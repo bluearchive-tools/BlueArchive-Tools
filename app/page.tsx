@@ -2,6 +2,7 @@
 'use client'
 
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
+import { useEffect } from 'react'
 
 export default function Home() {
   const session  = useSession()
