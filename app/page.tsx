@@ -2,14 +2,19 @@
 'use client'
 
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
-import { useEffect } from 'react'
 
 export default function Home() {
-  const session = useSession()
+  const session  = useSession()
   const supabase = useSupabaseClient()
 
   const signIn = async () => {
-    await supabase.auth.signInWithOAuth({ provider: 'google' })
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
+      }
+    })
+    if (error) console.error(error.message)
   }
   const signOut = async () => {
     await supabase.auth.signOut()
