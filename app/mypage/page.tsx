@@ -15,7 +15,7 @@ export default async function MyPage() {
 
   return (
     <main>
-      <h1>マイページ</h1>
+      <h2>マイページ</h2>
       <p>メールアドレス: {session.user.email}</p>
     </main>
   )
