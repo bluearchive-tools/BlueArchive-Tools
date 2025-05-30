@@ -13,25 +13,6 @@ const nextConfig = {
       // }
     ]
   },
-
-  // ここを追加
-  async headers() {
-    return [
-      {
-        source: '/api/auth/:path*',
-        headers: [
-          {
-            key: 'apikey',
-            value: process.env.SUPABASE_ANON_KEY!
-          },
-          {
-            key: 'Authorization',
-            value: `Bearer ${process.env.SUPABASE_ANON_KEY!}`
-          }
-        ]
-      }
-    ];
-  }
 }
 
 module.exports = nextConfig
