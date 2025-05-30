@@ -4,7 +4,7 @@ const nextConfig = {
     return [
       {
         source: '/api/auth/:path*',
-        destination: `${process.env.SUPABASE_URL}/auth/v1/:path*?apikey=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
+        destination: `${process.env.SUPABASE_URL}/auth/v1/:path*`
       },
       // 他にもREST APIやストレージをプロキシしたい場合は追加a
       // {
