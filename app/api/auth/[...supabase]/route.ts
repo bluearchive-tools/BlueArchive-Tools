@@ -1,7 +1,7 @@
 // app/api/auth/[...supabase]/route.ts
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   // cookies() は ReadonlyRequestCookies を返す関数なので、型が一致します
