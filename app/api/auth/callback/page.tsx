@@ -12,8 +12,8 @@ export default function Callback() {
     const supabase = createPagesBrowserClient()
 
     const handleAuth = async () => {
-      const params = new URLSearchParams(searchParams.toString()) // クエリをコピー
-      const { error } = await supabase.auth.exchangeCodeForSession(params)
+      const queryString = searchParams.toString()
+      const { error } = await supabase.auth.exchangeCodeForSession(queryString)
       if (error) {
         console.error('セッション交換失敗:', error.message)
       }
