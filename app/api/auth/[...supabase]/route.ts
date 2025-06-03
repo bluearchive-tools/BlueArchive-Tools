@@ -1,29 +1,27 @@
 // app/api/auth/[...supabase]/route.ts
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
-/**
- * このファイルが担う役割︓
- * 1) クライアントから来る /api/auth/v1/authorize や /api/auth/v1/token などのリクエストを
- *    Supabase Auth サーバーにプロキシする
- * 2) クッキーの取り扱い（アクセストークンの保存・更新）を補助する
- */
-
 export async function GET(request: NextRequest) {
-  // createRouteHandlerClient は cookies を自動で参照してくれる
-  const supabase = createRouteHandlerClient({ cookies: request.cookies })
-  // GET メソッドのリクエストを Supabase 側に転送
-  const { data, error } = await supabase.auth.api.getUserByCookie()
-  // 必要に応じてここでエラーハンドリングを入れてもよい
-  return NextResponse.json(data ?? { error })
+  // cookies() は ReadonlyRequestCookies を返す関数なので、型が一致します
+  const supabase = createRouteHandlerClient({ cookies })
+
+  // たとえば現在のセッション情報を返す例
+  const { data: { session }, error } = await supabase.auth.getSession()
+  if (error) {
+    return NextResponse.json({ error }, { status: 400 })
+  }
+  return NextResponse.json({ session })
 }
 
 export async function POST(request: NextRequest) {
-  // POST リクエストはリクエストボディやクエリパラメータをそのまま Supabase に渡す
-  const supabase = createRouteHandlerClient({ cookies: request.cookies })
-  // たとえば OAuth 認可コードの交換など
+  // POST の場合も同様に cookies() を使う
+  const supabase = createRouteHandlerClient({ cookies })
+
+  // クライアントから送られてきたボディを Supabase に渡す例
   const body = await request.json().catch(() => ({}))
-  const { data, error } = await supabase.auth.api.exchangeCodeForSession(body)
+  const { data, error } = await supabase.auth.exchangeCodeForSession(body)
   if (error) {
     return NextResponse.json({ error }, { status: 400 })
   }
