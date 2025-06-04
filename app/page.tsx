@@ -1,26 +1,27 @@
+// app/page.tsx
 'use client'
 
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useEffect } from 'react'
 
 export default function Home() {
-  const session = useSession()
+  const session  = useSession()
   const supabase = useSupabaseClient()
 
   const signIn = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'https://blue-archive-tools.vercel.app/auth/callback',
-      },
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
+      }
     })
     if (error) console.error(error.message)
   }
-
   const signOut = async () => {
     await supabase.auth.signOut()
   }
 
+  // （次のステップで使うので、このまま残しておきます）
   useEffect(() => {
     if (session) {
       console.log('ログイン済み:', session.user.email)
@@ -33,6 +34,6 @@ export default function Home() {
       <button onClick={signOut}>サインアウト</button>
     </div>
   ) : (
-    <button onClick={signIn}>Googleでログイン</button>
+    <button onClick={signIn}>Google でログイン</button>
   )
 }
