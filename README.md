@@ -18,6 +18,19 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## Environment Variables
+
+Supabase へのアクセスには以下の環境変数が必要です。サーバー用とブラウザ用の両方を設定してください。
+
+```env
+SUPABASE_URL=...
+SUPABASE_ANON_KEY=...
+NEXT_PUBLIC_SUPABASE_URL=$SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+```
+
+`SUPABASE_URL` と `SUPABASE_ANON_KEY` はサーバーサイドで使用され、`NEXT_PUBLIC_` で始まる変数はブラウザ側から参照されます。
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More
