@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import NoticeModal from './NoticeModal'
 import type { NextRouter } from 'next/router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBell, faCog, faChevronDown } from '@fortawesome/free-solid-svg-icons'
+import { faBell, faCog, faChevronDown, faMoon, faSun } from '@fortawesome/free-solid-svg-icons'
 import { faGoogle } from '@fortawesome/free-brands-svg-icons'
 import {
   useSession,
@@ -21,6 +21,7 @@ export default function Header() {
   const [username, setUsername] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
+  const [darkMode, setDarkMode] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -50,6 +51,18 @@ export default function Header() {
     document.addEventListener('click', handleClick)
     return () => document.removeEventListener('click', handleClick)
   }, [accountOpen])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('theme')
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      const isDark = saved ? saved === 'dark' : prefersDark
+      if (isDark) {
+        document.documentElement.classList.add('dark')
+        setDarkMode(true)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     let legacyRouter: NextRouter | undefined
@@ -83,6 +96,19 @@ export default function Header() {
     await supabase.auth.signOut()
   }
 
+  const toggleTheme = () => {
+    setDarkMode((prev) => {
+      const next = !prev
+      if (next) {
+        document.documentElement.classList.add('dark')
+        localStorage.setItem('theme', 'dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+        localStorage.setItem('theme', 'light')
+      }
+      return next
+    })
+  }
   const openNotice = () => {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('openNotice'))
@@ -101,6 +127,9 @@ export default function Header() {
         <Link href="/settings" aria-label="Settings">
           <FontAwesomeIcon icon={faCog} />
         </Link>
+        <button onClick={toggleTheme} aria-label="Toggle theme">
+          <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
+        </button>
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setAccountOpen(!accountOpen)}
@@ -122,7 +151,7 @@ export default function Header() {
                 </>
               ) : (
                 <button onClick={signIn} className="block w-full text-left px-2 py-1 flex items-center gap-2">
-                  <FontAwesomeIcon icon={faGoogle} className="text-red-500" />
+                  <FontAwesomeIcon icon={faGoogle} className="text-black" />
                   <span>Googleでログイン</span>
                 </button>
               )}
