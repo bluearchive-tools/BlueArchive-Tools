@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+
 import { useEffect, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 
@@ -23,6 +24,8 @@ export default function Header() {
     fetchProfile()
   }, [session, supabase])
 
+
+
   const signOut = async () => {
     await supabase.auth.signOut()
   }
@@ -39,6 +42,7 @@ export default function Header() {
         <details className="relative">
           <summary className="cursor-pointer">
             {session ? username ?? session.user.email : 'アカウント'}
+            {session ? session.user.email : 'アカウント'}
           </summary>
           <div className="absolute right-0 mt-2 bg-white text-black shadow p-2 z-10">
             {session ? (
