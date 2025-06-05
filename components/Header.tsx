@@ -2,19 +2,18 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import type { NextRouter } from 'next/router'
 import {
   useSession,
   useSupabaseClient,
 } from '@supabase/auth-helpers-react'
 import { useRouter, usePathname } from 'next/navigation'
-import { useRouter as useLegacyRouter } from 'next/router'
 
 export default function Header() {
   const session = useSession()
   const supabase = useSupabaseClient()
   const router = useRouter()
   const pathname = usePathname()
-  const legacyRouter = useLegacyRouter()
   const [username, setUsername] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -37,17 +36,25 @@ export default function Header() {
   }, [session, supabase, router, pathname])
 
   useEffect(() => {
+    let legacyRouter: NextRouter | undefined
     const handleStart = () => setLoading(true)
     const handleDone = () => setLoading(false)
-    legacyRouter.events.on('routeChangeStart', handleStart)
-    legacyRouter.events.on('routeChangeComplete', handleDone)
-    legacyRouter.events.on('routeChangeError', handleDone)
-    return () => {
-      legacyRouter.events.off('routeChangeStart', handleStart)
-      legacyRouter.events.off('routeChangeComplete', handleDone)
-      legacyRouter.events.off('routeChangeError', handleDone)
+    if (typeof window !== 'undefined') {
+      import('next/router').then((mod) => {
+        legacyRouter = mod.default
+        legacyRouter.events.on('routeChangeStart', handleStart)
+        legacyRouter.events.on('routeChangeComplete', handleDone)
+        legacyRouter.events.on('routeChangeError', handleDone)
+      })
     }
-  }, [legacyRouter])
+    return () => {
+      if (legacyRouter) {
+        legacyRouter.events.off('routeChangeStart', handleStart)
+        legacyRouter.events.off('routeChangeComplete', handleDone)
+        legacyRouter.events.off('routeChangeError', handleDone)
+      }
+    }
+  }, [])
   const signOut = async () => {
     await supabase.auth.signOut()
   }
