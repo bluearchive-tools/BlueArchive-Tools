@@ -7,13 +7,16 @@ import {
   useSupabaseClient,
 } from '@supabase/auth-helpers-react'
 import { useRouter, usePathname } from 'next/navigation'
+import { useRouter as useLegacyRouter } from 'next/router'
 
 export default function Header() {
   const session = useSession()
   const supabase = useSupabaseClient()
   const router = useRouter()
   const pathname = usePathname()
+  const legacyRouter = useLegacyRouter()
   const [username, setUsername] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -33,12 +36,24 @@ export default function Header() {
     fetchProfile()
   }, [session, supabase, router, pathname])
 
+  useEffect(() => {
+    const handleStart = () => setLoading(true)
+    const handleDone = () => setLoading(false)
+    legacyRouter.events.on('routeChangeStart', handleStart)
+    legacyRouter.events.on('routeChangeComplete', handleDone)
+    legacyRouter.events.on('routeChangeError', handleDone)
+    return () => {
+      legacyRouter.events.off('routeChangeStart', handleStart)
+      legacyRouter.events.off('routeChangeComplete', handleDone)
+      legacyRouter.events.off('routeChangeError', handleDone)
+    }
+  }, [legacyRouter])
   const signOut = async () => {
     await supabase.auth.signOut()
   }
 
   return (
-    <header className="flex justify-between items-center border-b p-4">
+    <header className="fixed top-0 inset-x-0 z-10 flex justify-between items-center border-b bg-white p-4 h-16 relative">
       <h1 className="text-lg font-bold">
         <Link href="/">BlueArchive Tools</Link>
       </h1>
@@ -68,6 +83,7 @@ export default function Header() {
           </div>
         </details>
       </div>
+      <div className={`absolute bottom-0 left-0 h-1 bg-blue-500 transition-all duration-300 ${loading ? 'w-full' : 'w-0'}`}></div>
     </header>
   )
 }
