@@ -58,16 +58,16 @@ export default function NoticeModal() {
 
   return (
     <div
-      className={`fixed inset-0 bg-black/30 flex items-center justify-center z-20 transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'}`}
+      className={`fixed inset-0 bg-black/30 dark:bg-black/50 flex items-center justify-center z-20 transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'}`}
       onClick={close}
     >
       <div
-        className="bg-gray-100 p-4 max-w-lg w-full rounded-lg"
+        className="bg-gray-100 dark:bg-gray-800 dark:text-white p-4 max-w-lg w-full rounded-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="max-h-96 overflow-auto space-y-4">
           {notices.map((n) => (
-            <div key={n.id} className="bg-white rounded-lg p-4 prose">
+            <div key={n.id} className="bg-white dark:bg-gray-700 rounded-lg p-4 prose dark:prose-invert">
               <ReactMarkdown>{n.content}</ReactMarkdown>
             </div>
           ))}
