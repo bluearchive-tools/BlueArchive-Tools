@@ -14,6 +14,16 @@ export default function NoticeModal() {
   const [open, setOpen] = useState(false)
   const [visible, setVisible] = useState(false)
 
+  const openModal = () => {
+    setVisible(true)
+    setTimeout(() => setOpen(true), 20)
+  }
+
+  const closeModal = () => {
+    if (latestId) localStorage.setItem('lastNoticeId', latestId)
+    setOpen(false)
+    setTimeout(() => setVisible(false), 200)
+  }
   useEffect(() => {
     const load = async () => {
       try {
@@ -26,7 +36,7 @@ export default function NoticeModal() {
           setLatestId(latest.id)
           const last = localStorage.getItem('lastNoticeId')
           if (last !== latest.id) {
-            setOpen(true)
+            openModal()
           }
         }
       } catch {
@@ -37,39 +47,29 @@ export default function NoticeModal() {
   }, [])
 
   useEffect(() => {
-    const handler = () => setOpen(true)
+    const handler = () => openModal()
     window.addEventListener('openNotice', handler)
     return () => window.removeEventListener('openNotice', handler)
   }, [])
 
-  useEffect(() => {
-    if (open) {
-      setVisible(true)
-    } else {
-      const id = setTimeout(() => setVisible(false), 200)
-      return () => clearTimeout(id)
-    }
-  }, [open])
-
-  const close = () => {
-    if (latestId) localStorage.setItem('lastNoticeId', latestId)
-    setOpen(false)
-  }
+  const close = () => closeModal()
 
   if (!visible) return null
 
   return (
     <div
-      className={`fixed inset-0 bg-black/50 flex items-center justify-center z-20 transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'}`}
+      className={`fixed inset-0 bg-black/30 flex items-center justify-center z-20 transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'}`}
       onClick={close}
     >
       <div
-        className="bg-white p-4 max-w-lg w-full"
+        className="bg-gray-100 p-4 max-w-lg w-full rounded-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="max-h-96 overflow-auto prose space-y-8">
+        <div className="max-h-96 overflow-auto space-y-4">
           {notices.map((n) => (
-            <ReactMarkdown key={n.id}>{n.content}</ReactMarkdown>
+            <div key={n.id} className="bg-white rounded-lg p-4 prose">
+              <ReactMarkdown>{n.content}</ReactMarkdown>
+            </div>
           ))}
         </div>
       </div>

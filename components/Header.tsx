@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import NoticeModal from './NoticeModal'
 import type { NextRouter } from 'next/router'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faBell, faCog, faChevronDown } from '@fortawesome/free-solid-svg-icons'
 import {
   useSession,
   useSupabaseClient,
@@ -85,17 +87,18 @@ export default function Header() {
       </h1>
       <div className="flex items-center gap-4">
         <button onClick={openNotice} aria-label="Notices">
-          <span>🔔</span>
+          <FontAwesomeIcon icon={faBell} />
         </button>
         <Link href="/settings" aria-label="Settings">
-          <span>⚙</span>
+          <FontAwesomeIcon icon={faCog} />
         </Link>
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setAccountOpen(!accountOpen)}
-            className="cursor-pointer min-w-[8rem] whitespace-nowrap text-center"
+            className="cursor-pointer min-w-[8rem] whitespace-nowrap text-center flex items-center justify-center gap-1"
           >
             {session && username ? username : 'アカウント'}
+            <FontAwesomeIcon icon={faChevronDown} />
           </button>
           {accountOpen && (
             <div className="absolute right-0 mt-2 bg-white text-black shadow p-2 z-10">
