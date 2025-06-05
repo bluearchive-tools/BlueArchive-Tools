@@ -6,11 +6,33 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
 
+  const supabase = createRouteHandlerClient(
+    { cookies },
+    {
+      supabaseUrl: process.env.SUPABASE_URL!,
+      supabaseKey: process.env.SUPABASE_ANON_KEY!,
+    }
+  )
+
   if (code) {
-    const supabase = createRouteHandlerClient({ cookies })
     await supabase.auth.exchangeCodeForSession(code)
   }
 
-  // 認証後に遷移させる先を指定
-  return NextResponse.redirect(new URL('/', requestUrl))
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  let redirectTo = '/'
+  if (session) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', session.user.id)
+      .maybeSingle()
+    if (!data) {
+      redirectTo = '/profile/setup'
+    }
+  }
+
+  return NextResponse.redirect(new URL(redirectTo, requestUrl))
 }
