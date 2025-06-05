@@ -48,7 +48,6 @@ export default function Header() {
       legacyRouter.events.off('routeChangeError', handleDone)
     }
   }, [legacyRouter])
-
   const signOut = async () => {
     await supabase.auth.signOut()
   }
