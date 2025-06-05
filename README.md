@@ -34,3 +34,14 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Supabase 連携
+
+Google 認証後に `profiles` テーブルへユーザー名を登録します。
+
+環境変数 `SUPABASE_URL` と `SUPABASE_ANON_KEY` を `.env.local` に設定してください。
+ユーザー名登録ページは `/profile/setup` です。
+
+## お知らせ機能
+
+`notices` フォルダに Markdown ファイルを追加すると、最新のお知らせがトップページ表示時にモーダルで通知されます。モーダルでは過去のお知らせもまとめて表示され、ヘッダーのベルアイコンからいつでも確認できます。ユーザーが一度確認するとローカルストレージに記録され、次回以降は更新があるまで自動表示されません。

@@ -28,12 +28,16 @@ export default function Home() {
     }
   }, [session])
 
-  return session ? (
-    <div>
-      <p>こんにちは、{session.user.email} さん</p>
-      <button onClick={signOut}>サインアウト</button>
-    </div>
-  ) : (
-    <button onClick={signIn}>Google でログイン</button>
+  return (
+    <>
+      {session ? (
+        <div>
+          <p>こんにちは、{session.user.email} さん</p>
+          <button onClick={signOut}>サインアウト</button>
+        </div>
+      ) : (
+        <button onClick={signIn}>Google でログイン</button>
+      )}
+    </>
   )
 }
