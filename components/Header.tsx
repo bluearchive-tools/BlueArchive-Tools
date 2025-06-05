@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import NoticeModal from './NoticeModal'
 import type { NextRouter } from 'next/router'
 import {
   useSession,
@@ -16,6 +17,8 @@ export default function Header() {
   const pathname = usePathname()
   const [username, setUsername] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [accountOpen, setAccountOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -34,6 +37,16 @@ export default function Header() {
     }
     fetchProfile()
   }, [session, supabase, router, pathname])
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (accountOpen && dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setAccountOpen(false)
+      }
+    }
+    document.addEventListener('click', handleClick)
+    return () => document.removeEventListener('click', handleClick)
+  }, [accountOpen])
 
   useEffect(() => {
     let legacyRouter: NextRouter | undefined
@@ -59,38 +72,53 @@ export default function Header() {
     await supabase.auth.signOut()
   }
 
+  const openNotice = () => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('openNotice'))
+    }
+  }
+
   return (
     <header className="fixed top-0 inset-x-0 z-10 flex justify-between items-center border-b bg-white p-4 h-16 relative">
       <h1 className="text-lg font-bold">
         <Link href="/">BlueArchive Tools</Link>
       </h1>
       <div className="flex items-center gap-4">
+        <button onClick={openNotice} aria-label="Notices">
+          <span>🔔</span>
+        </button>
         <Link href="/settings" aria-label="Settings">
           <span>⚙</span>
         </Link>
-        <details className="relative">
-          <summary className="cursor-pointer min-w-[8rem] whitespace-nowrap text-center">
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setAccountOpen(!accountOpen)}
+            className="cursor-pointer min-w-[8rem] whitespace-nowrap text-center"
+          >
             {session && username ? username : 'アカウント'}
-          </summary>
-          <div className="absolute right-0 mt-2 bg-white text-black shadow p-2 z-10">
-            {session ? (
-              <>
-                <Link href="/mypage" className="block px-2 py-1">
-                  マイページ
+          </button>
+          {accountOpen && (
+            <div className="absolute right-0 mt-2 bg-white text-black shadow p-2 z-10">
+              {session ? (
+                <>
+                  <Link href="/mypage" className="block px-2 py-1">
+                    マイページ
+                  </Link>
+                  <button onClick={signOut} className="block w-full text-left px-2 py-1">
+                    サインアウト
+                  </button>
+                </>
+              ) : (
+                <Link href="/" className="block px-2 py-1">
+                  ログイン
                 </Link>
-                <button onClick={signOut} className="block w-full text-left px-2 py-1">
-                  サインアウト
-                </button>
-              </>
-            ) : (
-              <Link href="/" className="block px-2 py-1">
-                ログイン
-              </Link>
-            )}
-          </div>
-        </details>
+              )}
+            </div>
+          )}
+        </div>
       </div>
       <div className={`absolute bottom-0 left-0 h-1 bg-blue-500 transition-all duration-300 ${loading ? 'w-full' : 'w-0'}`}></div>
+      <NoticeModal />
     </header>
   )
 }

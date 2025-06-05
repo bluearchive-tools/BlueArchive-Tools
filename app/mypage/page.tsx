@@ -1,5 +1,6 @@
 // app/mypage/page.tsx
 import { cookies } from 'next/headers'
+import Link from 'next/link'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { redirect } from 'next/navigation'
 
@@ -29,7 +30,14 @@ export default async function MyPage() {
   return (
     <main>
       <h2>マイページ</h2>
-      {profile?.username && <p>ユーザー名: {profile.username}</p>}
+      {profile?.username && (
+        <p>
+          ユーザー名: {profile.username}{' '}
+          <Link href="/profile/setup" className="text-blue-500 underline">
+            変更
+          </Link>
+        </p>
+      )}
       <p>メールアドレス: {session.user.email}</p>
     </main>
   )
