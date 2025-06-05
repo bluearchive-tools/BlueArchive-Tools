@@ -3,6 +3,8 @@
 
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useEffect } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faGoogle } from '@fortawesome/free-brands-svg-icons'
 
 export default function Home() {
   const session  = useSession()
@@ -28,12 +30,22 @@ export default function Home() {
     }
   }, [session])
 
-  return session ? (
-    <div>
-      <p>こんにちは、{session.user.email} さん</p>
-      <button onClick={signOut}>サインアウト</button>
-    </div>
-  ) : (
-    <button onClick={signIn}>Google でログイン</button>
+  return (
+    <>
+      {session ? (
+        <div>
+          <p>こんにちは、{session.user.email} さん</p>
+          <button onClick={signOut}>サインアウト</button>
+        </div>
+      ) : (
+        <button
+          onClick={signIn}
+          className="flex items-center gap-2 border rounded px-4 py-2 bg-white"
+        >
+          <FontAwesomeIcon icon={faGoogle} className="text-red-500" />
+          <span>Googleでログイン</span>
+        </button>
+      )}
+    </>
   )
 }
