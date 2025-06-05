@@ -6,6 +6,7 @@ import NoticeModal from './NoticeModal'
 import type { NextRouter } from 'next/router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBell, faCog, faChevronDown } from '@fortawesome/free-solid-svg-icons'
+import { faGoogle } from '@fortawesome/free-brands-svg-icons'
 import {
   useSession,
   useSupabaseClient,
@@ -70,6 +71,14 @@ export default function Header() {
       }
     }
   }, [])
+
+  const signIn = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback` }
+    })
+    if (error) console.error(error.message)
+  }
   const signOut = async () => {
     await supabase.auth.signOut()
   }
@@ -112,9 +121,10 @@ export default function Header() {
                   </button>
                 </>
               ) : (
-                <Link href="/" className="block px-2 py-1">
-                  ログイン
-                </Link>
+                <button onClick={signIn} className="block w-full text-left px-2 py-1 flex items-center gap-2">
+                  <FontAwesomeIcon icon={faGoogle} className="text-red-500" />
+                  <span>Googleでログイン</span>
+                </button>
               )}
             </div>
           )}
