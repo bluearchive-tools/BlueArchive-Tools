@@ -1,9 +1,11 @@
 // app/layout.tsx
 import './globals.css'
 import { Providers } from './providers'
+import Header from '../components/Header'
+import Footer from '../components/Footer'
 
 export const metadata = {
-  title: 'My App',
+  title: 'BlueArchive Tools',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -11,7 +13,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ja">
       <body>
         {/* ここではあくまでサーバー→クライアントの橋渡しだけ */}
-        <Providers>{children}</Providers>
+        <Providers>
+          <Header />
+          <main>{children}</main>
+          <Footer />
+        </Providers>
       </body>
     </html>
   )
