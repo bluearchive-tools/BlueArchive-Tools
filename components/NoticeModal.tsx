@@ -24,7 +24,6 @@ export default function NoticeModal() {
     setOpen(false)
     setTimeout(() => setVisible(false), 200)
   }
-
   useEffect(() => {
     const load = async () => {
       try {
