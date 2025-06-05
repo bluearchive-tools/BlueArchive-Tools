@@ -92,7 +92,6 @@ export default function Header() {
     })
     if (error) console.error(error.message)
   }
-
   const signOut = async () => {
     await supabase.auth.signOut()
   }
@@ -110,7 +109,6 @@ export default function Header() {
       return next
     })
   }
-
   const openNotice = () => {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('openNotice'))
