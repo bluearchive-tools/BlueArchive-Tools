@@ -55,7 +55,6 @@ export default function Header() {
       }
     }
   }, [])
-
   const signOut = async () => {
     await supabase.auth.signOut()
   }
