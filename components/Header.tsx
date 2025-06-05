@@ -1,11 +1,21 @@
 'use client'
 
 import Link from 'next/link'
+import {
+  useSession,
+  useSupabaseClient,
+} from '@supabase/auth-helpers-react'
+import { useRouter, usePathname } from 'next/navigation'
+  const router = useRouter()
+  const pathname = usePathname()
+        if (data) {
+          setUsername(data.username)
+        } else if (pathname !== '/profile/setup') {
+          router.push('/profile/setup')
+        }
+  }, [session, supabase, router, pathname])
 
-import { useEffect, useState } from 'react'
-import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
-
-export default function Header() {
+            {session && username ? username : 'アカウント'}
   const session = useSession()
   const supabase = useSupabaseClient()
   const [username, setUsername] = useState<string | null>(null)
