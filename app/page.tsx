@@ -3,6 +3,7 @@
 
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useEffect } from 'react'
+import NoticeModal from '../components/NoticeModal'
 
 export default function Home() {
   const session  = useSession()
@@ -28,12 +29,17 @@ export default function Home() {
     }
   }, [session])
 
-  return session ? (
-    <div>
-      <p>こんにちは、{session.user.email} さん</p>
-      <button onClick={signOut}>サインアウト</button>
-    </div>
-  ) : (
-    <button onClick={signIn}>Google でログイン</button>
+  return (
+    <>
+      <NoticeModal />
+      {session ? (
+        <div>
+          <p>こんにちは、{session.user.email} さん</p>
+          <button onClick={signOut}>サインアウト</button>
+        </div>
+      ) : (
+        <button onClick={signIn}>Google でログイン</button>
+      )}
+    </>
   )
 }
