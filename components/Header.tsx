@@ -3,11 +3,20 @@
 import Link from 'next/link'
 
 import { useEffect, useState } from 'react'
-import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
+import {
+  useSession,
+  useSupabaseClient,
+} from '@supabase/auth-helpers-react'
+import { useRouter, usePathname } from 'next/navigation'
+
 
 export default function Header() {
   const session = useSession()
   const supabase = useSupabaseClient()
+
+  const router = useRouter()
+  const pathname = usePathname()
+
   const [username, setUsername] = useState<string | null>(null)
 
   useEffect(() => {
@@ -18,12 +27,16 @@ export default function Header() {
           .select('username')
           .eq('id', session.user.id)
           .maybeSingle()
-        setUsername(data?.username ?? null)
+
+        if (data) {
+          setUsername(data?.username ?? null)
+        } else if (pathname !== '/profile/setup') {
+          router.push('/profile/setup')
+        }
       }
     }
     fetchProfile()
-  }, [session, supabase])
-
+  }, [session, supabase, router, pathname])
 
 
   const signOut = async () => {
@@ -41,8 +54,9 @@ export default function Header() {
         </Link>
         <details className="relative">
           <summary className="cursor-pointer">
-            {session ? username ?? session.user.email : 'アカウント'}
-            {session ? session.user.email : 'アカウント'}
+
+            {session && username ? username : 'アカウント'}
+
           </summary>
           <div className="absolute right-0 mt-2 bg-white text-black shadow p-2 z-10">
             {session ? (
