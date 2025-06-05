@@ -20,9 +20,16 @@ export default async function MyPage() {
     redirect('/')
   }
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', session.user.id)
+    .maybeSingle()
+
   return (
     <main>
       <h2>マイページ</h2>
+      {profile?.username && <p>ユーザー名: {profile.username}</p>}
       <p>メールアドレス: {session.user.email}</p>
     </main>
   )
