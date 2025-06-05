@@ -3,6 +3,7 @@
 
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useEffect } from 'react'
+import NoticeModal from '../components/NoticeModal'
 
 export default function Home() {
   const session  = useSession()
