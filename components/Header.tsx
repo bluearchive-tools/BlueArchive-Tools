@@ -12,6 +12,7 @@ import {
   useSupabaseClient,
 } from '@supabase/auth-helpers-react'
 import { useRouter, usePathname } from 'next/navigation'
+import { useTheme } from './ThemeProvider'
 
 export default function Header() {
   const session = useSession()
@@ -21,7 +22,7 @@ export default function Header() {
   const [username, setUsername] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
-  const [darkMode, setDarkMode] = useState(false)
+  const { dark, toggle } = useTheme()
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -52,17 +53,6 @@ export default function Header() {
     return () => document.removeEventListener('click', handleClick)
   }, [accountOpen])
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('theme')
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      const isDark = saved ? saved === 'dark' : prefersDark
-      if (isDark) {
-        document.documentElement.classList.add('dark')
-        setDarkMode(true)
-      }
-    }
-  }, [])
 
   useEffect(() => {
     let legacyRouter: NextRouter | undefined
@@ -96,19 +86,8 @@ export default function Header() {
     await supabase.auth.signOut()
   }
 
-  const toggleTheme = () => {
-    setDarkMode((prev) => {
-      const next = !prev
-      if (next) {
-        document.documentElement.classList.add('dark')
-        localStorage.setItem('theme', 'dark')
-      } else {
-        document.documentElement.classList.remove('dark')
-        localStorage.setItem('theme', 'light')
-      }
-      return next
-    })
-  }
+  const toggleTheme = () => toggle()
+
   const openNotice = () => {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('openNotice'))
@@ -116,7 +95,7 @@ export default function Header() {
   }
 
   return (
-    <header className="fixed top-0 inset-x-0 z-10 flex justify-between items-center border-b bg-white p-4 h-16 relative">
+    <header className="fixed top-0 inset-x-0 z-10 flex justify-between items-center border-b bg-white dark:bg-gray-900 dark:text-white dark:border-gray-700 transition-colors p-4 h-16 relative">
       <h1 className="text-lg font-bold">
         <Link href="/">BlueArchive Tools</Link>
       </h1>
@@ -128,7 +107,7 @@ export default function Header() {
           <FontAwesomeIcon icon={faCog} />
         </Link>
         <button onClick={toggleTheme} aria-label="Toggle theme">
-          <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
+          <FontAwesomeIcon icon={dark ? faSun : faMoon} />
         </button>
         <div className="relative" ref={dropdownRef}>
           <button
@@ -139,7 +118,7 @@ export default function Header() {
             <FontAwesomeIcon icon={faChevronDown} />
           </button>
           {accountOpen && (
-            <div className="absolute right-0 mt-2 bg-white text-black shadow p-2 z-10">
+            <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 dark:text-white text-black shadow p-2 z-10">
               {session ? (
                 <>
                   <Link href="/mypage" className="block px-2 py-1">
@@ -151,7 +130,7 @@ export default function Header() {
                 </>
               ) : (
                 <button onClick={signIn} className="block w-full text-left px-2 py-1 flex items-center gap-2">
-                  <FontAwesomeIcon icon={faGoogle} className="text-black" />
+                  <FontAwesomeIcon icon={faGoogle} className="text-black dark:text-white" />
                   <span>Googleでログイン</span>
                 </button>
               )}

@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { SessionContextProvider } from '@supabase/auth-helpers-react'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
+import { ThemeProvider } from '../components/ThemeProvider'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [supabaseClient] = useState(() =>
@@ -12,7 +13,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <SessionContextProvider supabaseClient={supabaseClient}>
-      {children}
+      <ThemeProvider>{children}</ThemeProvider>
     </SessionContextProvider>
   )
 }
