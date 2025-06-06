@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from './ThemeProvider'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 
 type Notice = {
   id: string
@@ -71,7 +73,7 @@ export default function NoticeModal() {
           {notices.map((n) => (
             <div key={n.id} className={`${dark ? 'bg-gray-700' : 'bg-white'} rounded-lg p-4 prose ${dark ? 'prose-invert' : ''}`}
             >
-              <ReactMarkdown>{n.content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{n.content}</ReactMarkdown>
             </div>
           ))}
         </div>
