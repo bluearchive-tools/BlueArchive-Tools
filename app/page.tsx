@@ -1,51 +1,24 @@
 // app/page.tsx
 'use client'
 
-import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
-import { useEffect } from 'react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faGoogle } from '@fortawesome/free-brands-svg-icons'
+import CollapsibleBox from '../components/CollapsibleBox'
 
 export default function Home() {
-  const session  = useSession()
-  const supabase = useSupabaseClient()
-
-  const signIn = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
-      }
-    })
-    if (error) console.error(error.message)
-  }
-  const signOut = async () => {
-    await supabase.auth.signOut()
-  }
-
-  // （次のステップで使うので、このまま残しておきます）
-  useEffect(() => {
-    if (session) {
-      console.log('ログイン済み:', session.user.email)
-    }
-  }, [session])
-
   return (
-    <>
-      {session ? (
-        <div>
-          <p>こんにちは、{session.user.email} さん</p>
-          <button onClick={signOut}>サインアウト</button>
-        </div>
-      ) : (
-        <button
-          onClick={signIn}
-          className="flex items-center gap-2 border rounded px-4 py-2 bg-white"
-        >
-          <FontAwesomeIcon icon={faGoogle} className="text-red-500" />
-          <span>Googleでログイン</span>
-        </button>
-      )}
-    </>
+    <main className="p-4 space-y-4">
+      <CollapsibleBox title="生徒管理" description="生徒のデータを確認、編集できます">
+        <ul className="list-disc pl-5 space-y-1">
+          <li>生徒データ確認　現在保存されている生徒のデータを表示します</li>
+          <li>生徒データインポート　画像から生徒のデータをインポートできます</li>
+          <li>部隊管理　部隊を構成できます</li>
+        </ul>
+      </CollapsibleBox>
+      <CollapsibleBox title="TLツール(β)" description="TL作成に役立つツールです">
+        <ul className="list-disc pl-5 space-y-1">
+          <li>TLメーカー　TLを作成できます</li>
+          <li>動画toTL　動画からTLを自動生成できます</li>
+        </ul>
+      </CollapsibleBox>
+    </main>
   )
 }
