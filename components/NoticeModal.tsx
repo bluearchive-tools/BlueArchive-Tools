@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTheme } from './ThemeProvider'
 import ReactMarkdown from 'react-markdown'
 
 type Notice = {
@@ -13,6 +14,7 @@ export default function NoticeModal() {
   const [latestId, setLatestId] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
   const [visible, setVisible] = useState(false)
+  const { dark } = useTheme()
 
   const openModal = () => {
     setVisible(true)
@@ -58,16 +60,17 @@ export default function NoticeModal() {
 
   return (
     <div
-      className={`fixed inset-0 dark:!bg-black/50 bg-black/20 flex items-center justify-center z-20 transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'}`}
+      className={`fixed inset-0 ${dark ? 'bg-black/50' : 'bg-black/20'} flex items-center justify-center z-20 transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'}`}
       onClick={close}
     >
       <div
-        className="bg-gray-100 dark:!bg-gray-800 dark:text-white p-4 max-w-lg w-full rounded-lg"
+        className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 max-w-lg w-full rounded-lg`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="max-h-96 overflow-auto space-y-4">
           {notices.map((n) => (
-            <div key={n.id} className="bg-white dark:!bg-gray-700 rounded-lg p-4 prose dark:prose-invert">
+            <div key={n.id} className={`${dark ? 'bg-gray-700' : 'bg-white'} rounded-lg p-4 prose ${dark ? 'prose-invert' : ''}`}
+            >
               <ReactMarkdown>{n.content}</ReactMarkdown>
             </div>
           ))}
