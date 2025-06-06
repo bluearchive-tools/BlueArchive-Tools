@@ -6,6 +6,33 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 
+const markdownComponents = {
+  h1: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+    <h1 className="text-3xl font-bold mt-4 mb-2" {...props} />
+  ),
+  h2: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+    <h2 className="text-2xl font-bold mt-4 mb-2" {...props} />
+  ),
+  h3: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+    <h3 className="text-xl font-bold mt-4 mb-2" {...props} />
+  ),
+  h4: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+    <h4 className="text-lg font-bold mt-4 mb-2" {...props} />
+  ),
+  h5: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+    <h5 className="text-base font-bold mt-4 mb-2" {...props} />
+  ),
+  h6: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+    <h6 className="text-sm font-bold mt-4 mb-2" {...props} />
+  ),
+  ul: (props: React.HTMLAttributes<HTMLUListElement>) => (
+    <ul className="list-disc pl-6" {...props} />
+  ),
+  ol: (props: React.HTMLAttributes<HTMLOListElement>) => (
+    <ol className="list-decimal pl-6" {...props} />
+  ),
+}
+
 type Notice = {
   id: string
   content: string
@@ -73,7 +100,13 @@ export default function NoticeModal() {
           {notices.map((n) => (
             <div key={n.id} className={`${dark ? 'bg-gray-700' : 'bg-white'} rounded-lg p-4 prose ${dark ? 'prose-invert' : ''}`}
             >
-              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{n.content}</ReactMarkdown>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+                components={markdownComponents}
+              >
+                {n.content}
+              </ReactMarkdown>
             </div>
           ))}
         </div>
