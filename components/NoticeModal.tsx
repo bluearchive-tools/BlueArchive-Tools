@@ -62,7 +62,7 @@ export default function NoticeModal() {
       onClick={close}
     >
       <div
-        className="bg-gray-100 dark:bg-gray-800 dark:text-white p-4 max-w-lg w-full rounded-lg"
+        className="light:bg-gray-100 dark:bg-gray-800 dark:text-white p-4 max-w-lg w-full rounded-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="max-h-96 overflow-auto space-y-4">
