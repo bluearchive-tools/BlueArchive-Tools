@@ -95,7 +95,7 @@ export default function Header() {
   }
 
   return (
-    <header className="fixed top-0 inset-x-0 z-10 flex justify-between items-center border-b bg-white dark:bg-black dark:text-white dark:border-gray-700 transition-colors p-4 h-16 relative">
+    <header className="fixed top-0 inset-x-0 z-10 flex justify-between items-center border-b dark:bg-black dark:text-white dark:border-gray-700 transition-colors p-4 h-16 relative">
       <h1 className="text-lg font-bold">
         <Link href="/">BlueArchive Tools</Link>
       </h1>
