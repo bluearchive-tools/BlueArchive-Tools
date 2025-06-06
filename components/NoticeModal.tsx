@@ -67,7 +67,7 @@ export default function NoticeModal() {
       >
         <div className="max-h-96 overflow-auto space-y-4">
           {notices.map((n) => (
-            <div key={n.id} className="dark:bg-gray-700 rounded-lg p-4 prose dark:prose-invert">
+            <div key={n.id} className="bg-white dark:bg-gray-700 rounded-lg p-4 prose dark:prose-invert">
               <ReactMarkdown>{n.content}</ReactMarkdown>
             </div>
           ))}
