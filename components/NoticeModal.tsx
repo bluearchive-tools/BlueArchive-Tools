@@ -58,7 +58,7 @@ export default function NoticeModal() {
 
   return (
     <div
-      className={`fixed inset-0 bg-black/30 dark:bg-black/50 flex items-center justify-center z-20 transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'}`}
+      className={`fixed inset-0 bg-black dark:bg-black/50 flex items-center justify-center z-20 transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'}`}
       onClick={close}
     >
       <div
