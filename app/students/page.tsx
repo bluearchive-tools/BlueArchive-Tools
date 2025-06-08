@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faArrowUp, faArrowDown } from '@fortawesome/free-solid-svg-icons'
 
 interface Student {
   id: string
@@ -49,9 +51,10 @@ export default function StudentsPage() {
         </select>
         <button
           onClick={() => setAsc(!asc)}
+          aria-label={asc ? '降順に並び替え' : '昇順に並び替え'}
           className="border rounded px-2 py-1"
         >
-          {asc ? '昇順' : '降順'}
+          <FontAwesomeIcon icon={asc ? faArrowUp : faArrowDown} />
         </button>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
