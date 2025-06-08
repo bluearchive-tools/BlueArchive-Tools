@@ -1,0 +1,5 @@
+[
+  { "id": "1", "name": "生徒A", "image": "https://via.placeholder.com/150?text=A" },
+  { "id": "2", "name": "生徒B", "image": "https://via.placeholder.com/150?text=B" },
+  { "id": "3", "name": "生徒C", "image": "https://via.placeholder.com/150?text=C" }
+]
