@@ -3,10 +3,12 @@
 
 import CollapsibleBox from '../components/CollapsibleBox'
 import FeatureItem from '../components/FeatureItem'
+import LoginPopup from '../components/LoginPopup'
 
 export default function Home() {
   return (
     <main className="p-4 space-y-4">
+      <LoginPopup />
       <CollapsibleBox title="生徒管理" description="生徒のデータを確認、編集できます">
         <div className="space-y-2">
           <FeatureItem title="生徒データ確認" description="現在保存されている生徒のデータを表示します" />
