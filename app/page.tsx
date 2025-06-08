@@ -3,6 +3,7 @@
 
 import CollapsibleBox from '../components/CollapsibleBox'
 import FeatureItem from '../components/FeatureItem'
+import Link from 'next/link'
 import LoginPopup from '../components/LoginPopup'
 
 export default function Home() {
@@ -11,7 +12,9 @@ export default function Home() {
       <LoginPopup />
       <CollapsibleBox title="生徒管理" description="生徒のデータを確認、編集できます">
         <div className="space-y-2">
-          <FeatureItem title="生徒データ確認" description="現在保存されている生徒のデータを表示します" />
+          <Link href="/students">
+            <FeatureItem title="生徒データ確認" description="現在保存されている生徒のデータを表示します" />
+          </Link>
           <FeatureItem title="生徒データインポート" description="画像から生徒のデータをインポートできます" />
           <FeatureItem title="部隊管理" description="部隊を構成できます" />
         </div>
