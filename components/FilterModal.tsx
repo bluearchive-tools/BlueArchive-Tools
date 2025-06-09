@@ -3,6 +3,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck } from '@fortawesome/free-solid-svg-icons'
 import { useTheme } from './ThemeProvider'
+import { useState, useEffect } from 'react'
 
 interface FilterModalProps {
   attackTypes: string[]
@@ -26,13 +27,24 @@ export default function FilterModal({
   close,
 }: FilterModalProps) {
   const { dark } = useTheme()
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    setVisible(true)
+  }, [])
+
+  const handleClose = () => {
+    setVisible(false)
+    setTimeout(close, 200)
+  }
+
   return (
     <div
-      className={`fixed inset-0 z-20 flex items-center justify-center ${dark ? 'bg-black/50' : 'bg-black/20'}`}
-      onClick={close}
+      className={`fixed inset-0 z-20 flex items-center justify-center transition-opacity duration-200 ${dark ? 'bg-black/50' : 'bg-black/20'} ${visible ? 'opacity-100' : 'opacity-0'}`}
+      onClick={handleClose}
     >
       <div
-        className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 rounded space-y-4 w-80 relative`}
+        className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 rounded space-y-4 w-80 relative transform transition-all duration-200 ${visible ? 'scale-100' : 'scale-95'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <button

@@ -13,6 +13,29 @@ interface Student {
   hasAccessory?: boolean
 }
 
+interface UserStudent {
+  level: number
+  star: number
+  unique_star: number
+  unique_level: number
+  bond: number
+  hp: number
+  hp_wb: number
+  attack: number
+  attack_wb: number
+  defense: number
+  heal: number
+  heal_wb: number
+  ex_skill: number
+  normal_skill: number
+  passive_skill: number
+  sub_skill: number
+  equip1: number
+  equip2: number
+  equip3: number
+  item_tier: number
+}
+
 interface AddStudentModalProps {
   addStudents: (students: Student[]) => void
   addStudent: (student: Student) => void
@@ -22,11 +45,22 @@ interface AddStudentModalProps {
 export default function AddStudentModal({ addStudents, addStudent, close }: AddStudentModalProps) {
   const { dark } = useTheme()
   const [mode, setMode] = useState<'menu' | 'manual' | 'image'>('menu')
+  const [visible, setVisible] = useState(false)
   const session = useSession()
   const supabase = useSupabaseClient()
   const fileRef = useRef<HTMLInputElement>(null)
   const imgRef = useRef<HTMLInputElement>(null)
   const [students, setStudents] = useState<Student[]>([])
+  const [existing, setExisting] = useState<UserStudent | null>(null)
+
+  useEffect(() => {
+    setVisible(true)
+  }, [])
+
+  const handleClose = () => {
+    setVisible(false)
+    setTimeout(close, 200)
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -79,6 +113,52 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
     }
   }, [selectedStudent])
 
+  useEffect(() => {
+    const load = async () => {
+      if (!session || !form.studentId) {
+        setExisting(null)
+        return
+      }
+      const { data } = await supabase
+        .from('user_students')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .eq('student_id', form.studentId)
+        .maybeSingle()
+      if (data) {
+        const d = data as UserStudent
+        setExisting(d)
+        setForm({
+          studentId: form.studentId,
+          level: d.level.toString(),
+          star: d.star.toString(),
+          uniqueStar: d.unique_star.toString(),
+          uniqueLevel: d.unique_level.toString(),
+          bond: d.bond.toString(),
+          hp: d.hp.toString(),
+          hpwb: d.hp_wb.toString(),
+          attack: d.attack.toString(),
+          attackwb: d.attack_wb.toString(),
+          defense: d.defense.toString(),
+          heal: d.heal.toString(),
+          healwb: d.heal_wb.toString(),
+          ex: d.ex_skill.toString(),
+          normal: d.normal_skill.toString(),
+          passive: d.passive_skill.toString(),
+          sub: d.sub_skill.toString(),
+          gear1: d.equip1.toString(),
+          gear2: d.equip2.toString(),
+          gear3: d.equip3.toString(),
+          love: d.item_tier.toString(),
+        })
+      } else {
+        setExisting(null)
+      }
+    }
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.studentId, session, supabase])
+
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -86,7 +166,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
       const text = await file.text()
       const data: Student[] = JSON.parse(text)
       addStudents(data)
-      close()
+      handleClose()
     } catch (err) {
       console.error(err)
     } finally {
@@ -106,7 +186,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
       defenseType: '',
     })
     e.target.value = ''
-    close()
+    handleClose()
   }
 
   const submitManual = async () => {
@@ -115,6 +195,11 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
       return
     }
     if (!form.studentId) return
+
+    if (existing) {
+      const ok = confirm('既に登録されたデータがあります。上書きしますか?')
+      if (!ok) return
+    }
 
     const { error } = await supabase.from('user_students').upsert({
       user_id: session.user.id,
@@ -144,16 +229,16 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
       alert(error.message)
       return
     }
-    close()
+    handleClose()
   }
 
   return (
     <div
-      className={`fixed inset-0 z-20 flex items-center justify-center ${dark ? 'bg-black/50' : 'bg-black/20'}`}
-      onClick={close}
+      className={`fixed inset-0 z-20 flex items-center justify-center transition-opacity duration-200 ${dark ? 'bg-black/50' : 'bg-black/20'} ${visible ? 'opacity-100' : 'opacity-0'}`}
+      onClick={handleClose}
     >
       <div
-        className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 rounded space-y-4 w-80`}
+        className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 rounded space-y-4 w-80 transform transition-all duration-200 ${visible ? 'scale-100' : 'scale-95'}`}
         onClick={(e) => e.stopPropagation()}
       >
         {mode === 'menu' && (
