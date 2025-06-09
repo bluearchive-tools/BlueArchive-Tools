@@ -303,6 +303,9 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
       image: url,
       attackType: '',
       defenseType: '',
+      initialStars: 1,
+      role: 'STRIKER',
+      characterType: 'タンク',
     })
     e.target.value = ''
     handleClose()
