@@ -9,11 +9,12 @@ interface Student {
   defenseType: string
 }
 
-export default async function StudentDetail({ params }: { params: { id: string } }) {
+export default async function StudentDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const filePath = path.join(process.cwd(), 'data', 'students.json')
   const data = await fs.readFile(filePath, 'utf-8')
   const students: Student[] = JSON.parse(data)
-  const student = students.find((s) => s.id === params.id)
+  const student = students.find((s) => s.id === id)
 
   if (!student) {
     return <main className="p-4">生徒が見つかりません</main>
