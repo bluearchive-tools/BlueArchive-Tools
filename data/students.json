@@ -5,8 +5,7 @@
     "image": "https://via.placeholder.com/150?text=A",
     "attackType": "爆発",
     "defenseType": "軽装備",
-    "hasAccessory": true,
-    "altIds": ["1-swimsuit"]
+    "hasAccessory": true
   },
   {
     "id": "2",
@@ -14,8 +13,7 @@
     "image": "https://via.placeholder.com/150?text=A+SW",
     "attackType": "貫通",
     "defenseType": "重装甲",
-    "hasAccessory": false,
-    "altOf": "1"
+    "hasAccessory": false
   },
   {
     "id": "3",
@@ -23,7 +21,7 @@
     "image": "https://via.placeholder.com/150?text=B",
     "attackType": "爆発",
     "defenseType": "軽装備",
-    "hasAccessory": false
+    "hasAccessory": true
   },
   {
     "id": "4",
@@ -360,5 +358,111 @@
     "attackType": "貫通",
     "defenseType": "重装甲",
     "hasAccessory": false
+  },
+  {
+    "id": "46",
+    "name": "マシロ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
+    "hasAccessory": true
+  },
+  {
+    "id": "47",
+    "name": "イズナ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "軽装備",
+    "hasAccessory": false
+  },
+  {
+    "id": "48",
+    "name": "シズコ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "特殊装甲",
+    "hasAccessory": true
+  },
+  {
+    "id": "49",
+    "name": "アリス",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false
+  },
+  {
+    "id": "50",
+    "name": "ミドリ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "軽装備",
+    "hasAccessory": false
+  },
+  {
+    "id": "51",
+    "name": "モモイ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "軽装備",
+    "hasAccessory": false
+  },
+  {
+    "id": "52",
+    "name": "チェリノ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "軽装備",
+    "hasAccessory": false
+  },
+  {
+    "id": "53",
+    "name": "ノドカ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
+    "hasAccessory": false
+  },
+  {
+    "id": "54",
+    "name": "ユズ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false
+  },
+  {
+    "id": "55",
+    "name": "アズサ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "altIds": ["58"]
+  },
+  {
+    "id": "56",
+    "name": "ハナコ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "特殊装甲",
+    "hasAccessory": true
+  },
+  {
+    "id": "57",
+    "name": "コハル",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
+    "hasAccessory": false
+  },
+  {
+    "id": "58",
+    "name": "アズサ(水着)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "軽装備",
+    "hasAccessory": false,
+    "altOf": "55"
   }
 ]
