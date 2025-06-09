@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 
 interface RouteProps<T> {
-  params: T
+  params: Promise<T>
 }
 
 interface Student {
@@ -18,7 +18,7 @@ interface Student {
 }
 
 export default async function StudentDetail({ params }: RouteProps<{ id: string }>) {
-  const { id } = params
+  const { id } = await params
   const filePath = path.join(process.cwd(), 'data', 'students.json')
   const data = await fs.readFile(filePath, 'utf-8')
   const students: Student[] = JSON.parse(data)
