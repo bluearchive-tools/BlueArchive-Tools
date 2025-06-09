@@ -154,34 +154,54 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                 </option>
               ))}
             </select>
-            <input
-              type="number"
-              value={form.level}
-              onChange={(e) => setForm({ ...form, level: Number(e.target.value) })}
-              placeholder="レベル"
-              className="border rounded w-full p-1"
-            />
-            <input
-              type="number"
-              value={form.star}
-              onChange={(e) => setForm({ ...form, star: Number(e.target.value) })}
-              placeholder="星"
-              className="border rounded w-full p-1"
-            />
-            <input
-              type="number"
-              value={form.unique}
-              onChange={(e) => setForm({ ...form, unique: Number(e.target.value) })}
-              placeholder="固有武器レベル"
-              className="border rounded w-full p-1"
-            />
-            <input
-              type="number"
-              value={form.attack}
-              onChange={(e) => setForm({ ...form, attack: Number(e.target.value) })}
-              placeholder="攻撃力"
-              className="border rounded w-full p-1"
-            />
+            <label className="flex items-center gap-2">
+              <span className="whitespace-nowrap">レベル:</span>
+              <input
+                type="number"
+                value={form.level}
+                onChange={(e) =>
+                  setForm({ ...form, level: Number(e.target.value) })
+                }
+                placeholder="レベル"
+                className="border rounded p-1 flex-1"
+              />
+            </label>
+            <label className="flex items-center gap-2">
+              <span className="whitespace-nowrap">星:</span>
+              <input
+                type="number"
+                value={form.star}
+                onChange={(e) =>
+                  setForm({ ...form, star: Number(e.target.value) })
+                }
+                placeholder="星"
+                className="border rounded p-1 flex-1"
+              />
+            </label>
+            <label className="flex items-center gap-2">
+              <span className="whitespace-nowrap">固有武器レベル:</span>
+              <input
+                type="number"
+                value={form.unique}
+                onChange={(e) =>
+                  setForm({ ...form, unique: Number(e.target.value) })
+                }
+                placeholder="固有武器レベル"
+                className="border rounded p-1 flex-1"
+              />
+            </label>
+            <label className="flex items-center gap-2">
+              <span className="whitespace-nowrap">攻撃力:</span>
+              <input
+                type="number"
+                value={form.attack}
+                onChange={(e) =>
+                  setForm({ ...form, attack: Number(e.target.value) })
+                }
+                placeholder="攻撃力"
+                className="border rounded p-1 flex-1"
+              />
+            </label>
             <div className="flex gap-2">
               <button type="button" onClick={submitManual} className="border rounded px-2 py-1">
                 追加
