@@ -1,36 +1,108 @@
 [
   {
     "id": "1",
-    "name": "生徒A",
+    "name": "アル",
     "image": "https://via.placeholder.com/150?text=A",
     "attackType": "爆発",
-    "defenseType": "重装甲",
+    "defenseType": "軽装備",
     "hasAccessory": true,
     "altIds": ["1-swimsuit"]
   },
   {
-    "id": "1-swimsuit",
-    "name": "生徒A(水着)",
+    "id": "2",
+    "name": "イオリ",
     "image": "https://via.placeholder.com/150?text=A+SW",
-    "attackType": "爆発",
+    "attackType": "貫通",
     "defenseType": "重装甲",
-    "hasAccessory": true,
+    "hasAccessory": false,
     "altOf": "1"
   },
   {
-    "id": "2",
-    "name": "生徒B",
+    "id": "3",
+    "name": "イズミ",
     "image": "https://via.placeholder.com/150?text=B",
-    "attackType": "貫通",
-    "defenseType": "軽装甲",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
     "hasAccessory": false
   },
   {
-    "id": "3",
-    "name": "生徒C",
+    "id": "4",
+    "name": "エイミ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": true
+  },
+  {
+    "id": "5",
+    "name": "カリン",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "重装甲",
+    "hasAccessory": false
+  },
+  {
+    "id": "6",
+    "name": "サヤ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": false
+  },
+  {
+    "id": "7",
+    "name": "シュン",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": false
+  },
+  {
+    "id": "8",
+    "name": "シロコ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": true
+  },
+  {
+    "id": "9",
+    "name": "スミレ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "特殊装甲",
+    "hasAccessory": true
+  },
+  {
+    "id": "10",
+    "name": "ツルギ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "重層甲",
+    "hasAccessory": true
+  },
+  {
+    "id": "11",
+    "name": "ネル",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "軽装備",
+    "hasAccessory": true
+  },
+  {
+    "id": "12",
+    "name": "ハルナ",
     "image": "https://via.placeholder.com/150?text=C",
     "attackType": "神秘",
-    "defenseType": "特殊装甲",
+    "defenseType": "重装甲",
+    "hasAccessory": false
+  },
+  {
+    "id": "13",
+    "name": "ヒナ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
     "hasAccessory": true
   }
 ]
