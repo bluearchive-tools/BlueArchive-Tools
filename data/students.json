@@ -116,7 +116,7 @@
     "name": "ヒフミ",
     "image": "https://via.placeholder.com/150?text=C",
     "attackType": "貫通",
-    "defenseType": 軽装備",
+    "defenseType": "軽装備",
     "hasAccessory":false
   },
   {
