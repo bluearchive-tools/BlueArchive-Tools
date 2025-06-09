@@ -40,12 +40,14 @@ interface AddStudentModalProps {
   addStudents: (students: Student[]) => void
   addStudent: (student: Student) => void
   close: () => void
+  onSaved: () => void
 }
 
-export default function AddStudentModal({ addStudents, addStudent, close }: AddStudentModalProps) {
+export default function AddStudentModal({ addStudents, addStudent, close, onSaved }: AddStudentModalProps) {
   const { dark } = useTheme()
   const [mode, setMode] = useState<'menu' | 'manual' | 'image'>('menu')
   const [visible, setVisible] = useState(false)
+  const [contentVisible, setContentVisible] = useState(false)
   const session = useSession()
   const supabase = useSupabaseClient()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -55,11 +57,21 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
 
   useEffect(() => {
     setVisible(true)
+    setContentVisible(true)
   }, [])
 
   const handleClose = () => {
+    setContentVisible(false)
     setVisible(false)
     setTimeout(close, 200)
+  }
+
+  const switchMode = (m: 'menu' | 'manual' | 'image') => {
+    setContentVisible(false)
+    setTimeout(() => {
+      setMode(m)
+      setContentVisible(true)
+    }, 200)
   }
 
   useEffect(() => {
@@ -75,8 +87,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
     }
     load()
   }, [])
-  const [form, setForm] = useState({
-    studentId: '',
+  const defaultValues = {
     level: '1',
     star: '1',
     uniqueStar: '0',
@@ -97,7 +108,11 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
     gear2: '1',
     gear3: '1',
     love: '0',
-  })
+  }
+
+  const resetForm = (studentId = '') => setForm({ studentId, ...defaultValues })
+
+  const [form, setForm] = useState({ studentId: '', ...defaultValues })
 
   useEffect(() => {
     if (Number(form.star) < 5) {
@@ -115,8 +130,10 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
 
   useEffect(() => {
     const load = async () => {
-      if (!session || !form.studentId) {
+      if (!form.studentId) return
+      if (!session) {
         setExisting(null)
+        resetForm(form.studentId)
         return
       }
       const { data } = await supabase
@@ -147,12 +164,13 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
           passive: d.passive_skill.toString(),
           sub: d.sub_skill.toString(),
           gear1: d.equip1.toString(),
-          gear2: d.equip2.toString(),
-          gear3: d.equip3.toString(),
-          love: d.item_tier.toString(),
-        })
+        gear2: d.equip2.toString(),
+        gear3: d.equip3.toString(),
+        love: d.item_tier.toString(),
+      })
       } else {
         setExisting(null)
+        resetForm(form.studentId)
       }
     }
     load()
@@ -186,6 +204,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
       defenseType: '',
     })
     e.target.value = ''
+    onSaved()
     handleClose()
   }
 
@@ -238,15 +257,15 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
       onClick={handleClose}
     >
       <div
-        className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 rounded space-y-4 w-80 transform transition-all duration-200 ${visible ? 'scale-100' : 'scale-95'}`}
+        className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 rounded space-y-4 w-80 transform transition-all duration-200 ${contentVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
         onClick={(e) => e.stopPropagation()}
       >
         {mode === 'menu' && (
           <div className="space-y-2">
-            <button type="button" className="border rounded w-full p-2" onClick={() => setMode('image')}>
+            <button type="button" className="border rounded w-full p-2" onClick={() => switchMode('image')}>
               画像から追加
             </button>
-            <button type="button" className="border rounded w-full p-2" onClick={() => setMode('manual')}>
+            <button type="button" className="border rounded w-full p-2" onClick={() => switchMode('manual')}>
               手動追加
             </button>
             <button type="button" className="border rounded w-full p-2" onClick={() => fileRef.current?.click()}>
@@ -513,7 +532,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
               </button>
               <button
                 type="button"
-                onClick={() => setMode('menu')}
+                onClick={() => switchMode('menu')}
                 className="border rounded px-2 py-1"
               >
                 戻る

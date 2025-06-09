@@ -100,21 +100,22 @@ export default function StudentsPage() {
     load()
   }, [])
 
-  useEffect(() => {
-    const loadStats = async () => {
-      if (!session) return
-      const { data } = await supabase
-        .from('user_students')
-        .select('*')
-        .eq('user_id', session.user.id)
-      if (data) {
-        const map: Record<string, UserStudent> = {}
-        for (const row of data) {
-          map[row.student_id as string] = row as UserStudent
-        }
-        setUserStats(map)
+  const loadStats = async () => {
+    if (!session) return
+    const { data } = await supabase
+      .from('user_students')
+      .select('*')
+      .eq('user_id', session.user.id)
+    if (data) {
+      const map: Record<string, UserStudent> = {}
+      for (const row of data) {
+        map[row.student_id as string] = row as UserStudent
       }
+      setUserStats(map)
     }
+  }
+
+  useEffect(() => {
     loadStats()
   }, [session, supabase])
 
@@ -257,6 +258,7 @@ export default function StudentsPage() {
           addStudents={addStudents}
           addStudent={addStudent}
           close={() => setAddOpen(false)}
+          onSaved={loadStats}
         />
       )}
     </main>
