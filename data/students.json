@@ -104,5 +104,261 @@
     "attackType": "爆発",
     "defenseType": "重装甲",
     "hasAccessory": true
+  },
+  {
+    "id": "14",
+    "name": "ヒビキ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
+    "hasAccessory": true
+  },
+  {
+    "id": "15",
+    "name": "ヒフミ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": 軽装備",
+    "hasAccessory":false
+  },
+  {
+    "id": "16",
+    "name": "ホシノ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "重装甲",
+    "hasAccessory": true
+  },
+  {
+    "id": "17",
+    "name": "マキ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "軽装備",
+    "hasAccessory": false
+  },
+  {
+    "id": "18",
+    "name": "アイリ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": false
+  },
+  {
+    "id": "19",
+    "name": "アカネ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "軽装備",
+    "hasAccessory": false
+  },
+  {
+    "id": "20",
+    "name": "アカリ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
+    "hasAccessory": false
+  },
+  {
+    "id": "21",
+    "name": "アヤネ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "軽装備",
+    "hasAccessory": false
+  },
+  {
+    "id": "22",
+    "name": "ウタハ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "重装甲",
+    "hasAccessory": true
+  },
+  {
+    "id": "23",
+    "name": "カヨコ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
+    "hasAccessory": false
+  },
+  {
+    "id": "24",
+    "name": "ジュンコ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "軽装備",
+    "hasAccessory": true
+  },
+  {
+    "id": "25",
+    "name": "セリカ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": true
+  },
+  {
+    "id": "26",
+    "name": "チセ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "重装甲",
+    "hasAccessory": true
+  },
+  {
+    "id": "27",
+    "name": "ツバキ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false
+  },
+  {
+    "id": "28",
+    "name": "ノノミ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "軽装備",
+    "hasAccessory": true
+  },
+  {
+    "id": "29",
+    "name": "ハスミ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "重装甲",
+    "hasAccessory": false
+  },
+  {
+    "id": "30",
+    "name": "ハナエ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
+    "hasAccessory": false
+  },
+  {
+    "id": "31",
+    "name": "ハレ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": true
+  },
+  {
+    "id": "32",
+    "name": "フウカ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
+    "hasAccessory": false
+  },
+  {
+    "id": "33",
+    "name": "ムツキ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": false
+  },
+  {
+    "id": "34",
+    "name": "ユウカ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
+    "hasAccessory": true
+  },
+  {
+    "id": "35",
+    "name": "アスナ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "軽装備",
+    "hasAccessory": false
+  },
+  {
+    "id": "36",
+    "name": "コタマ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": false
+  },
+  {
+    "id": "37",
+    "name": "コトリ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "軽装備",
+    "hasAccessory": true
+  },
+  {
+    "id": "38",
+    "name": "シミコ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": false
+  },
+  {
+    "id": "39",
+    "name": "ジュリ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": false
+  },
+  {
+    "id": "40",
+    "name": "スズミ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
+    "hasAccessory": true
+  },
+  {
+    "id": "41",
+    "name": "セリナ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "軽装備",
+    "hasAccessory": false
+  },
+  {
+    "id": "42",
+    "name": "チナツ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "軽装備",
+    "hasAccessory": true
+  },
+  {
+    "id": "43",
+    "name": "ハルカ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": false
+  },
+  {
+    "id": "44",
+    "name": "フィーナ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "軽装備",
+    "hasAccessory": false
+  },
+  {
+    "id": "45",
+    "name": "ヨシミ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "重装甲",
+    "hasAccessory": false
   }
 ]
