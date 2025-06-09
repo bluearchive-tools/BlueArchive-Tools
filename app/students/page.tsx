@@ -13,6 +13,7 @@ interface Student {
   image: string
   attackType: string
   defenseType: string
+  hasAccessory?: boolean
 }
 
 export default function StudentsPage() {

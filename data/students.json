@@ -4,20 +4,23 @@
     "name": "生徒A",
     "image": "https://via.placeholder.com/150?text=A",
     "attackType": "爆発",
-    "defenseType": "重装甲"
+    "defenseType": "重装甲",
+    "hasAccessory": true
   },
   {
     "id": "2",
     "name": "生徒B",
     "image": "https://via.placeholder.com/150?text=B",
     "attackType": "貫通",
-    "defenseType": "軽装甲"
+    "defenseType": "軽装甲",
+    "hasAccessory": false
   },
   {
     "id": "3",
     "name": "生徒C",
     "image": "https://via.placeholder.com/150?text=C",
     "attackType": "神秘",
-    "defenseType": "特殊装甲"
+    "defenseType": "特殊装甲",
+    "hasAccessory": true
   }
 ]

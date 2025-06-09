@@ -10,10 +10,11 @@ interface Student {
   image: string
   attackType: string
   defenseType: string
+  hasAccessory?: boolean
 }
 
-export default async function StudentDetail({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+export default async function StudentDetail({ params }: { params: { id: string } }) {
+  const { id } = params
   const filePath = path.join(process.cwd(), 'data', 'students.json')
   const data = await fs.readFile(filePath, 'utf-8')
   const students: Student[] = JSON.parse(data)
