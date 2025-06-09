@@ -112,6 +112,16 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
   }, [form.star])
 
   const selectedStudent = students.find((s) => s.id === form.studentId)
+
+  useEffect(() => {
+    if (selectedStudent) {
+      setForm((prev) => ({
+        ...prev,
+        star: selectedStudent.initialStars.toString(),
+      }))
+    }
+  }, [selectedStudent])
+
   useEffect(() => {
     if (!selectedStudent) return
     const baseId = selectedStudent.altOf || selectedStudent.id
