@@ -144,10 +144,6 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
       alert(error.message)
       return
     }
-    const student = students.find((s) => s.id === form.studentId)
-    if (student) {
-      addStudent(student)
-    }
     close()
   }
 

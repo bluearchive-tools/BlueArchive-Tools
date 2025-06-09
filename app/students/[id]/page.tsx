@@ -3,6 +3,7 @@ import path from 'path'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
+import StudentUserData from '../../../components/StudentUserData'
 
 interface RouteProps<T> {
   params: Promise<T>
@@ -37,6 +38,7 @@ export default async function StudentDetail({ params }: RouteProps<{ id: string 
       <img src={student.image} alt={student.name} className="w-full h-auto rounded" />
       <p>攻撃属性: {student.attackType}</p>
       <p>防御属性: {student.defenseType}</p>
+      <StudentUserData studentId={student.id} />
     </main>
   )
 }
