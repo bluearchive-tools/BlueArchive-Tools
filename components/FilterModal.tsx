@@ -40,7 +40,10 @@ export default function FilterModal({
             {attackTypes.map((at) => {
               const checked = selectedAttacks.includes(at)
               return (
-                <label key={at} className="flex items-center gap-1 cursor-pointer select-none">
+                <label
+                  key={at}
+                  className="flex items-center gap-1 cursor-pointer select-none"
+                >
                   <button
                     type="button"
                     onClick={() => toggleAttack(at)}
@@ -49,7 +52,7 @@ export default function FilterModal({
                   >
                     {checked && <FontAwesomeIcon icon={faCheck} />}
                   </button>
-                  <span className="text-sm">{at}</span>
+                  <span onClick={() => toggleAttack(at)} className="text-sm">{at}</span>
                 </label>
               )
             })}
@@ -61,7 +64,10 @@ export default function FilterModal({
             {defenseTypes.map((dt) => {
               const checked = selectedDefenses.includes(dt)
               return (
-                <label key={dt} className="flex items-center gap-1 cursor-pointer select-none">
+                <label
+                  key={dt}
+                  className="flex items-center gap-1 cursor-pointer select-none"
+                >
                   <button
                     type="button"
                     onClick={() => toggleDefense(dt)}
@@ -70,14 +76,11 @@ export default function FilterModal({
                   >
                     {checked && <FontAwesomeIcon icon={faCheck} />}
                   </button>
-                  <span className="text-sm">{dt}</span>
+                  <span onClick={() => toggleDefense(dt)} className="text-sm">{dt}</span>
                 </label>
               )
             })}
           </div>
-        </div>
-        <div className="flex justify-end">
-          <button onClick={close} className="px-4 py-1 border rounded">閉じる</button>
         </div>
       </div>
     </div>

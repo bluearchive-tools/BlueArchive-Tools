@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowUp, faArrowDown } from '@fortawesome/free-solid-svg-icons'
 import FilterModal from '../../components/FilterModal'
@@ -86,10 +87,14 @@ export default function StudentsPage() {
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {sorted.map((s) => (
-          <div key={s.id} className="border rounded p-2 flex flex-col items-center">
+          <Link
+            href={`/students/${s.id}`}
+            key={s.id}
+            className="border rounded p-2 flex flex-col items-center hover:bg-gray-50 dark:hover:bg-gray-700"
+          >
             <img src={s.image} alt={s.name} className="w-full h-auto rounded" />
             <p className="mt-2 text-center">{s.name}</p>
-          </div>
+          </Link>
         ))}
       </div>
       {filterOpen && (
