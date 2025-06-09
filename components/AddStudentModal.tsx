@@ -13,6 +13,9 @@ interface Student {
   hasAccessory?: boolean
   altIds?: string[]
   altOf?: string
+  initialStars: number
+  role: string
+  characterType: string
 }
 
 interface UserStudent {
