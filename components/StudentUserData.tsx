@@ -71,7 +71,17 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
   const student = students.find((s) => s.id === studentId)
   const baseId = student?.altOf || studentId
   const base = students.find((s) => s.id === baseId)
-  const altIds = base?.altIds || []
+  let otherIds: string[] = []
+  if (student && base) {
+    if (student.altOf) {
+      otherIds = [
+        baseId,
+        ...(base.altIds?.filter((id) => id !== studentId) || []),
+      ]
+    } else {
+      otherIds = (base.altIds || []).filter((id) => id !== studentId)
+    }
+  }
 
   if (!session) return null
 
@@ -86,7 +96,7 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
       <p>固有武器星: {data.unique_star}</p>
       <p>固有武器レベル: {data.unique_level}</p>
       <p>絆: {data.bond}</p>
-      {altIds.map((id) => {
+      {otherIds.map((id) => {
         const name = students.find((s) => s.id === id)?.name || id
         return (
           <p key={id}>

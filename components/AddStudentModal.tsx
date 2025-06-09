@@ -113,7 +113,16 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
     if (!selectedStudent) return
     const baseId = selectedStudent.altOf || selectedStudent.id
     const base = students.find((s) => s.id === baseId)
-    const ids = [baseId, ...(base?.altIds || [])]
+    let ids: string[] = []
+    if (selectedStudent.altOf) {
+      ids = [
+        selectedStudent.id,
+        baseId,
+        ...(base?.altIds?.filter((id) => id !== selectedStudent.id) || []),
+      ]
+    } else {
+      ids = [baseId, ...(base?.altIds || [])]
+    }
     setBonds((prev) => {
       const obj: Record<string, string> = {}
       for (const id of ids) {
@@ -125,15 +134,22 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
 
   const baseId = selectedStudent?.altOf || selectedStudent?.id
   const baseStudent = baseId ? students.find((s) => s.id === baseId) : undefined
-  const bondFields = baseStudent
-    ? [
-        { id: baseId!, name: baseStudent.name },
-        ...(baseStudent.altIds || []).map((id) => {
-          const a = students.find((s) => s.id === id)
-          return { id, name: a ? a.name : id }
-        }),
+  let bondFieldIds: string[] = []
+  if (selectedStudent && baseStudent) {
+    if (selectedStudent.altOf) {
+      bondFieldIds = [
+        selectedStudent.id,
+        baseId!,
+        ...(baseStudent.altIds?.filter((id) => id !== selectedStudent.id) || []),
       ]
-    : []
+    } else {
+      bondFieldIds = [baseId!, ...(baseStudent.altIds || [])]
+    }
+  }
+  const bondFields = bondFieldIds.map((id) => {
+    const a = students.find((s) => s.id === id)
+    return { id, name: a ? a.name : id }
+  })
 
   useEffect(() => {
     if (selectedStudent && !selectedStudent.hasAccessory) {
@@ -182,13 +198,24 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
         if (selectedStudent) {
           const baseId = selectedStudent.altOf || selectedStudent.id
           const base = students.find((s) => s.id === baseId)
-          const ids = [baseId, ...(base?.altIds || [])]
+          let ids: string[] = []
+          if (selectedStudent.altOf) {
+            ids = [
+              selectedStudent.id,
+              baseId,
+              ...(base?.altIds?.filter((id) => id !== selectedStudent.id) || []),
+            ]
+          } else {
+            ids = [baseId, ...(base?.altIds || [])]
+          }
           const obj: Record<string, string> = {}
           for (const id of ids) {
-            if (id === baseId) {
-              obj[id] = d.bond.toString()
-            } else if (alt && alt[id] !== undefined) {
+            if (alt && alt[id] !== undefined) {
               obj[id] = String(alt[id])
+            } else if (id === selectedStudent.id) {
+              obj[id] = d.bond.toString()
+            } else if (id === baseId) {
+              obj[id] = selectedStudent.id === baseId ? d.bond.toString() : String(alt?.[id] ?? d.bond)
             } else {
               obj[id] = '1'
             }
@@ -200,7 +227,16 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
         if (selectedStudent) {
           const baseId = selectedStudent.altOf || selectedStudent.id
           const base = students.find((s) => s.id === baseId)
-          const ids = [baseId, ...(base?.altIds || [])]
+          let ids: string[] = []
+          if (selectedStudent.altOf) {
+            ids = [
+              selectedStudent.id,
+              baseId,
+              ...(base?.altIds?.filter((id) => id !== selectedStudent.id) || []),
+            ]
+          } else {
+            ids = [baseId, ...(base?.altIds || [])]
+          }
           const obj: Record<string, string> = {}
           for (const id of ids) {
             obj[id] = '1'
@@ -255,7 +291,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
       if (!ok) return
     }
 
-    const baseId = selectedStudent?.altOf || selectedStudent?.id || ''
+    const mainId = selectedStudent?.id || ''
     const altData: Record<string, number> = {}
     for (const [k, v] of Object.entries(bonds)) {
       altData[k] = Number(v) || 0
@@ -268,7 +304,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
       star: Number(form.star) || 0,
       unique_star: Number(form.uniqueStar) || 0,
       unique_level: Number(form.uniqueLevel) || 0,
-      bond: altData[baseId] || 0,
+      bond: altData[mainId] || 0,
       hp: Number(form.hp) || 0,
       hp_wb: Number(form.hpwb) || 0,
       attack: Number(form.attack) || 0,
@@ -396,7 +432,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
             {bondFields.map(({ id, name }) => (
               <label key={id} className="flex items-center gap-2">
                 <span className="whitespace-nowrap">
-                  絆{baseId === id ? '' : `(${name})`}:
+                  絆{selectedStudent?.id === id ? '' : `(${name})`}:
                 </span>
                 <input
                   type="number"
