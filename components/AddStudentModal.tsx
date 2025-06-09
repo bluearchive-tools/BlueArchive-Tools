@@ -226,17 +226,43 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
         setExisting(null)
         if (selectedStudent) {
           const baseId = selectedStudent.altOf || selectedStudent.id
-          const base = students.find((s) => s.id === baseId)
-          let ids: string[] = []
           if (selectedStudent.altOf) {
-            ids = [
-              selectedStudent.id,
-              baseId,
-              ...(base?.altIds?.filter((id) => id !== selectedStudent.id) || []),
-            ]
-          } else {
-            ids = [baseId, ...(base?.altIds || [])]
+            const { data: baseRow } = await supabase
+              .from('user_students')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .eq('student_id', baseId)
+              .maybeSingle()
+            if (baseRow) {
+              const baseData = baseRow as UserStudent
+              const alt = baseData.alt_bonds || null
+              const ids = [
+                selectedStudent.id,
+                baseId,
+                ...((students.find((s) => s.id === baseId)?.altIds || []).filter(
+                  (id) => id !== selectedStudent.id
+                )),
+              ]
+              const obj: Record<string, string> = {}
+              for (const id of ids) {
+                if (id === selectedStudent.id) {
+                  obj[id] = String(alt?.[id] ?? 1)
+                } else if (id === baseId) {
+                  obj[id] = baseData.bond.toString()
+                } else {
+                  obj[id] = String(alt?.[id] ?? 1)
+                }
+              }
+              setBonds(obj)
+              return
+            }
           }
+          const base = students.find((s) => s.id === baseId)
+          const ids = [
+            baseId,
+            ...((base?.altIds || []).filter((id) => id !== selectedStudent.id)),
+          ]
+          if (selectedStudent.altOf) ids.unshift(selectedStudent.id)
           const obj: Record<string, string> = {}
           for (const id of ids) {
             obj[id] = '1'
