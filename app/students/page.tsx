@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowUp, faArrowDown, faPlus } from '@fortawesome/free-solid-svg-icons'
 import FilterModal from '../../components/FilterModal'
+import AddStudentModal from '../../components/AddStudentModal'
 
 interface Student {
   id: string
@@ -19,22 +20,16 @@ export default function StudentsPage() {
   const [sortKey, setSortKey] = useState<'id' | 'name' | 'attackType' | 'defenseType'>('id')
   const [asc, setAsc] = useState(true)
   const [filterOpen, setFilterOpen] = useState(false)
+  const [addOpen, setAddOpen] = useState(false)
   const [filterAttacks, setFilterAttacks] = useState<string[]>([])
   const [filterDefenses, setFilterDefenses] = useState<string[]>([])
-  const fileRef = useRef<HTMLInputElement>(null)
 
-  const importStudents = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    try {
-      const text = await file.text()
-      const data: Student[] = JSON.parse(text)
-      setStudents((prev) => [...prev, ...data])
-    } catch (err) {
-      console.error(err)
-    } finally {
-      e.target.value = ''
-    }
+  const addStudents = (data: Student[]) => {
+    setStudents((prev) => [...prev, ...data])
+  }
+
+  const addStudent = (s: Student) => {
+    setStudents((prev) => [...prev, s])
   }
 
   useEffect(() => {
@@ -78,15 +73,8 @@ export default function StudentsPage() {
       <div className="flex justify-between items-center">
         <h2 className="text-xl">生徒データ確認</h2>
         <div>
-          <input
-            type="file"
-            accept="application/json"
-            ref={fileRef}
-            onChange={importStudents}
-            className="hidden"
-          />
           <button
-            onClick={() => fileRef.current?.click()}
+            onClick={() => setAddOpen(true)}
             aria-label="生徒データ登録"
             className="border rounded p-2"
             type="button"
@@ -158,6 +146,13 @@ export default function StudentsPage() {
           }
           reset={resetFilters}
           close={() => setFilterOpen(false)}
+        />
+      )}
+      {addOpen && (
+        <AddStudentModal
+          addStudents={addStudents}
+          addStudent={addStudent}
+          close={() => setAddOpen(false)}
         />
       )}
     </main>
