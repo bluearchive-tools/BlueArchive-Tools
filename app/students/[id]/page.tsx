@@ -1,6 +1,7 @@
 import fs from 'fs/promises'
 import path from 'path'
 import Link from 'next/link'
+import type { PageProps } from 'next'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 
@@ -13,8 +14,8 @@ interface Student {
   hasAccessory?: boolean
 }
 
-export default async function StudentDetail({ params }: { params: { id: string } }) {
-  const { id } = params
+export default async function StudentDetail({ params }: PageProps<{ id: string }>) {
+  const { id } = await params
   const filePath = path.join(process.cwd(), 'data', 'students.json')
   const data = await fs.readFile(filePath, 'utf-8')
   const students: Student[] = JSON.parse(data)
