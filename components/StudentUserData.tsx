@@ -3,6 +3,17 @@
 import { useEffect, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 
+interface Student {
+  id: string
+  name: string
+  image: string
+  attackType: string
+  defenseType: string
+  hasAccessory?: boolean
+  altIds?: string[]
+  altOf?: string
+}
+
 interface UserStudent {
   level: number
   star: number
@@ -24,12 +35,25 @@ interface UserStudent {
   equip2: number
   equip3: number
   item_tier: number
+  alt_bonds?: Record<string, number>
 }
 
 export default function StudentUserData({ studentId }: { studentId: string }) {
   const session = useSession()
   const supabase = useSupabaseClient()
   const [data, setData] = useState<UserStudent | null>(null)
+  const [students, setStudents] = useState<Student[]>([])
+  useEffect(() => {
+    const loadStudents = async () => {
+      try {
+        const res = await fetch('/api/students')
+        if (res.ok) setStudents(await res.json())
+      } catch {
+        /* ignore */
+      }
+    }
+    loadStudents()
+  }, [])
   useEffect(() => {
     const load = async () => {
       if (!session) return
@@ -44,9 +68,16 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
     load()
   }, [session, supabase, studentId])
 
+  const student = students.find((s) => s.id === studentId)
+  const baseId = student?.altOf || studentId
+  const base = students.find((s) => s.id === baseId)
+  const altIds = base?.altIds || []
+
   if (!session) return null
 
   if (!data) return <p>未登録</p>
+
+  const altBonds = data.alt_bonds || {}
 
   return (
     <div className="space-y-1 text-sm">
@@ -55,6 +86,14 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
       <p>固有武器星: {data.unique_star}</p>
       <p>固有武器レベル: {data.unique_level}</p>
       <p>絆: {data.bond}</p>
+      {altIds.map((id) => {
+        const name = students.find((s) => s.id === id)?.name || id
+        return (
+          <p key={id}>
+            絆({name}): {altBonds[id] ?? 0}
+          </p>
+        )
+      })}
       <p>HP: {data.hp} / {data.hp_wb}</p>
       <p>攻撃力: {data.attack} / {data.attack_wb}</p>
       <p>防御力: {data.defense}</p>

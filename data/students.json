@@ -5,7 +5,17 @@
     "image": "https://via.placeholder.com/150?text=A",
     "attackType": "爆発",
     "defenseType": "重装甲",
-    "hasAccessory": true
+    "hasAccessory": true,
+    "altIds": ["1-swimsuit"]
+  },
+  {
+    "id": "1-swimsuit",
+    "name": "生徒A(水着)",
+    "image": "https://via.placeholder.com/150?text=A+SW",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
+    "hasAccessory": true,
+    "altOf": "1"
   },
   {
     "id": "2",

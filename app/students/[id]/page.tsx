@@ -16,6 +16,8 @@ interface Student {
   attackType: string
   defenseType: string
   hasAccessory?: boolean
+  altIds?: string[]
+  altOf?: string
 }
 
 export default async function StudentDetail({ params }: RouteProps<{ id: string }>) {

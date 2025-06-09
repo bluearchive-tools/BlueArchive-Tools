@@ -11,6 +11,8 @@ interface Student {
   attackType: string
   defenseType: string
   hasAccessory?: boolean
+  altIds?: string[]
+  altOf?: string
 }
 
 interface UserStudent {
@@ -34,20 +36,19 @@ interface UserStudent {
   equip2: number
   equip3: number
   item_tier: number
+  alt_bonds?: Record<string, number>
 }
 
 interface AddStudentModalProps {
   addStudents: (students: Student[]) => void
   addStudent: (student: Student) => void
   close: () => void
-  onSaved: () => void
 }
 
-export default function AddStudentModal({ addStudents, addStudent, close, onSaved }: AddStudentModalProps) {
+export default function AddStudentModal({ addStudents, addStudent, close }: AddStudentModalProps) {
   const { dark } = useTheme()
   const [mode, setMode] = useState<'menu' | 'manual' | 'image'>('menu')
   const [visible, setVisible] = useState(false)
-  const [contentVisible, setContentVisible] = useState(false)
   const session = useSession()
   const supabase = useSupabaseClient()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -57,21 +58,11 @@ export default function AddStudentModal({ addStudents, addStudent, close, onSave
 
   useEffect(() => {
     setVisible(true)
-    setContentVisible(true)
   }, [])
 
   const handleClose = () => {
-    setContentVisible(false)
     setVisible(false)
     setTimeout(close, 200)
-  }
-
-  const switchMode = (m: 'menu' | 'manual' | 'image') => {
-    setContentVisible(false)
-    setTimeout(() => {
-      setMode(m)
-      setContentVisible(true)
-    }, 200)
   }
 
   useEffect(() => {
@@ -87,12 +78,12 @@ export default function AddStudentModal({ addStudents, addStudent, close, onSave
     }
     load()
   }, [])
-  const defaultValues = {
+  const [form, setForm] = useState({
+    studentId: '',
     level: '1',
     star: '1',
     uniqueStar: '0',
     uniqueLevel: '0',
-    bond: '1',
     hp: '',
     hpwb: '',
     attack: '',
@@ -108,11 +99,8 @@ export default function AddStudentModal({ addStudents, addStudent, close, onSave
     gear2: '1',
     gear3: '1',
     love: '0',
-  }
-
-  const resetForm = (studentId = '') => setForm({ studentId, ...defaultValues })
-
-  const [form, setForm] = useState({ studentId: '', ...defaultValues })
+  })
+  const [bonds, setBonds] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (Number(form.star) < 5) {
@@ -121,6 +109,31 @@ export default function AddStudentModal({ addStudents, addStudent, close, onSave
   }, [form.star])
 
   const selectedStudent = students.find((s) => s.id === form.studentId)
+  useEffect(() => {
+    if (!selectedStudent) return
+    const baseId = selectedStudent.altOf || selectedStudent.id
+    const base = students.find((s) => s.id === baseId)
+    const ids = [baseId, ...(base?.altIds || [])]
+    setBonds((prev) => {
+      const obj: Record<string, string> = {}
+      for (const id of ids) {
+        obj[id] = prev[id] ?? '1'
+      }
+      return obj
+    })
+  }, [selectedStudent, students])
+
+  const baseId = selectedStudent?.altOf || selectedStudent?.id
+  const baseStudent = baseId ? students.find((s) => s.id === baseId) : undefined
+  const bondFields = baseStudent
+    ? [
+        { id: baseId!, name: baseStudent.name },
+        ...(baseStudent.altIds || []).map((id) => {
+          const a = students.find((s) => s.id === id)
+          return { id, name: a ? a.name : id }
+        }),
+      ]
+    : []
 
   useEffect(() => {
     if (selectedStudent && !selectedStudent.hasAccessory) {
@@ -130,10 +143,8 @@ export default function AddStudentModal({ addStudents, addStudent, close, onSave
 
   useEffect(() => {
     const load = async () => {
-      if (!form.studentId) return
-      if (!session) {
+      if (!session || !form.studentId) {
         setExisting(null)
-        resetForm(form.studentId)
         return
       }
       const { data } = await supabase
@@ -151,7 +162,6 @@ export default function AddStudentModal({ addStudents, addStudent, close, onSave
           star: d.star.toString(),
           uniqueStar: d.unique_star.toString(),
           uniqueLevel: d.unique_level.toString(),
-          bond: d.bond.toString(),
           hp: d.hp.toString(),
           hpwb: d.hp_wb.toString(),
           attack: d.attack.toString(),
@@ -164,13 +174,39 @@ export default function AddStudentModal({ addStudents, addStudent, close, onSave
           passive: d.passive_skill.toString(),
           sub: d.sub_skill.toString(),
           gear1: d.equip1.toString(),
-        gear2: d.equip2.toString(),
-        gear3: d.equip3.toString(),
-        love: d.item_tier.toString(),
-      })
+          gear2: d.equip2.toString(),
+          gear3: d.equip3.toString(),
+          love: d.item_tier.toString(),
+        })
+        const alt = d.alt_bonds || null
+        if (selectedStudent) {
+          const baseId = selectedStudent.altOf || selectedStudent.id
+          const base = students.find((s) => s.id === baseId)
+          const ids = [baseId, ...(base?.altIds || [])]
+          const obj: Record<string, string> = {}
+          for (const id of ids) {
+            if (id === baseId) {
+              obj[id] = d.bond.toString()
+            } else if (alt && alt[id] !== undefined) {
+              obj[id] = String(alt[id])
+            } else {
+              obj[id] = '1'
+            }
+          }
+          setBonds(obj)
+        }
       } else {
         setExisting(null)
-        resetForm(form.studentId)
+        if (selectedStudent) {
+          const baseId = selectedStudent.altOf || selectedStudent.id
+          const base = students.find((s) => s.id === baseId)
+          const ids = [baseId, ...(base?.altIds || [])]
+          const obj: Record<string, string> = {}
+          for (const id of ids) {
+            obj[id] = '1'
+          }
+          setBonds(obj)
+        }
       }
     }
     load()
@@ -204,7 +240,6 @@ export default function AddStudentModal({ addStudents, addStudent, close, onSave
       defenseType: '',
     })
     e.target.value = ''
-    onSaved()
     handleClose()
   }
 
@@ -220,6 +255,12 @@ export default function AddStudentModal({ addStudents, addStudent, close, onSave
       if (!ok) return
     }
 
+    const baseId = selectedStudent?.altOf || selectedStudent?.id || ''
+    const altData: Record<string, number> = {}
+    for (const [k, v] of Object.entries(bonds)) {
+      altData[k] = Number(v) || 0
+    }
+
     const { error } = await supabase.from('user_students').upsert({
       user_id: session.user.id,
       student_id: form.studentId,
@@ -227,7 +268,7 @@ export default function AddStudentModal({ addStudents, addStudent, close, onSave
       star: Number(form.star) || 0,
       unique_star: Number(form.uniqueStar) || 0,
       unique_level: Number(form.uniqueLevel) || 0,
-      bond: Number(form.bond) || 0,
+      bond: altData[baseId] || 0,
       hp: Number(form.hp) || 0,
       hp_wb: Number(form.hpwb) || 0,
       attack: Number(form.attack) || 0,
@@ -243,6 +284,7 @@ export default function AddStudentModal({ addStudents, addStudent, close, onSave
       equip2: Number(form.gear2) || 0,
       equip3: Number(form.gear3) || 0,
       item_tier: Number(form.love) || 0,
+      alt_bonds: altData,
     })
     if (error) {
       alert(error.message)
@@ -257,15 +299,15 @@ export default function AddStudentModal({ addStudents, addStudent, close, onSave
       onClick={handleClose}
     >
       <div
-        className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 rounded space-y-4 w-80 transform transition-all duration-200 ${contentVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+        className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 rounded space-y-4 w-80 transform transition-all duration-200 ${visible ? 'scale-100' : 'scale-95'}`}
         onClick={(e) => e.stopPropagation()}
       >
         {mode === 'menu' && (
           <div className="space-y-2">
-            <button type="button" className="border rounded w-full p-2" onClick={() => switchMode('image')}>
+            <button type="button" className="border rounded w-full p-2" onClick={() => setMode('image')}>
               画像から追加
             </button>
-            <button type="button" className="border rounded w-full p-2" onClick={() => switchMode('manual')}>
+            <button type="button" className="border rounded w-full p-2" onClick={() => setMode('manual')}>
               手動追加
             </button>
             <button type="button" className="border rounded w-full p-2" onClick={() => fileRef.current?.click()}>
@@ -351,19 +393,23 @@ export default function AddStudentModal({ addStudents, addStudent, close, onSave
                 className="border rounded p-1 flex-1"
               />
             </label>
-            <label className="flex items-center gap-2">
-              <span className="whitespace-nowrap">絆:</span>
-              <input
-                type="number"
-                min={1}
-                max={100}
-                value={form.bond}
-                onChange={(e) =>
-                  setForm({ ...form, bond: e.target.value })
-                }
-                className="border rounded p-1 flex-1"
-              />
-            </label>
+            {bondFields.map(({ id, name }) => (
+              <label key={id} className="flex items-center gap-2">
+                <span className="whitespace-nowrap">
+                  絆{baseId === id ? '' : `(${name})`}:
+                </span>
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={bonds[id] ?? ''}
+                  onChange={(e) =>
+                    setBonds({ ...bonds, [id]: e.target.value })
+                  }
+                  className="border rounded p-1 flex-1"
+                />
+              </label>
+            ))}
             <label className="flex items-center gap-2">
               <span className="whitespace-nowrap">HP:</span>
               <input
@@ -532,7 +578,7 @@ export default function AddStudentModal({ addStudents, addStudent, close, onSave
               </button>
               <button
                 type="button"
-                onClick={() => switchMode('menu')}
+                onClick={() => setMode('menu')}
                 className="border rounded px-2 py-1"
               >
                 戻る
