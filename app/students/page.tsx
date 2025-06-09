@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowUp, faArrowDown } from '@fortawesome/free-solid-svg-icons'
+import { faArrowUp, faArrowDown, faPlus } from '@fortawesome/free-solid-svg-icons'
 import FilterModal from '../../components/FilterModal'
 
 interface Student {
@@ -21,6 +21,21 @@ export default function StudentsPage() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [filterAttacks, setFilterAttacks] = useState<string[]>([])
   const [filterDefenses, setFilterDefenses] = useState<string[]>([])
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const importStudents = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      const text = await file.text()
+      const data: Student[] = JSON.parse(text)
+      setStudents((prev) => [...prev, ...data])
+    } catch (err) {
+      console.error(err)
+    } finally {
+      e.target.value = ''
+    }
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -39,6 +54,11 @@ export default function StudentsPage() {
   const attackTypes = Array.from(new Set(students.map((s) => s.attackType)))
   const defenseTypes = Array.from(new Set(students.map((s) => s.defenseType)))
 
+  const resetFilters = () => {
+    setFilterAttacks([])
+    setFilterDefenses([])
+  }
+
   const filtered = students.filter((s) => {
     const attackOk = filterAttacks.length ? filterAttacks.includes(s.attackType) : true
     const defenseOk = filterDefenses.length ? filterDefenses.includes(s.defenseType) : true
@@ -55,7 +75,26 @@ export default function StudentsPage() {
 
   return (
     <main className="p-4 space-y-4">
-      <h2 className="text-xl">生徒データ確認</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl">生徒データ確認</h2>
+        <div>
+          <input
+            type="file"
+            accept="application/json"
+            ref={fileRef}
+            onChange={importStudents}
+            className="hidden"
+          />
+          <button
+            onClick={() => fileRef.current?.click()}
+            aria-label="生徒データ登録"
+            className="border rounded p-2"
+            type="button"
+          >
+            <FontAwesomeIcon icon={faPlus} />
+          </button>
+        </div>
+      </div>
       <div className="flex items-center gap-2">
         <select
           value={sortKey}
@@ -117,6 +156,7 @@ export default function StudentsPage() {
                 : [...prev, v]
             )
           }
+          reset={resetFilters}
           close={() => setFilterOpen(false)}
         />
       )}

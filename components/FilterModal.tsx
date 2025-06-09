@@ -11,6 +11,7 @@ interface FilterModalProps {
   selectedDefenses: string[]
   toggleAttack: (value: string) => void
   toggleDefense: (value: string) => void
+  reset: () => void
   close: () => void
 }
 
@@ -21,6 +22,7 @@ export default function FilterModal({
   selectedDefenses,
   toggleAttack,
   toggleDefense,
+  reset,
   close,
 }: FilterModalProps) {
   const { dark } = useTheme()
@@ -30,9 +32,16 @@ export default function FilterModal({
       onClick={close}
     >
       <div
-        className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 rounded space-y-4 w-80`}
+        className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 rounded space-y-4 w-80 relative`}
         onClick={(e) => e.stopPropagation()}
       >
+        <button
+          onClick={reset}
+          className="absolute right-2 top-2 text-sm underline"
+          type="button"
+        >
+          リセット
+        </button>
         <h3 className="font-bold text-lg">絞り込み</h3>
         <div className="space-y-2">
           <p className="font-semibold">攻撃属性</p>
@@ -40,20 +49,20 @@ export default function FilterModal({
             {attackTypes.map((at) => {
               const checked = selectedAttacks.includes(at)
               return (
-                <label
+                <button
+                  type="button"
                   key={at}
+                  onClick={() => toggleAttack(at)}
                   className="flex items-center gap-1 cursor-pointer select-none"
                 >
-                  <button
-                    type="button"
-                    onClick={() => toggleAttack(at)}
+                  <span
                     className={`w-4 h-4 border flex items-center justify-center text-xs ${checked ? (dark ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : ''}`}
                     aria-pressed={checked}
                   >
                     {checked && <FontAwesomeIcon icon={faCheck} />}
-                  </button>
-                  <span onClick={() => toggleAttack(at)} className="text-sm">{at}</span>
-                </label>
+                  </span>
+                  <span className="text-sm">{at}</span>
+                </button>
               )
             })}
           </div>
@@ -64,20 +73,20 @@ export default function FilterModal({
             {defenseTypes.map((dt) => {
               const checked = selectedDefenses.includes(dt)
               return (
-                <label
+                <button
+                  type="button"
                   key={dt}
+                  onClick={() => toggleDefense(dt)}
                   className="flex items-center gap-1 cursor-pointer select-none"
                 >
-                  <button
-                    type="button"
-                    onClick={() => toggleDefense(dt)}
+                  <span
                     className={`w-4 h-4 border flex items-center justify-center text-xs ${checked ? (dark ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : ''}`}
                     aria-pressed={checked}
                   >
                     {checked && <FontAwesomeIcon icon={faCheck} />}
-                  </button>
-                  <span onClick={() => toggleDefense(dt)} className="text-sm">{dt}</span>
-                </label>
+                  </span>
+                  <span className="text-sm">{dt}</span>
+                </button>
               )
             })}
           </div>
