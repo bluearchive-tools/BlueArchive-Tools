@@ -2,9 +2,9 @@
 import './globals.css'
 import { Providers } from './providers'
 import Header from '../components/Header'
-import { M_PLUS_2p } from 'next/font/google'
+import { M_PLUS_2 } from 'next/font/google'
 
-const mplus = M_PLUS_2p({
+const mplus = M_PLUS_2({
   weight: '500',
   subsets: ['latin'],
   display: 'swap',
