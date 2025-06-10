@@ -95,6 +95,25 @@ export default function StudentsPage() {
   const [filterTypes, setFilterTypes] = useState<string[]>([])
   const [grid, setGrid] = useState(1)
 
+  useEffect(() => {
+    const saved = localStorage.getItem('students_page_opts')
+    if (saved) {
+      try {
+        const o = JSON.parse(saved)
+        if (o.sortKey) setSortKey(o.sortKey)
+        if (typeof o.asc === 'boolean') setAsc(o.asc)
+        if (Array.isArray(o.filterAttacks)) setFilterAttacks(o.filterAttacks)
+        if (Array.isArray(o.filterDefenses)) setFilterDefenses(o.filterDefenses)
+        if (Array.isArray(o.filterStars)) setFilterStars(o.filterStars)
+        if (Array.isArray(o.filterRoles)) setFilterRoles(o.filterRoles)
+        if (Array.isArray(o.filterTypes)) setFilterTypes(o.filterTypes)
+        if (typeof o.grid === 'number') setGrid(o.grid)
+      } catch {
+        // ignore
+      }
+    }
+  }, [])
+
   const addStudents = (data: Student[]) => {
     setStudents((prev) => [...prev, ...data])
   }
@@ -146,6 +165,20 @@ export default function StudentsPage() {
     'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4',
   ]
   const gridIcons: IconDefinition[] = [faList, faTableCellsLarge, faTableCells]
+
+  useEffect(() => {
+    const opts = {
+      sortKey,
+      asc,
+      filterAttacks,
+      filterDefenses,
+      filterStars,
+      filterRoles,
+      filterTypes,
+      grid,
+    }
+    localStorage.setItem('students_page_opts', JSON.stringify(opts))
+  }, [sortKey, asc, filterAttacks, filterDefenses, filterStars, filterRoles, filterTypes, grid])
 
   const resetFilters = () => {
     setFilterAttacks([])
@@ -247,13 +280,19 @@ export default function StudentsPage() {
         >
           絞り込み
         </button>
-        <button
-          onClick={() => setGrid((g) => (g + 1) % 3)}
-          aria-label="表示切替"
-          className="border rounded px-2 py-1"
-        >
-          <FontAwesomeIcon icon={gridIcons[grid]} />
-        </button>
+        <div className="flex gap-1">
+          {gridIcons.map((ic, i) => (
+            <button
+              key={i}
+              onClick={() => setGrid(i)}
+              aria-label={`表示${i + 1}`}
+              className={`border rounded px-2 py-1 ${grid === i ? 'bg-blue-500 text-white' : ''}`}
+              type="button"
+            >
+              <FontAwesomeIcon icon={ic} />
+            </button>
+          ))}
+        </div>
       </div>
       <div className={gridClasses[grid]}>
         {sorted.map((s) => (

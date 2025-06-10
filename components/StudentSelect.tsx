@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { toKatakana } from 'wanakana'
 
 interface Student {
   id: string
@@ -58,8 +59,8 @@ export default function StudentSelect({ students, value, onChange }: Props) {
   const typeOptions = Array.from(new Set(students.map((s) => s.characterType)))
 
   const filtered = students.filter((s) => {
-    const q = query.toLowerCase()
-    const nameOk = s.name.toLowerCase().includes(q)
+    const q = toKatakana(query).toLowerCase()
+    const nameOk = toKatakana(s.name).toLowerCase().includes(q)
     const attackOk = attackFilter.length ? attackFilter.includes(s.attackType) : true
     const defenseOk = defenseFilter.length ? defenseFilter.includes(s.defenseType) : true
     const starOk = starFilter.length ? starFilter.includes(s.initialStars) : true
