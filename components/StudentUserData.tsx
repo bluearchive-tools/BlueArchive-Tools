@@ -122,10 +122,12 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
             <button
               type="button"
               onClick={() => setShowBonds(true)}
-              className="text-pink-400 flex items-center gap-1"
+              className="relative text-pink-400 w-6 h-6"
             >
-              <FontAwesomeIcon icon={faHeart} />
-              {data.bond}
+              <FontAwesomeIcon icon={faHeart} className="w-6 h-6" />
+              <span className="absolute inset-0 flex items-center justify-center text-black text-xs font-bold drop-shadow-[0_0_2px_white]">
+                {data.bond}
+              </span>
             </button>
             <span className="flex-1 text-left text-2xl">{student?.name}</span>
             <span className="flex items-center -space-x-1 justify-end">
@@ -141,12 +143,28 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
           </div>
           <div className={`${!dark ? 'bg-[#114073] bg-opacity-90 px-1' : ''} inline-block w-20 text-center`}>Lv. {data.level}</div>
           <div className="flex gap-1">
-            <span className="bg-white text-[#114073] italic px-1 inline-block w-20 text-center">{student?.characterType}</span>
-            <span className={`${attrBg(student?.attackType)} text-white px-1 inline-block w-20 text-center`}>{student?.attackType}</span>
+            <span className="inline-block skew-x-12">
+              <span className="-skew-x-12 bg-white text-[#114073] italic px-1 inline-block w-20 text-center">
+                {student?.characterType}
+              </span>
+            </span>
+            <span className="inline-block skew-x-12">
+              <span className={`-skew-x-12 ${attrBg(student?.attackType)} text-white px-1 inline-block w-20 text-center`}>
+                {student?.attackType}
+              </span>
+            </span>
           </div>
           <div className="flex gap-1">
-            <span className="bg-[#114073] text-white italic px-1 inline-block w-20 text-center">{student?.position}</span>
-            <span className={`${attrBg(student?.defenseType)} text-white px-1 inline-block w-20 text-center`}>{student?.defenseType}</span>
+            <span className="inline-block skew-x-12">
+              <span className="-skew-x-12 bg-[#114073] text-white italic px-1 inline-block w-20 text-center">
+                {student?.position}
+              </span>
+            </span>
+            <span className="inline-block skew-x-12">
+              <span className={`-skew-x-12 ${attrBg(student?.defenseType)} text-white px-1 inline-block w-20 text-center`}>
+                {student?.defenseType}
+              </span>
+            </span>
           </div>
           </div>
         </div>
@@ -158,10 +176,18 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
           <div>治癒力 {data.heal} ({data.heal_wb})</div>
         </div>
         <div className="grid grid-cols-4 gap-2 text-center">
-          <div className="border p-1">{data.ex_skill}</div>
-          <div className="border p-1">{data.normal_skill}</div>
-          <div className="border p-1">{data.passive_skill}</div>
-          <div className="border p-1">{data.sub_skill}</div>
+          <div className="skew-x-12">
+            <div className="-skew-x-12 border w-12 h-16 flex items-center justify-center">{data.ex_skill}</div>
+          </div>
+          <div className="skew-x-12">
+            <div className="-skew-x-12 border w-12 h-16 flex items-center justify-center">{data.normal_skill}</div>
+          </div>
+          <div className="skew-x-12">
+            <div className="-skew-x-12 border w-12 h-16 flex items-center justify-center">{data.passive_skill}</div>
+          </div>
+          <div className="skew-x-12">
+            <div className="-skew-x-12 border w-12 h-16 flex items-center justify-center">{data.sub_skill}</div>
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-2 text-center">
           <div className="border p-1">{data.unique_level}</div>
@@ -175,10 +201,19 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="border p-1">{data.equip1}</div>
-          <div className="border p-1">{data.equip2}</div>
-          <div className="border p-1">{data.equip3}</div>
+        <div className="grid grid-cols-4 gap-2 text-center">
+          <div className="skew-x-12">
+            <div className="-skew-x-12 border w-12 h-12 flex items-center justify-center">{data.equip1}</div>
+          </div>
+          <div className="skew-x-12">
+            <div className="-skew-x-12 border w-12 h-12 flex items-center justify-center">{data.equip2}</div>
+          </div>
+          <div className="skew-x-12">
+            <div className="-skew-x-12 border w-12 h-12 flex items-center justify-center">{data.equip3}</div>
+          </div>
+          <div className="skew-x-12">
+            <div className={`-skew-x-12 border w-12 h-12 flex items-center justify-center ${student?.hasAccessory ? '' : 'bg-gray-300 text-gray-500'}`}>{student?.hasAccessory ? data.item_tier : 'EMPTY'}</div>
+          </div>
         </div>
       </div>
     </div>
