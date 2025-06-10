@@ -122,10 +122,10 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
             <button
               type="button"
               onClick={() => setShowBonds(true)}
-              className="relative text-pink-400 w-8 h-8"
+              className="relative text-pink-400 w-12 h-12"
             >
-              <FontAwesomeIcon icon={faHeart} className="w-8 h-8" />
-              <span className="absolute inset-0 flex items-center justify-center text-black text-xs font-bold drop-shadow-[0_0_2px_white]">
+              <FontAwesomeIcon icon={faHeart} className="w-12 h-12" />
+              <span className="absolute inset-0 flex items-center justify-center text-black text-sm font-bold drop-shadow-[0_0_2px_white]">
                 {data.bond}
               </span>
             </button>
@@ -178,20 +178,20 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
         <div className="grid grid-cols-4 gap-2 text-center">
           {[
             { label: 'EXスキル', value: data.ex_skill, ex: true },
-            { label: 'ノーマル', value: data.normal_skill },
-            { label: 'パッシブ', value: data.passive_skill },
-            { label: 'サブ', value: data.sub_skill },
+            { label: 'ノーマルスキル', value: data.normal_skill },
+            { label: 'パッシブスキル', value: data.passive_skill },
+            { label: 'サブスキル', value: data.sub_skill },
           ].map((skill, i) => (
             <div key={i} className="skew-x-12">
-              <div className="-skew-x-12 border flex flex-col items-center justify-between h-24 w-full p-1">
-                <span className="text-xs">{skill.label}</span>
+              <div className="-skew-x-12 border flex flex-col items-center justify-between h-28 w-full p-1">
+                <span className="text-xs italic">{skill.label}</span>
                 <div className="relative flex justify-center items-center my-1">
-                  <div className={`${attrBg(student?.attackType)} hexagon w-8 h-8`}></div>
+                  <div className={`${attrBg(student?.attackType)} hexagon w-6 h-6`}></div>
                   {skill.ex && (
                     <>
                       <div className="absolute hexagon w-8 h-8 border-2 border-black"></div>
                       <div className="absolute hexagon w-7 h-7 border-2 border-white"></div>
-                      <div className="absolute w-10 h-10 rounded-full border border-blue-400/50"></div>
+                      <div className="absolute w-12 h-12 rounded-full border-4 border-blue-300/50"></div>
                     </>
                   )}
                 </div>
@@ -200,10 +200,10 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
                   {skill.ex
                     ? skill.value >= 5
                       ? 'MAX'
-                      : skill.value
+                      : `Lv.${skill.value}`
                     : skill.value >= 10
                     ? 'MAX'
-                    : skill.value}
+                    : `Lv.${skill.value}`}
                 </span>
               </div>
             </div>
@@ -211,7 +211,7 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
         </div>
         <div className="grid grid-cols-1 gap-2 text-center">
           <div className="skew-x-12">
-            <div className="-skew-x-12 border flex flex-col items-center justify-between h-24 w-full p-1 space-y-1">
+            <div className="-skew-x-12 border flex flex-col items-center justify-between h-28 w-full p-1 space-y-1">
               <span className="text-sm">固有武器</span>
               <span>Lv. {data.unique_level}</span>
               <div className="space-x-px">
@@ -226,7 +226,7 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
           {[data.equip1, data.equip2, data.equip3, student?.hasAccessory ? data.item_tier : 'EMPTY'].map((tier, i) => (
             <div key={i} className="skew-x-12">
               <div
-                className={`-skew-x-12 border relative h-12 w-full flex items-end justify-start ${i === 3 && !student?.hasAccessory ? 'bg-gray-300 text-gray-500' : ''}`}
+                className={`-skew-x-12 border relative w-full aspect-square flex items-end justify-start ${i === 3 && !student?.hasAccessory ? 'bg-gray-300 text-gray-500' : ''}`}
               >
                 {i === 3 && !student?.hasAccessory ? (
                   <span className="text-xs ml-1 mb-1">EMPTY</span>
