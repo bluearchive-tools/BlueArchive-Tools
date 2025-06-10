@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
+import { useTheme } from './ThemeProvider'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faHeart, faStar } from '@fortawesome/free-solid-svg-icons'
 
@@ -47,8 +48,10 @@ interface UserStudent {
 export default function StudentUserData({ studentId }: { studentId: string }) {
   const session = useSession()
   const supabase = useSupabaseClient()
+  const { dark } = useTheme()
   const [data, setData] = useState<UserStudent | null>(null)
   const [students, setStudents] = useState<Student[]>([])
+  const [showBonds, setShowBonds] = useState(false)
   useEffect(() => {
     const loadStudents = async () => {
       try {
@@ -80,22 +83,31 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
 
   if (!data) return <p>未登録</p>
 
+  const bondEntries = Object.entries(
+    data.alt_bonds ?? { [studentId]: data.bond }
+  )
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-      <div className="relative">
-        {student && (
-          <img
-            src={student.image}
-            alt={student.name}
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <div className="relative">
+          {student && (
+            <img
+              src={student.image}
+              alt={student.name}
             className="w-full object-contain"
           />
         )}
         <div className="absolute inset-0 flex flex-col justify-end text-white p-2 space-y-1">
           <div className="flex justify-between items-center">
-            <span className="text-pink-400 flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setShowBonds(true)}
+              className="text-pink-400 flex items-center gap-1"
+            >
               <FontAwesomeIcon icon={faHeart} />
               {data.bond}
-            </span>
+            </button>
             <span className="flex-1 text-center">{student?.name}</span>
             <span className="flex items-center gap-1 justify-end">
               {Array.from({ length: data.star }).map((_, i) => (
@@ -149,5 +161,34 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
         </div>
       </div>
     </div>
+      {showBonds && (
+        <div
+          className={`fixed inset-0 z-20 flex items-center justify-center transition-opacity duration-200 ${dark ? 'bg-black/50' : 'bg-black/20'}`}
+          onClick={() => setShowBonds(false)}
+        >
+          <div
+            className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 rounded space-y-2 w-64 transform transition-all`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-bold text-lg">絆一覧</h3>
+            <ul className="space-y-1">
+              {bondEntries.map(([id, value]) => (
+                <li key={id} className="flex justify-between">
+                  <span>{students.find((s) => s.id === id)?.name || id}</span>
+                  <span>{value}</span>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => setShowBonds(false)}
+              className="underline text-sm block ml-auto"
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
