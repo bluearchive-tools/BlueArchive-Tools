@@ -5,6 +5,8 @@ import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useTheme } from './ThemeProvider'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faHeart, faStar } from '@fortawesome/free-solid-svg-icons'
+import EditValueModal from './EditValueModal'
+import EditBondsModal from './EditBondsModal'
 
 function attrBg(attr?: string) {
   switch (attr) {
@@ -71,6 +73,12 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
   const [data, setData] = useState<UserStudent | null>(null)
   const [students, setStudents] = useState<Student[]>([])
   const [showBonds, setShowBonds] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+  const [editField, setEditField] = useState<
+    | { field: string; label: string; value: number; min?: number; max?: number }
+    | null
+  >(null)
+  const [editBonds, setEditBonds] = useState(false)
   useEffect(() => {
     const loadStudents = async () => {
       try {
@@ -82,18 +90,20 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
     }
     loadStudents()
   }, [])
+  const loadData = async () => {
+    if (!session) return
+    const { data } = await supabase
+      .from('user_students')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .eq('student_id', studentId)
+      .maybeSingle()
+    if (data) setData(data as UserStudent)
+  }
+
   useEffect(() => {
-    const load = async () => {
-      if (!session) return
-      const { data } = await supabase
-        .from('user_students')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .eq('student_id', studentId)
-        .maybeSingle()
-      if (data) setData(data as UserStudent)
-    }
-    load()
+    loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, supabase, studentId])
 
   const student = students.find((s) => s.id === studentId)
@@ -108,6 +118,17 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
 
   return (
     <>
+      <div className="flex justify-end mb-2 text-sm">
+        <label className="inline-flex items-center gap-1">
+          <span>編集</span>
+          <input
+            type="checkbox"
+            checked={editMode}
+            onChange={(e) => setEditMode(e.target.checked)}
+            className="form-checkbox"
+          />
+        </label>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
         <div className="relative">
           {student && (
@@ -180,9 +201,15 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
       <div className="flex flex-col justify-between space-y-1">
         <div className="border rounded-md p-1">
           <div className="grid grid-cols-2 gap-1 pb-1 border-b border-gray-300">
-            <div>
+            <div onClick={() => editMode && setEditField({ field: 'hp', label: 'HP', value: data.hp })} className="cursor-pointer">
               HP {data.hp}{' '}
               <span
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (editMode) {
+                    setEditField({ field: 'hp_wb', label: 'HPWB', value: data.hp_wb, min: 0, max: 25 })
+                  }
+                }}
                 className={`bg-[#114073] px-1 text-white relative inline-block ml-1${
                   data.hp_wb >= 25 ? ' text-yellow-400' : ''
                 }`}
@@ -193,9 +220,26 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
                 )}
               </span>
             </div>
-            <div>
+            <div
+              onClick={() =>
+                editMode && setEditField({ field: 'attack', label: '攻撃力', value: data.attack })
+              }
+              className="cursor-pointer"
+            >
               攻撃力 {data.attack}{' '}
               <span
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (editMode) {
+                    setEditField({
+                      field: 'attack_wb',
+                      label: '攻撃力WB',
+                      value: data.attack_wb,
+                      min: 0,
+                      max: 25,
+                    })
+                  }
+                }}
                 className={`bg-[#114073] px-1 text-white relative inline-block ml-1${
                   data.attack_wb >= 25 ? ' text-yellow-400' : ''
                 }`}
@@ -208,10 +252,34 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-1 pt-1">
-            <div>防御力 {data.defense}</div>
-            <div>
+            <div
+              onClick={() =>
+                editMode && setEditField({ field: 'defense', label: '防御力', value: data.defense })
+              }
+              className="cursor-pointer"
+            >
+              防御力 {data.defense}
+            </div>
+            <div
+              onClick={() =>
+                editMode && setEditField({ field: 'heal', label: '治癒力', value: data.heal })
+              }
+              className="cursor-pointer"
+            >
               治癒力 {data.heal}{' '}
               <span
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (editMode) {
+                    setEditField({
+                      field: 'heal_wb',
+                      label: '治癒力WB',
+                      value: data.heal_wb,
+                      min: 0,
+                      max: 25,
+                    })
+                  }
+                }}
                 className={`bg-[#114073] px-1 text-white relative inline-block ml-1${
                   data.heal_wb >= 25 ? ' text-yellow-400' : ''
                 }`}
@@ -226,13 +294,25 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
         </div>
         <div className="grid grid-cols-4 gap-1 text-center">
           {[
-            { label: 'EXスキル', value: data.ex_skill, ex: true },
-            { label: 'ノーマルスキル', value: data.normal_skill },
-            { label: 'パッシブスキル', value: data.passive_skill },
-            { label: 'サブスキル', value: data.sub_skill },
+            { label: 'EXスキル', value: data.ex_skill, field: 'ex_skill', ex: true, max: 5 },
+            { label: 'ノーマルスキル', value: data.normal_skill, field: 'normal_skill', max: 10 },
+            { label: 'パッシブスキル', value: data.passive_skill, field: 'passive_skill', max: 10 },
+            { label: 'サブスキル', value: data.sub_skill, field: 'sub_skill', max: 10 },
           ].map((skill, i) => (
             <div key={i} className="skew-x-12">
-              <div className="-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1">
+              <div
+                className="-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1 cursor-pointer"
+                onClick={() =>
+                  editMode &&
+                  setEditField({
+                    field: skill.field,
+                    label: skill.label,
+                    value: skill.value,
+                    min: 1,
+                    max: skill.max,
+                  })
+                }
+              >
                 <span className="text-xs italic">{skill.label}</span>
                 <div className="relative flex justify-center items-center my-1">
                   <div className={`${attrBg(student?.attackType)} hexagon w-10 h-10`}></div>
@@ -260,10 +340,24 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
         </div>
         <div className="grid grid-cols-1 gap-1 text-center">
           <div className="skew-x-12">
-            <div className="-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1 space-y-1">
+            <div
+              className="-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1 space-y-1 cursor-pointer"
+              onClick={() =>
+                editMode &&
+                setEditField({ field: 'unique_level', label: '固有武器Lv', value: data.unique_level, min: 0 })
+              }
+            >
               <span className="text-sm">固有武器</span>
               <span>Lv. {data.unique_level}</span>
-              <div className="space-x-px">
+              <div
+                className="space-x-px"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (editMode) {
+                    setEditField({ field: 'unique_star', label: '固有武器星', value: data.unique_star, min: 0 })
+                  }
+                }}
+              >
                 {Array.from({ length: data.unique_star }).map((_, i) => (
                   <FontAwesomeIcon key={i} icon={faStar} className="text-sky-400" />
                 ))}
@@ -272,17 +366,33 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
           </div>
         </div>
         <div className="grid grid-cols-4 gap-1 text-center">
-          {[data.equip1, data.equip2, data.equip3, student?.hasAccessory ? data.item_tier : 'EMPTY'].map((tier, i) => (
+          {[
+            { value: data.equip1, field: 'equip1' },
+            { value: data.equip2, field: 'equip2' },
+            { value: data.equip3, field: 'equip3' },
+            { value: student?.hasAccessory ? data.item_tier : 'EMPTY', field: 'item_tier' },
+          ].map((gear, i) => (
             <div key={i} className="skew-x-12">
               <div
                 className={`-skew-x-12 rounded-lg border relative w-full aspect-square flex items-end justify-start ${
                   i === 3 && !student?.hasAccessory ? 'bg-gray-300 text-gray-500 border-black' : 'text-[#4298f5] border-black'
-                }`}
+                } ${editMode ? 'cursor-pointer' : ''}`}
+                onClick={() => {
+                  if (editMode && (i < 3 || student?.hasAccessory)) {
+                    setEditField({
+                      field: gear.field,
+                      label: i === 3 ? '愛用品Tier' : `装備${i + 1}Tier`,
+                      value: gear.value === 'EMPTY' ? 0 : (gear.value as number),
+                      min: 0,
+                      max: 10,
+                    })
+                  }
+                }}
               >
                 {i === 3 && !student?.hasAccessory ? (
                   <span className="text-sm ml-1 mb-1">EMPTY</span>
                 ) : (
-                  <span className="text-sm ml-1 mb-1 border border-[#4298f5] rounded px-1 bg-white/80">T{tier}</span>
+                  <span className="text-sm ml-1 mb-1 border border-[#4298f5] rounded px-1 bg-white/80">T{gear.value}</span>
                 )}
               </div>
             </div>
@@ -317,6 +427,41 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
             </button>
           </div>
         </div>
+      )}
+      {editField && (
+        <EditValueModal
+          label={editField.label}
+          value={editField.value}
+          min={editField.min}
+          max={editField.max}
+          onClose={() => setEditField(null)}
+          onSave={async (v) => {
+            await supabase
+              .from('user_students')
+              .update({ [editField.field]: v })
+              .eq('user_id', session!.user.id)
+              .eq('student_id', studentId)
+            setEditField(null)
+            loadData()
+          }}
+        />
+      )}
+      {editBonds && (
+        <EditBondsModal
+          bonds={{ [studentId]: data.bond, ...(data.alt_bonds || {}) }}
+          students={students}
+          onClose={() => setEditBonds(false)}
+          onSave={async (vals) => {
+            const main = vals[studentId] || 0
+            await supabase
+              .from('user_students')
+              .update({ bond: main, alt_bonds: vals })
+              .eq('user_id', session!.user.id)
+              .eq('student_id', studentId)
+            setEditBonds(false)
+            loadData()
+          }}
+        />
       )}
     </>
   )
