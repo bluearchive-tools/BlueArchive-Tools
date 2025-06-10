@@ -94,6 +94,25 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+      <div className="flex flex-col items-start justify-end space-y-1">
+        <div>
+          絆 {data.bond} {student?.name} 星 {data.star} ({student?.role})
+        </div>
+        {otherIds.map((id) => {
+          const name = students.find((s) => s.id === id)?.name || id
+          return (
+            <div key={id}>
+              絆({name}): {altBonds[id] ?? 0}
+            </div>
+          )
+        })}
+        <div>レベル: {data.level}</div>
+        <div className="flex gap-2">
+          <div>クラス: {student?.characterType}</div>
+          <div>攻撃属性: {student?.attackType}</div>
+        </div>
+        <div>防御属性: {student?.defenseType}</div>
+      </div>
       <div className="md:col-span-2 space-y-2">
         <div className="grid grid-cols-2 gap-2">
           <div>
@@ -122,21 +141,6 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
           <div>装備2Tier: {data.equip2}</div>
           <div>装備3Tier: {data.equip3}</div>
         </div>
-      </div>
-      <div className="flex flex-col items-end justify-end space-y-1">
-        <div>
-          絆 {data.bond} {student?.name} 星 {data.star} ({student?.role})
-        </div>
-        {otherIds.map((id) => {
-          const name = students.find((s) => s.id === id)?.name || id
-          return (
-            <div key={id}>
-              絆({name}): {altBonds[id] ?? 0}
-            </div>
-          )
-        })}
-        <div>レベル: {data.level}</div>
-        <div>クラス: {student?.characterType}</div>
       </div>
     </div>
   )
