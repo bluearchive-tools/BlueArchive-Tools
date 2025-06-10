@@ -122,12 +122,17 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
             <button
               type="button"
               onClick={() => setShowBonds(true)}
-              className="relative text-pink-300 border border-pink-400 w-8 h-8 rounded"
+              className="relative text-pink-300"
             >
               <FontAwesomeIcon
                 icon={faHeart}
                 className="!w-8 !h-8"
-                style={{ width: '2rem', height: '2rem' }}
+                style={{
+                  width: '2rem',
+                  height: '2rem',
+                  stroke: '#f472b6',
+                  strokeWidth: 2,
+                }}
               />
               <span className="absolute inset-0 flex items-center justify-center text-black text-sm font-bold drop-shadow-[0_0_2px_white]">
                 {data.bond}
@@ -271,13 +276,13 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
             <div key={i} className="skew-x-12">
               <div
                 className={`-skew-x-12 rounded-lg border relative w-full aspect-square flex items-end justify-start ${
-                  i === 3 && !student?.hasAccessory ? 'bg-gray-300 text-gray-500 border-current' : 'text-[#4298f5] border-current'
+                  i === 3 && !student?.hasAccessory ? 'bg-gray-300 text-gray-500 border-gray-300' : 'text-[#4298f5] border-[#4298f5]'
                 }`}
               >
                 {i === 3 && !student?.hasAccessory ? (
                   <span className="text-sm ml-1 mb-1">EMPTY</span>
                 ) : (
-                  <span className="text-sm ml-1 mb-1">T{tier}</span>
+                  <span className="text-sm ml-1 mb-1 border border-[#4298f5] rounded px-1 bg-white/80">T{tier}</span>
                 )}
               </div>
             </div>
