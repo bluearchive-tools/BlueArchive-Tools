@@ -8,7 +8,8 @@
     "hasAccessory": true,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "2",
@@ -19,7 +20,8 @@
     "hasAccessory": false,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "3",
@@ -30,7 +32,8 @@
     "hasAccessory": true,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "4",
@@ -41,7 +44,8 @@
     "hasAccessory": true,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "タンク"
+    "characterType": "タンク",
+    "position": "FRONT"
   },
   {
     "id": "5",
@@ -52,7 +56,8 @@
     "hasAccessory": false,
     "initialStars": 3,
     "role": "SPECIAL",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "6",
@@ -63,7 +68,8 @@
     "hasAccessory": false,
     "initialStars": 3,
     "role": "SPECIAL",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "7",
@@ -74,7 +80,8 @@
     "hasAccessory": false,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "8",
@@ -85,7 +92,8 @@
     "hasAccessory": true,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "9",
@@ -96,7 +104,8 @@
     "hasAccessory": true,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "10",
@@ -107,7 +116,8 @@
     "hasAccessory": true,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "11",
@@ -118,7 +128,8 @@
     "hasAccessory": true,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "12",
@@ -129,7 +140,8 @@
     "hasAccessory": false,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "13",
@@ -140,7 +152,8 @@
     "hasAccessory": true,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "14",
@@ -151,7 +164,8 @@
     "hasAccessory": true,
     "initialStars": 3,
     "role": "SPECIAL",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "15",
@@ -162,7 +176,8 @@
     "hasAccessory": false,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "サポーター"
+    "characterType": "サポーター",
+    "position": "FRONT"
   },
   {
     "id": "16",
@@ -173,7 +188,8 @@
     "hasAccessory": true,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "タンク"
+    "characterType": "タンク",
+    "position": "FRONT"
   },
   {
     "id": "17",
@@ -184,7 +200,8 @@
     "hasAccessory": false,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "18",
@@ -195,7 +212,8 @@
     "hasAccessory": false,
     "initialStars": 2,
     "role": "SPECIAL",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "19",
@@ -206,7 +224,8 @@
     "hasAccessory": false,
     "initialStars": 2,
     "role": "STRIKER",
-    "characterType": "サポーター"
+    "characterType": "サポーター",
+    "position": "FRONT"
   },
   {
     "id": "20",
@@ -217,7 +236,8 @@
     "hasAccessory": false,
     "initialStars": 2,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "21",
@@ -228,7 +248,8 @@
     "hasAccessory": false,
     "initialStars": 2,
     "role": "SPECIAL",
-    "characterType": "ヒーラー"
+    "characterType": "ヒーラー",
+    "position": "FRONT"
   },
   {
     "id": "22",
@@ -239,7 +260,8 @@
     "hasAccessory": true,
     "initialStars": 2,
     "role": "SPECIAL",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "23",
@@ -250,7 +272,8 @@
     "hasAccessory": false,
     "initialStars": 2,
     "role": "STRIKER",
-    "characterType": "サポーター"
+    "characterType": "サポーター",
+    "position": "FRONT"
   },
   {
     "id": "24",
@@ -261,7 +284,8 @@
     "hasAccessory": true,
     "initialStars": 2,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "25",
@@ -272,7 +296,8 @@
     "hasAccessory": true,
     "initialStars": 2,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "26",
@@ -283,7 +308,8 @@
     "hasAccessory": true,
     "initialStars": 2,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "27",
@@ -294,7 +320,8 @@
     "hasAccessory": false,
     "initialStars": 2,
     "role": "STRIKER",
-    "characterType": "タンク"
+    "characterType": "タンク",
+    "position": "FRONT"
   },
   {
     "id": "28",
@@ -305,7 +332,8 @@
     "hasAccessory": true,
     "initialStars": 2,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "29",
@@ -316,7 +344,8 @@
     "hasAccessory": false,
     "initialStars": 2,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "30",
@@ -327,7 +356,8 @@
     "hasAccessory": false,
     "initialStars": 2,
     "role": "SPECIAL",
-    "characterType": "ヒーラー"
+    "characterType": "ヒーラー",
+    "position": "FRONT"
   },
   {
     "id": "31",
@@ -338,7 +368,8 @@
     "hasAccessory": true,
     "initialStars": 2,
     "role": "SPECIAL",
-    "characterType": "サポーター"
+    "characterType": "サポーター",
+    "position": "FRONT"
   },
   {
     "id": "32",
@@ -349,7 +380,8 @@
     "hasAccessory": false,
     "initialStars": 2,
     "role": "SPECIAL",
-    "characterType": "ヒーラー"
+    "characterType": "ヒーラー",
+    "position": "FRONT"
   },
   {
     "id": "33",
@@ -360,7 +392,8 @@
     "hasAccessory": false,
     "initialStars": 2,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "34",
@@ -371,7 +404,8 @@
     "hasAccessory": true,
     "initialStars": 2,
     "role": "STRIKER",
-    "characterType": "タンク"
+    "characterType": "タンク",
+    "position": "FRONT"
   },
   {
     "id": "35",
@@ -382,7 +416,8 @@
     "hasAccessory": false,
     "initialStars": 1,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "36",
@@ -393,7 +428,8 @@
     "hasAccessory": false,
     "initialStars": 1,
     "role": "SPECIAL",
-    "characterType": "サポーター"
+    "characterType": "サポーター",
+    "position": "FRONT"
   },
   {
     "id": "37",
@@ -404,7 +440,8 @@
     "hasAccessory": true,
     "initialStars": 1,
     "role": "STRIKER",
-    "characterType": "サポーター"
+    "characterType": "サポーター",
+    "position": "FRONT"
   },
   {
     "id": "38",
@@ -415,7 +452,8 @@
     "hasAccessory": false,
     "initialStars": 1,
     "role": "SPECIAL",
-    "characterType": "サポーター"
+    "characterType": "サポーター",
+    "position": "FRONT"
   },
   {
     "id": "39",
@@ -426,7 +464,8 @@
     "hasAccessory": false,
     "initialStars": 1,
     "role": "SPECIAL",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "40",
@@ -437,7 +476,8 @@
     "hasAccessory": true,
     "initialStars": 1,
     "role": "STRIKER",
-    "characterType": "サポーター"
+    "characterType": "サポーター",
+    "position": "FRONT"
   },
   {
     "id": "41",
@@ -448,7 +488,8 @@
     "hasAccessory": false,
     "initialStars": 1,
     "role": "SPECIAL",
-    "characterType": "ヒーラー"
+    "characterType": "ヒーラー",
+    "position": "FRONT"
   },
   {
     "id": "42",
@@ -459,7 +500,8 @@
     "hasAccessory": true,
     "initialStars": 1,
     "role": "SPECIAL",
-    "characterType": "ヒーラー"
+    "characterType": "ヒーラー",
+    "position": "FRONT"
   },
   {
     "id": "43",
@@ -470,7 +512,8 @@
     "hasAccessory": false,
     "initialStars": 1,
     "role": "STRIKER",
-    "characterType": "タンク"
+    "characterType": "タンク",
+    "position": "FRONT"
   },
   {
     "id": "44",
@@ -481,7 +524,8 @@
     "hasAccessory": false,
     "initialStars": 1,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "45",
@@ -492,7 +536,8 @@
     "hasAccessory": false,
     "initialStars": 1,
     "role": "SPECIAL",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "46",
@@ -503,7 +548,8 @@
     "hasAccessory": true,
     "initialStars": 3,
     "role": "SPECIAL",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "47",
@@ -514,7 +560,8 @@
     "hasAccessory": false,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "48",
@@ -525,7 +572,8 @@
     "hasAccessory": true,
     "initialStars": 2,
     "role": "SPECIAL",
-    "characterType": "サポーター"
+    "characterType": "サポーター",
+    "position": "FRONT"
   },
   {
     "id": "49",
@@ -536,7 +584,8 @@
     "hasAccessory": false,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "50",
@@ -547,7 +596,8 @@
     "hasAccessory": false,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "51",
@@ -558,7 +608,8 @@
     "hasAccessory": false,
     "initialStars": 2,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "52",
@@ -569,7 +620,8 @@
     "hasAccessory": false,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "53",
@@ -580,7 +632,8 @@
     "hasAccessory": false,
     "initialStars": 1,
     "role": "SPECIAL",
-    "characterType": "サポーター"
+    "characterType": "サポーター",
+    "position": "FRONT"
   },
   {
     "id": "54",
@@ -591,7 +644,8 @@
     "hasAccessory": false,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "55",
@@ -605,7 +659,8 @@
     ],
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   },
   {
     "id": "56",
@@ -616,7 +671,8 @@
     "hasAccessory": true,
     "initialStars": 2,
     "role": "SPECIAL",
-    "characterType": "ヒーラー"
+    "characterType": "ヒーラー",
+    "position": "FRONT"
   },
   {
     "id": "57",
@@ -627,7 +683,8 @@
     "hasAccessory": false,
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "ヒーラー"
+    "characterType": "ヒーラー",
+    "position": "FRONT"
   },
   {
     "id": "58",
@@ -639,6 +696,7 @@
     "altOf": "55",
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "アタッカー"
+    "characterType": "アタッカー",
+    "position": "FRONT"
   }
 ]
