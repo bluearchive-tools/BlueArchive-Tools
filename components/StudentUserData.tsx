@@ -98,18 +98,18 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
             className="w-full object-contain"
           />
         )}
-        <div className="absolute inset-0 flex flex-col justify-end text-white p-2 space-y-1 bg-[#114073]/90 dark:bg-transparent">
+        <div className="absolute inset-0 flex flex-col justify-end text-white p-2 space-y-1">
           <div className="flex justify-between items-center">
-            <button
-              type="button"
-              onClick={() => setShowBonds(true)}
-              className="text-pink-400 flex items-center gap-1"
-            >
-              <FontAwesomeIcon icon={faHeart} />
-              {data.bond}
-            </button>
-            <span className="flex-1 text-left">{student?.name}</span>
-            <span className="flex items-center gap-1 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowBonds(true)}
+                className={`text-pink-400 flex items-center gap-1 ${!dark ? 'bg-[#114073] bg-opacity-90 px-1 rounded' : ''}`}
+              >
+                <FontAwesomeIcon icon={faHeart} />
+                {data.bond}
+              </button>
+              <span className={`flex-1 text-left ${!dark ? 'bg-[#114073] bg-opacity-90 px-1' : ''}`}>{student?.name}</span>
+              <span className={`flex items-center gap-1 justify-end ${!dark ? 'bg-[#114073] bg-opacity-90 px-1' : ''}`}>
               {Array.from({ length: data.star }).map((_, i) => (
                 <FontAwesomeIcon
                   key={i}
@@ -117,18 +117,18 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
                   className="text-yellow-400"
                 />
               ))}
-              <span>{student?.role}</span>
-            </span>
-          </div>
-          <div>Lv. {data.level}</div>
-          <div>
-            {student?.characterType} {student?.attackType}
-          </div>
-          <div>
-            {student?.position} {student?.defenseType}
+                <span className="italic">{student?.role}</span>
+              </span>
+            </div>
+            <div className={!dark ? 'bg-[#114073] bg-opacity-90 inline-block px-1' : ''}>Lv. {data.level}</div>
+            <div className={!dark ? 'bg-[#114073] bg-opacity-90 inline-block px-1' : ''}>
+              {student?.characterType} {student?.attackType}
+            </div>
+            <div className={!dark ? 'bg-[#114073] bg-opacity-90 inline-block px-1' : ''}>
+              <span className="italic">{student?.position}</span> <span className="italic">{student?.defenseType}</span>
+            </div>
           </div>
         </div>
-      </div>
       <div className="flex flex-col justify-between space-y-2">
         <div className="grid grid-cols-2 gap-2">
           <div>HP {data.hp} ({data.hp_wb})</div>
