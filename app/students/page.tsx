@@ -4,7 +4,15 @@ import { useEffect, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowUp, faArrowDown, faPlus } from '@fortawesome/free-solid-svg-icons'
+import type { IconDefinition } from '@fortawesome/free-solid-svg-icons'
+import {
+  faArrowUp,
+  faArrowDown,
+  faPlus,
+  faList,
+  faTableCells,
+  faTableCellsLarge,
+} from '@fortawesome/free-solid-svg-icons'
 import FilterModal from '../../components/FilterModal'
 import AddStudentModal from '../../components/AddStudentModal'
 
@@ -85,6 +93,7 @@ export default function StudentsPage() {
   const [filterStars, setFilterStars] = useState<number[]>([])
   const [filterRoles, setFilterRoles] = useState<string[]>([])
   const [filterTypes, setFilterTypes] = useState<string[]>([])
+  const [grid, setGrid] = useState(1)
 
   const addStudents = (data: Student[]) => {
     setStudents((prev) => [...prev, ...data])
@@ -131,6 +140,12 @@ export default function StudentsPage() {
   const starOptions = Array.from(new Set(students.map((s) => s.initialStars))).sort()
   const roleOptions = Array.from(new Set(students.map((s) => s.role)))
   const typeOptions = Array.from(new Set(students.map((s) => s.characterType)))
+  const gridClasses = [
+    'grid grid-cols-1 sm:grid-cols-2 gap-4',
+    'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4',
+    'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4',
+  ]
+  const gridIcons: IconDefinition[] = [faList, faTableCellsLarge, faTableCells]
 
   const resetFilters = () => {
     setFilterAttacks([])
@@ -232,8 +247,15 @@ export default function StudentsPage() {
         >
           絞り込み
         </button>
+        <button
+          onClick={() => setGrid((g) => (g + 1) % 3)}
+          aria-label="表示切替"
+          className="border rounded px-2 py-1"
+        >
+          <FontAwesomeIcon icon={gridIcons[grid]} />
+        </button>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      <div className={gridClasses[grid]}>
         {sorted.map((s) => (
           <Link
             href={`/students/${s.id}`}

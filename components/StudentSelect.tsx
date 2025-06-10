@@ -75,19 +75,19 @@ export default function StudentSelect({ students, value, onChange }: Props) {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="border rounded w-full p-1 text-left"
+        className="border rounded w-full p-1 text-left dark:bg-gray-800 dark:border-gray-700 dark:text-white"
       >
         {selected ? selected.name : '生徒選択'}
       </button>
       {open && (
-        <div className="absolute z-10 bg-white dark:bg-gray-800 border rounded w-full p-2 space-y-2 max-h-96 overflow-y-auto">
+        <div className="absolute z-10 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded w-full p-2 space-y-2 max-h-96 overflow-y-auto">
           <div className="flex items-start gap-2">
             <input
               type="text"
               placeholder="検索"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="border rounded p-1 flex-1"
+              className="border rounded p-1 flex-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white"
             />
             <button
               type="button"
@@ -177,7 +177,7 @@ export default function StudentSelect({ students, value, onChange }: Props) {
               </label>
             ))}
           </div>
-          <ul className="border-t pt-2 space-y-1 max-h-40 overflow-y-auto">
+          <ul className="border-t dark:border-gray-700 pt-2 space-y-1 max-h-40 overflow-y-auto">
             {filtered.map((s) => (
               <li key={s.id}>
                 <button
