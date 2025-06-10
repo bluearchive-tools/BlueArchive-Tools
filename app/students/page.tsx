@@ -17,6 +17,9 @@ interface Student {
   hasAccessory?: boolean
   altIds?: string[]
   altOf?: string
+  initialStars: number
+  role: string
+  characterType: string
 }
 
 interface UserStudent {
@@ -79,6 +82,9 @@ export default function StudentsPage() {
   const [addOpen, setAddOpen] = useState(false)
   const [filterAttacks, setFilterAttacks] = useState<string[]>([])
   const [filterDefenses, setFilterDefenses] = useState<string[]>([])
+  const [filterStars, setFilterStars] = useState<number[]>([])
+  const [filterRoles, setFilterRoles] = useState<string[]>([])
+  const [filterTypes, setFilterTypes] = useState<string[]>([])
 
   const addStudents = (data: Student[]) => {
     setStudents((prev) => [...prev, ...data])
@@ -122,16 +128,25 @@ export default function StudentsPage() {
 
   const attackTypes = Array.from(new Set(students.map((s) => s.attackType)))
   const defenseTypes = Array.from(new Set(students.map((s) => s.defenseType)))
+  const starOptions = Array.from(new Set(students.map((s) => s.initialStars))).sort()
+  const roleOptions = Array.from(new Set(students.map((s) => s.role)))
+  const typeOptions = Array.from(new Set(students.map((s) => s.characterType)))
 
   const resetFilters = () => {
     setFilterAttacks([])
     setFilterDefenses([])
+    setFilterStars([])
+    setFilterRoles([])
+    setFilterTypes([])
   }
 
   const filtered = students.filter((s) => {
     const attackOk = filterAttacks.length ? filterAttacks.includes(s.attackType) : true
     const defenseOk = filterDefenses.length ? filterDefenses.includes(s.defenseType) : true
-    return attackOk && defenseOk
+    const starOk = filterStars.length ? filterStars.includes(s.initialStars) : true
+    const roleOk = filterRoles.length ? filterRoles.includes(s.role) : true
+    const typeOk = filterTypes.length ? filterTypes.includes(s.characterType) : true
+    return attackOk && defenseOk && starOk && roleOk && typeOk
   })
 
   const baseKeys = ['id', 'name', 'attackType', 'defenseType']
@@ -234,8 +249,14 @@ export default function StudentsPage() {
         <FilterModal
           attackTypes={attackTypes}
           defenseTypes={defenseTypes}
+          starOptions={starOptions}
+          roles={roleOptions}
+          characterTypes={typeOptions}
           selectedAttacks={filterAttacks}
           selectedDefenses={filterDefenses}
+          selectedStars={filterStars}
+          selectedRoles={filterRoles}
+          selectedCharacterTypes={filterTypes}
           toggleAttack={(v) =>
             setFilterAttacks((prev) =>
               prev.includes(v)
@@ -245,6 +266,27 @@ export default function StudentsPage() {
           }
           toggleDefense={(v) =>
             setFilterDefenses((prev) =>
+              prev.includes(v)
+                ? prev.filter((x) => x !== v)
+                : [...prev, v]
+            )
+          }
+          toggleStar={(v) =>
+            setFilterStars((prev) =>
+              prev.includes(v)
+                ? prev.filter((x) => x !== v)
+                : [...prev, v]
+            )
+          }
+          toggleRole={(v) =>
+            setFilterRoles((prev) =>
+              prev.includes(v)
+                ? prev.filter((x) => x !== v)
+                : [...prev, v]
+            )
+          }
+          toggleCharacterType={(v) =>
+            setFilterTypes((prev) =>
               prev.includes(v)
                 ? prev.filter((x) => x !== v)
                 : [...prev, v]

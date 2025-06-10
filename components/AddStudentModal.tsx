@@ -13,6 +13,9 @@ interface Student {
   hasAccessory?: boolean
   altIds?: string[]
   altOf?: string
+  initialStars: number
+  role: string
+  characterType: string
 }
 
 interface UserStudent {
@@ -109,6 +112,16 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
   }, [form.star])
 
   const selectedStudent = students.find((s) => s.id === form.studentId)
+
+  useEffect(() => {
+    if (selectedStudent) {
+      setForm((prev) => ({
+        ...prev,
+        star: selectedStudent.initialStars.toString(),
+      }))
+    }
+  }, [selectedStudent])
+
   useEffect(() => {
     if (!selectedStudent) return
     const baseId = selectedStudent.altOf || selectedStudent.id
@@ -300,6 +313,9 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
       image: url,
       attackType: '',
       defenseType: '',
+      initialStars: 1,
+      role: 'STRIKER',
+      characterType: 'タンク',
     })
     e.target.value = ''
     handleClose()

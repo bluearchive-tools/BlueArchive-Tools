@@ -8,10 +8,19 @@ import { useState, useEffect } from 'react'
 interface FilterModalProps {
   attackTypes: string[]
   defenseTypes: string[]
+  starOptions: number[]
+  roles: string[]
+  characterTypes: string[]
   selectedAttacks: string[]
   selectedDefenses: string[]
+  selectedStars: number[]
+  selectedRoles: string[]
+  selectedCharacterTypes: string[]
   toggleAttack: (value: string) => void
   toggleDefense: (value: string) => void
+  toggleStar: (value: number) => void
+  toggleRole: (value: string) => void
+  toggleCharacterType: (value: string) => void
   reset: () => void
   close: () => void
 }
@@ -19,10 +28,19 @@ interface FilterModalProps {
 export default function FilterModal({
   attackTypes,
   defenseTypes,
+  starOptions,
+  roles,
+  characterTypes,
   selectedAttacks,
   selectedDefenses,
+  selectedStars,
+  selectedRoles,
+  selectedCharacterTypes,
   toggleAttack,
   toggleDefense,
+  toggleStar,
+  toggleRole,
+  toggleCharacterType,
   reset,
   close,
 }: FilterModalProps) {
@@ -98,6 +116,78 @@ export default function FilterModal({
                     {checked && <FontAwesomeIcon icon={faCheck} />}
                   </span>
                   <span className="text-sm">{dt}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <p className="font-semibold">初期星数</p>
+          <div className="flex flex-wrap gap-2">
+            {starOptions.map((st) => {
+              const checked = selectedStars.includes(st)
+              return (
+                <button
+                  type="button"
+                  key={st}
+                  onClick={() => toggleStar(st)}
+                  className="flex items-center gap-1 cursor-pointer select-none"
+                >
+                  <span
+                    className={`w-4 h-4 border flex items-center justify-center text-xs ${checked ? (dark ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : ''}`}
+                    aria-pressed={checked}
+                  >
+                    {checked && <FontAwesomeIcon icon={faCheck} />}
+                  </span>
+                  <span className="text-sm">{st}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <p className="font-semibold">役割</p>
+          <div className="flex flex-wrap gap-2">
+            {roles.map((r) => {
+              const checked = selectedRoles.includes(r)
+              return (
+                <button
+                  type="button"
+                  key={r}
+                  onClick={() => toggleRole(r)}
+                  className="flex items-center gap-1 cursor-pointer select-none"
+                >
+                  <span
+                    className={`w-4 h-4 border flex items-center justify-center text-xs ${checked ? (dark ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : ''}`}
+                    aria-pressed={checked}
+                  >
+                    {checked && <FontAwesomeIcon icon={faCheck} />}
+                  </span>
+                  <span className="text-sm">{r}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <p className="font-semibold">タイプ</p>
+          <div className="flex flex-wrap gap-2">
+            {characterTypes.map((ct) => {
+              const checked = selectedCharacterTypes.includes(ct)
+              return (
+                <button
+                  type="button"
+                  key={ct}
+                  onClick={() => toggleCharacterType(ct)}
+                  className="flex items-center gap-1 cursor-pointer select-none"
+                >
+                  <span
+                    className={`w-4 h-4 border flex items-center justify-center text-xs ${checked ? (dark ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : ''}`}
+                    aria-pressed={checked}
+                  >
+                    {checked && <FontAwesomeIcon icon={faCheck} />}
+                  </span>
+                  <span className="text-sm">{ct}</span>
                 </button>
               )
             })}
