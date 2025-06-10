@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTheme } from './ThemeProvider'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
+import StudentSelect from './StudentSelect'
 
 interface Student {
   id: string
@@ -409,18 +410,11 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
         )}
         {mode === 'manual' && (
           <div className="space-y-2 overflow-y-auto max-h-[70vh]">
-            <select
+            <StudentSelect
+              students={students}
               value={form.studentId}
-              onChange={(e) => setForm({ ...form, studentId: e.target.value })}
-              className="border rounded w-full p-1"
-            >
-              <option value="">生徒選択</option>
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+              onChange={(id) => setForm({ ...form, studentId: id })}
+            />
             <label className="flex items-center gap-2">
               <span className="whitespace-nowrap">レベル:</span>
               <input
