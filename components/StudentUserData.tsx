@@ -124,7 +124,11 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
               onClick={() => setShowBonds(true)}
               className="relative text-pink-400 w-16 h-16"
             >
-              <FontAwesomeIcon icon={faHeart} className="w-16 h-16" />
+              <FontAwesomeIcon
+                icon={faHeart}
+                className="!w-16 !h-16"
+                style={{ width: '4rem', height: '4rem' }}
+              />
               <span className="absolute inset-0 flex items-center justify-center text-black text-sm font-bold drop-shadow-[0_0_2px_white]">
                 {data.bond}
               </span>
@@ -232,7 +236,6 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
                       <div className="absolute hexagon w-12 h-12 border-2 border-black"></div>
                       <div className="absolute hexagon w-11 h-11 border-2 border-white"></div>
                       <div className="absolute w-16 h-16 rounded-full border-4 border-blue-300/50"></div>
-
                     </>
                   )}
                 </div>
@@ -250,7 +253,6 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
             </div>
           ))}
         </div>
-
         <div className="grid grid-cols-1 gap-1 text-center">
           <div className="skew-x-12">
             <div className="-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1 space-y-1">
