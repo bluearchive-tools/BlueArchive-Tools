@@ -98,7 +98,7 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
             className="w-full object-contain"
           />
         )}
-        <div className="absolute inset-0 flex flex-col justify-end text-white p-2 space-y-1">
+        <div className="absolute inset-0 flex flex-col justify-end text-white p-2 space-y-1 bg-[#114073]/90 dark:bg-transparent">
           <div className="flex justify-between items-center">
             <button
               type="button"
@@ -108,7 +108,7 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
               <FontAwesomeIcon icon={faHeart} />
               {data.bond}
             </button>
-            <span className="flex-1 text-center">{student?.name}</span>
+            <span className="flex-1 text-left">{student?.name}</span>
             <span className="flex items-center gap-1 justify-end">
               {Array.from({ length: data.star }).map((_, i) => (
                 <FontAwesomeIcon
