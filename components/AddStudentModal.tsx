@@ -423,7 +423,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                 max={90}
                 value={form.level}
                 onChange={(e) => setForm({ ...form, level: e.target.value })}
-                className="border rounded p-1 flex-1"
+                className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
             <label className="flex items-center gap-2">
@@ -434,7 +434,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                 max={5}
                 value={form.star}
                 onChange={(e) => setForm({ ...form, star: e.target.value })}
-                className="border rounded p-1 flex-1"
+                className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
             <label className="flex items-center gap-2">
@@ -448,7 +448,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                   setForm({ ...form, uniqueStar: e.target.value })
                 }
                 disabled={Number(form.star) < 5}
-                className="border rounded p-1 flex-1"
+                className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
             <label className="flex items-center gap-2">
@@ -462,7 +462,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                   setForm({ ...form, uniqueLevel: e.target.value })
                 }
                 disabled={Number(form.star) < 5}
-                className="border rounded p-1 flex-1"
+                className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
             {bondFields.map(({ id, name }) => (
@@ -478,7 +478,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                   onChange={(e) =>
                     setBonds({ ...bonds, [id]: e.target.value })
                   }
-                  className="border rounded p-1 flex-1"
+                  className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
                 />
               </label>
             ))}
@@ -488,7 +488,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                 type="number"
                 value={form.hp}
                 onChange={(e) => setForm({ ...form, hp: e.target.value })}
-                className="border rounded p-1 flex-1"
+                className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
             <label className="flex items-center gap-2">
@@ -499,7 +499,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                 max={25}
                 value={form.hpwb}
                 onChange={(e) => setForm({ ...form, hpwb: e.target.value })}
-                className="border rounded p-1 flex-1"
+                className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
             <label className="flex items-center gap-2">
@@ -508,7 +508,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                 type="number"
                 value={form.attack}
                 onChange={(e) => setForm({ ...form, attack: e.target.value })}
-                className="border rounded p-1 flex-1"
+                className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
             <label className="flex items-center gap-2">
@@ -519,7 +519,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                 max={25}
                 value={form.attackwb}
                 onChange={(e) => setForm({ ...form, attackwb: e.target.value })}
-                className="border rounded p-1 flex-1"
+                className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
             <label className="flex items-center gap-2">
@@ -528,7 +528,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                 type="number"
                 value={form.defense}
                 onChange={(e) => setForm({ ...form, defense: e.target.value })}
-                className="border rounded p-1 flex-1"
+                className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
             <label className="flex items-center gap-2">
@@ -537,7 +537,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                 type="number"
                 value={form.heal}
                 onChange={(e) => setForm({ ...form, heal: e.target.value })}
-                className="border rounded p-1 flex-1"
+                className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
             <label className="flex items-center gap-2">
@@ -548,7 +548,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                 max={25}
                 value={form.healwb}
                 onChange={(e) => setForm({ ...form, healwb: e.target.value })}
-                className="border rounded p-1 flex-1"
+                className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
             <label className="flex items-center gap-2">
@@ -559,7 +559,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                 max={5}
                 value={form.ex}
                 onChange={(e) => setForm({ ...form, ex: e.target.value })}
-                className="border rounded p-1 flex-1"
+                className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
             <label className="flex items-center gap-2">
@@ -570,7 +570,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                 max={10}
                 value={form.normal}
                 onChange={(e) => setForm({ ...form, normal: e.target.value })}
-                className="border rounded p-1 flex-1"
+                className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
             <label className="flex items-center gap-2">
@@ -581,7 +581,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                 max={10}
                 value={form.passive}
                 onChange={(e) => setForm({ ...form, passive: e.target.value })}
-                className="border rounded p-1 flex-1"
+                className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
             <label className="flex items-center gap-2">
@@ -592,7 +592,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                 max={10}
                 value={form.sub}
                 onChange={(e) => setForm({ ...form, sub: e.target.value })}
-                className="border rounded p-1 flex-1"
+                className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
             <label className="flex items-center gap-2">
@@ -603,7 +603,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                 max={10}
                 value={form.gear1}
                 onChange={(e) => setForm({ ...form, gear1: e.target.value })}
-                className="border rounded p-1 flex-1"
+                className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
             <label className="flex items-center gap-2">
@@ -614,7 +614,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                 max={10}
                 value={form.gear2}
                 onChange={(e) => setForm({ ...form, gear2: e.target.value })}
-                className="border rounded p-1 flex-1"
+                className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
             <label className="flex items-center gap-2">
@@ -625,7 +625,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                 max={9}
                 value={form.gear3}
                 onChange={(e) => setForm({ ...form, gear3: e.target.value })}
-                className="border rounded p-1 flex-1"
+                className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
             <label className="flex items-center gap-2">
@@ -637,7 +637,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
                 value={form.love}
                 onChange={(e) => setForm({ ...form, love: e.target.value })}
                 disabled={!selectedStudent?.hasAccessory}
-                className="border rounded p-1 flex-1"
+                className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
             <div className="flex gap-2">
