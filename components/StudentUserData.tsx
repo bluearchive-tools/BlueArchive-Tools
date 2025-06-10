@@ -133,15 +133,15 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
                 <FontAwesomeIcon key={i} icon={faStar} className="text-yellow-400" />
               ))}
             </span>
-            <span className="italic">{student?.role}</span>
             <span
-              className={`bg-white px-1 italic ${student?.characterType === 'STRIKER' ? 'text-red-500' : 'text-blue-500'}`}
+              className={`bg-white px-1 italic ${student?.role === 'STRIKER' ? 'text-red-500' : 'text-blue-500'}`}
             >
-              {student?.characterType}
+              {student?.role}
             </span>
           </div>
           <div className={`${!dark ? 'bg-[#114073] bg-opacity-90 px-1' : ''}`}>Lv. {data.level}</div>
           <div className="flex gap-1">
+            <span className="bg-white text-[#114073] italic px-1">{student?.characterType}</span>
             <span className={`${attrBg(student?.attackType)} text-white px-1`}>{student?.attackType}</span>
           </div>
           <div className="flex gap-1">

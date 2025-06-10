@@ -3,9 +3,14 @@ import './globals.css'
 import { Providers } from './providers'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import { M_PLUS_1p } from 'next/font/google'
+import { M_PLUS_2 } from 'next/font/google'
 
-const mplus = M_PLUS_1p({ weight: '500', subsets: ['latin'], display: 'swap' })
+const mplus = M_PLUS_2({
+  weight: '500',
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-sans',
+})
 
 export const metadata = {
   title: 'BlueArchive Tools',
@@ -14,7 +19,7 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ja">
-      <body className={mplus.className}>
+      <body className={`${mplus.variable} font-sans`}>
         {/* ここではあくまでサーバー→クライアントの橋渡しだけ */}
         <Providers>
           <Header />
