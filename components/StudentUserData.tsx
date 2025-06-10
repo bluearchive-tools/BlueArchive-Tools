@@ -134,14 +134,19 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
               ))}
             </span>
             <span className="italic">{student?.role}</span>
-            <span>Lv. {data.level}</span>
+            <span
+              className={`bg-white px-1 italic ${student?.characterType === 'STRIKER' ? 'text-red-500' : 'text-blue-500'}`}
+            >
+              {student?.characterType}
+            </span>
           </div>
+          <div className={`${!dark ? 'bg-[#114073] bg-opacity-90 px-1' : ''}`}>Lv. {data.level}</div>
           <div className="flex gap-1">
-            <span className="bg-white text-[#114073] px-1">{student?.characterType}</span>
             <span className={`${attrBg(student?.attackType)} text-white px-1`}>{student?.attackType}</span>
           </div>
-          <div className={`${attrBg(student?.defenseType)} text-white px-1`}>
-            <span className="italic mr-1">{student?.position}</span>{student?.defenseType}
+          <div className="flex gap-1">
+            <span className="bg-[#114073] text-white italic px-1">{student?.position}</span>
+            <span className={`${attrBg(student?.defenseType)} text-white px-1 inline-block`}>{student?.defenseType}</span>
           </div>
           </div>
         </div>
