@@ -5,7 +5,7 @@ import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { M_PLUS_2p } from 'next/font/google'
 
-const mplus = M_PLUS_2p({
+const mplus = M_PLUS_2({
   weight: '500',
   subsets: ['latin'],
   display: 'swap',
