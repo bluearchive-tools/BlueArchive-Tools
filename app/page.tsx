@@ -5,10 +5,12 @@ import CollapsibleBox from '../components/CollapsibleBox'
 import FeatureItem from '../components/FeatureItem'
 import Link from 'next/link'
 import LoginPopup from '../components/LoginPopup'
+import Footer from '../components/Footer'
 
 export default function Home() {
   return (
-    <main className="p-4 space-y-4">
+    <>
+    <main className="p-4 space-y-4 pb-16">
       <LoginPopup />
       <CollapsibleBox title="生徒管理" description="生徒のデータを確認、編集できます">
         <div className="space-y-2">
@@ -26,5 +28,7 @@ export default function Home() {
         </div>
       </CollapsibleBox>
     </main>
+    <Footer />
+    </>
   )
 }
