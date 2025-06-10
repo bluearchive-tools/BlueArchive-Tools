@@ -32,6 +32,15 @@ export default function StudentSelect({ students, value, onChange }: Props) {
   const [typeFilter, setTypeFilter] = useState<string[]>([])
   const ref = useRef<HTMLDivElement>(null)
 
+  const resetFilters = () => {
+    setQuery('')
+    setAttackFilter([])
+    setDefenseFilter([])
+    setStarFilter([])
+    setRoleFilter([])
+    setTypeFilter([])
+  }
+
   useEffect(() => {
     const handle = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -72,13 +81,22 @@ export default function StudentSelect({ students, value, onChange }: Props) {
       </button>
       {open && (
         <div className="absolute z-10 bg-white dark:bg-gray-800 border rounded w-full p-2 space-y-2 max-h-96 overflow-y-auto">
-          <input
-            type="text"
-            placeholder="検索"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="border rounded p-1 w-full"
-          />
+          <div className="flex items-start gap-2">
+            <input
+              type="text"
+              placeholder="検索"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="border rounded p-1 flex-1"
+            />
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="text-sm underline whitespace-nowrap"
+            >
+              リセット
+            </button>
+          </div>
           <div className="flex flex-wrap gap-2">
             {attackTypes.map((at) => (
               <label key={at} className="text-sm flex items-center gap-1">

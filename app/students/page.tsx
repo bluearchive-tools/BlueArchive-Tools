@@ -77,7 +77,7 @@ export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([])
   const [userStats, setUserStats] = useState<Record<string, UserStudent>>({})
   const [sortKey, setSortKey] = useState<SortKey>('id')
-  const [asc, setAsc] = useState(true)
+  const [asc, setAsc] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [filterAttacks, setFilterAttacks] = useState<string[]>([])
@@ -152,6 +152,11 @@ export default function StudentsPage() {
   const baseKeys = ['id', 'name', 'attackType', 'defenseType']
 
   const sorted = [...filtered].sort((a, b) => {
+    if (sortKey === 'id') {
+      const va = Number(a.id)
+      const vb = Number(b.id)
+      return asc ? va - vb : vb - va
+    }
     let va: number | string | undefined
     let vb: number | string | undefined
     if (baseKeys.includes(sortKey)) {
