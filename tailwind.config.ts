@@ -8,7 +8,11 @@ const config: Config = {
     './components/**/*.{ts,tsx,js,jsx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ['var(--font-sans)', 'sans-serif'],
+      },
+    },
   },
   plugins: [typography],
 }

@@ -21,6 +21,7 @@ interface Student {
   initialStars: number
   role: string
   characterType: string
+  position: string
 }
 
 export default async function StudentDetail({ params }: RouteProps<{ id: string }>) {
@@ -39,13 +40,6 @@ export default async function StudentDetail({ params }: RouteProps<{ id: string 
       <Link href="/students" aria-label="一覧に戻る" className="text-lg inline-block">
         <FontAwesomeIcon icon={faArrowLeft} />
       </Link>
-      <h2 className="text-xl font-bold">{student.name}</h2>
-      <img src={student.image} alt={student.name} className="w-full h-auto rounded" />
-      <p>攻撃属性: {student.attackType}</p>
-      <p>防御属性: {student.defenseType}</p>
-      <p>初期星数: {student.initialStars}</p>
-      <p>役割: {student.role}</p>
-      <p>タイプ: {student.characterType}</p>
       <StudentUserData studentId={student.id} />
     </main>
   )

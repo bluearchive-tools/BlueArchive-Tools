@@ -2,6 +2,28 @@
 
 import { useEffect, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
+import { useTheme } from './ThemeProvider'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faHeart, faStar } from '@fortawesome/free-solid-svg-icons'
+
+function attrBg(attr?: string) {
+  switch (attr) {
+    case '爆発':
+    case '軽装備':
+      return 'bg-red-500'
+    case '貫通':
+    case '重装甲':
+      return 'bg-yellow-500'
+    case '神秘':
+    case '特殊装甲':
+      return 'bg-blue-500'
+    case '振動':
+    case '弾力装甲':
+      return 'bg-pink-500'
+    default:
+      return 'bg-gray-500'
+  }
+}
 
 interface Student {
   id: string
@@ -15,6 +37,7 @@ interface Student {
   initialStars: number
   role: string
   characterType: string
+  position: string
 }
 
 interface UserStudent {
@@ -44,8 +67,10 @@ interface UserStudent {
 export default function StudentUserData({ studentId }: { studentId: string }) {
   const session = useSession()
   const supabase = useSupabaseClient()
+  const { dark } = useTheme()
   const [data, setData] = useState<UserStudent | null>(null)
   const [students, setStudents] = useState<Student[]>([])
+  const [showBonds, setShowBonds] = useState(false)
   useEffect(() => {
     const loadStudents = async () => {
       try {
@@ -72,53 +97,119 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
   }, [session, supabase, studentId])
 
   const student = students.find((s) => s.id === studentId)
-  const baseId = student?.altOf || studentId
-  const base = students.find((s) => s.id === baseId)
-  let otherIds: string[] = []
-  if (student && base) {
-    if (student.altOf) {
-      otherIds = [
-        baseId,
-        ...(base.altIds?.filter((id) => id !== studentId) || []),
-      ]
-    } else {
-      otherIds = (base.altIds || []).filter((id) => id !== studentId)
-    }
-  }
 
   if (!session) return null
 
   if (!data) return <p>未登録</p>
 
-  const altBonds = data.alt_bonds || {}
+  const bondEntries = Object.entries(
+    data.alt_bonds ?? { [studentId]: data.bond }
+  )
 
   return (
-    <div className="space-y-1 text-sm">
-      <p>レベル: {data.level}</p>
-      <p>星: {data.star}</p>
-      <p>固有武器星: {data.unique_star}</p>
-      <p>固有武器レベル: {data.unique_level}</p>
-      <p>絆: {data.bond}</p>
-      {otherIds.map((id) => {
-        const name = students.find((s) => s.id === id)?.name || id
-        return (
-          <p key={id}>
-            絆({name}): {altBonds[id] ?? 0}
-          </p>
-        )
-      })}
-      <p>HP: {data.hp} / {data.hp_wb}</p>
-      <p>攻撃力: {data.attack} / {data.attack_wb}</p>
-      <p>防御力: {data.defense}</p>
-      <p>治癒力: {data.heal} / {data.heal_wb}</p>
-      <p>EX: {data.ex_skill}</p>
-      <p>ノーマル: {data.normal_skill}</p>
-      <p>パッシブ: {data.passive_skill}</p>
-      <p>サブ: {data.sub_skill}</p>
-      <p>装備1: {data.equip1}</p>
-      <p>装備2: {data.equip2}</p>
-      <p>装備3: {data.equip3}</p>
-      <p>愛用品Tier: {data.item_tier}</p>
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <div className="relative">
+          {student && (
+            <img
+              src={student.image}
+              alt={student.name}
+            className="w-full object-contain"
+          />
+        )}
+        <div className="absolute inset-0 flex flex-col justify-end text-white p-2 space-y-1">
+          <div className={`flex flex-wrap gap-1 items-center ${!dark ? 'bg-[#114073] bg-opacity-90 px-1' : ''}`}>
+            <button
+              type="button"
+              onClick={() => setShowBonds(true)}
+              className="text-pink-400 flex items-center gap-1"
+            >
+              <FontAwesomeIcon icon={faHeart} />
+              {data.bond}
+            </button>
+            <span className="flex-1 text-left text-2xl">{student?.name}</span>
+            <span className="flex items-center -space-x-1 justify-end">
+              {Array.from({ length: data.star }).map((_, i) => (
+                <FontAwesomeIcon key={i} icon={faStar} className="text-yellow-400" />
+              ))}
+            </span>
+            <span
+              className={`bg-white px-1 italic ${student?.role === 'STRIKER' ? 'text-red-500' : 'text-blue-500'}`}
+            >
+              {student?.role}
+            </span>
+          </div>
+          <div className={`${!dark ? 'bg-[#114073] bg-opacity-90 px-1' : ''} inline-block w-20 text-center`}>Lv. {data.level}</div>
+          <div className="flex gap-1">
+            <span className="bg-white text-[#114073] italic px-1 inline-block w-20 text-center">{student?.characterType}</span>
+            <span className={`${attrBg(student?.attackType)} text-white px-1 inline-block w-20 text-center`}>{student?.attackType}</span>
+          </div>
+          <div className="flex gap-1">
+            <span className="bg-[#114073] text-white italic px-1 inline-block w-20 text-center">{student?.position}</span>
+            <span className={`${attrBg(student?.defenseType)} text-white px-1 inline-block w-20 text-center`}>{student?.defenseType}</span>
+          </div>
+          </div>
+        </div>
+      <div className="flex flex-col justify-between space-y-2">
+        <div className="grid grid-cols-2 gap-2">
+          <div>HP {data.hp} ({data.hp_wb})</div>
+          <div>攻撃力 {data.attack} ({data.attack_wb})</div>
+          <div>防御力 {data.defense}</div>
+          <div>治癒力 {data.heal} ({data.heal_wb})</div>
+        </div>
+        <div className="grid grid-cols-4 gap-2 text-center">
+          <div className="border p-1">{data.ex_skill}</div>
+          <div className="border p-1">{data.normal_skill}</div>
+          <div className="border p-1">{data.passive_skill}</div>
+          <div className="border p-1">{data.sub_skill}</div>
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-center">
+          <div className="border p-1">{data.unique_level}</div>
+          <div className="border p-1 space-x-px">
+            {Array.from({ length: data.unique_star }).map((_, i) => (
+              <FontAwesomeIcon
+                key={i}
+                icon={faStar}
+                className="text-sky-400"
+              />
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="border p-1">{data.equip1}</div>
+          <div className="border p-1">{data.equip2}</div>
+          <div className="border p-1">{data.equip3}</div>
+        </div>
+      </div>
     </div>
+      {showBonds && (
+        <div
+          className={`fixed inset-0 z-20 flex items-center justify-center transition-opacity duration-200 ${dark ? 'bg-black/50' : 'bg-black/20'}`}
+          onClick={() => setShowBonds(false)}
+        >
+          <div
+            className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 rounded space-y-2 w-64 transform transition-all`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-bold text-lg">絆一覧</h3>
+            <ul className="space-y-1">
+              {bondEntries.map(([id, value]) => (
+                <li key={id} className="flex justify-between">
+                  <span>{students.find((s) => s.id === id)?.name || id}</span>
+                  <span>{value}</span>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => setShowBonds(false)}
+              className="underline text-sm block ml-auto"
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
