@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -123,6 +123,21 @@ export default function StudentsPage() {
     setStudents((prev) => [...prev, s])
   }
 
+  const refreshUserStats = useCallback(async () => {
+    if (!session) return
+    const { data } = await supabase
+      .from('user_students')
+      .select('*')
+      .eq('user_id', session.user.id)
+    if (data) {
+      const map: Record<string, UserStudent> = {}
+      for (const row of data) {
+        map[row.student_id as string] = row as UserStudent
+      }
+      setUserStats(map)
+    }
+  }, [session, supabase])
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -138,22 +153,8 @@ export default function StudentsPage() {
   }, [])
 
   useEffect(() => {
-    const loadStats = async () => {
-      if (!session) return
-      const { data } = await supabase
-        .from('user_students')
-        .select('*')
-        .eq('user_id', session.user.id)
-      if (data) {
-        const map: Record<string, UserStudent> = {}
-        for (const row of data) {
-          map[row.student_id as string] = row as UserStudent
-        }
-        setUserStats(map)
-      }
-    }
-    loadStats()
-  }, [session, supabase])
+    refreshUserStats()
+  }, [refreshUserStats])
 
   const attackTypes = Array.from(new Set(students.map((s) => s.attackType)))
   const defenseTypes = Array.from(new Set(students.map((s) => s.defenseType)))
@@ -367,6 +368,7 @@ export default function StudentsPage() {
         <AddStudentModal
           addStudents={addStudents}
           addStudent={addStudent}
+          onAdded={refreshUserStats}
           close={() => setAddOpen(false)}
         />
       )}

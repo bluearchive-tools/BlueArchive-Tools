@@ -66,14 +66,19 @@ interface UserStudent {
   alt_bonds?: Record<string, number>
 }
 
-export default function StudentUserData({ studentId }: { studentId: string }) {
+export default function StudentUserData({
+  studentId,
+  editMode,
+}: {
+  studentId: string
+  editMode: boolean
+}) {
   const session = useSession()
   const supabase = useSupabaseClient()
   const { dark } = useTheme()
   const [data, setData] = useState<UserStudent | null>(null)
   const [students, setStudents] = useState<Student[]>([])
   const [showBonds, setShowBonds] = useState(false)
-  const [editMode, setEditMode] = useState(false)
   const [editField, setEditField] = useState<
     | { field: string; label: string; value: number; min?: number; max?: number }
     | null
@@ -118,17 +123,6 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
 
   return (
     <>
-      <div className="flex justify-end mb-2 text-sm">
-        <label className="inline-flex items-center gap-1">
-          <span>編集</span>
-          <input
-            type="checkbox"
-            checked={editMode}
-            onChange={(e) => setEditMode(e.target.checked)}
-            className="form-checkbox"
-          />
-        </label>
-      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
         <div className="relative">
           {student && (
