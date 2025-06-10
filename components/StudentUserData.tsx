@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
+import { useTheme } from './ThemeProvider'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faHeart, faStar } from '@fortawesome/free-solid-svg-icons'
 
 interface Student {
   id: string
@@ -15,6 +18,7 @@ interface Student {
   initialStars: number
   role: string
   characterType: string
+  position: string
 }
 
 interface UserStudent {
@@ -44,8 +48,10 @@ interface UserStudent {
 export default function StudentUserData({ studentId }: { studentId: string }) {
   const session = useSession()
   const supabase = useSupabaseClient()
+  const { dark } = useTheme()
   const [data, setData] = useState<UserStudent | null>(null)
   const [students, setStudents] = useState<Student[]>([])
+  const [showBonds, setShowBonds] = useState(false)
   useEffect(() => {
     const loadStudents = async () => {
       try {
@@ -72,54 +78,55 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
   }, [session, supabase, studentId])
 
   const student = students.find((s) => s.id === studentId)
-  const baseId = student?.altOf || studentId
-  const base = students.find((s) => s.id === baseId)
-  let otherIds: string[] = []
-  if (student && base) {
-    if (student.altOf) {
-      otherIds = [
-        baseId,
-        ...(base.altIds?.filter((id) => id !== studentId) || []),
-      ]
-    } else {
-      otherIds = (base.altIds || []).filter((id) => id !== studentId)
-    }
-  }
 
   if (!session) return null
 
   if (!data) return <p>未登録</p>
 
-  const altBonds = data.alt_bonds || {}
+  const bondEntries = Object.entries(
+    data.alt_bonds ?? { [studentId]: data.bond }
+  )
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-      <div className="flex flex-col justify-between items-start">
-        {student && (
-          <img
-            src={student.image}
-            alt={student.name}
-            className="w-full object-contain mb-2"
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <div className="relative">
+          {student && (
+            <img
+              src={student.image}
+              alt={student.name}
+            className="w-full object-contain"
           />
         )}
-        <div className="space-y-1">
-          <div>絆 {data.bond}</div>
-          <div>{student?.name}</div>
-          <div>{data.star} ({student?.role})</div>
-          <div>{data.level}</div>
-          <div className="flex gap-2">
-            <div>{student?.characterType}</div>
-            <div>{student?.attackType}</div>
+        <div className="absolute inset-0 flex flex-col justify-end text-white p-2 space-y-1">
+          <div className="flex justify-between items-center">
+            <button
+              type="button"
+              onClick={() => setShowBonds(true)}
+              className="text-pink-400 flex items-center gap-1"
+            >
+              <FontAwesomeIcon icon={faHeart} />
+              {data.bond}
+            </button>
+            <span className="flex-1 text-center">{student?.name}</span>
+            <span className="flex items-center gap-1 justify-end">
+              {Array.from({ length: data.star }).map((_, i) => (
+                <FontAwesomeIcon
+                  key={i}
+                  icon={faStar}
+                  className="text-yellow-400"
+                />
+              ))}
+              <span>{student?.role}</span>
+            </span>
           </div>
-          <div>{student?.defenseType}</div>
-          {otherIds.map((id) => {
-            const name = students.find((s) => s.id === id)?.name || id
-            return (
-              <div key={id} className="text-xs">
-                絆({name}) {altBonds[id] ?? 0}
-              </div>
-            )
-          })}
+          <div>Lv. {data.level}</div>
+          <div>
+            {student?.characterType} {student?.attackType}
+          </div>
+          <div>
+            {student?.position} {student?.defenseType}
+          </div>
         </div>
       </div>
       <div className="flex flex-col justify-between space-y-2">
@@ -137,7 +144,15 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
         </div>
         <div className="grid grid-cols-2 gap-2 text-center">
           <div>{data.unique_level}</div>
-          <div>{data.unique_star}</div>
+          <div className="space-x-1">
+            {Array.from({ length: data.unique_star }).map((_, i) => (
+              <FontAwesomeIcon
+                key={i}
+                icon={faStar}
+                className="text-sky-400"
+              />
+            ))}
+          </div>
         </div>
         <div className="grid grid-cols-3 gap-2 text-center">
           <div>{data.equip1}</div>
@@ -146,5 +161,34 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
         </div>
       </div>
     </div>
+      {showBonds && (
+        <div
+          className={`fixed inset-0 z-20 flex items-center justify-center transition-opacity duration-200 ${dark ? 'bg-black/50' : 'bg-black/20'}`}
+          onClick={() => setShowBonds(false)}
+        >
+          <div
+            className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 rounded space-y-2 w-64 transform transition-all`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-bold text-lg">絆一覧</h3>
+            <ul className="space-y-1">
+              {bondEntries.map(([id, value]) => (
+                <li key={id} className="flex justify-between">
+                  <span>{students.find((s) => s.id === id)?.name || id}</span>
+                  <span>{value}</span>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => setShowBonds(false)}
+              className="underline text-sm block ml-auto"
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

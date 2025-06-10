@@ -17,6 +17,7 @@ interface Student {
   initialStars: number
   role: string
   characterType: string
+  position: string
 }
 
 interface UserStudent {
@@ -317,6 +318,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
       initialStars: 1,
       role: 'STRIKER',
       characterType: 'タンク',
+      position: 'FRONT',
     })
     e.target.value = ''
     handleClose()

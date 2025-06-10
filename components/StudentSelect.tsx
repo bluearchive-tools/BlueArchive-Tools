@@ -15,6 +15,7 @@ interface Student {
   initialStars: number
   role: string
   characterType: string
+  position: string
 }
 
 interface Props {
