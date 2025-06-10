@@ -122,9 +122,9 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
             <button
               type="button"
               onClick={() => setShowBonds(true)}
-              className="relative text-pink-400 w-6 h-6"
+              className="relative text-pink-400 w-8 h-8"
             >
-              <FontAwesomeIcon icon={faHeart} className="w-6 h-6" />
+              <FontAwesomeIcon icon={faHeart} className="w-8 h-8" />
               <span className="absolute inset-0 flex items-center justify-center text-black text-xs font-bold drop-shadow-[0_0_2px_white]">
                 {data.bond}
               </span>
@@ -176,44 +176,66 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
           <div>治癒力 {data.heal} ({data.heal_wb})</div>
         </div>
         <div className="grid grid-cols-4 gap-2 text-center">
-          <div className="skew-x-12">
-            <div className="-skew-x-12 border w-12 h-16 flex items-center justify-center">{data.ex_skill}</div>
-          </div>
-          <div className="skew-x-12">
-            <div className="-skew-x-12 border w-12 h-16 flex items-center justify-center">{data.normal_skill}</div>
-          </div>
-          <div className="skew-x-12">
-            <div className="-skew-x-12 border w-12 h-16 flex items-center justify-center">{data.passive_skill}</div>
-          </div>
-          <div className="skew-x-12">
-            <div className="-skew-x-12 border w-12 h-16 flex items-center justify-center">{data.sub_skill}</div>
-          </div>
+          {[
+            { label: 'EXスキル', value: data.ex_skill, ex: true },
+            { label: 'ノーマル', value: data.normal_skill },
+            { label: 'パッシブ', value: data.passive_skill },
+            { label: 'サブ', value: data.sub_skill },
+          ].map((skill, i) => (
+            <div key={i} className="skew-x-12">
+              <div className="-skew-x-12 border flex flex-col items-center justify-between h-24 w-full p-1">
+                <span className="text-xs">{skill.label}</span>
+                <div className="relative flex justify-center items-center my-1">
+                  <div className={`${attrBg(student?.attackType)} hexagon w-8 h-8`}></div>
+                  {skill.ex && (
+                    <>
+                      <div className="absolute hexagon w-8 h-8 border-2 border-black"></div>
+                      <div className="absolute hexagon w-7 h-7 border-2 border-white"></div>
+                      <div className="absolute w-10 h-10 rounded-full border border-blue-400/50"></div>
+                    </>
+                  )}
+                </div>
+                <hr className="border-gray-300 w-full" />
+                <span className="text-sm">
+                  {skill.ex
+                    ? skill.value >= 5
+                      ? 'MAX'
+                      : skill.value
+                    : skill.value >= 10
+                    ? 'MAX'
+                    : skill.value}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
-        <div className="grid grid-cols-2 gap-2 text-center">
-          <div className="border p-1">{data.unique_level}</div>
-          <div className="border p-1 space-x-px">
-            {Array.from({ length: data.unique_star }).map((_, i) => (
-              <FontAwesomeIcon
-                key={i}
-                icon={faStar}
-                className="text-sky-400"
-              />
-            ))}
+        <div className="grid grid-cols-1 gap-2 text-center">
+          <div className="skew-x-12">
+            <div className="-skew-x-12 border flex flex-col items-center justify-between h-24 w-full p-1 space-y-1">
+              <span className="text-sm">固有武器</span>
+              <span>Lv. {data.unique_level}</span>
+              <div className="space-x-px">
+                {Array.from({ length: data.unique_star }).map((_, i) => (
+                  <FontAwesomeIcon key={i} icon={faStar} className="text-sky-400" />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
         <div className="grid grid-cols-4 gap-2 text-center">
-          <div className="skew-x-12">
-            <div className="-skew-x-12 border w-12 h-12 flex items-center justify-center">{data.equip1}</div>
-          </div>
-          <div className="skew-x-12">
-            <div className="-skew-x-12 border w-12 h-12 flex items-center justify-center">{data.equip2}</div>
-          </div>
-          <div className="skew-x-12">
-            <div className="-skew-x-12 border w-12 h-12 flex items-center justify-center">{data.equip3}</div>
-          </div>
-          <div className="skew-x-12">
-            <div className={`-skew-x-12 border w-12 h-12 flex items-center justify-center ${student?.hasAccessory ? '' : 'bg-gray-300 text-gray-500'}`}>{student?.hasAccessory ? data.item_tier : 'EMPTY'}</div>
-          </div>
+          {[data.equip1, data.equip2, data.equip3, student?.hasAccessory ? data.item_tier : 'EMPTY'].map((tier, i) => (
+            <div key={i} className="skew-x-12">
+              <div
+                className={`-skew-x-12 border relative h-12 w-full flex items-end justify-start ${i === 3 && !student?.hasAccessory ? 'bg-gray-300 text-gray-500' : ''}`}
+              >
+                {i === 3 && !student?.hasAccessory ? (
+                  <span className="text-xs ml-1 mb-1">EMPTY</span>
+                ) : (
+                  <span className="text-xs ml-1 mb-1 text-[#4298f5]">T{tier}</span>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

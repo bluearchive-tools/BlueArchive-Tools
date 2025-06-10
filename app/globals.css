@@ -36,3 +36,14 @@ body {
   from { opacity: 1; }
   to { opacity: 0; }
 }
+
+.hexagon {
+  clip-path: polygon(
+    50% 0%,
+    93% 25%,
+    93% 75%,
+    50% 100%,
+    7% 75%,
+    7% 25%
+  );
+}
