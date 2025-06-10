@@ -127,8 +127,8 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
               <FontAwesomeIcon icon={faHeart} />
               {data.bond}
             </button>
-            <span className="flex-1 text-left">{student?.name}</span>
-            <span className="flex items-center gap-px justify-end">
+            <span className="flex-1 text-left text-2xl">{student?.name}</span>
+            <span className="flex items-center -space-x-1 justify-end">
               {Array.from({ length: data.star }).map((_, i) => (
                 <FontAwesomeIcon key={i} icon={faStar} className="text-yellow-400" />
               ))}
@@ -139,14 +139,14 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
               {student?.role}
             </span>
           </div>
-          <div className={`${!dark ? 'bg-[#114073] bg-opacity-90 px-1' : ''}`}>Lv. {data.level}</div>
+          <div className={`${!dark ? 'bg-[#114073] bg-opacity-90 px-1' : ''} inline-block w-20 text-center`}>Lv. {data.level}</div>
           <div className="flex gap-1">
-            <span className="bg-white text-[#114073] italic px-1">{student?.characterType}</span>
-            <span className={`${attrBg(student?.attackType)} text-white px-1`}>{student?.attackType}</span>
+            <span className="bg-white text-[#114073] italic px-1 inline-block w-20 text-center">{student?.characterType}</span>
+            <span className={`${attrBg(student?.attackType)} text-white px-1 inline-block w-20 text-center`}>{student?.attackType}</span>
           </div>
           <div className="flex gap-1">
-            <span className="bg-[#114073] text-white italic px-1">{student?.position}</span>
-            <span className={`${attrBg(student?.defenseType)} text-white px-1 inline-block`}>{student?.defenseType}</span>
+            <span className="bg-[#114073] text-white italic px-1 inline-block w-20 text-center">{student?.position}</span>
+            <span className={`${attrBg(student?.defenseType)} text-white px-1 inline-block w-20 text-center`}>{student?.defenseType}</span>
           </div>
           </div>
         </div>
@@ -158,14 +158,14 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
           <div>治癒力 {data.heal} ({data.heal_wb})</div>
         </div>
         <div className="grid grid-cols-4 gap-2 text-center">
-          <div>{data.ex_skill}</div>
-          <div>{data.normal_skill}</div>
-          <div>{data.passive_skill}</div>
-          <div>{data.sub_skill}</div>
+          <div className="border p-1">{data.ex_skill}</div>
+          <div className="border p-1">{data.normal_skill}</div>
+          <div className="border p-1">{data.passive_skill}</div>
+          <div className="border p-1">{data.sub_skill}</div>
         </div>
         <div className="grid grid-cols-2 gap-2 text-center">
-          <div>{data.unique_level}</div>
-          <div className="space-x-px">
+          <div className="border p-1">{data.unique_level}</div>
+          <div className="border p-1 space-x-px">
             {Array.from({ length: data.unique_star }).map((_, i) => (
               <FontAwesomeIcon
                 key={i}
@@ -176,9 +176,9 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
           </div>
         </div>
         <div className="grid grid-cols-3 gap-2 text-center">
-          <div>{data.equip1}</div>
-          <div>{data.equip2}</div>
-          <div>{data.equip3}</div>
+          <div className="border p-1">{data.equip1}</div>
+          <div className="border p-1">{data.equip2}</div>
+          <div className="border p-1">{data.equip3}</div>
         </div>
       </div>
     </div>

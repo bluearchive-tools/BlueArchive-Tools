@@ -2,7 +2,6 @@
 import './globals.css'
 import { Providers } from './providers'
 import Header from '../components/Header'
-import Footer from '../components/Footer'
 import { M_PLUS_2 } from 'next/font/google'
 
 const mplus = M_PLUS_2({
@@ -24,7 +23,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <Header />
           <main className="pt-4 pb-16">{children}</main>
-          <Footer />
         </Providers>
       </body>
     </html>
