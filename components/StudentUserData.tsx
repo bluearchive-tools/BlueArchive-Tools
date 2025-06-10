@@ -93,32 +93,51 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
   const altBonds = data.alt_bonds || {}
 
   return (
-    <div className="space-y-1 text-sm">
-      <p>レベル: {data.level}</p>
-      <p>星: {data.star}</p>
-      <p>固有武器星: {data.unique_star}</p>
-      <p>固有武器レベル: {data.unique_level}</p>
-      <p>絆: {data.bond}</p>
-      {otherIds.map((id) => {
-        const name = students.find((s) => s.id === id)?.name || id
-        return (
-          <p key={id}>
-            絆({name}): {altBonds[id] ?? 0}
-          </p>
-        )
-      })}
-      <p>HP: {data.hp} / {data.hp_wb}</p>
-      <p>攻撃力: {data.attack} / {data.attack_wb}</p>
-      <p>防御力: {data.defense}</p>
-      <p>治癒力: {data.heal} / {data.heal_wb}</p>
-      <p>EX: {data.ex_skill}</p>
-      <p>ノーマル: {data.normal_skill}</p>
-      <p>パッシブ: {data.passive_skill}</p>
-      <p>サブ: {data.sub_skill}</p>
-      <p>装備1: {data.equip1}</p>
-      <p>装備2: {data.equip2}</p>
-      <p>装備3: {data.equip3}</p>
-      <p>愛用品Tier: {data.item_tier}</p>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+      <div className="md:col-span-2 space-y-2">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            HP: {data.hp} ({data.hp_wb})
+          </div>
+          <div>
+            攻撃力: {data.attack} ({data.attack_wb})
+          </div>
+          <div>防御力: {data.defense}</div>
+          <div>
+            治癒力: {data.heal} ({data.heal_wb})
+          </div>
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          <div>EXスキル: {data.ex_skill}</div>
+          <div>ノーマルスキル: {data.normal_skill}</div>
+          <div>パッシブスキル: {data.passive_skill}</div>
+          <div>サブスキル: {data.sub_skill}</div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>固有武器Lv: {data.unique_level}</div>
+          <div>固有武器星: {data.unique_star}</div>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <div>装備1Tier: {data.equip1}</div>
+          <div>装備2Tier: {data.equip2}</div>
+          <div>装備3Tier: {data.equip3}</div>
+        </div>
+      </div>
+      <div className="flex flex-col items-end justify-end space-y-1">
+        <div>
+          絆 {data.bond} {student?.name} 星 {data.star} ({student?.role})
+        </div>
+        {otherIds.map((id) => {
+          const name = students.find((s) => s.id === id)?.name || id
+          return (
+            <div key={id}>
+              絆({name}): {altBonds[id] ?? 0}
+            </div>
+          )
+        })}
+        <div>レベル: {data.level}</div>
+        <div>クラス: {student?.characterType}</div>
+      </div>
     </div>
   )
 }
