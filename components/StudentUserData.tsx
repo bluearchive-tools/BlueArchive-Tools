@@ -118,7 +118,7 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
           />
         )}
         <div className="absolute inset-0 flex flex-col justify-end text-white p-2 space-y-1">
-          <div className={`flex flex-wrap gap-1 items-center ${!dark ? 'bg-[#114073] bg-opacity-90 px-1' : ''}`}>
+          <div className="flex flex-wrap gap-1 items-center bg-[#114073] bg-opacity-90 px-1">
             <button
               type="button"
               onClick={() => setShowBonds(true)}
@@ -141,7 +141,7 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
               {student?.role}
             </span>
           </div>
-          <div className={`${!dark ? 'bg-[#114073] bg-opacity-90 px-1' : ''} inline-block w-20 text-center`}>Lv. {data.level}</div>
+          <div className="bg-[#114073] bg-opacity-90 px-1 inline-block w-20 text-center">Lv. {data.level}</div>
           <div className="flex gap-1">
             <span className="inline-block skew-x-12">
               <span className="-skew-x-12 bg-white text-[#114073] italic px-1 inline-block w-20 text-center">
