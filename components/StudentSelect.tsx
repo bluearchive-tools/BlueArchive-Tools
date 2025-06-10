@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { toKatakana } from 'wanakana'
 
 interface Student {
   id: string
@@ -14,6 +15,7 @@ interface Student {
   initialStars: number
   role: string
   characterType: string
+  position: string
 }
 
 interface Props {
@@ -32,6 +34,15 @@ export default function StudentSelect({ students, value, onChange }: Props) {
   const [typeFilter, setTypeFilter] = useState<string[]>([])
   const ref = useRef<HTMLDivElement>(null)
 
+  const resetFilters = () => {
+    setQuery('')
+    setAttackFilter([])
+    setDefenseFilter([])
+    setStarFilter([])
+    setRoleFilter([])
+    setTypeFilter([])
+  }
+
   useEffect(() => {
     const handle = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -49,8 +60,8 @@ export default function StudentSelect({ students, value, onChange }: Props) {
   const typeOptions = Array.from(new Set(students.map((s) => s.characterType)))
 
   const filtered = students.filter((s) => {
-    const q = query.toLowerCase()
-    const nameOk = s.name.toLowerCase().includes(q)
+    const q = toKatakana(query).toLowerCase()
+    const nameOk = toKatakana(s.name).toLowerCase().includes(q)
     const attackOk = attackFilter.length ? attackFilter.includes(s.attackType) : true
     const defenseOk = defenseFilter.length ? defenseFilter.includes(s.defenseType) : true
     const starOk = starFilter.length ? starFilter.includes(s.initialStars) : true
@@ -66,19 +77,28 @@ export default function StudentSelect({ students, value, onChange }: Props) {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="border rounded w-full p-1 text-left"
+        className="border rounded w-full p-1 text-left dark:bg-gray-800 dark:border-gray-700 dark:text-white"
       >
         {selected ? selected.name : '生徒選択'}
       </button>
       {open && (
-        <div className="absolute z-10 bg-white dark:bg-gray-800 border rounded w-full p-2 space-y-2 max-h-96 overflow-y-auto">
-          <input
-            type="text"
-            placeholder="検索"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="border rounded p-1 w-full"
-          />
+        <div className="absolute z-10 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded w-full p-2 space-y-2 max-h-96 overflow-y-auto">
+          <div className="flex items-start gap-2">
+            <input
+              type="text"
+              placeholder="検索"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="border rounded p-1 flex-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white"
+            />
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="text-sm underline whitespace-nowrap"
+            >
+              リセット
+            </button>
+          </div>
           <div className="flex flex-wrap gap-2">
             {attackTypes.map((at) => (
               <label key={at} className="text-sm flex items-center gap-1">
@@ -159,7 +179,7 @@ export default function StudentSelect({ students, value, onChange }: Props) {
               </label>
             ))}
           </div>
-          <ul className="border-t pt-2 space-y-1 max-h-40 overflow-y-auto">
+          <ul className="border-t dark:border-gray-700 pt-2 space-y-1 max-h-40 overflow-y-auto">
             {filtered.map((s) => (
               <li key={s.id}>
                 <button
