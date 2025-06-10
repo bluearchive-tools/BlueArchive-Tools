@@ -276,7 +276,7 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
             <div key={i} className="skew-x-12">
               <div
                 className={`-skew-x-12 rounded-lg border relative w-full aspect-square flex items-end justify-start ${
-                  i === 3 && !student?.hasAccessory ? 'bg-gray-300 text-gray-500 border-gray-300' : 'text-[#4298f5] border-[#4298f5]'
+                  i === 3 && !student?.hasAccessory ? 'bg-gray-300 text-gray-500 border-black' : 'text-[#4298f5] border-black'
                 }`}
               >
                 {i === 3 && !student?.hasAccessory ? (
