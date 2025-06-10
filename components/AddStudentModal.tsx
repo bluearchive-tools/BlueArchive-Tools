@@ -47,10 +47,11 @@ interface UserStudent {
 interface AddStudentModalProps {
   addStudents: (students: Student[]) => void
   addStudent: (student: Student) => void
+  onAdded: () => void
   close: () => void
 }
 
-export default function AddStudentModal({ addStudents, addStudent, close }: AddStudentModalProps) {
+export default function AddStudentModal({ addStudents, addStudent, onAdded, close }: AddStudentModalProps) {
   const { dark } = useTheme()
   const [mode, setMode] = useState<'menu' | 'manual' | 'image'>('menu')
   const [visible, setVisible] = useState(false)
@@ -371,6 +372,7 @@ export default function AddStudentModal({ addStudents, addStudent, close }: AddS
       alert(error.message)
       return
     }
+    onAdded()
     handleClose()
   }
 
