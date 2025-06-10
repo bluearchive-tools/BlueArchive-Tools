@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* ここではあくまでサーバー→クライアントの橋渡しだけ */}
         <Providers>
           <Header />
-          <main className="pt-16 pb-16">{children}</main>
+          <main className="pt-4 pb-16">{children}</main>
           <Footer />
         </Providers>
       </body>
