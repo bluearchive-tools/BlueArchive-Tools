@@ -93,53 +93,56 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
   const altBonds = data.alt_bonds || {}
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-      <div className="flex flex-col items-start justify-end space-y-1">
-        <div>
-          絆 {data.bond} {student?.name} 星 {data.star} ({student?.role})
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+      <div className="flex flex-col justify-between items-start">
+        {student && (
+          <img
+            src={student.image}
+            alt={student.name}
+            className="w-full object-contain mb-2"
+          />
+        )}
+        <div className="space-y-1">
+          <div>絆 {data.bond}</div>
+          <div>{student?.name}</div>
+          <div>{data.star} ({student?.role})</div>
+          <div>{data.level}</div>
+          <div className="flex gap-2">
+            <div>{student?.characterType}</div>
+            <div>{student?.attackType}</div>
+          </div>
+          <div>{student?.defenseType}</div>
+          {otherIds.map((id) => {
+            const name = students.find((s) => s.id === id)?.name || id
+            return (
+              <div key={id} className="text-xs">
+                絆({name}) {altBonds[id] ?? 0}
+              </div>
+            )
+          })}
         </div>
-        {otherIds.map((id) => {
-          const name = students.find((s) => s.id === id)?.name || id
-          return (
-            <div key={id}>
-              絆({name}): {altBonds[id] ?? 0}
-            </div>
-          )
-        })}
-        <div>レベル: {data.level}</div>
-        <div className="flex gap-2">
-          <div>クラス: {student?.characterType}</div>
-          <div>攻撃属性: {student?.attackType}</div>
-        </div>
-        <div>防御属性: {student?.defenseType}</div>
       </div>
-      <div className="md:col-span-2 space-y-2">
+      <div className="flex flex-col justify-between space-y-2">
         <div className="grid grid-cols-2 gap-2">
-          <div>
-            HP: {data.hp} ({data.hp_wb})
-          </div>
-          <div>
-            攻撃力: {data.attack} ({data.attack_wb})
-          </div>
-          <div>防御力: {data.defense}</div>
-          <div>
-            治癒力: {data.heal} ({data.heal_wb})
-          </div>
+          <div>HP {data.hp} ({data.hp_wb})</div>
+          <div>攻撃力 {data.attack} ({data.attack_wb})</div>
+          <div>防御力 {data.defense}</div>
+          <div>治癒力 {data.heal} ({data.heal_wb})</div>
         </div>
-        <div className="grid grid-cols-4 gap-2">
-          <div>EXスキル: {data.ex_skill}</div>
-          <div>ノーマルスキル: {data.normal_skill}</div>
-          <div>パッシブスキル: {data.passive_skill}</div>
-          <div>サブスキル: {data.sub_skill}</div>
+        <div className="grid grid-cols-4 gap-2 text-center">
+          <div>{data.ex_skill}</div>
+          <div>{data.normal_skill}</div>
+          <div>{data.passive_skill}</div>
+          <div>{data.sub_skill}</div>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div>固有武器Lv: {data.unique_level}</div>
-          <div>固有武器星: {data.unique_star}</div>
+        <div className="grid grid-cols-2 gap-2 text-center">
+          <div>{data.unique_level}</div>
+          <div>{data.unique_star}</div>
         </div>
-        <div className="grid grid-cols-3 gap-2">
-          <div>装備1Tier: {data.equip1}</div>
-          <div>装備2Tier: {data.equip2}</div>
-          <div>装備3Tier: {data.equip3}</div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div>{data.equip1}</div>
+          <div>{data.equip2}</div>
+          <div>{data.equip3}</div>
         </div>
       </div>
     </div>
