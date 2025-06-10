@@ -2,12 +2,12 @@
 import './globals.css'
 import { Providers } from './providers'
 import Header from '../components/Header'
-import { M_PLUS_2 } from 'next/font/google'
+import { M_PLUS_Rounded_1c } from 'next/font/google'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
 config.autoAddCss = false
 
-const mplus = M_PLUS_2({
+const mplus = M_PLUS_Rounded_1c({
   weight: '500',
   subsets: ['latin'],
   display: 'swap',
