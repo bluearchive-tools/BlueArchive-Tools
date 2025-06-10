@@ -6,6 +6,25 @@ import { useTheme } from './ThemeProvider'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faHeart, faStar } from '@fortawesome/free-solid-svg-icons'
 
+function attrBg(attr?: string) {
+  switch (attr) {
+    case '爆発':
+    case '軽装備':
+      return 'bg-red-500'
+    case '貫通':
+    case '重装甲':
+      return 'bg-yellow-500'
+    case '神秘':
+    case '特殊装甲':
+      return 'bg-blue-500'
+    case '振動':
+    case '弾力装甲':
+      return 'bg-pink-500'
+    default:
+      return 'bg-gray-500'
+  }
+}
+
 interface Student {
   id: string
   name: string
@@ -99,34 +118,31 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
           />
         )}
         <div className="absolute inset-0 flex flex-col justify-end text-white p-2 space-y-1">
-          <div className="flex justify-between items-center">
-              <button
-                type="button"
-                onClick={() => setShowBonds(true)}
-                className={`text-pink-400 flex items-center gap-1 ${!dark ? 'bg-[#114073] bg-opacity-90 px-1 rounded' : ''}`}
-              >
-                <FontAwesomeIcon icon={faHeart} />
-                {data.bond}
-              </button>
-              <span className={`flex-1 text-left ${!dark ? 'bg-[#114073] bg-opacity-90 px-1' : ''}`}>{student?.name}</span>
-              <span className={`flex items-center gap-1 justify-end ${!dark ? 'bg-[#114073] bg-opacity-90 px-1' : ''}`}>
+          <div className={`flex flex-wrap gap-1 items-center ${!dark ? 'bg-[#114073] bg-opacity-90 px-1' : ''}`}>
+            <button
+              type="button"
+              onClick={() => setShowBonds(true)}
+              className="text-pink-400 flex items-center gap-1"
+            >
+              <FontAwesomeIcon icon={faHeart} />
+              {data.bond}
+            </button>
+            <span className="flex-1 text-left">{student?.name}</span>
+            <span className="flex items-center gap-px justify-end">
               {Array.from({ length: data.star }).map((_, i) => (
-                <FontAwesomeIcon
-                  key={i}
-                  icon={faStar}
-                  className="text-yellow-400"
-                />
+                <FontAwesomeIcon key={i} icon={faStar} className="text-yellow-400" />
               ))}
-                <span className="italic">{student?.role}</span>
-              </span>
-            </div>
-            <div className={!dark ? 'bg-[#114073] bg-opacity-90 inline-block px-1' : ''}>Lv. {data.level}</div>
-            <div className={!dark ? 'bg-[#114073] bg-opacity-90 inline-block px-1' : ''}>
-              {student?.characterType} {student?.attackType}
-            </div>
-            <div className={!dark ? 'bg-[#114073] bg-opacity-90 inline-block px-1' : ''}>
-              <span className="italic">{student?.position}</span> <span className="italic">{student?.defenseType}</span>
-            </div>
+            </span>
+            <span className="italic">{student?.role}</span>
+            <span>Lv. {data.level}</span>
+          </div>
+          <div className="flex gap-1">
+            <span className="bg-white text-[#114073] px-1">{student?.characterType}</span>
+            <span className={`${attrBg(student?.attackType)} text-white px-1`}>{student?.attackType}</span>
+          </div>
+          <div className={`${attrBg(student?.defenseType)} text-white px-1`}>
+            <span className="italic mr-1">{student?.position}</span>{student?.defenseType}
+          </div>
           </div>
         </div>
       <div className="flex flex-col justify-between space-y-2">
@@ -144,7 +160,7 @@ export default function StudentUserData({ studentId }: { studentId: string }) {
         </div>
         <div className="grid grid-cols-2 gap-2 text-center">
           <div>{data.unique_level}</div>
-          <div className="space-x-1">
+          <div className="space-x-px">
             {Array.from({ length: data.unique_star }).map((_, i) => (
               <FontAwesomeIcon
                 key={i}
