@@ -1,0 +1,30 @@
+{
+  "weapon": {
+    "tiers": [
+      { "tier": 1, "name": "訓練用武器", "values": { "attack": 5 } },
+      { "tier": 2, "name": "実戦用武器", "values": { "attack": 10 } },
+      { "tier": 3, "name": "高級武器", "values": { "attack": 15 } }
+    ]
+  },
+  "gloves": {
+    "tiers": [
+      { "tier": 1, "name": "レザーグローブ", "values": { "crit": 2 } },
+      { "tier": 2, "name": "強化グローブ", "values": { "crit": 4 } },
+      { "tier": 3, "name": "戦術グローブ", "values": { "crit": 6 } }
+    ]
+  },
+  "shoes": {
+    "tiers": [
+      { "tier": 1, "name": "トレーニングシューズ", "values": { "speed": 1 } },
+      { "tier": 2, "name": "戦闘シューズ", "values": { "speed": 2 } },
+      { "tier": 3, "name": "戦術シューズ", "values": { "speed": 3 } }
+    ]
+  },
+  "accessory": {
+    "tiers": [
+      { "tier": 1, "name": "シンプルなアクセサリ", "values": { "hp": 50 } },
+      { "tier": 2, "name": "高級アクセサリ", "values": { "hp": 100 } },
+      { "tier": 3, "name": "特製アクセサリ", "values": { "hp": 150 } }
+    ]
+  }
+}
