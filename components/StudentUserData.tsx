@@ -296,7 +296,7 @@ export default function StudentUserData({
           {[
             { label: 'EXスキル', value: data.ex_skill, field: 'ex_skill', ex: true, max: 5 },
             { label: 'ノーマルスキル', value: data.normal_skill, field: 'normal_skill', max: 10 },
-            { label: 'パッシブスキル', value: data.passive_skill, field: 'passive_skill', max: 10 },
+            { label: data.unique_star >= 2 ? "パッシブスキル+" : "パッシブスキル", value: data.passive_skill, field: "passive_skill", max: 10 },
             { label: 'サブスキル', value: data.sub_skill, field: 'sub_skill', max: 10 },
           ].map((skill, i) => (
             <div key={i} className="skew-x-12">
