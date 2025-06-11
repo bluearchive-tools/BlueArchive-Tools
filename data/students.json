@@ -9,7 +9,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "2",
@@ -21,7 +109,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "3",
@@ -33,7 +209,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "4",
@@ -45,7 +309,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "タンク",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "5",
@@ -57,7 +409,95 @@
     "initialStars": 3,
     "role": "SPECIAL",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "6",
@@ -69,7 +509,95 @@
     "initialStars": 3,
     "role": "SPECIAL",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "7",
@@ -81,7 +609,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "8",
@@ -93,7 +709,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "9",
@@ -105,7 +809,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "10",
@@ -117,7 +909,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "11",
@@ -129,7 +1009,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "12",
@@ -141,7 +1109,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "13",
@@ -153,7 +1209,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "14",
@@ -165,7 +1309,95 @@
     "initialStars": 3,
     "role": "SPECIAL",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "15",
@@ -177,7 +1409,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "16",
@@ -189,7 +1509,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "タンク",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "17",
@@ -201,7 +1609,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "18",
@@ -213,7 +1709,95 @@
     "initialStars": 2,
     "role": "SPECIAL",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "19",
@@ -225,7 +1809,95 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "20",
@@ -237,7 +1909,95 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "21",
@@ -249,7 +2009,95 @@
     "initialStars": 2,
     "role": "SPECIAL",
     "characterType": "ヒーラー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "22",
@@ -261,7 +2109,95 @@
     "initialStars": 2,
     "role": "SPECIAL",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "23",
@@ -273,7 +2209,95 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "24",
@@ -285,7 +2309,95 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "25",
@@ -297,7 +2409,95 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "26",
@@ -309,7 +2509,95 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "27",
@@ -321,7 +2609,95 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "タンク",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "28",
@@ -333,7 +2709,95 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "29",
@@ -345,7 +2809,95 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "30",
@@ -357,7 +2909,95 @@
     "initialStars": 2,
     "role": "SPECIAL",
     "characterType": "ヒーラー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "31",
@@ -369,7 +3009,95 @@
     "initialStars": 2,
     "role": "SPECIAL",
     "characterType": "サポーター",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "32",
@@ -381,7 +3109,95 @@
     "initialStars": 2,
     "role": "SPECIAL",
     "characterType": "ヒーラー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "33",
@@ -393,7 +3209,95 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "34",
@@ -405,7 +3309,95 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "タンク",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "35",
@@ -417,7 +3409,95 @@
     "initialStars": 1,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "36",
@@ -429,7 +3509,95 @@
     "initialStars": 1,
     "role": "SPECIAL",
     "characterType": "サポーター",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "37",
@@ -441,7 +3609,95 @@
     "initialStars": 1,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "38",
@@ -453,7 +3709,95 @@
     "initialStars": 1,
     "role": "SPECIAL",
     "characterType": "サポーター",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "39",
@@ -465,7 +3809,95 @@
     "initialStars": 1,
     "role": "SPECIAL",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "40",
@@ -477,7 +3909,95 @@
     "initialStars": 1,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "41",
@@ -489,7 +4009,95 @@
     "initialStars": 1,
     "role": "SPECIAL",
     "characterType": "ヒーラー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "42",
@@ -501,7 +4109,95 @@
     "initialStars": 1,
     "role": "SPECIAL",
     "characterType": "ヒーラー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "43",
@@ -513,7 +4209,95 @@
     "initialStars": 1,
     "role": "STRIKER",
     "characterType": "タンク",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "44",
@@ -525,7 +4309,95 @@
     "initialStars": 1,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "45",
@@ -537,7 +4409,95 @@
     "initialStars": 1,
     "role": "SPECIAL",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "46",
@@ -549,7 +4509,95 @@
     "initialStars": 3,
     "role": "SPECIAL",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "47",
@@ -561,7 +4609,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "48",
@@ -573,7 +4709,95 @@
     "initialStars": 2,
     "role": "SPECIAL",
     "characterType": "サポーター",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "49",
@@ -585,7 +4809,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "50",
@@ -597,7 +4909,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "51",
@@ -609,7 +5009,95 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "52",
@@ -621,7 +5109,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "53",
@@ -633,7 +5209,95 @@
     "initialStars": 1,
     "role": "SPECIAL",
     "characterType": "サポーター",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "54",
@@ -645,7 +5309,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "55",
@@ -660,7 +5412,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "56",
@@ -672,7 +5512,95 @@
     "initialStars": 2,
     "role": "SPECIAL",
     "characterType": "ヒーラー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "57",
@@ -684,7 +5612,95 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "ヒーラー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   },
   {
     "id": "58",
@@ -697,6 +5713,94 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT"
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
   }
 ]
