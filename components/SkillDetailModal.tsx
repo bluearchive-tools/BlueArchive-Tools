@@ -1,7 +1,7 @@
 'use client'
 
 import { useTheme } from './ThemeProvider'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 interface Skill {
   title: string
@@ -22,10 +22,35 @@ export default function SkillDetailModal({
   const [visible, setVisible] = useState(false)
   useEffect(() => setVisible(true), [])
 
-  const formatted = skill.text.replace(/\{(\w+)\}/g, (_, key) => {
-    const arr = skill.values?.[key]
-    return arr && arr[level - 1] !== undefined ? String(arr[level - 1]) : ''
-  })
+  const formatText = () => {
+    const regex = /\*\*(.+?)\*\*|\{(\w+)\}/g
+    const parts: React.ReactNode[] = []
+    let lastIndex = 0
+    for (const match of skill.text.matchAll(regex)) {
+      if (match.index === undefined) continue
+      if (match.index > lastIndex) {
+        parts.push(skill.text.slice(lastIndex, match.index))
+      }
+      if (match[1]) {
+        parts.push(<b key={parts.length}>{match[1]}</b>)
+      } else if (match[2]) {
+        const arr = skill.values?.[match[2]]
+        const val = arr && arr[level - 1] !== undefined ? arr[level - 1] : ''
+        parts.push(
+          <span key={parts.length} className="text-sky-400 font-bold">
+            {val}
+          </span>
+        )
+      }
+      lastIndex = match.index + match[0].length
+    }
+    if (lastIndex < skill.text.length) {
+      parts.push(skill.text.slice(lastIndex))
+    }
+    return parts
+  }
+
+  const formatted = formatText()
 
   const handleClose = () => {
     setVisible(false)

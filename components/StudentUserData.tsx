@@ -317,8 +317,8 @@ export default function StudentUserData({
         <div className="grid grid-cols-4 gap-1 text-center">
           {[
             { label: 'EXスキル', value: data.ex_skill, field: 'ex_skill', key: 'ex', ex: true, max: 5 },
-            { label: 'ノーマルスキル', value: data.normal_skill, field: 'normal_skill', key: 'normal', max: 10 },
-            { label: data.unique_star >= 2 ? "パッシブスキル+" : "パッシブスキル", value: data.passive_skill, field: "passive_skill", key: 'passive', max: 10 },
+            { label: data.item_tier >= 2 ? 'ノーマルスキル+' : 'ノーマルスキル', value: data.normal_skill, field: 'normal_skill', key: 'normal', max: 10 },
+            { label: data.unique_star >= 2  ? "パッシブスキル+" : "パッシブスキル", value: data.passive_skill, field: "passive_skill", key: 'passive', max: 10 },
             { label: 'サブスキル', value: data.sub_skill, field: 'sub_skill', key: 'sub', max: 10 },
           ].map((skill, i) => (
             <div key={i} className="skew-x-12">
@@ -334,7 +334,10 @@ export default function StudentUserData({
                       max: skill.max,
                     })
                   } else if (student) {
-                    const sk = student.skills?.[skill.key]
+                    let key = skill.key
+                    if (skill.key === 'normal' && data.item_tier >= 2) key = 'normalPlus'
+                    if (skill.key === 'passive' && data.unique_star >= 2) key = 'passivePlus'
+                    const sk = student.skills?.[key] || student.skills?.[skill.key]
                     if (sk) setSkillDetail({ skill: sk, level: skill.value })
                   }
                 }}
