@@ -44,6 +44,7 @@ interface Student {
   position: string
   skills?: Record<string, Skill>
   equipmentSlots?: Record<string, string[]>
+  accessory?: { tiers: { tier: number; name: string; description: string }[] }
 }
 
 interface Skill {
@@ -94,9 +95,9 @@ export default function StudentUserData({
     | null
   >(null)
   const [editBonds, setEditBonds] = useState(false)
-  const [equipment, setEquipment] = useState<Record<string, { tiers: { tier: number; name: string; values: Record<string, number> }[] }>>({})
+  const [equipment, setEquipment] = useState<Record<string, { tiers: { tier: number; name: string; description: string }[] }>>({})
   const [skillDetail, setSkillDetail] = useState<{ skill: Skill; level: number } | null>(null)
-  const [gearDetail, setGearDetail] = useState<{ type: string; tier: number } | null>(null)
+  const [gearDetail, setGearDetail] = useState<{ type: string; tier: number; equipment?: Record<string, { tiers: { tier: number; name: string; description: string }[] }> } | null>(null)
   useEffect(() => {
     const loadStudents = async () => {
       try {
@@ -317,8 +318,8 @@ export default function StudentUserData({
         <div className="grid grid-cols-4 gap-1 text-center">
           {[
             { label: 'EXスキル', value: data.ex_skill, field: 'ex_skill', key: 'ex', ex: true, max: 5 },
-            { label: 'ノーマルスキル', value: data.normal_skill, field: 'normal_skill', key: 'normal', max: 10 },
-            { label: data.unique_star >= 2 ? "パッシブスキル+" : "パッシブスキル", value: data.passive_skill, field: "passive_skill", key: 'passive', max: 10 },
+            { label: data.item_tier >= 2 ? 'ノーマルスキル+' : 'ノーマルスキル', value: data.normal_skill, field: 'normal_skill', key: 'normal', max: 10 },
+            { label: data.unique_star >= 2  ? "パッシブスキル+" : "パッシブスキル", value: data.passive_skill, field: "passive_skill", key: 'passive', max: 10 },
             { label: 'サブスキル', value: data.sub_skill, field: 'sub_skill', key: 'sub', max: 10 },
           ].map((skill, i) => (
             <div key={i} className="skew-x-12">
@@ -334,7 +335,10 @@ export default function StudentUserData({
                       max: skill.max,
                     })
                   } else if (student) {
-                    const sk = student.skills?.[skill.key]
+                    let key = skill.key
+                    if (skill.key === 'normal' && data.item_tier >= 2) key = 'normalPlus'
+                    if (skill.key === 'passive' && data.unique_star >= 2) key = 'passivePlus'
+                    const sk = student.skills?.[key] || student.skills?.[skill.key]
                     if (sk) setSkillDetail({ skill: sk, level: skill.value })
                   }
                 }}
@@ -415,9 +419,17 @@ export default function StudentUserData({
                       max: 10,
                     })
                   } else if (!editMode && gear.value !== 'EMPTY' && student) {
-                    const types = student.equipmentSlots?.[gear.slot]
-                    if (types && types.length) {
-                      setGearDetail({ type: types[0], tier: gear.value as number })
+                    if (gear.slot === 'accessory' && student.accessory) {
+                      setGearDetail({
+                        type: 'accessory',
+                        tier: gear.value as number,
+                        equipment: { accessory: student.accessory },
+                      })
+                    } else {
+                      const types = student.equipmentSlots?.[gear.slot]
+                      if (types && types.length) {
+                        setGearDetail({ type: types[0], tier: gear.value as number })
+                      }
                     }
                   }
                 }}
@@ -507,7 +519,7 @@ export default function StudentUserData({
         <EquipmentDetailModal
           type={gearDetail.type}
           tier={gearDetail.tier}
-          equipment={equipment}
+          equipment={gearDetail.equipment || equipment}
           onClose={() => setGearDetail(null)}
         />
       )}
