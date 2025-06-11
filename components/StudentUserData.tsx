@@ -7,6 +7,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faHeart, faStar } from '@fortawesome/free-solid-svg-icons'
 import EditValueModal from './EditValueModal'
 import EditBondsModal from './EditBondsModal'
+import SkillDetailModal from './SkillDetailModal'
+import EquipmentDetailModal from './EquipmentDetailModal'
 
 function attrBg(attr?: string) {
   switch (attr) {
@@ -40,6 +42,14 @@ interface Student {
   role: string
   characterType: string
   position: string
+  skills?: Record<string, Skill>
+  equipmentSlots?: Record<string, string[]>
+}
+
+interface Skill {
+  title: string
+  text: string
+  values: Record<string, number[]>
 }
 
 interface UserStudent {
@@ -84,6 +94,9 @@ export default function StudentUserData({
     | null
   >(null)
   const [editBonds, setEditBonds] = useState(false)
+  const [equipment, setEquipment] = useState<Record<string, { tiers: { tier: number; name: string; values: Record<string, number> }[] }>>({})
+  const [skillDetail, setSkillDetail] = useState<{ skill: Skill; level: number } | null>(null)
+  const [gearDetail, setGearDetail] = useState<{ type: string; tier: number } | null>(null)
   useEffect(() => {
     const loadStudents = async () => {
       try {
@@ -93,7 +106,16 @@ export default function StudentUserData({
         /* ignore */
       }
     }
+    const loadEquip = async () => {
+      try {
+        const res = await fetch('/api/equipment')
+        if (res.ok) setEquipment(await res.json())
+      } catch {
+        /* ignore */
+      }
+    }
     loadStudents()
+    loadEquip()
   }, [])
   const loadData = async () => {
     if (!session) return
@@ -294,24 +316,28 @@ export default function StudentUserData({
         </div>
         <div className="grid grid-cols-4 gap-1 text-center">
           {[
-            { label: 'EXスキル', value: data.ex_skill, field: 'ex_skill', ex: true, max: 5 },
-            { label: 'ノーマルスキル', value: data.normal_skill, field: 'normal_skill', max: 10 },
-            { label: data.unique_star >= 2 ? "パッシブスキル+" : "パッシブスキル", value: data.passive_skill, field: "passive_skill", max: 10 },
-            { label: 'サブスキル', value: data.sub_skill, field: 'sub_skill', max: 10 },
+            { label: 'EXスキル', value: data.ex_skill, field: 'ex_skill', key: 'ex', ex: true, max: 5 },
+            { label: 'ノーマルスキル', value: data.normal_skill, field: 'normal_skill', key: 'normal', max: 10 },
+            { label: data.unique_star >= 2 ? "パッシブスキル+" : "パッシブスキル", value: data.passive_skill, field: "passive_skill", key: 'passive', max: 10 },
+            { label: 'サブスキル', value: data.sub_skill, field: 'sub_skill', key: 'sub', max: 10 },
           ].map((skill, i) => (
             <div key={i} className="skew-x-12">
               <div
                 className={`-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1 cursor-pointer${editMode ? ' edit-highlight' : ''}`}
-                onClick={() =>
-                  editMode &&
-                  setEditField({
-                    field: skill.field,
-                    label: skill.label,
-                    value: skill.value,
-                    min: 1,
-                    max: skill.max,
-                  })
-                }
+                onClick={() => {
+                  if (editMode) {
+                    setEditField({
+                      field: skill.field,
+                      label: skill.label,
+                      value: skill.value,
+                      min: 1,
+                      max: skill.max,
+                    })
+                  } else if (student) {
+                    const sk = student.skills?.[skill.key]
+                    if (sk) setSkillDetail({ skill: sk, level: skill.value })
+                  }
+                }}
               >
                 <span className="text-xs italic">{skill.label}</span>
                 <div className="relative flex justify-center items-center my-1">
@@ -369,10 +395,10 @@ export default function StudentUserData({
         </div>
         <div className="grid grid-cols-4 gap-1 text-center">
           {[
-            { value: data.equip1, field: 'equip1' },
-            { value: data.equip2, field: 'equip2' },
-            { value: data.equip3, field: 'equip3' },
-            { value: student?.hasAccessory ? data.item_tier : 'EMPTY', field: 'item_tier' },
+            { value: data.equip1, field: 'equip1', slot: 'slot1' },
+            { value: data.equip2, field: 'equip2', slot: 'slot2' },
+            { value: data.equip3, field: 'equip3', slot: 'slot3' },
+            { value: student?.hasAccessory ? data.item_tier : 'EMPTY', field: 'item_tier', slot: 'accessory' },
           ].map((gear, i) => (
             <div key={i} className="skew-x-12">
               <div
@@ -388,6 +414,11 @@ export default function StudentUserData({
                       min: 0,
                       max: 10,
                     })
+                  } else if (!editMode && gear.value !== 'EMPTY' && student) {
+                    const types = student.equipmentSlots?.[gear.slot]
+                    if (types && types.length) {
+                      setGearDetail({ type: types[0], tier: gear.value as number })
+                    }
                   }
                 }}
               >
@@ -463,6 +494,21 @@ export default function StudentUserData({
             setEditBonds(false)
             loadData()
           }}
+        />
+      )}
+      {skillDetail && (
+        <SkillDetailModal
+          skill={skillDetail.skill}
+          level={skillDetail.level}
+          onClose={() => setSkillDetail(null)}
+        />
+      )}
+      {gearDetail && (
+        <EquipmentDetailModal
+          type={gearDetail.type}
+          tier={gearDetail.tier}
+          equipment={equipment}
+          onClose={() => setGearDetail(null)}
         />
       )}
     </>
