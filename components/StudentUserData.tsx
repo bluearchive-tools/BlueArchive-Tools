@@ -44,6 +44,7 @@ interface Student {
   position: string
   skills?: Record<string, Skill>
   equipmentSlots?: Record<string, string[]>
+  accessory?: { tiers: { tier: number; name: string; description: string }[] }
 }
 
 interface Skill {
@@ -94,9 +95,9 @@ export default function StudentUserData({
     | null
   >(null)
   const [editBonds, setEditBonds] = useState(false)
-  const [equipment, setEquipment] = useState<Record<string, { tiers: { tier: number; name: string; values: Record<string, number> }[] }>>({})
+  const [equipment, setEquipment] = useState<Record<string, { tiers: { tier: number; name: string; description: string }[] }>>({})
   const [skillDetail, setSkillDetail] = useState<{ skill: Skill; level: number } | null>(null)
-  const [gearDetail, setGearDetail] = useState<{ type: string; tier: number } | null>(null)
+  const [gearDetail, setGearDetail] = useState<{ type: string; tier: number; equipment?: Record<string, { tiers: { tier: number; name: string; description: string }[] }> } | null>(null)
   useEffect(() => {
     const loadStudents = async () => {
       try {
@@ -418,9 +419,17 @@ export default function StudentUserData({
                       max: 10,
                     })
                   } else if (!editMode && gear.value !== 'EMPTY' && student) {
-                    const types = student.equipmentSlots?.[gear.slot]
-                    if (types && types.length) {
-                      setGearDetail({ type: types[0], tier: gear.value as number })
+                    if (gear.slot === 'accessory' && student.accessory) {
+                      setGearDetail({
+                        type: 'accessory',
+                        tier: gear.value as number,
+                        equipment: { accessory: student.accessory },
+                      })
+                    } else {
+                      const types = student.equipmentSlots?.[gear.slot]
+                      if (types && types.length) {
+                        setGearDetail({ type: types[0], tier: gear.value as number })
+                      }
                     }
                   }
                 }}
@@ -510,7 +519,7 @@ export default function StudentUserData({
         <EquipmentDetailModal
           type={gearDetail.type}
           tier={gearDetail.tier}
-          equipment={equipment}
+          equipment={gearDetail.equipment || equipment}
           onClose={() => setGearDetail(null)}
         />
       )}

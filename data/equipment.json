@@ -1,30 +1,59 @@
 {
   "weapon": {
     "tiers": [
-      { "tier": 1, "name": "訓練用武器", "values": { "attack": 5 } },
-      { "tier": 2, "name": "実戦用武器", "values": { "attack": 10 } },
-      { "tier": 3, "name": "高級武器", "values": { "attack": 15 } }
+      {
+        "tier": 1,
+        "name": "訓練用武器",
+        "description": "訓練で使用される標準的な武器"
+      },
+      {
+        "tier": 2,
+        "name": "実戦用武器",
+        "description": "実戦向けに調整された武器"
+      },
+      {
+        "tier": 3,
+        "name": "高級武器",
+        "description": "高性能な戦術武器"
+      }
     ]
   },
   "gloves": {
     "tiers": [
-      { "tier": 1, "name": "レザーグローブ", "values": { "crit": 2 } },
-      { "tier": 2, "name": "強化グローブ", "values": { "crit": 4 } },
-      { "tier": 3, "name": "戦術グローブ", "values": { "crit": 6 } }
+      {
+        "tier": 1,
+        "name": "レザーグローブ",
+        "description": "簡素な革製グローブ"
+      },
+      {
+        "tier": 2,
+        "name": "強化グローブ",
+        "description": "補強が施されたグローブ"
+      },
+      {
+        "tier": 3,
+        "name": "戦術グローブ",
+        "description": "戦術行動用の高級グローブ"
+      }
     ]
   },
   "shoes": {
     "tiers": [
-      { "tier": 1, "name": "トレーニングシューズ", "values": { "speed": 1 } },
-      { "tier": 2, "name": "戦闘シューズ", "values": { "speed": 2 } },
-      { "tier": 3, "name": "戦術シューズ", "values": { "speed": 3 } }
-    ]
-  },
-  "accessory": {
-    "tiers": [
-      { "tier": 1, "name": "シンプルなアクセサリ", "values": { "hp": 50 } },
-      { "tier": 2, "name": "高級アクセサリ", "values": { "hp": 100 } },
-      { "tier": 3, "name": "特製アクセサリ", "values": { "hp": 150 } }
+      {
+        "tier": 1,
+        "name": "トレーニングシューズ",
+        "description": "初心者向けの軽量シューズ"
+      },
+      {
+        "tier": 2,
+        "name": "戦闘シューズ",
+        "description": "実戦用に作られたシューズ"
+      },
+      {
+        "tier": 3,
+        "name": "戦術シューズ",
+        "description": "高性能な戦術シューズ"
+      }
     ]
   }
 }

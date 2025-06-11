@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 interface TierInfo {
   tier: number
   name: string
-  values: Record<string, number>
+  description: string
 }
 interface EquipType {
   tiers: TierInfo[]
@@ -50,15 +50,7 @@ export default function EquipmentDetailModal({
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="font-bold text-lg">{info?.name || `${type} T${tier}`}</h3>
-        {info && (
-          <ul className="list-disc pl-4">
-            {Object.entries(info.values).map(([k, v]) => (
-              <li key={k}>
-                {k}: {v}
-              </li>
-            ))}
-          </ul>
-        )}
+        {info && <p className="whitespace-pre-line">{info.description}</p>}
         <button type="button" onClick={handleClose} className="underline text-sm block ml-auto">
           閉じる
         </button>

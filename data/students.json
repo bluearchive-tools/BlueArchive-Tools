@@ -159,6 +159,20 @@
       "accessory": [
         "accessory"
       ]
+    },
+    "accessory": {
+      "tiers": [
+        {
+          "tier": 1,
+          "name": "アルの愛用品T1",
+          "description": "アルが大切にしているアクセサリ"
+        },
+        {
+          "tier": 2,
+          "name": "アルの愛用品T2",
+          "description": "強化されたアル専用アクセサリ"
+        }
+      ]
     }
   },
   {
