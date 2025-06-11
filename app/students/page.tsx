@@ -1,10 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowUp, faArrowDown, faPlus } from '@fortawesome/free-solid-svg-icons'
+import type { IconDefinition } from '@fortawesome/free-solid-svg-icons'
+import {
+  faArrowUp,
+  faArrowDown,
+  faPlus,
+  faList,
+  faTableCells,
+  faTableCellsLarge,
+} from '@fortawesome/free-solid-svg-icons'
 import FilterModal from '../../components/FilterModal'
 import AddStudentModal from '../../components/AddStudentModal'
 
@@ -20,6 +28,7 @@ interface Student {
   initialStars: number
   role: string
   characterType: string
+  position: string
 }
 
 interface UserStudent {
@@ -77,7 +86,7 @@ export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([])
   const [userStats, setUserStats] = useState<Record<string, UserStudent>>({})
   const [sortKey, setSortKey] = useState<SortKey>('id')
-  const [asc, setAsc] = useState(true)
+  const [asc, setAsc] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [filterAttacks, setFilterAttacks] = useState<string[]>([])
@@ -85,6 +94,26 @@ export default function StudentsPage() {
   const [filterStars, setFilterStars] = useState<number[]>([])
   const [filterRoles, setFilterRoles] = useState<string[]>([])
   const [filterTypes, setFilterTypes] = useState<string[]>([])
+  const [grid, setGrid] = useState(1)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('students_page_opts')
+    if (saved) {
+      try {
+        const o = JSON.parse(saved)
+        if (o.sortKey) setSortKey(o.sortKey)
+        if (typeof o.asc === 'boolean') setAsc(o.asc)
+        if (Array.isArray(o.filterAttacks)) setFilterAttacks(o.filterAttacks)
+        if (Array.isArray(o.filterDefenses)) setFilterDefenses(o.filterDefenses)
+        if (Array.isArray(o.filterStars)) setFilterStars(o.filterStars)
+        if (Array.isArray(o.filterRoles)) setFilterRoles(o.filterRoles)
+        if (Array.isArray(o.filterTypes)) setFilterTypes(o.filterTypes)
+        if (typeof o.grid === 'number') setGrid(o.grid)
+      } catch {
+        // ignore
+      }
+    }
+  }, [])
 
   const addStudents = (data: Student[]) => {
     setStudents((prev) => [...prev, ...data])
@@ -93,6 +122,21 @@ export default function StudentsPage() {
   const addStudent = (s: Student) => {
     setStudents((prev) => [...prev, s])
   }
+
+  const refreshUserStats = useCallback(async () => {
+    if (!session) return
+    const { data } = await supabase
+      .from('user_students')
+      .select('*')
+      .eq('user_id', session.user.id)
+    if (data) {
+      const map: Record<string, UserStudent> = {}
+      for (const row of data) {
+        map[row.student_id as string] = row as UserStudent
+      }
+      setUserStats(map)
+    }
+  }, [session, supabase])
 
   useEffect(() => {
     const load = async () => {
@@ -109,28 +153,34 @@ export default function StudentsPage() {
   }, [])
 
   useEffect(() => {
-    const loadStats = async () => {
-      if (!session) return
-      const { data } = await supabase
-        .from('user_students')
-        .select('*')
-        .eq('user_id', session.user.id)
-      if (data) {
-        const map: Record<string, UserStudent> = {}
-        for (const row of data) {
-          map[row.student_id as string] = row as UserStudent
-        }
-        setUserStats(map)
-      }
-    }
-    loadStats()
-  }, [session, supabase])
+    refreshUserStats()
+  }, [refreshUserStats])
 
   const attackTypes = Array.from(new Set(students.map((s) => s.attackType)))
   const defenseTypes = Array.from(new Set(students.map((s) => s.defenseType)))
   const starOptions = Array.from(new Set(students.map((s) => s.initialStars))).sort()
   const roleOptions = Array.from(new Set(students.map((s) => s.role)))
   const typeOptions = Array.from(new Set(students.map((s) => s.characterType)))
+  const gridClasses = [
+    'grid grid-cols-1 sm:grid-cols-2 gap-4',
+    'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4',
+    'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4',
+  ]
+  const gridIcons: IconDefinition[] = [faList, faTableCellsLarge, faTableCells]
+
+  useEffect(() => {
+    const opts = {
+      sortKey,
+      asc,
+      filterAttacks,
+      filterDefenses,
+      filterStars,
+      filterRoles,
+      filterTypes,
+      grid,
+    }
+    localStorage.setItem('students_page_opts', JSON.stringify(opts))
+  }, [sortKey, asc, filterAttacks, filterDefenses, filterStars, filterRoles, filterTypes, grid])
 
   const resetFilters = () => {
     setFilterAttacks([])
@@ -152,6 +202,11 @@ export default function StudentsPage() {
   const baseKeys = ['id', 'name', 'attackType', 'defenseType']
 
   const sorted = [...filtered].sort((a, b) => {
+    if (sortKey === 'id') {
+      const va = Number(a.id)
+      const vb = Number(b.id)
+      return asc ? va - vb : vb - va
+    }
     let va: number | string | undefined
     let vb: number | string | undefined
     if (baseKeys.includes(sortKey)) {
@@ -227,8 +282,21 @@ export default function StudentsPage() {
         >
           絞り込み
         </button>
+        <div className="flex gap-1">
+          {gridIcons.map((ic, i) => (
+            <button
+              key={i}
+              onClick={() => setGrid(i)}
+              aria-label={`表示${i + 1}`}
+              className={`border rounded px-2 py-1 ${grid === i ? 'bg-blue-500 text-white' : ''}`}
+              type="button"
+            >
+              <FontAwesomeIcon icon={ic} />
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      <div className={gridClasses[grid]}>
         {sorted.map((s) => (
           <Link
             href={`/students/${s.id}`}
@@ -300,6 +368,7 @@ export default function StudentsPage() {
         <AddStudentModal
           addStudents={addStudents}
           addStudent={addStudent}
+          onAdded={refreshUserStats}
           close={() => setAddOpen(false)}
         />
       )}
