@@ -137,7 +137,7 @@ export default function StudentUserData({
             <button
               type="button"
               onClick={() => setShowBonds(true)}
-              className="relative text-pink-300"
+              className={`relative text-pink-300${editMode ? ' edit-highlight' : ''}`}
             >
               <FontAwesomeIcon
                 icon={faHeart}
@@ -195,7 +195,12 @@ export default function StudentUserData({
       <div className="flex flex-col justify-between space-y-1">
         <div className="border rounded-md p-1">
           <div className="grid grid-cols-2 gap-1 pb-1 border-b border-gray-300">
-            <div onClick={() => editMode && setEditField({ field: 'hp', label: 'HP', value: data.hp })} className="cursor-pointer">
+            <div
+              onClick={() =>
+                editMode && setEditField({ field: 'hp', label: 'HP', value: data.hp })
+              }
+              className={`cursor-pointer${editMode ? ' edit-highlight' : ''}`}
+            >
               HP {data.hp}{' '}
               <span
                 onClick={(e) => {
@@ -210,7 +215,7 @@ export default function StudentUserData({
               >
                 Lv.{data.hp_wb}
                 {data.hp_wb >= 25 && (
-                  <span className="absolute -top-1 right-0 text-[10px]">MAX</span>
+                  <span className="absolute -top-1 right-0 text-[10px] max-gradient">MAX</span>
                 )}
               </span>
             </div>
@@ -218,7 +223,7 @@ export default function StudentUserData({
               onClick={() =>
                 editMode && setEditField({ field: 'attack', label: '攻撃力', value: data.attack })
               }
-              className="cursor-pointer"
+              className={`cursor-pointer${editMode ? ' edit-highlight' : ''}`}
             >
               攻撃力 {data.attack}{' '}
               <span
@@ -240,7 +245,7 @@ export default function StudentUserData({
               >
                 Lv.{data.attack_wb}
                 {data.attack_wb >= 25 && (
-                  <span className="absolute -top-1 right-0 text-[10px]">MAX</span>
+                  <span className="absolute -top-1 right-0 text-[10px] max-gradient">MAX</span>
                 )}
               </span>
             </div>
@@ -250,7 +255,7 @@ export default function StudentUserData({
               onClick={() =>
                 editMode && setEditField({ field: 'defense', label: '防御力', value: data.defense })
               }
-              className="cursor-pointer"
+              className={`cursor-pointer${editMode ? ' edit-highlight' : ''}`}
             >
               防御力 {data.defense}
             </div>
@@ -258,7 +263,7 @@ export default function StudentUserData({
               onClick={() =>
                 editMode && setEditField({ field: 'heal', label: '治癒力', value: data.heal })
               }
-              className="cursor-pointer"
+              className={`cursor-pointer${editMode ? ' edit-highlight' : ''}`}
             >
               治癒力 {data.heal}{' '}
               <span
@@ -280,7 +285,7 @@ export default function StudentUserData({
               >
                 Lv.{data.heal_wb}
                 {data.heal_wb >= 25 && (
-                  <span className="absolute -top-1 right-0 text-[10px]">MAX</span>
+                  <span className="absolute -top-1 right-0 text-[10px] max-gradient">MAX</span>
                 )}
               </span>
             </div>
@@ -295,7 +300,7 @@ export default function StudentUserData({
           ].map((skill, i) => (
             <div key={i} className="skew-x-12">
               <div
-                className="-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1 cursor-pointer"
+                className={`-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1 cursor-pointer${editMode ? ' edit-highlight' : ''}`}
                 onClick={() =>
                   editMode &&
                   setEditField({
@@ -319,12 +324,14 @@ export default function StudentUserData({
                   )}
                 </div>
                 <hr className="border-gray-300 w-full" />
-                <span className="text-sm">
-                  {skill.ex
-                    ? skill.value >= 5
-                      ? 'MAX'
-                      : `Lv.${skill.value}`
-                    : skill.value >= 10
+                <span
+                  className={`text-sm ${
+                    (skill.ex ? skill.value >= 5 : skill.value >= 10) ? 'max-gradient' : ''
+                  }`}
+                >
+                  {(
+                    skill.ex ? (skill.value >= 5) : (skill.value >= 10)
+                  )
                     ? 'MAX'
                     : `Lv.${skill.value}`}
                 </span>
@@ -335,7 +342,7 @@ export default function StudentUserData({
         <div className="grid grid-cols-1 gap-1 text-center">
           <div className="skew-x-12">
             <div
-              className="-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1 space-y-1 cursor-pointer"
+              className={`-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1 space-y-1 cursor-pointer${editMode ? ' edit-highlight' : ''}`}
               onClick={() =>
                 editMode &&
                 setEditField({ field: 'unique_level', label: '固有武器Lv', value: data.unique_level, min: 0 })
@@ -344,7 +351,7 @@ export default function StudentUserData({
               <span className="text-sm">固有武器</span>
               <span>Lv. {data.unique_level}</span>
               <div
-                className="space-x-px"
+                className={`space-x-px${editMode ? ' edit-highlight cursor-pointer' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation()
                   if (editMode) {
@@ -370,7 +377,7 @@ export default function StudentUserData({
               <div
                 className={`-skew-x-12 rounded-lg border relative w-full aspect-square flex items-end justify-start ${
                   i === 3 && !student?.hasAccessory ? 'bg-gray-300 text-gray-500 border-black' : 'text-[#4298f5] border-black'
-                } ${editMode ? 'cursor-pointer' : ''}`}
+                } ${editMode ? 'cursor-pointer edit-highlight' : ''}`}
                 onClick={() => {
                   if (editMode && (i < 3 || student?.hasAccessory)) {
                     setEditField({

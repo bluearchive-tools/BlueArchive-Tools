@@ -47,3 +47,8 @@ body {
     7% 25%
   );
 }
+
+@keyframes edit-highlight {0%,100%{background-color:transparent;}50%{background-color:rgba(253,224,71,0.6);}}
+.edit-highlight{animation:edit-highlight 1s step-end infinite;}
+
+.max-gradient{background:linear-gradient(to right,#f97316,#fde047,#f97316);-webkit-background-clip:text;color:transparent;font-weight:bold;font-style:italic;}
