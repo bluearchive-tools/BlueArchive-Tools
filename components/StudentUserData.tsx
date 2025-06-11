@@ -141,10 +141,11 @@ export default function StudentUserData({
             >
               <FontAwesomeIcon
                 icon={faHeart}
-                className="!w-8 !h-8"
+                className="!w-8 !h-8 text-pink-400"
                 style={{
                   width: '2rem',
                   height: '2rem',
+                  color: '#f472b6',
                   stroke: '#f472b6',
                   strokeWidth: 2,
                 }}
