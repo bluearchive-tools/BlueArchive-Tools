@@ -194,6 +194,9 @@
     "attackType": "貫通",
     "defenseType": "重装甲",
     "hasAccessory": false,
+    "altIds": [
+      "63"
+    ],
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
@@ -294,6 +297,9 @@
     "attackType": "爆発",
     "defenseType": "軽装備",
     "hasAccessory": true,
+    "altIds": [
+      "64"
+    ],
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
@@ -994,6 +1000,9 @@
     "attackType": "貫通",
     "defenseType": "重装甲",
     "hasAccessory": true,
+    "altIds": [
+      "60"
+    ],
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
@@ -1294,6 +1303,9 @@
     "attackType": "爆発",
     "defenseType": "重装甲",
     "hasAccessory": true,
+    "altIds": [
+      "62"
+    ],
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
@@ -1494,6 +1506,9 @@
     "attackType": "貫通",
     "defenseType": "軽装備",
     "hasAccessory": false,
+    "altIds": [
+      "61"
+    ],
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
@@ -4594,6 +4609,9 @@
     "attackType": "爆発",
     "defenseType": "重装甲",
     "hasAccessory": true,
+    "altIds": [
+      "59"
+    ],
     "initialStars": 3,
     "role": "SPECIAL",
     "characterType": "アタッカー",
@@ -5801,6 +5819,612 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
+  },
+  {
+    "id": "59",
+    "name": "マシロ(水着)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "軽装備",
+    "hasAccessory": false,
+    "altOf": "46",
+    "initialStars": 3,
+    "role": "SPECIAL",
+    "characterType": "アタッカー",
+    "position": "BACK",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
+  },
+  {
+    "id": "60",
+    "name": "ツルギ(水着)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "軽装備",
+    "hasAccessory": false,
+    "altOf": "10",
+    "initialStars": 1,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
+  },
+  {
+    "id": "61",
+    "name": "ヒフミ(水着)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "重装甲",
+    "hasAccessory": true,
+    "altOf": "15",
+    "initialStars": 3,
+    "role": "SPECIAL",
+    "characterType": "T.S.",
+    "position": "BACK",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
+  },
+  {
+    "id": "62",
+    "name": "ヒナ(水着)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "altOf": "13",
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
+  },
+  {
+    "id": "63",
+    "name": "イオリ(水着)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false,
+    "altOf": "2",
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {
+          "damage": [
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190
+          ]
+        }
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {
+          "buff": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ]
+        }
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {
+          "passive": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {
+          "crit": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      }
+    },
+    "equipmentSlots": {
+      "slot1": [
+        "weapon"
+      ],
+      "slot2": [
+        "gloves"
+      ],
+      "slot3": [
+        "shoes"
+      ],
+      "accessory": [
+        "accessory"
+      ]
+    }
+  },
+  {
+    "id": "64",
+    "name": "イズミ(水着)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": true,
+    "altOf": "3",
+    "initialStars": 1,
+    "role": "STRIKER",
+    "characterType": "サポーター",
     "position": "FRONT",
     "skills": {
       "ex": {
