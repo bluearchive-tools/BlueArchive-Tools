@@ -40,10 +40,6 @@ export default function TLSearchPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const tlRes = await fetch('/api/timelines')
-        if (tlRes.ok) {
-          setTimelines(await tlRes.json())
-        }
         const raidRes = await fetch('/api/raids')
         if (raidRes.ok) {
           setRaidData(await raidRes.json())
@@ -54,6 +50,17 @@ export default function TLSearchPage() {
     }
     load()
   }, [])
+
+  const handleSearch = async () => {
+    try {
+      const tlRes = await fetch('/api/timelines')
+      if (tlRes.ok) {
+        setTimelines(await tlRes.json())
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   const terrains = raidData?.terrains ?? []
   const armors = raidData?.armors ?? []
@@ -192,10 +199,16 @@ export default function TLSearchPage() {
           <option value="">シーズンを選択</option>
           {availableSeasons.map((s) => (
             <option key={s.number} value={s.number}>
-              {`シーズン${s.number} (${s.boss} ${s.terrain}) (${s.startDate}~${s.endDate})`}
-            </option>
-          ))}
+          {`シーズン${s.number} (${s.boss} ${s.terrain}) (${s.startDate}~${s.endDate})`}
+        </option>
+      ))}
         </select>
+        <button
+          onClick={handleSearch}
+          className="border px-4 py-1 rounded bg-blue-500 text-white"
+        >
+          検索
+        </button>
       </div>
       <ul className="space-y-2">
         {filtered.map((t) => (
