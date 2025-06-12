@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import fs from 'fs/promises'
 import path from 'path'
+import { Timeline } from '../../../types/timeline'
 
 const supabaseUrl = process.env.SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_ANON_KEY!
@@ -14,7 +15,13 @@ interface Season {
   endDate: string
 }
 
-function guessSeason(snippet: any, seasons: Season[]): string | null {
+interface Snippet {
+  title?: string
+  description?: string
+  publishedAt?: string
+}
+
+function guessSeason(snippet: Snippet, seasons: Season[]): string | null {
   const { title = '', description = '', publishedAt } = snippet
   for (const s of seasons) {
     if (
@@ -26,6 +33,7 @@ function guessSeason(snippet: any, seasons: Season[]): string | null {
       return s.number
     }
   }
+  if (!publishedAt) return null
   const date = new Date(publishedAt)
   for (const s of seasons) {
     const start = new Date(s.startDate)
@@ -60,8 +68,8 @@ export async function GET() {
     const raid = JSON.parse(await fs.readFile(raidPath, 'utf-8'))
     const seasons: Season[] = raid.seasons
 
-    await ensureTables(seasons)
-    const timelines: any[] = []
+  await ensureTables(seasons)
+  const timelines: Timeline[] = []
 
     const videos = await fetchVideos()
     for (const info of videos) {
@@ -90,7 +98,7 @@ export async function GET() {
     if (unknown) timelines.push(...unknown)
 
     return NextResponse.json(timelines)
-  } catch (e) {
+  } catch {
     return NextResponse.json([], { status: 500 })
   }
 }
