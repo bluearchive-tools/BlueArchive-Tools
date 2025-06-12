@@ -47,6 +47,7 @@
       "armor": "重装甲",
       "type": "大決戦",
       "defenseArmors": ["軽装備", "重装甲", "特殊装甲"],
+      "maxDifficultyArmors": ["軽装備", "特殊装甲"],
       "maxDifficulty": "Hardcore",
       "startDate": "2024-07-10",
       "endDate": "2024-07-17"

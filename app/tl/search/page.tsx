@@ -10,6 +10,7 @@ interface Season {
   armor: string
   type: string
   defenseArmors: string[]
+  maxDifficultyArmors?: string[]
   maxDifficulty: string
   startDate: string
   endDate: string
@@ -33,6 +34,9 @@ export default function TLSearchPage() {
   const [difficulty, setDifficulty] = useState('')
   const [season, setSeason] = useState('')
 
+  // 簡易的な難易度順
+  const difficultyOrder = raidData?.difficulties ?? []
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -54,7 +58,18 @@ export default function TLSearchPage() {
   const terrains = raidData?.terrains ?? []
   const armors = raidData?.armors ?? []
   const bosses = raidData?.bosses ?? []
-  const difficulties = raidData?.difficulties ?? []
+  const selectedSeason = raidData?.seasons.find((s) => s.number === season)
+
+  let difficulties: string[] = raidData?.difficulties ?? []
+  if (selectedSeason) {
+    const maxIndex = difficultyOrder.indexOf(selectedSeason.maxDifficulty)
+    let allowed = maxIndex
+    if (selectedSeason.type === '大決戦' && armor) {
+      const unlocked = selectedSeason.maxDifficultyArmors?.includes(armor)
+      if (!unlocked) allowed = Math.max(0, allowed - 1)
+    }
+    difficulties = difficultyOrder.slice(0, allowed + 1)
+  }
   const seasonOptions = raidData?.seasons ?? []
   const availableSeasons = seasonOptions.filter((s) => {
     if (boss && s.boss !== boss) return false
@@ -101,7 +116,22 @@ export default function TLSearchPage() {
         </select>
         <select
           value={armor}
-          onChange={(e) => setArmor(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value
+            setArmor(value)
+            if (selectedSeason) {
+              const maxIndex = difficultyOrder.indexOf(selectedSeason.maxDifficulty)
+              let allowed = maxIndex
+              if (selectedSeason.type === '大決戦' && value) {
+                const unlocked = selectedSeason.maxDifficultyArmors?.includes(value)
+                if (!unlocked) allowed = Math.max(0, allowed - 1)
+              }
+              const allowedDiffs = difficultyOrder.slice(0, allowed + 1)
+              if (!allowedDiffs.includes(difficulty)) {
+                setDifficulty('')
+              }
+            }
+          }}
           className="border rounded px-2 py-1 w-full"
         >
           <option value="">装甲を選択</option>
@@ -131,11 +161,26 @@ export default function TLSearchPage() {
             if (value === '') {
               setBoss('')
               setTerrain('')
+              setArmor('')
+              setDifficulty('')
             } else {
               const selected = seasonOptions.find((s) => s.number === value)
               if (selected) {
                 if (!boss) setBoss(selected.boss)
                 if (!terrain) setTerrain(selected.terrain)
+                if (selected.type === '総力戦') {
+                  setArmor(selected.defenseArmors[0])
+                }
+                const maxIndex = difficultyOrder.indexOf(selected.maxDifficulty)
+                let allowed = maxIndex
+                if (selected.type === '大決戦' && armor) {
+                  const unlocked = selected.maxDifficultyArmors?.includes(armor)
+                  if (!unlocked) allowed = Math.max(0, allowed - 1)
+                }
+                const allowedDiffs = difficultyOrder.slice(0, allowed + 1)
+                if (!allowedDiffs.includes(difficulty)) {
+                  setDifficulty('')
+                }
               }
             }
           }}
