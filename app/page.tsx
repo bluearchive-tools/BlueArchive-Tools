@@ -21,12 +21,15 @@ export default function Home() {
           <FeatureItem title="部隊管理" description="部隊を構成できます" />
         </div>
       </CollapsibleBox>
-      <CollapsibleBox title="TLツール(β)" description="TL作成に役立つツールです">
-        <div className="space-y-2">
-          <FeatureItem title="TLメーカー" description="TLを作成できます" />
-          <FeatureItem title="動画toTL" description="動画からTLを自動生成できます" />
-        </div>
-      </CollapsibleBox>
+        <CollapsibleBox title="TLツール(β)" description="TL作成に役立つツールです">
+          <div className="space-y-2">
+            <Link href="/tl/search">
+              <FeatureItem title="TL検索" description="既存のTLを検索できます" />
+            </Link>
+            <FeatureItem title="TLメーカー" description="TLを作成できます" />
+            <FeatureItem title="動画toTL" description="動画からTLを自動生成できます" />
+          </div>
+        </CollapsibleBox>
     </main>
     <Footer />
     </>
