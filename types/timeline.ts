@@ -3,6 +3,7 @@ export interface Timeline {
   boss: string
   terrain: string
   armor: string
+  difficulty: string
   seasons: string[]
   videoId: string
 }

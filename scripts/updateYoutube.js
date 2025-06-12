@@ -33,7 +33,15 @@ async function update() {
   for (const vid of videos) {
     if (!current.some((t) => t.videoId === vid)) {
       maxId += 1
-      current.push({ id: maxId, boss: '', terrain: '', armor: '', seasons: [], videoId: vid })
+      current.push({
+        id: maxId,
+        boss: '',
+        terrain: '',
+        armor: '',
+        difficulty: '',
+        seasons: [],
+        videoId: vid,
+      })
     }
   }
   await fs.writeFile(FILE_PATH, JSON.stringify(current, null, 2))
