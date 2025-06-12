@@ -16,5 +16,13 @@
   "terrains": ["市街地", "屋外", "屋内"],
   "armors": ["軽装備", "重装甲", "特殊装甲", "弾力装甲"],
   "difficulties": ["Hardcore", "Extreme", "Insane", "Torment", "Lunatic"],
-  "seasons": ["2024夏"]
+  "seasons": [
+    {
+      "number": "2024夏",
+      "boss": "デカグラマトン",
+      "terrain": "屋外",
+      "armor": "重装甲",
+      "maxDifficulty": "Hardcore"
+    }
+  ]
 }

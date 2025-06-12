@@ -3,12 +3,20 @@
 import { useEffect, useState } from 'react'
 import { Timeline } from '../../../types/timeline'
 
+interface Season {
+  number: string
+  boss: string
+  terrain: string
+  armor: string
+  maxDifficulty: string
+}
+
 interface RaidData {
   bosses: string[]
   terrains: string[]
   armors: string[]
   difficulties: string[]
-  seasons: string[]
+  seasons: Season[]
 }
 
 export default function TLSearchPage() {
@@ -18,7 +26,7 @@ export default function TLSearchPage() {
   const [terrain, setTerrain] = useState('')
   const [armor, setArmor] = useState('')
   const [difficulty, setDifficulty] = useState('')
-  const [seasons, setSeasons] = useState<string[]>([])
+  const [season, setSeason] = useState('')
 
   useEffect(() => {
     const load = async () => {
@@ -44,20 +52,12 @@ export default function TLSearchPage() {
   const difficulties = raidData?.difficulties ?? []
   const seasonOptions = raidData?.seasons ?? []
 
-  const toggleSeason = (v: string) => {
-    setSeasons((prev) =>
-      prev.includes(v) ? prev.filter((s) => s !== v) : [...prev, v]
-    )
-  }
-
   const filtered = timelines.filter((t) => {
     const bossOk = boss ? t.boss === boss : true
     const terrainOk = terrain ? t.terrain === terrain : true
     const armorOk = armor ? t.armor === armor : true
     const difficultyOk = difficulty ? t.difficulty === difficulty : true
-    const seasonOk = seasons.length
-      ? seasons.every((s) => t.seasons.includes(s))
-      : true
+    const seasonOk = season ? t.seasons.includes(season) : true
     return bossOk && terrainOk && armorOk && difficultyOk && seasonOk
   })
 
@@ -113,18 +113,18 @@ export default function TLSearchPage() {
             </option>
           ))}
         </select>
-        <div className="space-x-2">
+        <select
+          value={season}
+          onChange={(e) => setSeason(e.target.value)}
+          className="border rounded px-2 py-1 w-full"
+        >
+          <option value="">シーズンを選択</option>
           {seasonOptions.map((s) => (
-            <label key={s} className="inline-flex items-center gap-1">
-              <input
-                type="checkbox"
-                checked={seasons.includes(s)}
-                onChange={() => toggleSeason(s)}
-              />
-              <span>{s}</span>
-            </label>
+            <option key={s.number} value={s.number}>
+              {s.number}
+            </option>
           ))}
-        </div>
+        </select>
       </div>
       <ul className="space-y-2">
         {filtered.map((t) => (
