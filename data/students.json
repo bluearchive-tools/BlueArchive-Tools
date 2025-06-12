@@ -7623,7 +7623,7 @@
   },
   {
     "id": "76",
-    "name": チェリノ(温泉)",
+    "name": "チェリノ(温泉)",
     "image": "https://via.placeholder.com/150?text=C",
     "attackType": "爆発",
     "defenseType": "重装甲",
@@ -8237,7 +8237,7 @@
     "initialStars": 3,
     "role": "SPECIAL",
     "characterType": "サポーター",
-    "position": BACK",
+    "position": "BACK",
     "skills": {
       "ex": {
         "title": "サンプルEX",
