@@ -8,6 +8,8 @@ interface Season {
   boss: string
   terrain: string
   armor: string
+  type: string
+  defenseArmors: string[]
   maxDifficulty: string
   startDate: string
   endDate: string
@@ -17,6 +19,7 @@ interface RaidData {
   bosses: string[]
   terrains: string[]
   armors: string[]
+  types: string[]
   difficulties: string[]
   seasons: Season[]
 }
