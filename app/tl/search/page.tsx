@@ -125,10 +125,15 @@ export default function TLSearchPage() {
           onChange={(e) => {
             const value = e.target.value
             setSeason(value)
-            const selected = seasonOptions.find((s) => s.number === value)
-            if (selected) {
-              if (!boss) setBoss(selected.boss)
-              if (!terrain) setTerrain(selected.terrain)
+            if (value === '') {
+              setBoss('')
+              setTerrain('')
+            } else {
+              const selected = seasonOptions.find((s) => s.number === value)
+              if (selected) {
+                if (!boss) setBoss(selected.boss)
+                if (!terrain) setTerrain(selected.terrain)
+              }
             }
           }}
           className="border rounded px-2 py-1 w-full"
