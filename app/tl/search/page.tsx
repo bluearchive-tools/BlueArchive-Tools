@@ -9,6 +9,8 @@ interface Season {
   terrain: string
   armor: string
   maxDifficulty: string
+  startDate: string
+  endDate: string
 }
 
 interface RaidData {
@@ -51,6 +53,11 @@ export default function TLSearchPage() {
   const bosses = raidData?.bosses ?? []
   const difficulties = raidData?.difficulties ?? []
   const seasonOptions = raidData?.seasons ?? []
+  const availableSeasons = seasonOptions.filter((s) => {
+    if (boss && s.boss !== boss) return false
+    if (terrain && s.terrain !== terrain) return false
+    return true
+  })
 
   const filtered = timelines.filter((t) => {
     const bossOk = boss ? t.boss === boss : true
@@ -115,13 +122,21 @@ export default function TLSearchPage() {
         </select>
         <select
           value={season}
-          onChange={(e) => setSeason(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value
+            setSeason(value)
+            const selected = seasonOptions.find((s) => s.number === value)
+            if (selected) {
+              if (!boss) setBoss(selected.boss)
+              if (!terrain) setTerrain(selected.terrain)
+            }
+          }}
           className="border rounded px-2 py-1 w-full"
         >
           <option value="">シーズンを選択</option>
-          {seasonOptions.map((s) => (
+          {availableSeasons.map((s) => (
             <option key={s.number} value={s.number}>
-              {s.number}
+              {`シーズン${s.number} (${s.boss} ${s.terrain}) (${s.startDate}~${s.endDate})`}
             </option>
           ))}
         </select>

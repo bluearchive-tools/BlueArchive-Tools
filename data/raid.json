@@ -18,11 +18,31 @@
   "difficulties": ["Hardcore", "Extreme", "Insane", "Torment", "Lunatic"],
   "seasons": [
     {
+      "number": "1",
+      "boss": "ビナー",
+      "terrain": "市街地",
+      "armor": "軽装備",
+      "maxDifficulty": "Hardcore",
+      "startDate": "2024-01-15",
+      "endDate": "2024-01-22"
+    },
+    {
+      "number": "2",
+      "boss": "ケセド",
+      "terrain": "屋外",
+      "armor": "重装甲",
+      "maxDifficulty": "Extreme",
+      "startDate": "2024-03-20",
+      "endDate": "2024-03-27"
+    },
+    {
       "number": "2024夏",
       "boss": "デカグラマトン",
       "terrain": "屋外",
       "armor": "重装甲",
-      "maxDifficulty": "Hardcore"
+      "maxDifficulty": "Hardcore",
+      "startDate": "2024-07-10",
+      "endDate": "2024-07-17"
     }
   ]
 }
