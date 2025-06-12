@@ -59,6 +59,7 @@ export default function TLSearchPage() {
   const armors = raidData?.armors ?? []
   const bosses = raidData?.bosses ?? []
   const selectedSeason = raidData?.seasons.find((s) => s.number === season)
+  const armorOptions = selectedSeason ? selectedSeason.defenseArmors : armors
 
   let difficulties: string[] = raidData?.difficulties ?? []
   if (selectedSeason) {
@@ -134,8 +135,8 @@ export default function TLSearchPage() {
           }}
           className="border rounded px-2 py-1 w-full"
         >
-          <option value="">装甲を選択</option>
-          {armors.map((a) => (
+          <option value="">全て</option>
+          {armorOptions.map((a) => (
             <option key={a} value={a}>
               {a}
             </option>
@@ -146,7 +147,7 @@ export default function TLSearchPage() {
           onChange={(e) => setDifficulty(e.target.value)}
           className="border rounded px-2 py-1 w-full"
         >
-          <option value="">難易度を選択</option>
+          <option value="">全て</option>
           {difficulties.map((d) => (
             <option key={d} value={d}>
               {d}
@@ -168,8 +169,10 @@ export default function TLSearchPage() {
               if (selected) {
                 if (!boss) setBoss(selected.boss)
                 if (!terrain) setTerrain(selected.terrain)
-                if (selected.type === '総力戦') {
+                if (selected.type === '総力戦' && selected.defenseArmors.length === 1) {
                   setArmor(selected.defenseArmors[0])
+                } else if (!selected.defenseArmors.includes(armor)) {
+                  setArmor('')
                 }
                 const maxIndex = difficultyOrder.indexOf(selected.maxDifficulty)
                 let allowed = maxIndex

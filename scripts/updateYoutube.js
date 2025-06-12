@@ -8,7 +8,7 @@ if (!API_KEY) {
   process.exit(1)
 }
 
-const FILE_PATH = path.join(__dirname, '..', 'data', 'tl.json')
+const FILE_PATH = path.join(__dirname, '..', 'data', 'tl', 'unknown.json')
 
 async function fetchVideos() {
   const res = await fetch(
