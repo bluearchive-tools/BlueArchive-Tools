@@ -1,0 +1,56 @@
+{
+  "bosses": [
+    "ビナー",
+    "ケセド",
+    "シロ&クロ",
+    "ヒエロニムス",
+    "KAITEN FX Mk.0",
+    "ペロロジラ",
+    "ホド",
+    "ゴズ",
+    "グレゴリオ",
+    "ホバークラフト",
+    "クロカゲ",
+    "ゲブラ"
+  ],
+  "terrains": ["市街地", "屋外", "屋内"],
+  "armors": ["軽装備", "重装甲", "特殊装甲", "弾力装甲"],
+  "types": ["総力戦", "大決戦"],
+  "difficulties": ["Hardcore", "Extreme", "Insane", "Torment", "Lunatic"],
+  "seasons": [
+    {
+      "number": "1",
+      "boss": "ビナー",
+      "terrain": "市街地",
+      "armor": "軽装備",
+      "type": "総力戦",
+      "defenseArmors": ["重装甲"],
+      "maxDifficulty": "Hardcore",
+      "startDate": "2024-01-15",
+      "endDate": "2024-01-22"
+    },
+    {
+      "number": "2",
+      "boss": "ケセド",
+      "terrain": "屋外",
+      "armor": "重装甲",
+      "type": "総力戦",
+      "defenseArmors": ["特殊装甲"],
+      "maxDifficulty": "Extreme",
+      "startDate": "2024-03-20",
+      "endDate": "2024-03-27"
+    },
+    {
+      "number": "2024夏",
+      "boss": "デカグラマトン",
+      "terrain": "屋外",
+      "armor": "重装甲",
+      "type": "大決戦",
+      "defenseArmors": ["軽装備", "重装甲", "特殊装甲"],
+      "maxDifficultyArmors": ["軽装備", "特殊装甲"],
+      "maxDifficulty": "Hardcore",
+      "startDate": "2024-07-10",
+      "endDate": "2024-07-17"
+    }
+  ]
+}
