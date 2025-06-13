@@ -180,7 +180,7 @@
     },
     {
       "number": "S15",
-      "boss": KAITEN FX Mk.0",
+      "boss": "KAITEN FX Mk.0",
       "terrain": "屋外",
       "type": "総力戦",
       "defenseArmors": ["軽装備"],
@@ -753,7 +753,7 @@
       "boss": "ヒエロニムス",
       "terrain": "市街地",
       "type": "総力戦",
-      "defenseArmors": ["市街地"],
+      "defenseArmors": ["軽装備"],
       "maxDifficulty": "Torment",
       "startDate": "2024-11-27",
       "endDate": "2024-12-04"

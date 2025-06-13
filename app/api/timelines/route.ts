@@ -21,6 +21,11 @@ interface Snippet {
   publishedAt?: string
 }
 
+interface VideoItem {
+  id: { videoId: string }
+  snippet: Snippet
+}
+
 function guessSeason(snippet: Snippet, seasons: Season[]): string | null {
   const { title = '', description = '', publishedAt } = snippet
   for (const s of seasons) {
@@ -47,19 +52,32 @@ function guessSeason(snippet: Snippet, seasons: Season[]): string | null {
 
 async function ensureTables(seasons: Season[]) {
   for (const s of seasons) {
-    await supabase.rpc('create_tl_table', { name: `tl_${s.number}` })
+    const { error } = await supabase.rpc('create_tl_table', {
+      name: `tl_${s.number}`,
+    })
+    if (error) throw error
   }
-  await supabase.rpc('create_tl_table', { name: 'tl_unknown' })
+  const { error } = await supabase.rpc('create_tl_table', { name: 'tl_unknown' })
+  if (error) throw error
 }
 
-async function fetchVideos() {
+async function fetchVideos(): Promise<VideoItem[]> {
   if (!API_KEY) return []
   const res = await fetch(
     `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=%E3%83%96%E3%83%AB%E3%83%BC%E3%82%A2%E3%83%BC%E3%82%AB%E3%82%A4%E3%83%96%20TL&key=${API_KEY}&type=video&order=date`
   )
   if (!res.ok) return []
   const data = await res.json()
-  return data.items
+  return (data.items as VideoItem[]).filter(v => {
+    const t = v.snippet.title || ''
+    const d = v.snippet.description || ''
+    return (
+      t.includes('ブルアカ') ||
+      t.includes('ブルーアーカイブ') ||
+      d.includes('ブルアカ') ||
+      d.includes('ブルーアーカイブ')
+    )
+  })
 }
 
 export async function GET() {
@@ -78,7 +96,7 @@ export async function GET() {
       const table = seasonNum ? `tl_${seasonNum}` : 'tl_unknown'
       const { data: exist } = await supabase.from(table).select('id').eq('videoId', vid).maybeSingle()
       if (!exist) {
-        await supabase.from(table).insert({
+        const { error } = await supabase.from(table).insert({
           boss: '',
           terrain: '',
           armor: '',
@@ -86,6 +104,7 @@ export async function GET() {
           seasons: seasonNum ? [seasonNum] : [],
           videoId: vid,
         })
+        if (error) throw error
       }
     }
 
@@ -100,5 +119,44 @@ export async function GET() {
     return NextResponse.json(timelines)
   } catch {
     return NextResponse.json([], { status: 500 })
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const { season } = await request.json()
+    const raidPath = path.join(process.cwd(), 'data', 'raid.json')
+    const raid = JSON.parse(await fs.readFile(raidPath, 'utf-8'))
+    const seasons: Season[] = raid.seasons
+
+    await ensureTables(seasons)
+
+    const videos = await fetchVideos()
+    for (const info of videos) {
+      const vid = info.id.videoId
+      const seasonNum = guessSeason(info.snippet, seasons)
+      if (season && seasonNum !== season) continue
+      const table = seasonNum ? `tl_${seasonNum}` : 'tl_unknown'
+      const { data: exist } = await supabase
+        .from(table)
+        .select('id')
+        .eq('videoId', vid)
+        .maybeSingle()
+      if (!exist) {
+        const { error } = await supabase.from(table).insert({
+          boss: '',
+          terrain: '',
+          armor: '',
+          difficulty: '',
+          seasons: seasonNum ? [seasonNum] : [],
+          videoId: vid,
+        })
+        if (error) throw error
+      }
+    }
+
+    return NextResponse.json({ success: true })
+  } catch {
+    return NextResponse.json({ success: false }, { status: 500 })
   }
 }
