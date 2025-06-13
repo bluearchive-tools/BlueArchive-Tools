@@ -7,7 +7,6 @@ interface Season {
   number: string
   boss: string
   terrain: string
-  armor: string
   type: string
   defenseArmors: string[]
   maxDifficultyArmors?: string[]
