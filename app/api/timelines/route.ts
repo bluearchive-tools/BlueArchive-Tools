@@ -102,3 +102,41 @@ export async function GET() {
     return NextResponse.json([], { status: 500 })
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    const { season } = await request.json()
+    const raidPath = path.join(process.cwd(), 'data', 'raid.json')
+    const raid = JSON.parse(await fs.readFile(raidPath, 'utf-8'))
+    const seasons: Season[] = raid.seasons
+
+    await ensureTables(seasons)
+
+    const videos = await fetchVideos()
+    for (const info of videos) {
+      const vid = info.id.videoId
+      const seasonNum = guessSeason(info.snippet, seasons)
+      if (season && seasonNum !== season) continue
+      const table = seasonNum ? `tl_${seasonNum}` : 'tl_unknown'
+      const { data: exist } = await supabase
+        .from(table)
+        .select('id')
+        .eq('videoId', vid)
+        .maybeSingle()
+      if (!exist) {
+        await supabase.from(table).insert({
+          boss: '',
+          terrain: '',
+          armor: '',
+          difficulty: '',
+          seasons: seasonNum ? [seasonNum] : [],
+          videoId: vid,
+        })
+      }
+    }
+
+    return NextResponse.json({ success: true })
+  } catch {
+    return NextResponse.json({ success: false }, { status: 500 })
+  }
+}
