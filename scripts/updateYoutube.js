@@ -18,6 +18,60 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 
 const RAID_FILE = path.join(__dirname, '..', 'data', 'raid.json')
 
+function extractArmor(text) {
+  if (/爆発|軽装備/.test(text)) return '軽装備'
+  if (/貫通|重装甲/.test(text)) return '重装甲'
+  if (/神秘|特殊装甲/.test(text)) return '特殊装甲'
+  if (/振動|弾力装甲|弾力/.test(text)) return '弾力装甲'
+  return ''
+}
+
+function extractDifficulty(text) {
+  const mapping = {
+    Lunatic: 'Lunatic',
+    Torment: 'Torment',
+    Insane: 'Insane',
+    Extreme: 'Extreme',
+    Hardcore: 'Hardcore',
+    'ルナティック': 'Lunatic',
+    'トーメント': 'Torment',
+    'インセイン': 'Insane',
+    'エクストリーム': 'Extreme',
+    'ハードコア': 'Hardcore',
+  }
+  for (const k in mapping) {
+    if (text.includes(k)) return mapping[k]
+  }
+  return ''
+}
+
+function extractScore(text) {
+  const cleaned = text.replace(/,/g, '')
+  const m = cleaned.match(/([0-9]{6,})/)
+  return m ? m[1] : ''
+}
+
+async function extractFormation(text) {
+  try {
+    const file = path.join(__dirname, '..', 'data', 'students.json')
+    const raw = await fs.readFile(file, 'utf-8')
+    const students = JSON.parse(raw)
+    const lines = text.split(/\r?\n/)
+    const result = []
+    for (const line of lines) {
+      const members = students.filter((s) => line.includes(s.name))
+      if (members.length) result.push(members)
+    }
+    if (!result.length) {
+      const names = students.filter((s) => text.includes(s.name))
+      if (names.length) result.push(names)
+    }
+    return JSON.stringify(result)
+  } catch {
+    return '[]'
+  }
+}
+
 async function loadRaidData() {
   const data = await fs.readFile(RAID_FILE, 'utf-8')
   return JSON.parse(data)
@@ -93,14 +147,16 @@ async function update() {
     const table = seasonNum ? `tl_${seasonNum.toLowerCase()}` : 'tl_unknown'
     const arr = timelines[table] || []
     const maxId = arr.reduce((a, c) => Math.max(a, c.id || 0), 0)
+    const text = `${info.snippet.title || ''}\n${info.snippet.description || ''}`
     const entry = {
       id: maxId + 1,
-      boss: '',
-      terrain: '',
-      armor: '',
-      difficulty: '',
-      seasons: seasonNum ? [seasonNum] : [],
+      armor: extractArmor(text),
+      difficulty: extractDifficulty(text),
       videoid: vid,
+      score: extractScore(text),
+      formation: await extractFormation(text),
+      title: info.snippet.title || '',
+      description: info.snippet.description || '',
     }
     const { error } = await supabase.from(table).insert(entry)
     if (!error) {
