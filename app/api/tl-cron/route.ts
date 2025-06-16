@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import fs from 'fs/promises'
 import path from 'path'
 
+
 interface Season {
   number: string
   startDate: string
@@ -65,6 +66,60 @@ async function fetchVideos(): Promise<VideoItem[]> {
   return data.items as VideoItem[]
 }
 
+function extractArmor(text: string): string {
+  if (/爆発|軽装備/.test(text)) return '軽装備'
+  if (/貫通|重装甲/.test(text)) return '重装甲'
+  if (/神秘|特殊装甲/.test(text)) return '特殊装甲'
+  if (/振動|弾力装甲|弾力/.test(text)) return '弾力装甲'
+  return ''
+}
+
+function extractDifficulty(text: string): string {
+  const mapping: Record<string, string> = {
+    Lunatic: 'Lunatic',
+    Torment: 'Torment',
+    Insane: 'Insane',
+    Extreme: 'Extreme',
+    Hardcore: 'Hardcore',
+    ルナティック: 'Lunatic',
+    トーメント: 'Torment',
+    インセイン: 'Insane',
+    エクストリーム: 'Extreme',
+    ハードコア: 'Hardcore',
+  }
+  for (const [k, v] of Object.entries(mapping)) {
+    if (text.includes(k)) return v
+  }
+  return ''
+}
+
+function extractScore(text: string): string {
+  const cleaned = text.replace(/,/g, '')
+  const m = cleaned.match(/([0-9]{6,})/)
+  return m ? m[1] : ''
+}
+
+async function extractFormation(text: string): Promise<string> {
+  try {
+    const file = path.join(process.cwd(), 'data', 'students.json')
+    const raw = await fs.readFile(file, 'utf-8')
+    const students = JSON.parse(raw) as { name: string }[]
+    const lines = text.split(/\r?\n/)
+    const result: { name: string }[][] = []
+    for (const line of lines) {
+      const members = students.filter((s) => line.includes(s.name))
+      if (members.length) result.push(members)
+    }
+    if (!result.length) {
+      const names = students.filter((s) => text.includes(s.name))
+      if (names.length) result.push(names)
+    }
+    return JSON.stringify(result)
+  } catch {
+    return '[]'
+  }
+}
+
 export async function GET() {
   try {
     const raidPath = path.join(process.cwd(), 'data', 'raid.json')
@@ -93,14 +148,17 @@ export async function GET() {
         .eq('videoid', vid)
         .maybeSingle()
       if (!exist) {
-        const { error } = await supabase.from(table).insert({
-          boss: latest.boss || '',
-          terrain: latest.terrain || '',
-          armor: (latest.defenseArmors && latest.defenseArmors[0]) || '',
-          difficulty: latest.maxDifficulty || '',
-          seasons: [latest.number],
+        const text = `${info.snippet.title || ''}\n${info.snippet.description || ''}`
+        const entry = {
+          armor: extractArmor(text) || (latest.defenseArmors && latest.defenseArmors[0]) || '',
+          difficulty: extractDifficulty(text) || latest.maxDifficulty || '',
           videoid: vid,
-        })
+          score: extractScore(text),
+          formation: await extractFormation(text),
+          title: info.snippet.title || '',
+          description: info.snippet.description || '',
+        }
+        const { error } = await supabase.from(table).insert(entry)
         if (!error) added++
       }
     }

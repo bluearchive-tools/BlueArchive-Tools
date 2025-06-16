@@ -80,6 +80,60 @@ async function fetchVideos(): Promise<VideoItem[]> {
   })
 }
 
+function extractArmor(text: string): string {
+  if (/爆発|軽装備/.test(text)) return '軽装備'
+  if (/貫通|重装甲/.test(text)) return '重装甲'
+  if (/神秘|特殊装甲/.test(text)) return '特殊装甲'
+  if (/振動|弾力装甲|弾力/.test(text)) return '弾力装甲'
+  return ''
+}
+
+function extractDifficulty(text: string): string {
+  const mapping: Record<string, string> = {
+    Lunatic: 'Lunatic',
+    Torment: 'Torment',
+    Insane: 'Insane',
+    Extreme: 'Extreme',
+    Hardcore: 'Hardcore',
+    ルナティック: 'Lunatic',
+    トーメント: 'Torment',
+    インセイン: 'Insane',
+    エクストリーム: 'Extreme',
+    ハードコア: 'Hardcore',
+  }
+  for (const [k, v] of Object.entries(mapping)) {
+    if (text.includes(k)) return v
+  }
+  return ''
+}
+
+function extractScore(text: string): string {
+  const cleaned = text.replace(/,/g, '')
+  const m = cleaned.match(/([0-9]{6,})/)
+  return m ? m[1] : ''
+}
+
+async function extractFormation(text: string): Promise<string> {
+  try {
+    const file = path.join(process.cwd(), 'data', 'students.json')
+    const raw = await fs.readFile(file, 'utf-8')
+    const students = JSON.parse(raw) as { name: string }[]
+    const lines = text.split(/\r?\n/)
+    const result: { name: string }[][] = []
+    for (const line of lines) {
+      const members = students.filter((s) => line.includes(s.name))
+      if (members.length) result.push(members)
+    }
+    if (!result.length) {
+      const names = students.filter((s) => text.includes(s.name))
+      if (names.length) result.push(names)
+    }
+    return JSON.stringify(result)
+  } catch {
+    return '[]'
+  }
+}
+
 export async function GET(request: Request) {
   try {
     const reqUrl = new URL(request.url)
@@ -107,13 +161,26 @@ export async function GET(request: Request) {
     }
 
     const normalized: Timeline[] = timelines.map((t) => {
-      const raw = t as unknown as { seasons?: unknown }
-      const seasons: string[] = Array.isArray(raw.seasons)
-        ? (raw.seasons as string[])
-        : typeof raw.seasons === 'string'
-          ? [raw.seasons]
-          : []
-      return { ...t, seasons }
+      const raw = t as {
+        id: number
+        armor?: string
+        difficulty?: string
+        videoid: string
+        score?: string
+        formation?: string
+        title?: string
+        description?: string
+      }
+      return {
+        id: raw.id,
+        armor: raw.armor || '',
+        difficulty: raw.difficulty || '',
+        videoid: raw.videoid,
+        score: raw.score || '',
+        formation: raw.formation || '[]',
+        title: raw.title || '',
+        description: raw.description || '',
+      }
     })
 
     return NextResponse.json(normalized)
@@ -143,14 +210,17 @@ export async function POST(request: Request) {
         .eq('videoid', vid)
         .maybeSingle()
       if (!exist) {
-        const { error } = await supabase.from(table).insert({
-          boss: '',
-          terrain: '',
-          armor: '',
-          difficulty: '',
-          seasons: seasonNum ? [seasonNum] : [],
+        const text = `${info.snippet.title || ''}\n${info.snippet.description || ''}`
+        const entry = {
+          armor: extractArmor(text),
+          difficulty: extractDifficulty(text),
           videoid: vid,
-        })
+          score: extractScore(text),
+          formation: await extractFormation(text),
+          title: info.snippet.title || '',
+          description: info.snippet.description || '',
+        }
+        const { error } = await supabase.from(table).insert(entry)
         if (error) throw error
       }
     }

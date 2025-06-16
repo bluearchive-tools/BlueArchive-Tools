@@ -33,6 +33,7 @@ export default function TLSearchPage() {
   const [difficulty, setDifficulty] = useState('')
   const [season, setSeason] = useState('')
   const [loadingMessage, setLoadingMessage] = useState('')
+  const [openId, setOpenId] = useState<number | null>(null)
 
   // 簡易的な難易度順
   const difficultyOrder = raidData?.difficulties ?? []
@@ -133,12 +134,9 @@ export default function TLSearchPage() {
   })
 
   const filtered = timelines.filter((t) => {
-    const bossOk = boss ? t.boss === boss : true
-    const terrainOk = terrain ? t.terrain === terrain : true
     const armorOk = armor ? t.armor === armor : true
     const difficultyOk = difficulty ? t.difficulty === difficulty : true
-    const seasonOk = season ? t.seasons.includes(season) : true
-    return bossOk && terrainOk && armorOk && difficultyOk && seasonOk
+    return armorOk && difficultyOk
   })
 
   return (
@@ -260,24 +258,24 @@ export default function TLSearchPage() {
       {loadingMessage && <p>{loadingMessage}</p>}
       <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
         {filtered.map((t) => (
-          <li key={t.id} className="border rounded p-2 space-y-1 text-sm">
-            <p>
-              {t.boss} / {t.terrain} / {t.armor} / {t.difficulty} /
-              {t.seasons.join(', ')}
-            </p>
-            <a
-              href={`https://www.youtube.com/watch?v=${t.videoid}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block"
-            >
-              <img
-                src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
-                alt="thumbnail"
-                className="w-full h-auto mb-1"
-              />
-              <span className="text-blue-600 underline">動画を見る</span>
-            </a>
+          <li
+            key={t.id}
+            className="border rounded p-2 space-y-1 text-sm cursor-pointer"
+            onClick={() => setOpenId(openId === t.id ? null : t.id)}
+          >
+            <img
+              src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
+              alt="thumbnail"
+              className="w-full h-auto mb-1"
+            />
+            <p className="text-xs">{t.title}</p>
+            <p className="text-lg font-bold">{t.score}</p>
+            {openId === t.id && (
+              <div className="whitespace-pre-wrap text-xs">
+                <p className="font-bold mb-1">{t.title}</p>
+                <p>{t.description}</p>
+              </div>
+            )}
           </li>
         ))}
       </ul>
