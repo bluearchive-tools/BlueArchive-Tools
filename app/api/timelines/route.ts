@@ -87,27 +87,8 @@ export async function GET() {
     const raid = JSON.parse(await fs.readFile(raidPath, 'utf-8'))
     const seasons: Season[] = raid.seasons
 
-  await ensureTables(seasons)
-  const timelines: Timeline[] = []
-
-    const videos = await fetchVideos()
-    for (const info of videos) {
-      const vid = info.id.videoId
-      const seasonNum = guessSeason(info.snippet, seasons)
-      const table = seasonNum ? `tl_${seasonNum.toLowerCase()}` : 'tl_unknown'
-      const { data: exist } = await supabase.from(table).select('id').eq('videoId', vid).maybeSingle()
-      if (!exist) {
-        const { error } = await supabase.from(table).insert({
-          boss: '',
-          terrain: '',
-          armor: '',
-          difficulty: '',
-          seasons: seasonNum ? [seasonNum] : [],
-          videoId: vid,
-        })
-        if (error) throw error
-      }
-    }
+    await ensureTables(seasons)
+    const timelines: Timeline[] = []
 
     for (const s of seasons) {
       const table = `tl_${s.number.toLowerCase()}`
@@ -117,7 +98,17 @@ export async function GET() {
     const { data: unknown } = await supabase.from('tl_unknown').select('*')
     if (unknown) timelines.push(...unknown)
 
-    return NextResponse.json(timelines)
+    const normalized: Timeline[] = timelines.map((t) => {
+      const raw = t as unknown as { seasons?: unknown }
+      const seasons: string[] = Array.isArray(raw.seasons)
+        ? (raw.seasons as string[])
+        : typeof raw.seasons === 'string'
+          ? [raw.seasons]
+          : []
+      return { ...t, seasons }
+    })
+
+    return NextResponse.json(normalized)
   } catch {
     return NextResponse.json([], { status: 500 })
   }
@@ -141,7 +132,7 @@ export async function POST(request: Request) {
       const { data: exist } = await supabase
         .from(table)
         .select('id')
-        .eq('videoId', vid)
+        .eq('videoid', vid)
         .maybeSingle()
       if (!exist) {
         const { error } = await supabase.from(table).insert({
@@ -150,7 +141,7 @@ export async function POST(request: Request) {
           armor: '',
           difficulty: '',
           seasons: seasonNum ? [seasonNum] : [],
-          videoId: vid,
+          videoid: vid,
         })
         if (error) throw error
       }
