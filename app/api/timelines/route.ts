@@ -52,14 +52,13 @@ function guessSeason(snippet: Snippet, seasons: Season[]): string | null {
 
 async function ensureTables(seasons: Season[]) {
   // テーブルは事前に手動で作成する想定
-  // ここでは存在チェックのみを行います
+  // 存在しない場合はエラーとせずスキップ
   for (const s of seasons) {
     const table = `tl_${s.number.toLowerCase()}`
     const { error } = await supabase.from(table).select('id').limit(1)
-    if (error) throw error
+    if (error) continue
   }
-  const { error } = await supabase.from('tl_unknown').select('id').limit(1)
-  if (error) throw error
+  await supabase.from('tl_unknown').select('id').limit(1)
 }
 
 async function fetchVideos(): Promise<VideoItem[]> {
@@ -92,7 +91,8 @@ export async function GET() {
 
     for (const s of seasons) {
       const table = `tl_${s.number.toLowerCase()}`
-      const { data } = await supabase.from(table).select('*')
+      const { data, error } = await supabase.from(table).select('*')
+      if (error) continue
       if (data) timelines.push(...data)
     }
     const { data: unknown } = await supabase.from('tl_unknown').select('*')
