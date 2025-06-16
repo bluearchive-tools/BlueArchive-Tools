@@ -87,27 +87,8 @@ export async function GET() {
     const raid = JSON.parse(await fs.readFile(raidPath, 'utf-8'))
     const seasons: Season[] = raid.seasons
 
-  await ensureTables(seasons)
-  const timelines: Timeline[] = []
-
-    const videos = await fetchVideos()
-    for (const info of videos) {
-      const vid = info.id.videoId
-      const seasonNum = guessSeason(info.snippet, seasons)
-      const table = seasonNum ? `tl_${seasonNum.toLowerCase()}` : 'tl_unknown'
-      const { data: exist } = await supabase.from(table).select('id').eq('videoid', vid).maybeSingle()
-      if (!exist) {
-        const { error } = await supabase.from(table).insert({
-          boss: '',
-          terrain: '',
-          armor: '',
-          difficulty: '',
-          seasons: seasonNum ? [seasonNum] : [],
-          videoid: vid,
-        })
-        if (error) throw error
-      }
-    }
+    await ensureTables(seasons)
+    const timelines: Timeline[] = []
 
     for (const s of seasons) {
       const table = `tl_${s.number.toLowerCase()}`
