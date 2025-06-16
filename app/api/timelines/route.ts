@@ -80,23 +80,31 @@ async function fetchVideos(): Promise<VideoItem[]> {
   })
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const reqUrl = new URL(request.url)
+    const selected = reqUrl.searchParams.getAll('season')
     const raidPath = path.join(process.cwd(), 'data', 'raid.json')
     const raid = JSON.parse(await fs.readFile(raidPath, 'utf-8'))
     const seasons: Season[] = raid.seasons
+    const targets =
+      selected.length > 0
+        ? seasons.filter((s) => selected.includes(s.number))
+        : seasons
 
-    await ensureTables(seasons)
+    await ensureTables(targets)
     const timelines: Timeline[] = []
 
-    for (const s of seasons) {
+    for (const s of targets) {
       const table = `tl_${s.number.toLowerCase()}`
       const { data, error } = await supabase.from(table).select('*')
       if (error) continue
       if (data) timelines.push(...data)
     }
-    const { data: unknown } = await supabase.from('tl_unknown').select('*')
-    if (unknown) timelines.push(...unknown)
+    if (selected.length === 0) {
+      const { data: unknown } = await supabase.from('tl_unknown').select('*')
+      if (unknown) timelines.push(...unknown)
+    }
 
     const normalized: Timeline[] = timelines.map((t) => {
       const raw = t as unknown as { seasons?: unknown }
