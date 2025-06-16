@@ -52,7 +52,20 @@ export default function TLSearchPage() {
 
   const handleSearch = async () => {
     try {
-      const tlRes = await fetch('/api/timelines')
+      const params = new URLSearchParams()
+      if (season) {
+        params.append('season', season)
+      } else if (
+        availableSeasons.length &&
+        raidData &&
+        availableSeasons.length !== raidData.seasons.length
+      ) {
+        for (const s of availableSeasons) {
+          params.append('season', s.number)
+        }
+      }
+      const query = params.toString()
+      const tlRes = await fetch(`/api/timelines${query ? `?${query}` : ''}`)
       if (tlRes.ok) {
         setTimelines(await tlRes.json())
       }
@@ -217,7 +230,7 @@ export default function TLSearchPage() {
               {t.seasons.join(', ')}
             </p>
             <a
-              href={`https://www.youtube.com/watch?v=${t.videoId}`}
+              href={`https://www.youtube.com/watch?v=${t.videoid}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 underline"

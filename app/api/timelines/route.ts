@@ -52,14 +52,13 @@ function guessSeason(snippet: Snippet, seasons: Season[]): string | null {
 
 async function ensureTables(seasons: Season[]) {
   // テーブルは事前に手動で作成する想定
-  // ここでは存在チェックのみを行います
+  // 存在しない場合はエラーとせずスキップ
   for (const s of seasons) {
     const table = `tl_${s.number.toLowerCase()}`
     const { error } = await supabase.from(table).select('id').limit(1)
-    if (error) throw error
+    if (error) continue
   }
-  const { error } = await supabase.from('tl_unknown').select('id').limit(1)
-  if (error) throw error
+  await supabase.from('tl_unknown').select('id').limit(1)
 }
 
 async function fetchVideos(): Promise<VideoItem[]> {
@@ -81,43 +80,43 @@ async function fetchVideos(): Promise<VideoItem[]> {
   })
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const reqUrl = new URL(request.url)
+    const selected = reqUrl.searchParams.getAll('season')
     const raidPath = path.join(process.cwd(), 'data', 'raid.json')
     const raid = JSON.parse(await fs.readFile(raidPath, 'utf-8'))
     const seasons: Season[] = raid.seasons
+    const targets =
+      selected.length > 0
+        ? seasons.filter((s) => selected.includes(s.number))
+        : seasons
 
-  await ensureTables(seasons)
-  const timelines: Timeline[] = []
+    await ensureTables(targets)
+    const timelines: Timeline[] = []
 
-    const videos = await fetchVideos()
-    for (const info of videos) {
-      const vid = info.id.videoId
-      const seasonNum = guessSeason(info.snippet, seasons)
-      const table = seasonNum ? `tl_${seasonNum.toLowerCase()}` : 'tl_unknown'
-      const { data: exist } = await supabase.from(table).select('id').eq('videoId', vid).maybeSingle()
-      if (!exist) {
-        const { error } = await supabase.from(table).insert({
-          boss: '',
-          terrain: '',
-          armor: '',
-          difficulty: '',
-          seasons: seasonNum ? [seasonNum] : [],
-          videoId: vid,
-        })
-        if (error) throw error
-      }
-    }
-
-    for (const s of seasons) {
+    for (const s of targets) {
       const table = `tl_${s.number.toLowerCase()}`
-      const { data } = await supabase.from(table).select('*')
+      const { data, error } = await supabase.from(table).select('*')
+      if (error) continue
       if (data) timelines.push(...data)
     }
-    const { data: unknown } = await supabase.from('tl_unknown').select('*')
-    if (unknown) timelines.push(...unknown)
+    if (selected.length === 0) {
+      const { data: unknown } = await supabase.from('tl_unknown').select('*')
+      if (unknown) timelines.push(...unknown)
+    }
 
-    return NextResponse.json(timelines)
+    const normalized: Timeline[] = timelines.map((t) => {
+      const raw = t as unknown as { seasons?: unknown }
+      const seasons: string[] = Array.isArray(raw.seasons)
+        ? (raw.seasons as string[])
+        : typeof raw.seasons === 'string'
+          ? [raw.seasons]
+          : []
+      return { ...t, seasons }
+    })
+
+    return NextResponse.json(normalized)
   } catch {
     return NextResponse.json([], { status: 500 })
   }
@@ -141,7 +140,7 @@ export async function POST(request: Request) {
       const { data: exist } = await supabase
         .from(table)
         .select('id')
-        .eq('videoId', vid)
+        .eq('videoid', vid)
         .maybeSingle()
       if (!exist) {
         const { error } = await supabase.from(table).insert({
@@ -150,7 +149,7 @@ export async function POST(request: Request) {
           armor: '',
           difficulty: '',
           seasons: seasonNum ? [seasonNum] : [],
-          videoId: vid,
+          videoid: vid,
         })
         if (error) throw error
       }

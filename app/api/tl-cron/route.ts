@@ -90,7 +90,7 @@ export async function GET() {
       const { data: exist } = await supabase
         .from(table)
         .select('id')
-        .eq('videoId', vid)
+        .eq('videoid', vid)
         .maybeSingle()
       if (!exist) {
         const { error } = await supabase.from(table).insert({
@@ -99,7 +99,7 @@ export async function GET() {
           armor: (latest.defenseArmors && latest.defenseArmors[0]) || '',
           difficulty: latest.maxDifficulty || '',
           seasons: [latest.number],
-          videoId: vid,
+          videoid: vid,
         })
         if (!error) added++
       }
