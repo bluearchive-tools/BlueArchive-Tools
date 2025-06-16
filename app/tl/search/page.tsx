@@ -41,7 +41,25 @@ export default function TLSearchPage() {
       try {
         const raidRes = await fetch('/api/raids')
         if (raidRes.ok) {
-          setRaidData(await raidRes.json())
+          const data: RaidData = await raidRes.json()
+          data.seasons.sort(
+            (a, b) =>
+              new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+          )
+          setRaidData(data)
+          const latest = data.seasons[0]
+          if (latest) {
+            setSeason(latest.number)
+            setBoss(latest.boss)
+            setTerrain(latest.terrain)
+            if (latest.type === '総力戦' && latest.defenseArmors.length === 1) {
+              setArmor(latest.defenseArmors[0])
+            }
+            const res = await fetch(`/api/timelines?season=${latest.number}`)
+            if (res.ok) {
+              setTimelines(await res.json())
+            }
+          }
         }
       } catch {
         // ignore
@@ -90,7 +108,12 @@ export default function TLSearchPage() {
     }
     difficulties = difficultyOrder.slice(0, allowed + 1)
   }
-  const seasonOptions = raidData?.seasons ?? []
+  const seasonOptions = raidData?.seasons
+    ? [...raidData.seasons].sort(
+        (a, b) =>
+          new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+      )
+    : []
   const availableSeasons = seasonOptions.filter((s) => {
     if (boss && s.boss !== boss) return false
     if (terrain && s.terrain !== terrain) return false
@@ -233,9 +256,14 @@ export default function TLSearchPage() {
               href={`https://www.youtube.com/watch?v=${t.videoid}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 underline"
+              className="block"
             >
-              動画を見る
+              <img
+                src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
+                alt="thumbnail"
+                className="w-full h-auto mb-1"
+              />
+              <span className="text-blue-600 underline">動画を見る</span>
             </a>
           </li>
         ))}
