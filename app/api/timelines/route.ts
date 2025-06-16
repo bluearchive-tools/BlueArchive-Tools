@@ -95,7 +95,7 @@ export async function GET() {
       const vid = info.id.videoId
       const seasonNum = guessSeason(info.snippet, seasons)
       const table = seasonNum ? `tl_${seasonNum.toLowerCase()}` : 'tl_unknown'
-      const { data: exist } = await supabase.from(table).select('id').eq('videoId', vid).maybeSingle()
+      const { data: exist } = await supabase.from(table).select('id').eq('videoid', vid).maybeSingle()
       if (!exist) {
         const { error } = await supabase.from(table).insert({
           boss: '',
@@ -103,7 +103,7 @@ export async function GET() {
           armor: '',
           difficulty: '',
           seasons: seasonNum ? [seasonNum] : [],
-          videoId: vid,
+          videoid: vid,
         })
         if (error) throw error
       }
@@ -141,7 +141,7 @@ export async function POST(request: Request) {
       const { data: exist } = await supabase
         .from(table)
         .select('id')
-        .eq('videoId', vid)
+        .eq('videoid', vid)
         .maybeSingle()
       if (!exist) {
         const { error } = await supabase.from(table).insert({
@@ -150,7 +150,7 @@ export async function POST(request: Request) {
           armor: '',
           difficulty: '',
           seasons: seasonNum ? [seasonNum] : [],
-          videoId: vid,
+          videoid: vid,
         })
         if (error) throw error
       }

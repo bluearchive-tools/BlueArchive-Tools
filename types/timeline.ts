@@ -5,5 +5,5 @@ export interface Timeline {
   armor: string
   difficulty: string
   seasons: string[]
-  videoId: string
+  videoid: string
 }

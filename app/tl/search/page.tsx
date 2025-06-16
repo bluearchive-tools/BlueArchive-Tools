@@ -217,7 +217,7 @@ export default function TLSearchPage() {
               {t.seasons.join(', ')}
             </p>
             <a
-              href={`https://www.youtube.com/watch?v=${t.videoId}`}
+              href={`https://www.youtube.com/watch?v=${t.videoid}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 underline"
