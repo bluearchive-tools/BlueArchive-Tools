@@ -86,7 +86,7 @@ async function update() {
 
   for (const info of videos) {
     const vid = info.id.videoId
-    if (Object.values(timelines).some((arr) => arr.some((t) => t.videoId === vid))) {
+    if (Object.values(timelines).some((arr) => arr.some((t) => t.videoid === vid))) {
       continue
     }
     const seasonNum = guessSeason(info.snippet, raid.seasons)
@@ -100,7 +100,7 @@ async function update() {
       armor: '',
       difficulty: '',
       seasons: seasonNum ? [seasonNum] : [],
-      videoId: vid,
+      videoid: vid,
     }
     const { error } = await supabase.from(table).insert(entry)
     if (!error) {
