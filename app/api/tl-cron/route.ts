@@ -79,7 +79,8 @@ export async function GET() {
         new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
     )
     const latest = targets[0]
-    await supabase.rpc('create_tl_table', { name: `tl_${latest.number}` })
+    const table = `tl_${latest.number.toLowerCase()}`
+    await supabase.rpc('create_tl_table', { name: table })
 
     const videos = await fetchVideos()
     let added = 0
@@ -88,12 +89,12 @@ export async function GET() {
       const seasonNum = guessSeason(info.snippet, [latest])
       if (seasonNum !== latest.number) continue
       const { data: exist } = await supabase
-        .from(`tl_${latest.number}`)
+        .from(table)
         .select('id')
         .eq('videoId', vid)
         .maybeSingle()
       if (!exist) {
-        const { error } = await supabase.from(`tl_${latest.number}`).insert({
+        const { error } = await supabase.from(table).insert({
           boss: latest.boss || '',
           terrain: latest.terrain || '',
           armor: (latest.defenseArmors && latest.defenseArmors[0]) || '',
