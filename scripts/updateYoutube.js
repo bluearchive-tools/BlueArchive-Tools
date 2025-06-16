@@ -58,16 +58,16 @@ async function fetchVideos() {
 }
 
 async function ensureTables(seasons) {
-    await supabase.rpc('create_tl_table', { name: table })
-  await supabase.rpc('create_tl_table', { name: 'tl_unknown' })
-    const table = `tl_${s.number.toLowerCase()}`
-    await supabase.rpc('create_tl_table', { name: table }).catch(() => {})
-  }
-  await supabase.rpc('create_tl_table', { name: 'tl_unknown' }).catch(() => {})
-}
-
-async function loadTimelines(seasons) {
-  await ensureTables(seasons)
+    const tableName = `tl_${s.number.toLowerCase()}`
+    await supabase.rpc('create_tl_table', { name: tableName })
+    const tableName = `tl_${s.number.toLowerCase()}`
+    const { data } = await supabase.from(tableName).select('*')
+    result[tableName] = (data || []).map((d) => ({ ...d, videoId: d.videoid || d.videoId }))
+    const tableName = seasonNum ? `tl_${seasonNum.toLowerCase()}` : 'tl_unknown'
+    const arr = timelines[tableName] || []
+      .from(tableName)
+      if (!timelines[tableName]) timelines[tableName] = []
+      timelines[tableName].push(entry)
   const result = {}
   for (const s of seasons) {
     const table = `tl_${s.number.toLowerCase()}`

@@ -79,11 +79,11 @@ export async function GET() {
         new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
     )
     const latest = targets[0]
-    const table = `tl_${latest.number.toLowerCase()}`
-    await supabase.rpc('create_tl_table', { name: table })
+    const tableName = `tl_${latest.number.toLowerCase()}`
+    await supabase.rpc('create_tl_table', { name: tableName })
 
-
-    const videos = await fetchVideos()
+        .from(tableName)
+        const { error } = await supabase.from(tableName).insert({
     let added = 0
     for (const info of videos) {
       const vid = info.id.videoId
