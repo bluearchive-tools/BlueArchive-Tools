@@ -32,6 +32,7 @@ export default function TLSearchPage() {
   const [armor, setArmor] = useState('')
   const [difficulty, setDifficulty] = useState('')
   const [season, setSeason] = useState('')
+  const [loadingMessage, setLoadingMessage] = useState('')
 
   // 簡易的な難易度順
   const difficultyOrder = raidData?.difficulties ?? []
@@ -55,10 +56,12 @@ export default function TLSearchPage() {
             if (latest.type === '総力戦' && latest.defenseArmors.length === 1) {
               setArmor(latest.defenseArmors[0])
             }
+            setLoadingMessage(`(${latest.number})のデータを取得中...`)
             const res = await fetch(`/api/timelines?season=${latest.number}`)
             if (res.ok) {
               setTimelines(await res.json())
             }
+            setLoadingMessage('')
           }
         }
       } catch {
@@ -71,8 +74,10 @@ export default function TLSearchPage() {
   const handleSearch = async () => {
     try {
       const params = new URLSearchParams()
+      let targets: string[] = []
       if (season) {
         params.append('season', season)
+        targets = [season]
       } else if (
         availableSeasons.length &&
         raidData &&
@@ -81,14 +86,21 @@ export default function TLSearchPage() {
         for (const s of availableSeasons) {
           params.append('season', s.number)
         }
+        targets = availableSeasons.map((s) => s.number)
+      }
+      if (targets.length === 0 && raidData) {
+        targets = raidData.seasons.map((s) => s.number)
       }
       const query = params.toString()
+      setLoadingMessage(`(${targets.join(', ')})のデータを取得中...`)
       const tlRes = await fetch(`/api/timelines${query ? `?${query}` : ''}`)
       if (tlRes.ok) {
         setTimelines(await tlRes.json())
       }
+      setLoadingMessage('')
     } catch {
       // ignore
+      setLoadingMessage('')
     }
   }
 
@@ -245,9 +257,10 @@ export default function TLSearchPage() {
           検索
         </button>
       </div>
-      <ul className="space-y-2">
+      {loadingMessage && <p>{loadingMessage}</p>}
+      <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
         {filtered.map((t) => (
-          <li key={t.id} className="border rounded p-2 space-y-1">
+          <li key={t.id} className="border rounded p-2 space-y-1 text-sm">
             <p>
               {t.boss} / {t.terrain} / {t.armor} / {t.difficulty} /
               {t.seasons.join(', ')}
