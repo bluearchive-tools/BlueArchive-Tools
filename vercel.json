@@ -1,8 +1,8 @@
 {
-  "functions": {
-    "api/tl-cron.ts": {
-      "runtime": "nodejs18.x",
+  "crons": [
+    {
+      "path": "/api/tl-cron",
       "schedule": "*/5 * * * *"
     }
-  }
+  ]
 }
