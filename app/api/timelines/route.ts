@@ -52,9 +52,8 @@ function guessSeason(snippet: Snippet, seasons: Season[]): string | null {
 
 async function ensureTables(seasons: Season[]) {
   for (const s of seasons) {
-    const { error } = await supabase.rpc('create_tl_table', {
-      name: `tl_${s.number}`,
-    })
+    const table = `tl_${s.number.toLowerCase()}`
+    const { error } = await supabase.rpc('create_tl_table', { name: table })
     if (error) throw error
   }
   const { error } = await supabase.rpc('create_tl_table', { name: 'tl_unknown' })
@@ -93,7 +92,7 @@ export async function GET() {
     for (const info of videos) {
       const vid = info.id.videoId
       const seasonNum = guessSeason(info.snippet, seasons)
-      const table = seasonNum ? `tl_${seasonNum}` : 'tl_unknown'
+      const table = seasonNum ? `tl_${seasonNum.toLowerCase()}` : 'tl_unknown'
       const { data: exist } = await supabase.from(table).select('id').eq('videoId', vid).maybeSingle()
       if (!exist) {
         const { error } = await supabase.from(table).insert({
@@ -109,7 +108,7 @@ export async function GET() {
     }
 
     for (const s of seasons) {
-      const table = `tl_${s.number}`
+      const table = `tl_${s.number.toLowerCase()}`
       const { data } = await supabase.from(table).select('*')
       if (data) timelines.push(...data)
     }
@@ -136,7 +135,7 @@ export async function POST(request: Request) {
       const vid = info.id.videoId
       const seasonNum = guessSeason(info.snippet, seasons)
       if (season && seasonNum !== season) continue
-      const table = seasonNum ? `tl_${seasonNum}` : 'tl_unknown'
+      const table = seasonNum ? `tl_${seasonNum.toLowerCase()}` : 'tl_unknown'
       const { data: exist } = await supabase
         .from(table)
         .select('id')

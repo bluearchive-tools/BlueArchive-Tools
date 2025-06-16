@@ -59,7 +59,7 @@ async function fetchVideos() {
 
 async function ensureTables(seasons) {
   for (const s of seasons) {
-    const table = `tl_${s.number}`
+    const table = `tl_${s.number.toLowerCase()}`
     await supabase.rpc('create_tl_table', { name: table })
   }
   await supabase.rpc('create_tl_table', { name: 'tl_unknown' })
@@ -69,7 +69,7 @@ async function loadTimelines(seasons) {
   await ensureTables(seasons)
   const result = {}
   for (const s of seasons) {
-    const table = `tl_${s.number}`
+    const table = `tl_${s.number.toLowerCase()}`
     const { data } = await supabase.from(table).select('*')
     result[table] = data || []
   }
@@ -89,7 +89,7 @@ async function update() {
       continue
     }
     const seasonNum = guessSeason(info.snippet, raid.seasons)
-    const table = seasonNum ? `tl_${seasonNum}` : 'tl_unknown'
+    const table = seasonNum ? `tl_${seasonNum.toLowerCase()}` : 'tl_unknown'
     const arr = timelines[table] || []
     const maxId = arr.reduce((a, c) => Math.max(a, c.id || 0), 0)
     const entry = {
