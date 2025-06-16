@@ -80,7 +80,6 @@ export async function GET() {
     )
     const latest = targets[0]
     const table = `tl_${latest.number.toLowerCase()}`
-    await supabase.rpc('create_tl_table', { name: table })
 
     const videos = await fetchVideos()
     let added = 0

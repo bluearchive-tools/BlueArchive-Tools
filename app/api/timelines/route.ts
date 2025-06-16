@@ -51,12 +51,14 @@ function guessSeason(snippet: Snippet, seasons: Season[]): string | null {
 }
 
 async function ensureTables(seasons: Season[]) {
+  // テーブルは事前に手動で作成する想定
+  // ここでは存在チェックのみを行います
   for (const s of seasons) {
     const table = `tl_${s.number.toLowerCase()}`
-    const { error } = await supabase.rpc('create_tl_table', { name: table })
+    const { error } = await supabase.from(table).select('id').limit(1)
     if (error) throw error
   }
-  const { error } = await supabase.rpc('create_tl_table', { name: 'tl_unknown' })
+  const { error } = await supabase.from('tl_unknown').select('id').limit(1)
   if (error) throw error
 }
 

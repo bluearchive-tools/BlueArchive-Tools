@@ -58,11 +58,12 @@ async function fetchVideos() {
 }
 
 async function ensureTables(seasons) {
+  // DB テーブルは手動で作成済みであることを想定
   for (const s of seasons) {
     const table = `tl_${s.number.toLowerCase()}`
-    await supabase.rpc('create_tl_table', { name: table })
+    await supabase.from(table).select('id').limit(1)
   }
-  await supabase.rpc('create_tl_table', { name: 'tl_unknown' })
+  await supabase.from('tl_unknown').select('id').limit(1)
 }
 
 async function loadTimelines(seasons) {
