@@ -3,27 +3,33 @@ import { createClient } from '@supabase/supabase-js'
 import fs from 'fs/promises'
 import path from 'path'
 
-interface Season {
-  number: string
-  startDate: string
-  endDate: string
-  type: string
-  boss?: string
-  terrain?: string
-  defenseArmors?: string[]
-  maxDifficulty?: string
-}
+// raid.json のシーズン情報
+/**
+ * @typedef {Object} Season
+ * @property {string} number
+ * @property {string} startDate
+ * @property {string} endDate
+ * @property {string} type
+ * @property {string=} boss
+ * @property {string=} terrain
+ * @property {string[]=} defenseArmors
+ * @property {string=} maxDifficulty
+ */
 
-interface Snippet {
-  title?: string
-  description?: string
-  publishedAt?: string
-}
+// YouTube API の snippet 部分
+/**
+ * @typedef {Object} Snippet
+ * @property {string=} title
+ * @property {string=} description
+ * @property {string=} publishedAt
+ */
 
-interface VideoItem {
-  id: { videoId: string }
-  snippet: Snippet
-}
+// YouTube API の検索結果
+/**
+ * @typedef {Object} VideoItem
+ * @property {{videoId: string}} id
+ * @property {Snippet} snippet
+ */
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -31,7 +37,10 @@ const supabase = createClient(
 )
 const API_KEY = process.env.YOUTUBE_API_KEY
 
-function guessSeason(snippet: Snippet, seasons: Season[]): string | null {
+/**
+ * 動画情報からシーズンを推測する
+ */
+function guessSeason(snippet, seasons) {
   const { title = '', description = '', publishedAt } = snippet
   for (const s of seasons) {
     if (
@@ -55,21 +64,24 @@ function guessSeason(snippet: Snippet, seasons: Season[]): string | null {
   return null
 }
 
-async function fetchVideos(): Promise<VideoItem[]> {
+/**
+ * YouTube から TL 動画を取得
+ */
+async function fetchVideos() {
   if (!API_KEY) return []
   const res = await fetch(
     `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=%E3%83%96%E3%83%AB%E3%83%BC%E3%82%A2%E3%83%BC%E3%82%AB%E3%82%A4%E3%83%96%20TL&key=${API_KEY}&type=video&order=date`
   )
   if (!res.ok) return []
   const data = await res.json()
-  return data.items as VideoItem[]
+  return data.items
 }
 
 export async function GET() {
   try {
     const raidPath = path.join(process.cwd(), 'data', 'raid.json')
     const raid = JSON.parse(await fs.readFile(raidPath, 'utf-8'))
-    const seasons: Season[] = raid.seasons
+    const seasons = raid.seasons
     const targets = seasons.filter(
       (s) => s.type === '総力戦' || s.type === '大決戦'
     )
