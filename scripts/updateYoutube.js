@@ -59,22 +59,22 @@ async function fetchVideos() {
 
 async function ensureTables(seasons) {
   for (const s of seasons) {
-    const table = `tl_${s.number}`
-    await supabase.rpc('create_tl_table', { name: table })
+    const table = `tl_${s.number.toLowerCase()}`
+    await supabase.rpc('create_tl_table', { name: table }).catch(() => {})
   }
-  await supabase.rpc('create_tl_table', { name: 'tl_unknown' })
+  await supabase.rpc('create_tl_table', { name: 'tl_unknown' }).catch(() => {})
 }
 
 async function loadTimelines(seasons) {
   await ensureTables(seasons)
   const result = {}
   for (const s of seasons) {
-    const table = `tl_${s.number}`
+    const table = `tl_${s.number.toLowerCase()}`
     const { data } = await supabase.from(table).select('*')
-    result[table] = data || []
+    result[table] = (data || []).map((d) => ({ ...d, videoId: d.videoid || d.videoId }))
   }
   const { data: unknown } = await supabase.from('tl_unknown').select('*')
-  result['tl_unknown'] = unknown || []
+  result['tl_unknown'] = (unknown || []).map((d) => ({ ...d, videoId: d.videoid || d.videoId }))
   return result
 }
 
@@ -89,7 +89,7 @@ async function update() {
       continue
     }
     const seasonNum = guessSeason(info.snippet, raid.seasons)
-    const table = seasonNum ? `tl_${seasonNum}` : 'tl_unknown'
+    const table = seasonNum ? `tl_${seasonNum.toLowerCase()}` : 'tl_unknown'
     const arr = timelines[table] || []
     const maxId = arr.reduce((a, c) => Math.max(a, c.id || 0), 0)
     const entry = {
@@ -101,7 +101,9 @@ async function update() {
       seasons: seasonNum ? [seasonNum] : [],
       videoId: vid,
     }
-    const { error } = await supabase.from(table).insert(entry)
+    const { error } = await supabase
+      .from(table)
+      .insert({ ...entry, videoid: vid })
     if (!error) {
       if (!timelines[table]) timelines[table] = []
       timelines[table].push(entry)

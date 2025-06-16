@@ -4,6 +4,10 @@ import fs from 'fs/promises'
 import path from 'path'
 import { Timeline } from '../../../types/timeline'
 
+interface DBTimeline extends Timeline {
+  videoid?: string
+}
+
 const supabaseUrl = process.env.SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_ANON_KEY!
 const supabase = createClient(supabaseUrl, supabaseKey)
@@ -52,13 +56,10 @@ function guessSeason(snippet: Snippet, seasons: Season[]): string | null {
 
 async function ensureTables(seasons: Season[]) {
   for (const s of seasons) {
-    const { error } = await supabase.rpc('create_tl_table', {
-      name: `tl_${s.number}`,
-    })
-    if (error) throw error
+    const table = `tl_${s.number.toLowerCase()}`
+    await supabase.rpc('create_tl_table', { name: table }).catch(() => {})
   }
-  const { error } = await supabase.rpc('create_tl_table', { name: 'tl_unknown' })
-  if (error) throw error
+  await supabase.rpc('create_tl_table', { name: 'tl_unknown' }).catch(() => {})
 }
 
 async function fetchVideos(): Promise<VideoItem[]> {
@@ -93,8 +94,8 @@ export async function GET() {
     for (const info of videos) {
       const vid = info.id.videoId
       const seasonNum = guessSeason(info.snippet, seasons)
-      const table = seasonNum ? `tl_${seasonNum}` : 'tl_unknown'
-      const { data: exist } = await supabase.from(table).select('id').eq('videoId', vid).maybeSingle()
+      const table = seasonNum ? `tl_${seasonNum.toLowerCase()}` : 'tl_unknown'
+      const { data: exist } = await supabase.from(table).select('id').eq('videoid', vid).maybeSingle()
       if (!exist) {
         const { error } = await supabase.from(table).insert({
           boss: '',
@@ -102,19 +103,31 @@ export async function GET() {
           armor: '',
           difficulty: '',
           seasons: seasonNum ? [seasonNum] : [],
-          videoId: vid,
+          videoid: vid,
         })
         if (error) throw error
       }
     }
 
     for (const s of seasons) {
-      const table = `tl_${s.number}`
+      const table = `tl_${s.number.toLowerCase()}`
       const { data } = await supabase.from(table).select('*')
-      if (data) timelines.push(...data)
+      if (data)
+        timelines.push(
+          ...data.map((d) => {
+            const row = d as DBTimeline
+            return { ...row, videoId: row.videoid ?? row.videoId }
+          })
+        )
     }
     const { data: unknown } = await supabase.from('tl_unknown').select('*')
-    if (unknown) timelines.push(...unknown)
+    if (unknown)
+      timelines.push(
+        ...unknown.map((d) => {
+          const row = d as DBTimeline
+          return { ...row, videoId: row.videoid ?? row.videoId }
+        })
+      )
 
     return NextResponse.json(timelines)
   } catch {
@@ -136,11 +149,11 @@ export async function POST(request: Request) {
       const vid = info.id.videoId
       const seasonNum = guessSeason(info.snippet, seasons)
       if (season && seasonNum !== season) continue
-      const table = seasonNum ? `tl_${seasonNum}` : 'tl_unknown'
+      const table = seasonNum ? `tl_${seasonNum.toLowerCase()}` : 'tl_unknown'
       const { data: exist } = await supabase
         .from(table)
         .select('id')
-        .eq('videoId', vid)
+        .eq('videoid', vid)
         .maybeSingle()
       if (!exist) {
         const { error } = await supabase.from(table).insert({
@@ -149,7 +162,7 @@ export async function POST(request: Request) {
           armor: '',
           difficulty: '',
           seasons: seasonNum ? [seasonNum] : [],
-          videoId: vid,
+          videoid: vid,
         })
         if (error) throw error
       }
