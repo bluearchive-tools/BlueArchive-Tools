@@ -117,7 +117,17 @@ export async function GET() {
     const { data: unknown } = await supabase.from('tl_unknown').select('*')
     if (unknown) timelines.push(...unknown)
 
-    return NextResponse.json(timelines)
+    const normalized: Timeline[] = timelines.map((t) => {
+      const raw = t as unknown as { seasons?: unknown }
+      const seasons: string[] = Array.isArray(raw.seasons)
+        ? (raw.seasons as string[])
+        : typeof raw.seasons === 'string'
+          ? [raw.seasons]
+          : []
+      return { ...t, seasons }
+    })
+
+    return NextResponse.json(normalized)
   } catch {
     return NextResponse.json([], { status: 500 })
   }
