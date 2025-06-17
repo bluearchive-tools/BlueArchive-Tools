@@ -30,7 +30,13 @@ const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_ANON_KEY!
 )
-const API_KEY = process.env.YOUTUBE_API_KEY
+const API_KEYS = (
+  process.env.YOUTUBE_API_KEYS?.split(',').map((k) => k.trim()).filter(Boolean) ||
+  []
+)
+if (process.env.YOUTUBE_API_KEY && !API_KEYS.includes(process.env.YOUTUBE_API_KEY)) {
+  API_KEYS.push(process.env.YOUTUBE_API_KEY)
+}
 
 function guessSeason(snippet: Snippet, seasons: Season[]): string | null {
   const { title = '', description = '', publishedAt } = snippet
@@ -57,13 +63,71 @@ function guessSeason(snippet: Snippet, seasons: Season[]): string | null {
 }
 
 async function fetchVideos(): Promise<VideoItem[]> {
-  if (!API_KEY) return []
-  const res = await fetch(
-    `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=%E3%83%96%E3%83%AB%E3%83%BC%E3%82%A2%E3%83%BC%E3%82%AB%E3%82%A4%E3%83%96%20TL&key=${API_KEY}&type=video&order=date`
-  )
-  if (!res.ok) return []
-  const data = await res.json()
-  return data.items as VideoItem[]
+  if (API_KEYS.length === 0) return []
+  const base =
+    'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=%E3%83%96%E3%83%AB%E3%83%BC%E3%82%A2%E3%83%BC%E3%82%AB%E3%82%A4%E3%83%96%20TL&type=video&order=date'
+  for (const key of API_KEYS) {
+    const res = await fetch(`${base}&key=${key}`)
+    if (res.ok) {
+      const data = await res.json()
+      return data.items as VideoItem[]
+    }
+  }
+  return []
+}
+
+function extractArmor(text: string): string {
+  if (/爆発|軽装備/.test(text)) return '軽装備'
+  if (/貫通|重装甲/.test(text)) return '重装甲'
+  if (/神秘|特殊装甲/.test(text)) return '特殊装甲'
+  if (/振動|弾力装甲|弾力/.test(text)) return '弾力装甲'
+  return ''
+}
+
+function extractDifficulty(text: string): string {
+  const mapping: Record<string, string> = {
+    Lunatic: 'Lunatic',
+    Torment: 'Torment',
+    Insane: 'Insane',
+    Extreme: 'Extreme',
+    Hardcore: 'Hardcore',
+    ルナティック: 'Lunatic',
+    トーメント: 'Torment',
+    インセイン: 'Insane',
+    エクストリーム: 'Extreme',
+    ハードコア: 'Hardcore',
+  }
+  for (const [k, v] of Object.entries(mapping)) {
+    if (text.includes(k)) return v
+  }
+  return ''
+}
+
+function extractScore(text: string): string {
+  const cleaned = text.replace(/,/g, '')
+  const m = cleaned.match(/([0-9]{6,})/)
+  return m ? m[1] : ''
+}
+
+async function extractFormation(text: string): Promise<string> {
+  try {
+    const file = path.join(process.cwd(), 'data', 'students.json')
+    const raw = await fs.readFile(file, 'utf-8')
+    const students = JSON.parse(raw) as { name: string }[]
+    const lines = text.split(/\r?\n/)
+    const result: { name: string }[][] = []
+    for (const line of lines) {
+      const members = students.filter((s) => line.includes(s.name))
+      if (members.length) result.push(members)
+    }
+    if (!result.length) {
+      const names = students.filter((s) => text.includes(s.name))
+      if (names.length) result.push(names)
+    }
+    return JSON.stringify(result)
+  } catch {
+    return '[]'
+  }
 }
 
 function extractArmor(text: string): string {

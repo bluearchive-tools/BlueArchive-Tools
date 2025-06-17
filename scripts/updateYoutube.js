@@ -2,9 +2,17 @@ const fs = require('fs/promises')
 const path = require('path')
 const { createClient } = require('@supabase/supabase-js')
 
-const API_KEY = process.env.YOUTUBE_API_KEY
-if (!API_KEY) {
-  console.error('YOUTUBE_API_KEY is not set')
+const API_KEYS = (process.env.YOUTUBE_API_KEYS || '')
+  .split(',')
+  .map((k) => k.trim())
+  .filter(Boolean)
+if (process.env.YOUTUBE_API_KEY) {
+  if (!API_KEYS.includes(process.env.YOUTUBE_API_KEY)) {
+    API_KEYS.push(process.env.YOUTUBE_API_KEY)
+  }
+}
+if (API_KEYS.length === 0) {
+  console.error('YOUTUBE_API_KEYS is not set')
   process.exit(1)
 }
 
@@ -101,14 +109,16 @@ function guessSeason(snippet, seasons) {
 }
 
 async function fetchVideos() {
-  const res = await fetch(
-    `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=%E3%83%96%E3%83%AB%E3%83%BC%E3%82%A2%E3%83%BC%E3%82%AB%E3%82%A4%E3%83%96%20TL&key=${API_KEY}&type=video&order=date`
-  )
-  if (!res.ok) {
-    throw new Error(`Failed: ${res.status}`)
+  const base =
+    'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=%E3%83%96%E3%83%AB%E3%83%BC%E3%82%A2%E3%83%BC%E3%82%AB%E3%82%A4%E3%83%96%20TL&type=video&order=date'
+  for (const key of API_KEYS) {
+    const res = await fetch(`${base}&key=${key}`)
+    if (res.ok) {
+      const data = await res.json()
+      return data.items
+    }
   }
-  const data = await res.json()
-  return data.items
+  throw new Error('All API keys failed')
 }
 
 async function ensureTables(seasons) {

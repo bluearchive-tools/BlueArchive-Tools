@@ -7,7 +7,13 @@ import { Timeline } from '../../../types/timeline'
 const supabaseUrl = process.env.SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_ANON_KEY!
 const supabase = createClient(supabaseUrl, supabaseKey)
-const API_KEY = process.env.YOUTUBE_API_KEY
+const API_KEYS = (
+  process.env.YOUTUBE_API_KEYS?.split(',').map((k) => k.trim()).filter(Boolean) ||
+  []
+)
+if (process.env.YOUTUBE_API_KEY && !API_KEYS.includes(process.env.YOUTUBE_API_KEY)) {
+  API_KEYS.push(process.env.YOUTUBE_API_KEY)
+}
 
 interface Season {
   number: string
@@ -62,22 +68,26 @@ async function ensureTables(seasons: Season[]) {
 }
 
 async function fetchVideos(): Promise<VideoItem[]> {
-  if (!API_KEY) return []
-  const res = await fetch(
-    `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=%E3%83%96%E3%83%AB%E3%83%BC%E3%82%A2%E3%83%BC%E3%82%AB%E3%82%A4%E3%83%96%20TL&key=${API_KEY}&type=video&order=date`
-  )
-  if (!res.ok) return []
-  const data = await res.json()
-  return (data.items as VideoItem[]).filter(v => {
-    const t = v.snippet.title || ''
-    const d = v.snippet.description || ''
-    return (
-      t.includes('ブルアカ') ||
-      t.includes('ブルーアーカイブ') ||
-      d.includes('ブルアカ') ||
-      d.includes('ブルーアーカイブ')
-    )
-  })
+  if (API_KEYS.length === 0) return []
+  const base =
+    'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=%E3%83%96%E3%83%AB%E3%83%BC%E3%82%A2%E3%83%BC%E3%82%AB%E3%82%A4%E3%83%96%20TL&type=video&order=date'
+  for (const key of API_KEYS) {
+    const res = await fetch(`${base}&key=${key}`)
+    if (res.ok) {
+      const data = await res.json()
+      return (data.items as VideoItem[]).filter((v) => {
+        const t = v.snippet.title || ''
+        const d = v.snippet.description || ''
+        return (
+          t.includes('ブルアカ') ||
+          t.includes('ブルーアーカイブ') ||
+          d.includes('ブルアカ') ||
+          d.includes('ブルーアーカイブ')
+        )
+      })
+    }
+  }
+  return []
 }
 
 function extractArmor(text: string): string {
