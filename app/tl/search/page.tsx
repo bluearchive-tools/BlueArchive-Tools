@@ -32,6 +32,8 @@ export default function TLSearchPage() {
   const [armor, setArmor] = useState('')
   const [difficulty, setDifficulty] = useState('')
   const [season, setSeason] = useState('')
+  const [loadingMessage, setLoadingMessage] = useState('')
+  const [openId, setOpenId] = useState<number | null>(null)
 
   // 簡易的な難易度順
   const difficultyOrder = raidData?.difficulties ?? []
@@ -41,7 +43,27 @@ export default function TLSearchPage() {
       try {
         const raidRes = await fetch('/api/raids')
         if (raidRes.ok) {
-          setRaidData(await raidRes.json())
+          const data: RaidData = await raidRes.json()
+          data.seasons.sort(
+            (a, b) =>
+              new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+          )
+          setRaidData(data)
+          const latest = data.seasons[0]
+          if (latest) {
+            setSeason(latest.number)
+            setBoss(latest.boss)
+            setTerrain(latest.terrain)
+            if (latest.type === '総力戦' && latest.defenseArmors.length === 1) {
+              setArmor(latest.defenseArmors[0])
+            }
+            setLoadingMessage(`(${latest.number})のデータを取得中...`)
+            const res = await fetch(`/api/timelines?season=${latest.number}`)
+            if (res.ok) {
+              setTimelines(await res.json())
+            }
+            setLoadingMessage('')
+          }
         }
       } catch {
         // ignore
@@ -52,12 +74,34 @@ export default function TLSearchPage() {
 
   const handleSearch = async () => {
     try {
-      const tlRes = await fetch('/api/timelines')
+      const params = new URLSearchParams()
+      let targets: string[] = []
+      if (season) {
+        params.append('season', season)
+        targets = [season]
+      } else if (
+        availableSeasons.length &&
+        raidData &&
+        availableSeasons.length !== raidData.seasons.length
+      ) {
+        for (const s of availableSeasons) {
+          params.append('season', s.number)
+        }
+        targets = availableSeasons.map((s) => s.number)
+      }
+      if (targets.length === 0 && raidData) {
+        targets = raidData.seasons.map((s) => s.number)
+      }
+      const query = params.toString()
+      setLoadingMessage(`(${targets.join(', ')})のデータを取得中...`)
+      const tlRes = await fetch(`/api/timelines${query ? `?${query}` : ''}`)
       if (tlRes.ok) {
         setTimelines(await tlRes.json())
       }
+      setLoadingMessage('')
     } catch {
       // ignore
+      setLoadingMessage('')
     }
   }
 
@@ -77,7 +121,12 @@ export default function TLSearchPage() {
     }
     difficulties = difficultyOrder.slice(0, allowed + 1)
   }
-  const seasonOptions = raidData?.seasons ?? []
+  const seasonOptions = raidData?.seasons
+    ? [...raidData.seasons].sort(
+        (a, b) =>
+          new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+      )
+    : []
   const availableSeasons = seasonOptions.filter((s) => {
     if (boss && s.boss !== boss) return false
     if (terrain && s.terrain !== terrain) return false
@@ -85,12 +134,9 @@ export default function TLSearchPage() {
   })
 
   const filtered = timelines.filter((t) => {
-    const bossOk = boss ? t.boss === boss : true
-    const terrainOk = terrain ? t.terrain === terrain : true
     const armorOk = armor ? t.armor === armor : true
     const difficultyOk = difficulty ? t.difficulty === difficulty : true
-    const seasonOk = season ? t.seasons.includes(season) : true
-    return bossOk && terrainOk && armorOk && difficultyOk && seasonOk
+    return armorOk && difficultyOk
   })
 
   return (
@@ -209,21 +255,27 @@ export default function TLSearchPage() {
           検索
         </button>
       </div>
-      <ul className="space-y-2">
+      {loadingMessage && <p>{loadingMessage}</p>}
+      <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
         {filtered.map((t) => (
-          <li key={t.id} className="border rounded p-2 space-y-1">
-            <p>
-              {t.boss} / {t.terrain} / {t.armor} / {t.difficulty} /
-              {t.seasons.join(', ')}
-            </p>
-            <a
-              href={`https://www.youtube.com/watch?v=${t.videoId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 underline"
-            >
-              動画を見る
-            </a>
+          <li
+            key={t.id}
+            className="border rounded p-2 space-y-1 text-sm cursor-pointer"
+            onClick={() => setOpenId(openId === t.id ? null : t.id)}
+          >
+            <img
+              src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
+              alt="thumbnail"
+              className="w-full h-auto mb-1"
+            />
+            <p className="text-xs">{t.title}</p>
+            <p className="text-lg font-bold">{t.score}</p>
+            {openId === t.id && (
+              <div className="whitespace-pre-wrap text-xs">
+                <p className="font-bold mb-1">{t.title}</p>
+                <p>{t.description}</p>
+              </div>
+            )}
           </li>
         ))}
       </ul>

@@ -1,9 +1,10 @@
 export interface Timeline {
   id: number
-  boss: string
-  terrain: string
   armor: string
   difficulty: string
-  seasons: string[]
-  videoId: string
+  videoid: string
+  score: string
+  formation: string
+  title: string
+  description: string
 }
