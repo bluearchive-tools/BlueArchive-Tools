@@ -108,17 +108,33 @@ function guessSeason(snippet, seasons) {
   return null
 }
 
-async function fetchVideos() {
+async function fetchVideos(seasons) {
+  if (!seasons?.length) return []
   const base =
-    'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&q=%E3%83%96%E3%83%AB%E3%83%BC%E3%82%A2%E3%83%BC%E3%82%AB%E3%82%A4%E3%83%96%20TL&type=video&order=date'
-  for (const key of API_KEYS) {
-    const res = await fetch(`${base}&key=${key}`)
-    if (res.ok) {
-      const data = await res.json()
-      return data.items
+    'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&type=video&order=date'
+  const results = []
+  const seen = new Set()
+  for (const s of seasons) {
+    const armors = s.defenseArmors && s.defenseArmors.length > 0 ? s.defenseArmors : ['']
+    for (const armor of armors) {
+      const query = `${s.boss} ${s.terrain} ${armor}`.trim()
+      for (const key of API_KEYS) {
+        const res = await fetch(`${base}&q=${encodeURIComponent(query)}&key=${key}`)
+        if (res.ok) {
+          const data = await res.json()
+          for (const item of data.items) {
+            const vid = item.id.videoId
+            if (!seen.has(vid)) {
+              seen.add(vid)
+              results.push(item)
+            }
+          }
+          break
+        }
+      }
     }
   }
-  throw new Error('All API keys failed')
+  return results
 }
 
 async function ensureTables(seasons) {
@@ -146,7 +162,7 @@ async function loadTimelines(seasons) {
 async function update() {
   const raid = await loadRaidData()
   const timelines = await loadTimelines(raid.seasons)
-  const videos = await fetchVideos()
+  const videos = await fetchVideos(raid.seasons)
 
   for (const info of videos) {
     const vid = info.id.videoId
