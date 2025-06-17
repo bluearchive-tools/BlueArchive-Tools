@@ -90,11 +90,13 @@ async function fetchVideos(season: Season): Promise<VideoItem[]> {
 }
 
 function extractArmor(text: string): string {
-  if (/爆発|軽装備/.test(text)) return '軽装備'
-  if (/貫通|重装甲/.test(text)) return '重装甲'
-  if (/神秘|特殊装甲/.test(text)) return '特殊装甲'
-  if (/振動|弾力装甲|弾力/.test(text)) return '弾力装甲'
-  return ''
+  const matched: string[] = []
+  if (/爆発|軽装備/.test(text)) matched.push('軽装備')
+  if (/貫通|重装甲/.test(text)) matched.push('重装甲')
+  if (/神秘|特殊装甲/.test(text)) matched.push('特殊装甲')
+  if (/振動|弾力装甲|弾力/.test(text)) matched.push('弾力装甲')
+  if (matched.length > 1) return '不明'
+  return matched[0] || ''
 }
 
 function extractDifficulty(text: string): string {

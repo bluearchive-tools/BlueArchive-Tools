@@ -145,7 +145,16 @@ export default function TLSearchPage() {
   const filteredSorted = [...filtered].sort(
     (a, b) => parseInt(b.score || '0') - parseInt(a.score || '0')
   )
-  const highest = filteredSorted[0] || null
+  const highestEntries: Record<string, Timeline> = {}
+  if (selectedSeason?.defenseArmors.length && armor === '') {
+    for (const ar of selectedSeason.defenseArmors) {
+      const found = filteredSorted.find((t) => t.armor === ar)
+      if (found) highestEntries[ar] = found
+    }
+  }
+  const highest = Object.keys(highestEntries).length
+    ? null
+    : filteredSorted.find((t) => t.armor !== '不明') || null
 
   const grouped: Record<string, Timeline[]> = {}
   if (selectedSeason?.type === '大決戦' && armor === '') {
@@ -154,6 +163,18 @@ export default function TLSearchPage() {
       if (!grouped[key]) grouped[key] = []
       grouped[key].push(t)
     }
+    // "不明" を最後にするため並び替え
+    const ordered: Record<string, Timeline[]> = {}
+    Object.keys(grouped)
+      .sort((a, b) => {
+        if (a === '不明') return 1
+        if (b === '不明') return -1
+        return 0
+      })
+      .forEach((k) => {
+        ordered[k] = grouped[k]
+      })
+    Object.assign(grouped, ordered)
   }
 
   return (
@@ -273,7 +294,7 @@ export default function TLSearchPage() {
         </button>
       </div>
       {loadingMessage && <p>{loadingMessage}</p>}
-      {highest && (
+      {Object.keys(highestEntries).length === 0 && highest && (
         <div>
           <h3 className="font-bold">現在の最高スコア</h3>
           <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mb-2">
@@ -293,9 +314,49 @@ export default function TLSearchPage() {
           </ul>
         </div>
       )}
+
+      {Object.keys(highestEntries).length > 0 && (
+        <div>
+          <h3 className="font-bold">現在の最高スコア</h3>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+            {Object.entries(highestEntries).map(([ar, t]) => (
+              <li
+                key={ar}
+                className="border rounded p-2 space-y-1 text-sm cursor-pointer"
+                onClick={() => setOpenTl(t)}
+              >
+                <img
+                  src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
+                  alt="thumbnail"
+                  className="w-full h-auto mb-1"
+                />
+                <p className="text-xs">{t.title}</p>
+                <p className="text-lg font-bold">{t.score}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {selectedSeason?.type === '大決戦' && armor === '' && Object.keys(grouped).length > 1 && (
+        <div className="flex gap-2 flex-wrap mb-2">
+          {Object.keys(grouped).map((ar) => (
+            <button
+              key={ar}
+              className="text-blue-600 underline text-sm"
+              onClick={() =>
+                document.getElementById(`armor-${ar}`)?.scrollIntoView({
+                  behavior: 'smooth',
+                })
+              }
+            >
+              {ar}へ
+            </button>
+          ))}
+        </div>
+      )}
       {selectedSeason?.type === '大決戦' && armor === '' ? (
         Object.entries(grouped).map(([ar, arr]) => (
-          <div key={ar} className="mt-4">
+          <div key={ar} id={`armor-${ar}`} className="mt-4">
             <h3 className="font-bold mb-1">{ar}</h3>
             <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
               {arr.map((t) => (
