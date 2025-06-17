@@ -65,7 +65,7 @@ function guessSeason(snippet: Snippet, seasons: Season[]): string | null {
 async function fetchVideos(): Promise<VideoItem[]> {
   if (API_KEYS.length === 0) return []
   const base =
-    'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=%E3%83%96%E3%83%AB%E3%83%BC%E3%82%A2%E3%83%BC%E3%82%AB%E3%82%A4%E3%83%96%20TL&type=video&order=date'
+    'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&q=%E3%83%96%E3%83%AB%E3%83%BC%E3%82%A2%E3%83%BC%E3%82%AB%E3%82%A4%E3%83%96%20TL&type=video&order=date'
   for (const key of API_KEYS) {
     const res = await fetch(`${base}&key=${key}`)
     if (res.ok) {
