@@ -32,6 +32,8 @@ export default function TLSearchPage() {
   const [armor, setArmor] = useState('')
   const [difficulty, setDifficulty] = useState('')
   const [season, setSeason] = useState('')
+  const [loadingMessage, setLoadingMessage] = useState('')
+  const [openTl, setOpenTl] = useState<Timeline | null>(null)
 
   // 簡易的な難易度順
   const difficultyOrder = raidData?.difficulties ?? []
@@ -41,7 +43,29 @@ export default function TLSearchPage() {
       try {
         const raidRes = await fetch('/api/raids')
         if (raidRes.ok) {
-          setRaidData(await raidRes.json())
+          const data: RaidData = await raidRes.json()
+          data.seasons.sort(
+            (a, b) =>
+              new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+          )
+          setRaidData(data)
+          const latest = data.seasons[0]
+          if (latest) {
+            setSeason(latest.number)
+            setBoss(latest.boss)
+            setTerrain(latest.terrain)
+            if (latest.type === '総力戦' && latest.defenseArmors.length === 1) {
+              setArmor(latest.defenseArmors[0])
+            }
+            setLoadingMessage(`(${latest.number})のデータを取得中...`)
+            const res = await fetch(`/api/timelines?season=${latest.number}`)
+            if (res.ok) {
+              const data: Timeline[] = await res.json()
+              data.sort((a, b) => parseInt(b.score || '0') - parseInt(a.score || '0'))
+              setTimelines(data)
+            }
+            setLoadingMessage('')
+          }
         }
       } catch {
         // ignore
@@ -52,12 +76,36 @@ export default function TLSearchPage() {
 
   const handleSearch = async () => {
     try {
-      const tlRes = await fetch('/api/timelines')
-      if (tlRes.ok) {
-        setTimelines(await tlRes.json())
+      const params = new URLSearchParams()
+      let targets: string[] = []
+      if (season) {
+        params.append('season', season)
+        targets = [season]
+      } else if (
+        availableSeasons.length &&
+        raidData &&
+        availableSeasons.length !== raidData.seasons.length
+      ) {
+        for (const s of availableSeasons) {
+          params.append('season', s.number)
+        }
+        targets = availableSeasons.map((s) => s.number)
       }
+      if (targets.length === 0 && raidData) {
+        targets = raidData.seasons.map((s) => s.number)
+      }
+      const query = params.toString()
+      setLoadingMessage(`(${targets.join(', ')})のデータを取得中...`)
+      const tlRes = await fetch(`/api/timelines${query ? `?${query}` : ''}`)
+      if (tlRes.ok) {
+        const data: Timeline[] = await tlRes.json()
+        data.sort((a, b) => parseInt(b.score || '0') - parseInt(a.score || '0'))
+        setTimelines(data)
+      }
+      setLoadingMessage('')
     } catch {
       // ignore
+      setLoadingMessage('')
     }
   }
 
@@ -77,7 +125,12 @@ export default function TLSearchPage() {
     }
     difficulties = difficultyOrder.slice(0, allowed + 1)
   }
-  const seasonOptions = raidData?.seasons ?? []
+  const seasonOptions = raidData?.seasons
+    ? [...raidData.seasons].sort(
+        (a, b) =>
+          new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+      )
+    : []
   const availableSeasons = seasonOptions.filter((s) => {
     if (boss && s.boss !== boss) return false
     if (terrain && s.terrain !== terrain) return false
@@ -85,13 +138,44 @@ export default function TLSearchPage() {
   })
 
   const filtered = timelines.filter((t) => {
-    const bossOk = boss ? t.boss === boss : true
-    const terrainOk = terrain ? t.terrain === terrain : true
     const armorOk = armor ? t.armor === armor : true
     const difficultyOk = difficulty ? t.difficulty === difficulty : true
-    const seasonOk = season ? t.seasons.includes(season) : true
-    return bossOk && terrainOk && armorOk && difficultyOk && seasonOk
+    return armorOk && difficultyOk
   })
+  const filteredSorted = [...filtered].sort(
+    (a, b) => parseInt(b.score || '0') - parseInt(a.score || '0')
+  )
+  const highestEntries: Record<string, Timeline> = {}
+  if (selectedSeason?.defenseArmors.length && armor === '') {
+    for (const ar of selectedSeason.defenseArmors) {
+      const found = filteredSorted.find((t) => t.armor === ar)
+      if (found) highestEntries[ar] = found
+    }
+  }
+  const highest = Object.keys(highestEntries).length
+    ? null
+    : filteredSorted.find((t) => t.armor !== '不明') || null
+
+  const grouped: Record<string, Timeline[]> = {}
+  if (selectedSeason?.type === '大決戦' && armor === '') {
+    for (const t of filteredSorted) {
+      const key = t.armor || 'その他'
+      if (!grouped[key]) grouped[key] = []
+      grouped[key].push(t)
+    }
+    // "不明" を最後にするため並び替え
+    const ordered: Record<string, Timeline[]> = {}
+    Object.keys(grouped)
+      .sort((a, b) => {
+        if (a === '不明') return 1
+        if (b === '不明') return -1
+        return 0
+      })
+      .forEach((k) => {
+        ordered[k] = grouped[k]
+      })
+    Object.assign(grouped, ordered)
+  }
 
   return (
     <main className="p-4 space-y-4">
@@ -209,24 +293,128 @@ export default function TLSearchPage() {
           検索
         </button>
       </div>
-      <ul className="space-y-2">
-        {filtered.map((t) => (
-          <li key={t.id} className="border rounded p-2 space-y-1">
-            <p>
-              {t.boss} / {t.terrain} / {t.armor} / {t.difficulty} /
-              {t.seasons.join(', ')}
-            </p>
-            <a
-              href={`https://www.youtube.com/watch?v=${t.videoId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 underline"
+      {loadingMessage && <p>{loadingMessage}</p>}
+      {Object.keys(highestEntries).length === 0 && highest && (
+        <div>
+          <h3 className="font-bold">現在の最高スコア</h3>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+            <li
+              key={highest.id}
+              className="border rounded p-2 space-y-1 text-sm cursor-pointer"
+              onClick={() => setOpenTl(highest)}
             >
-              動画を見る
-            </a>
-          </li>
-        ))}
-      </ul>
+              <img
+                src={`https://i.ytimg.com/vi/${highest.videoid}/mqdefault.jpg`}
+                alt="thumbnail"
+                className="w-full h-auto mb-1"
+              />
+              <p className="text-xs">{highest.title}</p>
+              <p className="text-lg font-bold">{highest.score}</p>
+            </li>
+          </ul>
+        </div>
+      )}
+
+      {Object.keys(highestEntries).length > 0 && (
+        <div>
+          <h3 className="font-bold">現在の最高スコア</h3>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+            {Object.entries(highestEntries).map(([ar, t]) => (
+              <li
+                key={ar}
+                className="border rounded p-2 space-y-1 text-sm cursor-pointer"
+                onClick={() => setOpenTl(t)}
+              >
+                <img
+                  src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
+                  alt="thumbnail"
+                  className="w-full h-auto mb-1"
+                />
+                <p className="text-xs">{t.title}</p>
+                <p className="text-lg font-bold">{t.score}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {selectedSeason?.type === '大決戦' && armor === '' && Object.keys(grouped).length > 1 && (
+        <div className="flex gap-2 flex-wrap mb-2">
+          {Object.keys(grouped).map((ar) => (
+            <button
+              key={ar}
+              className="text-blue-600 underline text-sm"
+              onClick={() =>
+                document.getElementById(`armor-${ar}`)?.scrollIntoView({
+                  behavior: 'smooth',
+                })
+              }
+            >
+              {ar}へ
+            </button>
+          ))}
+        </div>
+      )}
+      {selectedSeason?.type === '大決戦' && armor === '' ? (
+        Object.entries(grouped).map(([ar, arr]) => (
+          <div key={ar} id={`armor-${ar}`} className="mt-4">
+            <h3 className="font-bold mb-1">{ar}</h3>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
+              {arr.map((t) => (
+                <li
+                  key={t.id}
+                  className="border rounded p-2 space-y-1 text-sm cursor-pointer"
+                  onClick={() => setOpenTl(t)}
+                >
+                  <img
+                    src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
+                    alt="thumbnail"
+                    className="w-full h-auto mb-1"
+                  />
+                  <p className="text-xs">{t.title}</p>
+                  <p className="text-lg font-bold">{t.score}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      ) : (
+        <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
+          {filteredSorted.map((t) => (
+            <li
+              key={t.id}
+              className="border rounded p-2 space-y-1 text-sm cursor-pointer"
+              onClick={() => setOpenTl(t)}
+            >
+              <img
+                src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
+                alt="thumbnail"
+                className="w-full h-auto mb-1"
+              />
+              <p className="text-xs">{t.title}</p>
+              <p className="text-lg font-bold">{t.score}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+      {openTl && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setOpenTl(null)}
+        >
+          <div
+            className="bg-white p-4 rounded max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={`https://i.ytimg.com/vi/${openTl.videoid}/hqdefault.jpg`}
+              alt="thumbnail"
+              className="w-full h-auto mb-2"
+            />
+            <h3 className="font-bold mb-2">{openTl.title}</h3>
+            <p className="whitespace-pre-wrap text-sm">{openTl.description}</p>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
