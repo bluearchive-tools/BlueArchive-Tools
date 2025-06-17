@@ -75,16 +75,7 @@ async function fetchVideos(): Promise<VideoItem[]> {
     const res = await fetch(`${base}&key=${key}`)
     if (res.ok) {
       const data = await res.json()
-      return (data.items as VideoItem[]).filter((v) => {
-        const t = v.snippet.title || ''
-        const d = v.snippet.description || ''
-        return (
-          t.includes('ブルアカ') ||
-          t.includes('ブルーアーカイブ') ||
-          d.includes('ブルアカ') ||
-          d.includes('ブルーアーカイブ')
-        )
-      })
+      return data.items as VideoItem[]
     }
   }
   return []
@@ -192,6 +183,10 @@ export async function GET(request: Request) {
         description: raw.description || '',
       }
     })
+
+    normalized.sort(
+      (a, b) => parseInt(b.score || '0') - parseInt(a.score || '0')
+    )
 
     return NextResponse.json(normalized)
   } catch {

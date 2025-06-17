@@ -33,7 +33,7 @@ export default function TLSearchPage() {
   const [difficulty, setDifficulty] = useState('')
   const [season, setSeason] = useState('')
   const [loadingMessage, setLoadingMessage] = useState('')
-  const [openId, setOpenId] = useState<number | null>(null)
+  const [openTl, setOpenTl] = useState<Timeline | null>(null)
 
   // 簡易的な難易度順
   const difficultyOrder = raidData?.difficulties ?? []
@@ -60,7 +60,9 @@ export default function TLSearchPage() {
             setLoadingMessage(`(${latest.number})のデータを取得中...`)
             const res = await fetch(`/api/timelines?season=${latest.number}`)
             if (res.ok) {
-              setTimelines(await res.json())
+              const data: Timeline[] = await res.json()
+              data.sort((a, b) => parseInt(b.score || '0') - parseInt(a.score || '0'))
+              setTimelines(data)
             }
             setLoadingMessage('')
           }
@@ -96,7 +98,9 @@ export default function TLSearchPage() {
       setLoadingMessage(`(${targets.join(', ')})のデータを取得中...`)
       const tlRes = await fetch(`/api/timelines${query ? `?${query}` : ''}`)
       if (tlRes.ok) {
-        setTimelines(await tlRes.json())
+        const data: Timeline[] = await tlRes.json()
+        data.sort((a, b) => parseInt(b.score || '0') - parseInt(a.score || '0'))
+        setTimelines(data)
       }
       setLoadingMessage('')
     } catch {
@@ -138,6 +142,19 @@ export default function TLSearchPage() {
     const difficultyOk = difficulty ? t.difficulty === difficulty : true
     return armorOk && difficultyOk
   })
+  const filteredSorted = [...filtered].sort(
+    (a, b) => parseInt(b.score || '0') - parseInt(a.score || '0')
+  )
+  const highest = filteredSorted[0] || null
+
+  const grouped: Record<string, Timeline[]> = {}
+  if (selectedSeason?.type === '大決戦' && armor === '') {
+    for (const t of filteredSorted) {
+      const key = t.armor || 'その他'
+      if (!grouped[key]) grouped[key] = []
+      grouped[key].push(t)
+    }
+  }
 
   return (
     <main className="p-4 space-y-4">
@@ -256,29 +273,87 @@ export default function TLSearchPage() {
         </button>
       </div>
       {loadingMessage && <p>{loadingMessage}</p>}
-      <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
-        {filtered.map((t) => (
-          <li
-            key={t.id}
-            className="border rounded p-2 space-y-1 text-sm cursor-pointer"
-            onClick={() => setOpenId(openId === t.id ? null : t.id)}
+      {highest && (
+        <div>
+          <h3 className="font-bold">現在の最高スコア</h3>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+            <li
+              key={highest.id}
+              className="border rounded p-2 space-y-1 text-sm cursor-pointer"
+              onClick={() => setOpenTl(highest)}
+            >
+              <img
+                src={`https://i.ytimg.com/vi/${highest.videoid}/mqdefault.jpg`}
+                alt="thumbnail"
+                className="w-full h-auto mb-1"
+              />
+              <p className="text-xs">{highest.title}</p>
+              <p className="text-lg font-bold">{highest.score}</p>
+            </li>
+          </ul>
+        </div>
+      )}
+      {selectedSeason?.type === '大決戦' && armor === '' ? (
+        Object.entries(grouped).map(([ar, arr]) => (
+          <div key={ar} className="mt-4">
+            <h3 className="font-bold mb-1">{ar}</h3>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
+              {arr.map((t) => (
+                <li
+                  key={t.id}
+                  className="border rounded p-2 space-y-1 text-sm cursor-pointer"
+                  onClick={() => setOpenTl(t)}
+                >
+                  <img
+                    src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
+                    alt="thumbnail"
+                    className="w-full h-auto mb-1"
+                  />
+                  <p className="text-xs">{t.title}</p>
+                  <p className="text-lg font-bold">{t.score}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      ) : (
+        <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
+          {filteredSorted.map((t) => (
+            <li
+              key={t.id}
+              className="border rounded p-2 space-y-1 text-sm cursor-pointer"
+              onClick={() => setOpenTl(t)}
+            >
+              <img
+                src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
+                alt="thumbnail"
+                className="w-full h-auto mb-1"
+              />
+              <p className="text-xs">{t.title}</p>
+              <p className="text-lg font-bold">{t.score}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+      {openTl && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setOpenTl(null)}
+        >
+          <div
+            className="bg-white p-4 rounded max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
           >
             <img
-              src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
+              src={`https://i.ytimg.com/vi/${openTl.videoid}/hqdefault.jpg`}
               alt="thumbnail"
-              className="w-full h-auto mb-1"
+              className="w-full h-auto mb-2"
             />
-            <p className="text-xs">{t.title}</p>
-            <p className="text-lg font-bold">{t.score}</p>
-            {openId === t.id && (
-              <div className="whitespace-pre-wrap text-xs">
-                <p className="font-bold mb-1">{t.title}</p>
-                <p>{t.description}</p>
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
+            <h3 className="font-bold mb-2">{openTl.title}</h3>
+            <p className="whitespace-pre-wrap text-sm">{openTl.description}</p>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
