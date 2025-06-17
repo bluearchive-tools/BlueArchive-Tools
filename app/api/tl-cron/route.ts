@@ -62,18 +62,31 @@ function guessSeason(snippet: Snippet, seasons: Season[]): string | null {
   return null
 }
 
-async function fetchVideos(): Promise<VideoItem[]> {
+async function fetchVideos(season: Season): Promise<VideoItem[]> {
   if (API_KEYS.length === 0) return []
   const base =
-    'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&q=%E3%83%96%E3%83%AB%E3%83%BC%E3%82%A2%E3%83%BC%E3%82%AB%E3%82%A4%E3%83%96%20TL&type=video&order=date'
-  for (const key of API_KEYS) {
-    const res = await fetch(`${base}&key=${key}`)
-    if (res.ok) {
-      const data = await res.json()
-      return data.items as VideoItem[]
+    'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&type=video&order=date'
+  const results: VideoItem[] = []
+  const seen = new Set<string>()
+  const armors = season.defenseArmors && season.defenseArmors.length > 0 ? season.defenseArmors : ['']
+  for (const armor of armors) {
+    const query = `${season.boss} ${season.terrain} ${armor}`.trim()
+    for (const key of API_KEYS) {
+      const res = await fetch(`${base}&q=${encodeURIComponent(query)}&key=${key}`)
+      if (res.ok) {
+        const data = await res.json()
+        for (const item of data.items as VideoItem[]) {
+          const vid = item.id.videoId
+          if (!seen.has(vid)) {
+            seen.add(vid)
+            results.push(item)
+          }
+        }
+        break
+      }
     }
   }
-  return []
+  return results
 }
 
 function extractArmor(text: string): string {
@@ -146,7 +159,7 @@ export async function GET() {
     const latest = targets[0]
     const table = `tl_${latest.number.toLowerCase()}`
 
-    const videos = await fetchVideos()
+    const videos = await fetchVideos(latest)
     let added = 0
     for (const info of videos) {
       const vid = info.id.videoId

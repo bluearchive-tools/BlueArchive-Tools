@@ -19,6 +19,9 @@ interface Season {
   number: string
   startDate: string
   endDate: string
+  boss?: string
+  terrain?: string
+  defenseArmors?: string[]
 }
 
 interface Snippet {
@@ -67,18 +70,33 @@ async function ensureTables(seasons: Season[]) {
   await supabase.from('tl_unknown').select('id').limit(1)
 }
 
-async function fetchVideos(): Promise<VideoItem[]> {
-  if (API_KEYS.length === 0) return []
+async function fetchVideos(seasons: Season[]): Promise<VideoItem[]> {
+  if (API_KEYS.length === 0 || seasons.length === 0) return []
   const base =
-    'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&q=%E3%83%96%E3%83%AB%E3%83%BC%E3%82%A2%E3%83%BC%E3%82%AB%E3%82%A4%E3%83%96%20TL&type=video&order=date'
-  for (const key of API_KEYS) {
-    const res = await fetch(`${base}&key=${key}`)
-    if (res.ok) {
-      const data = await res.json()
-      return data.items as VideoItem[]
+    'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&type=video&order=date'
+  const results: VideoItem[] = []
+  const seen = new Set<string>()
+  for (const s of seasons) {
+    const armors = s.defenseArmors && s.defenseArmors.length > 0 ? s.defenseArmors : ['']
+    for (const armor of armors) {
+      const query = `${s.boss} ${s.terrain} ${armor}`.trim()
+      for (const key of API_KEYS) {
+        const res = await fetch(`${base}&q=${encodeURIComponent(query)}&key=${key}`)
+        if (res.ok) {
+          const data = await res.json()
+          for (const item of data.items as VideoItem[]) {
+            const vid = item.id.videoId
+            if (!seen.has(vid)) {
+              seen.add(vid)
+              results.push(item)
+            }
+          }
+          break
+        }
+      }
     }
   }
-  return []
+  return results
 }
 
 function extractArmor(text: string): string {
@@ -203,7 +221,11 @@ export async function POST(request: Request) {
 
     await ensureTables(seasons)
 
-    const videos = await fetchVideos()
+    const targetSeasons = season
+      ? seasons.filter((s) => s.number === season)
+      : seasons
+
+    const videos = await fetchVideos(targetSeasons)
     for (const info of videos) {
       const vid = info.id.videoId
       const seasonNum = guessSeason(info.snippet, seasons)
