@@ -17,7 +17,7 @@ export async function PUT(request: NextRequest) {
     if (!season) {
       return NextResponse.json({ success: false }, { status: 400 })
     }
-    const id = request.nextUrl.pathname.split('/').slice(-2)[0]
+    const id = request.nextUrl.pathname.split('/').pop()!
     const table = season ? `tl_${season.toLowerCase()}` : 'tl_unknown'
     const update: Record<string, unknown> = {}
     if (score !== undefined) update.score = score
