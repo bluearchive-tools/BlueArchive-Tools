@@ -170,7 +170,7 @@ export default function TLSearchPage() {
           )
         )
       }
-      setLoadingMessage('')
+          className="absolute -top-2 right-1 bg-white/80 border text-xs px-1 rounded"
     } catch {
       // ignore
     } finally {
