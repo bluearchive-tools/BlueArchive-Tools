@@ -37,7 +37,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Supabase 連携
 
-Google 認証後に `profiles` テーブルへユーザー名を登録します。
+Google 認証後に `profiles` テーブルへユーザー名を登録します。`admin` 列を追加しておくと管理者権限を付与できます。
 
 環境変数 `SUPABASE_URL` と `SUPABASE_ANON_KEY` を `.env.local` に設定してください。
 ユーザー名登録ページは `/profile/setup` です。
