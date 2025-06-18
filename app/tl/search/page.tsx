@@ -44,6 +44,9 @@ export default function TLSearchPage() {
   const [editScore, setEditScore] = useState('')
   const [editGuide, setEditGuide] = useState(false)
   const [editFormationStatus, setEditFormationStatus] = useState('none')
+  const [filterGuide, setFilterGuide] = useState(false)
+  const [filterFormationAdded, setFilterFormationAdded] = useState(false)
+  const [filterFormationConfirmed, setFilterFormationConfirmed] = useState(false)
 
   const formatScore = (value: string) => {
     const num = parseInt(value || '0')
@@ -277,7 +280,20 @@ export default function TLSearchPage() {
   const filtered = timelines.filter((t) => {
     const armorOk = armor ? t.armor === armor : true
     const difficultyOk = difficulty ? t.difficulty === difficulty : true
-    return armorOk && difficultyOk
+    const guideOk = filterGuide ? Boolean(t.guide) : true
+    const formationAddedOk = filterFormationAdded
+      ? t.formation && t.formation !== '[]'
+      : true
+    const formationConfirmedOk = filterFormationConfirmed
+      ? t.formationStatus === 'manual'
+      : true
+    return (
+      armorOk &&
+      difficultyOk &&
+      guideOk &&
+      formationAddedOk &&
+      formationConfirmedOk
+    )
   })
   const filteredSorted = [...filtered].sort((a, b) => {
     if (a.armor === '不明' && b.armor !== '不明') return 1
@@ -436,6 +452,30 @@ export default function TLSearchPage() {
         </option>
       ))}
         </select>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={filterGuide}
+            onChange={(e) => setFilterGuide(e.target.checked)}
+          />
+          <span>解説ありのみ</span>
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={filterFormationAdded}
+            onChange={(e) => setFilterFormationAdded(e.target.checked)}
+          />
+          <span>編成追加のみ</span>
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={filterFormationConfirmed}
+            onChange={(e) => setFilterFormationConfirmed(e.target.checked)}
+          />
+          <span>編成確認済みのみ</span>
+        </label>
         <button
           onClick={handleSearch}
           className="border px-4 py-1 rounded bg-blue-500 text-white"
@@ -514,6 +554,15 @@ export default function TLSearchPage() {
             />
             <h3 className="font-bold mb-2">{openTl.title}</h3>
             <p className="whitespace-pre-wrap text-sm">{openTl.description}</p>
+            {openTl.formation && openTl.formation !== '[]' && (
+              <div className="mt-2 space-y-1 text-sm">
+                {JSON.parse(openTl.formation).map(
+                  (team: { name: string }[], idx: number) => (
+                    <p key={idx}>{team.map((m) => m.name).join('、')}</p>
+                  )
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
