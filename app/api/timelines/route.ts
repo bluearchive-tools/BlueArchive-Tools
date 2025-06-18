@@ -130,8 +130,11 @@ function extractDifficulty(text: string): string {
 
 function extractScore(text: string): string {
   const cleaned = text.replace(/,/g, '')
-  const m = cleaned.match(/([0-9]{6,})/)
-  return m ? m[1] : ''
+  const m = cleaned.match(/([0-9]{4,})/)
+  if (!m) return ''
+  const digits = m[1]
+  if (digits.length === 4) return digits + '0000'
+  return digits
 }
 
 async function extractFormation(text: string): Promise<string> {
