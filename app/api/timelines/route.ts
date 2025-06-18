@@ -137,6 +137,10 @@ function extractScore(text: string): string {
   return digits
 }
 
+function extractGuide(text: string): boolean {
+  return /解説/.test(text)
+}
+
 async function extractFormation(text: string): Promise<string> {
   try {
     const file = path.join(process.cwd(), 'data', 'students.json')
@@ -207,18 +211,25 @@ export async function GET(request: Request) {
         videoid: string
         score?: string
         formation?: string
+        guide?: boolean
+        formation_status?: string
         title?: string
         description?: string
         publishedAt?: string
         season?: string
       }
+      const formationVal = raw.formation || '[]'
       return {
         id: raw.id,
         armor: raw.armor || '',
         difficulty: raw.difficulty || '',
         videoid: raw.videoid,
         score: raw.score || '',
-        formation: raw.formation || '[]',
+        formation: formationVal,
+        guide: Boolean(raw.guide),
+        formationStatus:
+          raw.formation_status ||
+          (formationVal && formationVal !== '[]' ? 'auto' : 'none'),
         title: raw.title || '',
         description: raw.description || '',
         publishedAt: raw.publishedAt,
@@ -264,12 +275,15 @@ export async function POST(request: Request) {
         .maybeSingle()
       if (!exist) {
         const text = `${info.snippet.title || ''}\n${info.snippet.description || ''}`
+        const formation = await extractFormation(text)
         const entry = {
           armor: extractArmor(text),
           difficulty: extractDifficulty(text),
           videoid: vid,
           score: extractScore(text),
-          formation: await extractFormation(text),
+          formation,
+          guide: extractGuide(text),
+          formation_status: formation && formation !== '[]' ? 'auto' : 'none',
           title: info.snippet.title || '',
           description: info.snippet.description || '',
           publishedAt: info.snippet.publishedAt,

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faUser, faUserSlash } from '@fortawesome/free-solid-svg-icons'
 import { Timeline } from '../../../types/timeline'
 
 interface Season {
@@ -170,7 +172,6 @@ export default function TLSearchPage() {
           )
         )
       }
-      setLoadingMessage('')
     } catch {
       // ignore
     } finally {
@@ -178,18 +179,17 @@ export default function TLSearchPage() {
     }
   }
 
-  const TimelineCard = ({ t }: { t: Timeline }) => {
-    return (
-      <li
-        key={t.id}
-        className="border rounded p-2 space-y-1 text-sm cursor-pointer relative"
-        onClick={() => setOpenTl(t)}
-      >
-        {isAdmin && (
-          <button
-            className="absolute -top-2 right-1 bg-white/80 border text-xs px-1 rounded"
-            onClick={(e) => {
-              e.stopPropagation()
+  const TimelineCard = ({ t }: { t: Timeline }) => (
+    <li
+      key={t.id}
+      className="border rounded p-2 space-y-1 text-sm cursor-pointer relative"
+      onClick={() => setOpenTl(t)}
+    >
+      {isAdmin && (
+        <button
+          className="absolute -top-2 right-1 bg-white/80 border text-xs px-1 rounded"
+          onClick={(e) => {
+            e.stopPropagation()
               setEditTl(t)
               setEditScore(t.score)
             }}
@@ -206,12 +206,27 @@ export default function TLSearchPage() {
           <span className="absolute top-1 right-1 bg-black/50 text-white text-xs px-1">
             {getDayText(t)}
           </span>
+          {t.guide && (
+            <span className="absolute bottom-1 right-1 bg-black/50 text-white text-xs px-1">
+              解説付き
+            </span>
+          )}
         </div>
         <p className="text-xs">{t.title}</p>
-        <p className="text-lg font-bold">{formatScore(t.score)}</p>
-      </li>
-    )
-  }
+        <p className="text-lg font-bold flex items-center">
+          {formatScore(t.score)}
+          {(!t.formation || t.formation === '[]') && (
+            <FontAwesomeIcon icon={faUserSlash} className="text-red-500 ml-1" />
+          )}
+          {t.formation && t.formation !== '[]' && t.formationStatus !== 'manual' && (
+            <FontAwesomeIcon icon={faUser} className="text-gray-500 ml-1" />
+          )}
+          {t.formationStatus === 'manual' && (
+            <FontAwesomeIcon icon={faUser} className="text-green-500 ml-1" />
+          )}
+        </p>
+    </li>
+  )
 
   const terrains = raidData?.terrains ?? []
   const armors = raidData?.armors ?? []
