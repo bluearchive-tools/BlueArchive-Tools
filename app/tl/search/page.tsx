@@ -42,6 +42,8 @@ export default function TLSearchPage() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [editTl, setEditTl] = useState<Timeline | null>(null)
   const [editScore, setEditScore] = useState('')
+  const [editGuide, setEditGuide] = useState(false)
+  const [editFormationStatus, setEditFormationStatus] = useState('none')
 
   const formatScore = (value: string) => {
     const num = parseInt(value || '0')
@@ -157,27 +159,41 @@ export default function TLSearchPage() {
     }
   }
 
-  const handleSaveScore = async () => {
+  const handleSaveEdit = async () => {
     if (!editTl) return
     try {
       const res = await fetch(`/api/timelines/${editTl.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ season: editTl.season || '', score: editScore }),
+        body: JSON.stringify({
+          season: editTl.season || '',
+          score: editScore,
+          guide: editGuide,
+          formationStatus: editFormationStatus,
+        }),
       })
       if (res.ok) {
         setTimelines((prev) =>
           prev.map((t) =>
-            t.id === editTl.id ? { ...t, score: editScore } : t
+            t.id === editTl.id
+              ? {
+                  ...t,
+                  score: editScore,
+                  guide: editGuide,
+                  formationStatus: editFormationStatus,
+                }
+              : t
           )
         )
       }
-    } catch {
-      // ignore
-    } finally {
-      setEditTl(null)
-    }
+  } catch {
+    // ignore
+  } finally {
+    setEditTl(null)
+    setEditGuide(false)
+    setEditFormationStatus('none')
   }
+}
 
   const TimelineCard = ({ t }: { t: Timeline }) => (
     <li
@@ -190,9 +206,11 @@ export default function TLSearchPage() {
           className="absolute -top-2 right-1 bg-white/80 border text-xs px-1 rounded"
           onClick={(e) => {
             e.stopPropagation()
-              setEditTl(t)
-              setEditScore(t.score)
-            }}
+            setEditTl(t)
+            setEditScore(t.score)
+            setEditGuide(Boolean(t.guide))
+            setEditFormationStatus(t.formationStatus || 'none')
+          }}
           >
             編集
           </button>
@@ -502,7 +520,11 @@ export default function TLSearchPage() {
       {editTl && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={() => setEditTl(null)}
+          onClick={() => {
+            setEditTl(null)
+            setEditGuide(false)
+            setEditFormationStatus('none')
+          }}
         >
           <div
             className="bg-white p-4 rounded space-y-2 w-64"
@@ -517,12 +539,39 @@ export default function TLSearchPage() {
                 className="border rounded p-1 flex-1"
               />
             </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={editGuide}
+                onChange={(e) => setEditGuide(e.target.checked)}
+              />
+              <span>解説付き</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <span>編成状態:</span>
+              <select
+                value={editFormationStatus}
+                onChange={(e) => setEditFormationStatus(e.target.value)}
+                className="border rounded p-1 flex-1"
+              >
+                <option value="none">none</option>
+                <option value="auto">auto</option>
+                <option value="manual">manual</option>
+              </select>
+            </label>
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setEditTl(null)} className="border px-2 py-1">
+              <button
+                onClick={() => {
+                  setEditTl(null)
+                  setEditGuide(false)
+                  setEditFormationStatus('none')
+                }}
+                className="border px-2 py-1"
+              >
                 キャンセル
               </button>
               <button
-                onClick={handleSaveScore}
+                onClick={handleSaveEdit}
                 className="border px-2 py-1 bg-blue-500 text-white"
               >
                 保存
