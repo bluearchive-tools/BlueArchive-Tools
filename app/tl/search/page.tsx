@@ -44,10 +44,11 @@ export default function TLSearchPage() {
     if (!raidData || !t.publishedAt) return ''
     const seasonInfo = raidData.seasons.find((s) => s.number === t.season)
     if (!seasonInfo) return ''
-    const start = new Date(seasonInfo.startDate)
-    const end = new Date(seasonInfo.endDate)
-    const pub = new Date(t.publishedAt)
-    if (pub > end) return '終了後'
+    const start = new Date(`${seasonInfo.startDate}T00:00:00+09:00`)
+    const pubUtc = new Date(t.publishedAt)
+    const pub = new Date(pubUtc.getTime() + 9 * 60 * 60 * 1000)
+    const cutoff = new Date(start.getTime() + 6 * 86400000 + 4 * 60 * 60 * 1000)
+    if (pub >= cutoff) return '終了後'
     const diff = Math.floor((pub.getTime() - start.getTime()) / 86400000) + 1
     return `${diff}日目`
   }
