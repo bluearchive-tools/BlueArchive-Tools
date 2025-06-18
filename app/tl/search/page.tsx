@@ -170,6 +170,7 @@ export default function TLSearchPage() {
           )
         )
       }
+      setLoadingMessage('')
     } catch {
       // ignore
     } finally {
