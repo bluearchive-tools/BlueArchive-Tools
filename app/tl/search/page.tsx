@@ -47,6 +47,7 @@ export default function TLSearchPage() {
   const [filterGuide, setFilterGuide] = useState(false)
   const [filterFormationAdded, setFilterFormationAdded] = useState(false)
   const [filterFormationConfirmed, setFilterFormationConfirmed] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   const formatScore = (value: string) => {
     const num = parseInt(value || '0')
@@ -347,33 +348,34 @@ export default function TLSearchPage() {
     <main className="p-4 space-y-4">
       <h2 className="text-xl">TL検索</h2>
       <div className="space-y-2">
-        <select
-          value={boss}
-          onChange={(e) => setBoss(e.target.value)}
-          className="border rounded px-2 py-1 w-full"
-        >
+        <div className="flex flex-wrap gap-2 items-center">
+          <select
+            value={boss}
+            onChange={(e) => setBoss(e.target.value)}
+            className="border rounded px-2 py-1 flex-1 min-w-[8rem]"
+          >
           <option value="">ボスを選択</option>
           {bosses.map((b) => (
             <option key={b} value={b}>
               {b}
             </option>
           ))}
-        </select>
-        <select
-          value={terrain}
-          onChange={(e) => setTerrain(e.target.value)}
-          className="border rounded px-2 py-1 w-full"
-        >
+          </select>
+          <select
+            value={terrain}
+            onChange={(e) => setTerrain(e.target.value)}
+            className="border rounded px-2 py-1 flex-1 min-w-[8rem]"
+          >
           <option value="">地形を選択</option>
           {terrains.map((t) => (
             <option key={t} value={t}>
               {t}
             </option>
           ))}
-        </select>
-        <select
-          value={armor}
-          onChange={(e) => {
+          </select>
+          <select
+            value={armor}
+            onChange={(e) => {
             const value = e.target.value
             setArmor(value)
             if (selectedSeason) {
@@ -389,7 +391,7 @@ export default function TLSearchPage() {
               }
             }
           }}
-          className="border rounded px-2 py-1 w-full"
+          className="border rounded px-2 py-1 flex-1 min-w-[8rem]"
         >
           <option value="">全て</option>
           {armorOptions.map((a) => (
@@ -397,11 +399,11 @@ export default function TLSearchPage() {
               {a}
             </option>
           ))}
-        </select>
-        <select
-          value={difficulty}
-          onChange={(e) => setDifficulty(e.target.value)}
-          className="border rounded px-2 py-1 w-full"
+          </select>
+          <select
+            value={difficulty}
+            onChange={(e) => setDifficulty(e.target.value)}
+            className="border rounded px-2 py-1 flex-1 min-w-[8rem]"
         >
           <option value="">全て</option>
           {difficulties.map((d) => (
@@ -409,9 +411,9 @@ export default function TLSearchPage() {
               {d}
             </option>
           ))}
-        </select>
-        <select
-          value={season}
+          </select>
+          <select
+            value={season}
           onChange={(e) => {
             const value = e.target.value
             setSeason(value)
@@ -443,7 +445,7 @@ export default function TLSearchPage() {
               }
             }
           }}
-          className="border rounded px-2 py-1 w-full"
+            className="border rounded px-2 py-1 flex-1 min-w-[8rem]"
         >
           <option value="">シーズンを選択</option>
           {availableSeasons.map((s) => (
@@ -451,37 +453,50 @@ export default function TLSearchPage() {
           {`シーズン${s.number} (${s.boss} ${s.terrain}) (${s.startDate}~${s.endDate})`}
         </option>
       ))}
-        </select>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={filterGuide}
-            onChange={(e) => setFilterGuide(e.target.checked)}
-          />
-          <span>解説ありのみ</span>
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={filterFormationAdded}
-            onChange={(e) => setFilterFormationAdded(e.target.checked)}
-          />
-          <span>編成追加のみ</span>
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={filterFormationConfirmed}
-            onChange={(e) => setFilterFormationConfirmed(e.target.checked)}
-          />
-          <span>編成確認済みのみ</span>
-        </label>
-        <button
-          onClick={handleSearch}
-          className="border px-4 py-1 rounded bg-blue-500 text-white"
-        >
-          検索
-        </button>
+          </select>
+          <button
+            onClick={handleSearch}
+            className="border px-3 py-1 rounded bg-blue-500 text-white"
+          >
+            検索
+          </button>
+        </div>
+        <div>
+          <button
+            className="border rounded px-2 py-1"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+          >
+            詳細検索
+          </button>
+          {showAdvanced && (
+            <div className="mt-2 space-y-1">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={filterGuide}
+                  onChange={(e) => setFilterGuide(e.target.checked)}
+                />
+                <span>解説ありのみ</span>
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={filterFormationAdded}
+                  onChange={(e) => setFilterFormationAdded(e.target.checked)}
+                />
+                <span>編成追加のみ</span>
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={filterFormationConfirmed}
+                  onChange={(e) => setFilterFormationConfirmed(e.target.checked)}
+                />
+                <span>編成確認済みのみ</span>
+              </label>
+            </div>
+          )}
+        </div>
       </div>
       {loadingMessage && <p>{loadingMessage}</p>}
       {Object.keys(highestEntries).length === 0 && highest && (
