@@ -168,17 +168,32 @@ export async function GET(request: Request) {
         : seasons
 
     await ensureTables(targets)
-    const timelines: Timeline[] = []
+    const timelines: Record<string, unknown>[] = []
 
     for (const s of targets) {
       const table = `tl_${s.number.toLowerCase()}`
       const { data, error } = await supabase.from(table).select('*')
       if (error) continue
-      if (data) timelines.push(...data)
+      if (data) {
+        timelines.push(
+          ...(data as Record<string, unknown>[]).map((d) => ({
+            ...(d as Record<string, unknown>),
+            season: s.number,
+          }))
+        )
+      }
     }
     if (selected.length === 0) {
-      const { data: unknown } = await supabase.from('tl_unknown').select('*')
-      if (unknown) timelines.push(...unknown)
+      const { data: unknown } = await supabase
+        .from('tl_unknown')
+        .select('*')
+      if (unknown)
+        timelines.push(
+          ...(unknown as Record<string, unknown>[]).map((d) => ({
+            ...(d as Record<string, unknown>),
+            season: '',
+          }))
+        )
     }
 
     const normalized: Timeline[] = timelines.map((t) => {
@@ -191,6 +206,8 @@ export async function GET(request: Request) {
         formation?: string
         title?: string
         description?: string
+        publishedAt?: string
+        season?: string
       }
       return {
         id: raw.id,
@@ -201,12 +218,16 @@ export async function GET(request: Request) {
         formation: raw.formation || '[]',
         title: raw.title || '',
         description: raw.description || '',
+        publishedAt: raw.publishedAt,
+        season: raw.season,
       }
     })
 
-    normalized.sort(
-      (a, b) => parseInt(b.score || '0') - parseInt(a.score || '0')
-    )
+    normalized.sort((a, b) => {
+      if (a.armor === '不明' && b.armor !== '不明') return 1
+      if (a.armor !== '不明' && b.armor === '不明') return -1
+      return parseInt(b.score || '0') - parseInt(a.score || '0')
+    })
 
     return NextResponse.json(normalized)
   } catch {
@@ -248,6 +269,7 @@ export async function POST(request: Request) {
           formation: await extractFormation(text),
           title: info.snippet.title || '',
           description: info.snippet.description || '',
+          publishedAt: info.snippet.publishedAt,
         }
         const { error } = await supabase.from(table).insert(entry)
         if (error) throw error

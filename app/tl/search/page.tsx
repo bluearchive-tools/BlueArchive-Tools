@@ -35,6 +35,23 @@ export default function TLSearchPage() {
   const [loadingMessage, setLoadingMessage] = useState('')
   const [openTl, setOpenTl] = useState<Timeline | null>(null)
 
+  const formatScore = (value: string) => {
+    const num = parseInt(value || '0')
+    return num.toLocaleString()
+  }
+
+  const getDayText = (t: Timeline) => {
+    if (!raidData || !t.publishedAt) return ''
+    const seasonInfo = raidData.seasons.find((s) => s.number === t.season)
+    if (!seasonInfo) return ''
+    const start = new Date(seasonInfo.startDate)
+    const end = new Date(seasonInfo.endDate)
+    const pub = new Date(t.publishedAt)
+    if (pub > end) return '終了後'
+    const diff = Math.floor((pub.getTime() - start.getTime()) / 86400000) + 1
+    return `${diff}日目`
+  }
+
   // 簡易的な難易度順
   const difficultyOrder = raidData?.difficulties ?? []
 
@@ -61,7 +78,11 @@ export default function TLSearchPage() {
             const res = await fetch(`/api/timelines?season=${latest.number}`)
             if (res.ok) {
               const data: Timeline[] = await res.json()
-              data.sort((a, b) => parseInt(b.score || '0') - parseInt(a.score || '0'))
+              data.sort((a, b) => {
+                if (a.armor === '不明' && b.armor !== '不明') return 1
+                if (a.armor !== '不明' && b.armor === '不明') return -1
+                return parseInt(b.score || '0') - parseInt(a.score || '0')
+              })
               setTimelines(data)
             }
             setLoadingMessage('')
@@ -99,7 +120,11 @@ export default function TLSearchPage() {
       const tlRes = await fetch(`/api/timelines${query ? `?${query}` : ''}`)
       if (tlRes.ok) {
         const data: Timeline[] = await tlRes.json()
-        data.sort((a, b) => parseInt(b.score || '0') - parseInt(a.score || '0'))
+        data.sort((a, b) => {
+          if (a.armor === '不明' && b.armor !== '不明') return 1
+          if (a.armor !== '不明' && b.armor === '不明') return -1
+          return parseInt(b.score || '0') - parseInt(a.score || '0')
+        })
         setTimelines(data)
       }
       setLoadingMessage('')
@@ -142,9 +167,11 @@ export default function TLSearchPage() {
     const difficultyOk = difficulty ? t.difficulty === difficulty : true
     return armorOk && difficultyOk
   })
-  const filteredSorted = [...filtered].sort(
-    (a, b) => parseInt(b.score || '0') - parseInt(a.score || '0')
-  )
+  const filteredSorted = [...filtered].sort((a, b) => {
+    if (a.armor === '不明' && b.armor !== '不明') return 1
+    if (a.armor !== '不明' && b.armor === '不明') return -1
+    return parseInt(b.score || '0') - parseInt(a.score || '0')
+  })
   const highestEntries: Record<string, Timeline> = {}
   if (selectedSeason?.defenseArmors.length && armor === '') {
     for (const ar of selectedSeason.defenseArmors) {
@@ -155,6 +182,17 @@ export default function TLSearchPage() {
   const highest = Object.keys(highestEntries).length
     ? null
     : filteredSorted.find((t) => t.armor !== '不明') || null
+
+  let highestScoreText = ''
+  if (selectedSeason?.type === '大決戦' && Object.keys(highestEntries).length) {
+    const total = Object.values(highestEntries).reduce(
+      (sum, t) => sum + parseInt(t.score || '0'),
+      0
+    )
+    highestScoreText = formatScore(String(total))
+  } else if (highest) {
+    highestScoreText = formatScore(highest.score)
+  }
 
   const grouped: Record<string, Timeline[]> = {}
   if (selectedSeason?.type === '大決戦' && armor === '') {
@@ -296,20 +334,25 @@ export default function TLSearchPage() {
       {loadingMessage && <p>{loadingMessage}</p>}
       {Object.keys(highestEntries).length === 0 && highest && (
         <div>
-          <h3 className="font-bold">現在の最高スコア</h3>
+          <h3 className="font-bold">現在の最高スコア: {highestScoreText}</h3>
           <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mb-2">
             <li
               key={highest.id}
               className="border rounded p-2 space-y-1 text-sm cursor-pointer"
               onClick={() => setOpenTl(highest)}
             >
-              <img
-                src={`https://i.ytimg.com/vi/${highest.videoid}/mqdefault.jpg`}
-                alt="thumbnail"
-                className="w-full h-auto mb-1"
-              />
+              <div className="relative">
+                <img
+                  src={`https://i.ytimg.com/vi/${highest.videoid}/mqdefault.jpg`}
+                  alt="thumbnail"
+                  className="w-full h-auto mb-1"
+                />
+                <span className="absolute top-1 right-1 bg-black/50 text-white text-xs px-1">
+                  {getDayText(highest)}
+                </span>
+              </div>
               <p className="text-xs">{highest.title}</p>
-              <p className="text-lg font-bold">{highest.score}</p>
+              <p className="text-lg font-bold">{formatScore(highest.score)}</p>
             </li>
           </ul>
         </div>
@@ -317,7 +360,7 @@ export default function TLSearchPage() {
 
       {Object.keys(highestEntries).length > 0 && (
         <div>
-          <h3 className="font-bold">現在の最高スコア</h3>
+          <h3 className="font-bold">現在の最高スコア: {highestScoreText}</h3>
           <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mb-2">
             {Object.entries(highestEntries).map(([ar, t]) => (
               <li
@@ -325,13 +368,18 @@ export default function TLSearchPage() {
                 className="border rounded p-2 space-y-1 text-sm cursor-pointer"
                 onClick={() => setOpenTl(t)}
               >
-                <img
-                  src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
-                  alt="thumbnail"
-                  className="w-full h-auto mb-1"
-                />
+                <div className="relative">
+                  <img
+                    src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
+                    alt="thumbnail"
+                    className="w-full h-auto mb-1"
+                  />
+                  <span className="absolute top-1 right-1 bg-black/50 text-white text-xs px-1">
+                    {getDayText(t)}
+                  </span>
+                </div>
                 <p className="text-xs">{t.title}</p>
-                <p className="text-lg font-bold">{t.score}</p>
+                <p className="text-lg font-bold">{formatScore(t.score)}</p>
               </li>
             ))}
           </ul>
@@ -365,13 +413,18 @@ export default function TLSearchPage() {
                   className="border rounded p-2 space-y-1 text-sm cursor-pointer"
                   onClick={() => setOpenTl(t)}
                 >
-                  <img
-                    src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
-                    alt="thumbnail"
-                    className="w-full h-auto mb-1"
-                  />
+                  <div className="relative">
+                    <img
+                      src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
+                      alt="thumbnail"
+                      className="w-full h-auto mb-1"
+                    />
+                    <span className="absolute top-1 right-1 bg-black/50 text-white text-xs px-1">
+                      {getDayText(t)}
+                    </span>
+                  </div>
                   <p className="text-xs">{t.title}</p>
-                  <p className="text-lg font-bold">{t.score}</p>
+                  <p className="text-lg font-bold">{formatScore(t.score)}</p>
                 </li>
               ))}
             </ul>
@@ -385,13 +438,18 @@ export default function TLSearchPage() {
               className="border rounded p-2 space-y-1 text-sm cursor-pointer"
               onClick={() => setOpenTl(t)}
             >
-              <img
-                src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
-                alt="thumbnail"
-                className="w-full h-auto mb-1"
-              />
+              <div className="relative">
+                <img
+                  src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
+                  alt="thumbnail"
+                  className="w-full h-auto mb-1"
+                />
+                <span className="absolute top-1 right-1 bg-black/50 text-white text-xs px-1">
+                  {getDayText(t)}
+                </span>
+              </div>
               <p className="text-xs">{t.title}</p>
-              <p className="text-lg font-bold">{t.score}</p>
+              <p className="text-lg font-bold">{formatScore(t.score)}</p>
             </li>
           ))}
         </ul>

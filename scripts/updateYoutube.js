@@ -185,6 +185,7 @@ async function update() {
       formation: await extractFormation(text),
       title: info.snippet.title || '',
       description: info.snippet.description || '',
+      publishedAt: info.snippet.publishedAt,
     }
     const { error } = await supabase.from(table).insert(entry)
     if (!error) {

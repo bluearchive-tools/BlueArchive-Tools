@@ -7,4 +7,6 @@ export interface Timeline {
   formation: string
   title: string
   description: string
+  publishedAt?: string
+  season?: string
 }
