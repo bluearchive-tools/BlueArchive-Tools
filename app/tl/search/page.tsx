@@ -48,6 +48,7 @@ export default function TLSearchPage() {
   const [filterFormationAdded, setFilterFormationAdded] = useState(false)
   const [filterFormationConfirmed, setFilterFormationConfirmed] = useState(false)
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [seasonOpen, setSeasonOpen] = useState(false)
 
   const formatScore = (value: string) => {
     const num = parseInt(value || '0')
@@ -123,6 +124,38 @@ export default function TLSearchPage() {
     }
     checkAdmin()
   }, [session, supabase])
+
+  const handleSeasonSelect = (value: string) => {
+    setSeason(value)
+    setSeasonOpen(false)
+    if (value === '') {
+      setBoss('')
+      setTerrain('')
+      setArmor('')
+      setDifficulty('')
+    } else {
+      const selected = seasonOptions.find((s) => s.number === value)
+      if (selected) {
+        if (!boss) setBoss(selected.boss)
+        if (!terrain) setTerrain(selected.terrain)
+        if (selected.type === '総力戦' && selected.defenseArmors.length === 1) {
+          setArmor(selected.defenseArmors[0])
+        } else if (!selected.defenseArmors.includes(armor)) {
+          setArmor('')
+        }
+        const maxIndex = difficultyOrder.indexOf(selected.maxDifficulty)
+        let allowed = maxIndex
+        if (selected.type === '大決戦' && armor) {
+          const unlocked = selected.maxDifficultyArmors?.includes(armor)
+          if (!unlocked) allowed = Math.max(0, allowed - 1)
+        }
+        const allowedDiffs = difficultyOrder.slice(0, allowed + 1)
+        if (!allowedDiffs.includes(difficulty)) {
+          setDifficulty('')
+        }
+      }
+    }
+  }
 
   const handleSearch = async () => {
     try {
@@ -412,48 +445,34 @@ export default function TLSearchPage() {
             </option>
           ))}
           </select>
-          <select
-            value={season}
-          onChange={(e) => {
-            const value = e.target.value
-            setSeason(value)
-            if (value === '') {
-              setBoss('')
-              setTerrain('')
-              setArmor('')
-              setDifficulty('')
-            } else {
-              const selected = seasonOptions.find((s) => s.number === value)
-              if (selected) {
-                if (!boss) setBoss(selected.boss)
-                if (!terrain) setTerrain(selected.terrain)
-                if (selected.type === '総力戦' && selected.defenseArmors.length === 1) {
-                  setArmor(selected.defenseArmors[0])
-                } else if (!selected.defenseArmors.includes(armor)) {
-                  setArmor('')
-                }
-                const maxIndex = difficultyOrder.indexOf(selected.maxDifficulty)
-                let allowed = maxIndex
-                if (selected.type === '大決戦' && armor) {
-                  const unlocked = selected.maxDifficultyArmors?.includes(armor)
-                  if (!unlocked) allowed = Math.max(0, allowed - 1)
-                }
-                const allowedDiffs = difficultyOrder.slice(0, allowed + 1)
-                if (!allowedDiffs.includes(difficulty)) {
-                  setDifficulty('')
-                }
-              }
-            }
-          }}
-            className="border rounded px-2 py-1 flex-1 min-w-[8rem]"
-        >
-          <option value="">シーズンを選択</option>
-          {availableSeasons.map((s) => (
-            <option key={s.number} value={s.number}>
-          {`シーズン${s.number} (${s.boss} ${s.terrain}) (${s.startDate}~${s.endDate})`}
-        </option>
-      ))}
-          </select>
+          <div className="relative flex-1 min-w-[8rem]">
+            <button
+              type="button"
+              className="border rounded px-2 py-1 w-full text-left"
+              onClick={() => setSeasonOpen((o) => !o)}
+            >
+              {season ? `シーズン${season}` : 'シーズンを選択'}
+            </button>
+            {seasonOpen && (
+              <ul className="absolute z-10 bg-white border rounded mt-1 max-h-60 overflow-y-auto w-full text-sm">
+                <li
+                  className="px-2 py-1 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => handleSeasonSelect('')}
+                >
+                  全て
+                </li>
+                {availableSeasons.map((s) => (
+                  <li
+                    key={s.number}
+                    className="px-2 py-1 hover:bg-gray-100 cursor-pointer whitespace-nowrap"
+                    onClick={() => handleSeasonSelect(s.number)}
+                  >
+                    {`シーズン${s.number}`}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           <button
             onClick={handleSearch}
             className="border px-3 py-1 rounded bg-blue-500 text-white"
