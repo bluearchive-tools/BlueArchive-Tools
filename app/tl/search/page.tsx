@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faUser, faUserSlash } from '@fortawesome/free-solid-svg-icons'
 import { Timeline } from '../../../types/timeline'
 
 interface Season {
@@ -180,7 +182,23 @@ export default function TLSearchPage() {
 
   const TimelineCard = ({ t }: { t: Timeline }) => {
     return (
-      <li
+          {t.guide && (
+            <span className="absolute bottom-1 right-1 bg-black/50 text-white text-xs px-1">
+              解説付き
+            </span>
+          )}
+        <p className="text-lg font-bold flex items-center">
+          {formatScore(t.score)}
+          {(!t.formation || t.formation === '[]') && (
+            <FontAwesomeIcon icon={faUserSlash} className="text-red-500 ml-1" />
+          )}
+          {t.formation && t.formation !== '[]' && t.formationStatus !== 'manual' && (
+            <FontAwesomeIcon icon={faUser} className="text-gray-500 ml-1" />
+          )}
+          {t.formationStatus === 'manual' && (
+            <FontAwesomeIcon icon={faUser} className="text-green-500 ml-1" />
+          )}
+        </p>
         key={t.id}
         className="border rounded p-2 space-y-1 text-sm cursor-pointer relative"
         onClick={() => setOpenTl(t)}

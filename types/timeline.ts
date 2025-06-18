@@ -5,6 +5,8 @@ export interface Timeline {
   videoid: string
   score: string
   formation: string
+  guide?: boolean
+  formationStatus?: string
   title: string
   description: string
   publishedAt?: string

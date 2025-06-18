@@ -127,6 +127,10 @@ function extractScore(text: string): string {
   return digits
 }
 
+function extractGuide(text: string): boolean {
+  return /解説/.test(text)
+}
+
 async function extractFormation(text: string): Promise<string> {
   try {
     const file = path.join(process.cwd(), 'data', 'students.json')
@@ -177,12 +181,15 @@ export async function GET() {
         .maybeSingle()
       if (!exist) {
         const text = `${info.snippet.title || ''}\n${info.snippet.description || ''}`
+        const formation = await extractFormation(text)
         const entry = {
           armor: extractArmor(text) || (latest.defenseArmors && latest.defenseArmors[0]) || '',
           difficulty: extractDifficulty(text) || latest.maxDifficulty || '',
           videoid: vid,
           score: extractScore(text),
-          formation: await extractFormation(text),
+          formation,
+          guide: extractGuide(text),
+          formation_status: formation && formation !== '[]' ? 'auto' : 'none',
           title: info.snippet.title || '',
           description: info.snippet.description || '',
           publishedAt: info.snippet.publishedAt,

@@ -64,6 +64,10 @@ function extractScore(text) {
   return digits
 }
 
+function extractGuide(text) {
+  return /解説/.test(text)
+}
+
 async function extractFormation(text) {
   try {
     const file = path.join(__dirname, '..', 'data', 'students.json')
@@ -179,13 +183,16 @@ async function update() {
     const arr = timelines[table] || []
     const maxId = arr.reduce((a, c) => Math.max(a, c.id || 0), 0)
     const text = `${info.snippet.title || ''}\n${info.snippet.description || ''}`
+    const formation = await extractFormation(text)
     const entry = {
       id: maxId + 1,
       armor: extractArmor(text),
       difficulty: extractDifficulty(text),
       videoid: vid,
       score: extractScore(text),
-      formation: await extractFormation(text),
+      formation,
+      guide: extractGuide(text),
+      formation_status: formation && formation !== '[]' ? 'auto' : 'none',
       title: info.snippet.title || '',
       description: info.snippet.description || '',
       publishedAt: info.snippet.publishedAt,
