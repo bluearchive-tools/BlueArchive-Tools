@@ -178,38 +178,40 @@ export default function TLSearchPage() {
     }
   }
 
-  const TimelineCard = ({ t }: { t: Timeline }) => (
-    <li
-      key={t.id}
-      className="border rounded p-2 space-y-1 text-sm cursor-pointer relative"
-      onClick={() => setOpenTl(t)}
-    >
-      {isAdmin && (
-        <button
-          className="absolute top-1 right-1 bg-white/80 border text-xs px-1 rounded"
-          onClick={(e) => {
-            e.stopPropagation()
-            setEditTl(t)
-            setEditScore(t.score)
-          }}
-        >
-          編集
-        </button>
-      )}
-      <div className="relative">
-        <img
-          src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
-          alt="thumbnail"
-          className="w-full h-auto mb-1"
-        />
-        <span className="absolute top-1 right-1 bg-black/50 text-white text-xs px-1">
-          {getDayText(t)}
-        </span>
-      </div>
-      <p className="text-xs">{t.title}</p>
-      <p className="text-lg font-bold">{formatScore(t.score)}</p>
-    </li>
-  )
+  const TimelineCard = ({ t }: { t: Timeline }) => {
+    return (
+      <li
+        key={t.id}
+        className="border rounded p-2 space-y-1 text-sm cursor-pointer relative"
+        onClick={() => setOpenTl(t)}
+      >
+        {isAdmin && (
+          <button
+            className="absolute -top-2 right-1 bg-white/80 border text-xs px-1 rounded"
+            onClick={(e) => {
+              e.stopPropagation()
+              setEditTl(t)
+              setEditScore(t.score)
+            }}
+          >
+            編集
+          </button>
+        )}
+        <div className="relative">
+          <img
+            src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
+            alt="thumbnail"
+            className="w-full h-auto mb-1"
+          />
+          <span className="absolute top-1 right-1 bg-black/50 text-white text-xs px-1">
+            {getDayText(t)}
+          </span>
+        </div>
+        <p className="text-xs">{t.title}</p>
+        <p className="text-lg font-bold">{formatScore(t.score)}</p>
+      </li>
+    )
+  }
 
   const terrains = raidData?.terrains ?? []
   const armors = raidData?.armors ?? []
