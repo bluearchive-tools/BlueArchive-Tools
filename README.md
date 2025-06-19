@@ -37,7 +37,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Supabase 連携
 
-Google 認証後に `profiles` テーブルへユーザー名を登録します。
+Google 認証後に `profiles` テーブルへユーザー名を登録します。`admin` 列を追加しておくと管理者権限を付与できます。
 
 環境変数 `SUPABASE_URL` と `SUPABASE_ANON_KEY` を `.env.local` に設定してください。
 ユーザー名登録ページは `/profile/setup` です。
@@ -48,6 +48,9 @@ Google 認証後に `profiles` テーブルへユーザー名を登録します�
 
 ## TL 自動更新
 
-`api/tl-cron` エンドポイントは Vercel Cron により 5 分おきに実行されます。
+`api/tl-cron` エンドポイントは Vercel Cron により 30 分おきに実行されます。
 最新シーズンのタイムライン動画を検索し、Supabase に保存します。
 テーブル名はすべて小文字の `tl_<シーズン番号>` として事前に作成しておく必要があります。
+各テーブルには以下の列を用意してください。
+`guide` (boolean) は動画に解説が付いているかどうか、
+`formation_status` (text) は編成情報の状態(`none`/`auto`/`manual`)を示します。
