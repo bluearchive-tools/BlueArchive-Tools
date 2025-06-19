@@ -6,6 +6,21 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUser, faUserSlash } from '@fortawesome/free-solid-svg-icons'
 import { Timeline } from '../../../types/timeline'
 
+interface Member {
+  id: string
+  name: string
+  level?: number
+  bond?: number
+  ex_skill?: number
+  normal_skill?: number
+  passive_skill?: number
+  sub_skill?: number
+  equip1?: number
+  equip2?: number
+  equip3?: number
+  item_tier?: number
+}
+
 interface Season {
   number: string
   boss: string
@@ -590,11 +605,24 @@ export default function TLSearchPage() {
             <p className="whitespace-pre-wrap text-sm">{openTl.description}</p>
             {openTl.formation && openTl.formation !== '[]' && (
               <div className="mt-2 space-y-1 text-sm">
-                {JSON.parse(openTl.formation).map(
-                  (team: { name: string }[], idx: number) => (
-                    <p key={idx}>{team.map((m) => m.name).join('、')}</p>
-                  )
-                )}
+                {JSON.parse(openTl.formation).map((team: Member[], idx: number) => (
+                  <div key={idx}>
+                    {team.map((m: Member, i: number) => {
+                      const parts: string[] = [m.name]
+                      if (m.level) parts.push(`Lv${m.level}`)
+                      if (m.bond) parts.push(`絆${m.bond}`)
+                      if (m.ex_skill) parts.push(`EX${m.ex_skill}`)
+                      if (m.normal_skill) parts.push(`NS${m.normal_skill}`)
+                      if (m.passive_skill) parts.push(`PS${m.passive_skill}`)
+                      if (m.sub_skill) parts.push(`SS${m.sub_skill}`)
+                      if (m.equip1) parts.push(`T${m.equip1}`)
+                      if (m.equip2) parts.push(`T${m.equip2}`)
+                      if (m.equip3) parts.push(`T${m.equip3}`)
+                      if (m.item_tier) parts.push(`UE${m.item_tier}`)
+                      return <p key={i}>{parts.join(' ')}</p>
+                    })}
+                  </div>
+                ))}
               </div>
             )}
           </div>

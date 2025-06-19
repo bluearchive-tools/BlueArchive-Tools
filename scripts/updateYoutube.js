@@ -73,6 +73,19 @@ async function extractFormation(text) {
     const file = path.join(__dirname, '..', 'data', 'students.json')
     const raw = await fs.readFile(file, 'utf-8')
     const students = JSON.parse(raw)
+    const ids = students.filter((s) => text.includes(s.name)).map((s) => s.id)
+    const userMap = {}
+    if (ids.length) {
+      const { data } = await supabase
+        .from('user_students')
+        .select('*')
+        .in('student_id', ids)
+      if (data) {
+        for (const row of data) {
+          userMap[row.student_id] = row
+        }
+      }
+    }
     const lines = text.split(/\r?\n/)
     const result = []
     for (const line of lines) {
@@ -95,12 +108,31 @@ async function extractFormation(text) {
           equip3: gears[2],
           item_tier: get(/(?:愛用品|UE)\s*T?(\d+)/i),
         }
-        result.push(members.map((m) => Object.assign({}, m, info)))
+        result.push(
+          members.map((m) => {
+            const base = userMap[m.id] || {}
+            return Object.assign({}, m, {
+              level: info.level ?? base.level,
+              bond: info.bond ?? base.bond,
+              ex_skill: info.ex_skill ?? base.ex_skill,
+              normal_skill: info.normal_skill ?? base.normal_skill,
+              passive_skill: info.passive_skill ?? base.passive_skill,
+              sub_skill: info.sub_skill ?? base.sub_skill,
+              equip1: info.equip1 ?? base.equip1,
+              equip2: info.equip2 ?? base.equip2,
+              equip3: info.equip3 ?? base.equip3,
+              item_tier: info.item_tier ?? base.item_tier,
+            })
+          })
+        )
       }
     }
     if (!result.length) {
       const names = students.filter((s) => text.includes(s.name))
-      if (names.length) result.push(names.map((m) => Object.assign({}, m)))
+      if (names.length)
+        result.push(
+          names.map((m) => Object.assign({}, m, userMap[m.id] || {}))
+        )
     }
     return JSON.stringify(result)
   } catch {
