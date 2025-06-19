@@ -91,18 +91,31 @@ async function extractFormation(text) {
     for (const line of lines) {
       const members = students.filter((s) => line.includes(s.name))
       if (members.length) {
-        const get = (re) => {
+        const get = (re, max) => {
           const m = line.match(re)
-          return m ? Number(m[1]) : undefined
+          if (!m) return undefined
+          const val = m[1].toUpperCase()
+          return val === 'M' && max ? max : Number(val)
         }
+        const compact = (() => {
+          const m = line.match(/\b([M\d]{4})\b/)
+          if (!m) return {}
+          const [e, n, p, s] = m[1].split('')
+          return {
+            ex: e === 'M' ? 5 : Number(e),
+            ns: n === 'M' ? 10 : Number(n),
+            ps: p === 'M' ? 10 : Number(p),
+            ss: s === 'M' ? 10 : Number(s),
+          }
+        })()
         const gears = [...line.matchAll(/T(\d+)/gi)].map((m) => Number(m[1]))
         const info = {
           level: get(/Lv\.?\s*(\d+)/i),
           bond: get(/絆\s*(\d+)/),
-          ex_skill: get(/EX(?:スキル)?\s*(\d+)/i),
-          normal_skill: get(/NS(?:スキル)?\s*(\d+)/i),
-          passive_skill: get(/PS(?:スキル)?\s*(\d+)/i),
-          sub_skill: get(/SS(?:スキル)?\s*(\d+)/i),
+          ex_skill: get(/EX(?:スキル)?\s*(\d+|M)/i, 5) ?? compact.ex,
+          normal_skill: get(/NS(?:スキル)?\s*(\d+|M)/i, 10) ?? compact.ns,
+          passive_skill: get(/PS(?:スキル)?\s*(\d+|M)/i, 10) ?? compact.ps,
+          sub_skill: get(/SS(?:スキル)?\s*(\d+|M)/i, 10) ?? compact.ss,
           equip1: gears[0],
           equip2: gears[1],
           equip3: gears[2],

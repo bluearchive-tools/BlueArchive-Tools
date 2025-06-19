@@ -173,9 +173,28 @@ interface UserStudent extends Member {
   student_id: string
 }
 
-function parseNumbers(line: string, regex: RegExp): number | undefined {
+function parseNumbers(
+  line: string,
+  regex: RegExp,
+  maxValue?: number
+): number | undefined {
   const m = line.match(regex)
-  return m ? Number(m[1]) : undefined
+  if (!m) return undefined
+  const val = m[1].toUpperCase()
+  if (val === 'M' && maxValue) return maxValue
+  return Number(val)
+}
+
+function parseCompactSkill(line: string) {
+  const m = line.match(/\b([M\d]{4})\b/)
+  if (!m) return {}
+  const [e, n, p, s] = m[1].split('')
+  return {
+    ex: e === 'M' ? 5 : Number(e),
+    ns: n === 'M' ? 10 : Number(n),
+    ps: p === 'M' ? 10 : Number(p),
+    ss: s === 'M' ? 10 : Number(s),
+  }
 }
 
 async function extractFormation(text: string): Promise<string> {
@@ -201,12 +220,17 @@ async function extractFormation(text: string): Promise<string> {
     for (const line of lines) {
       const members = students.filter((s) => line.includes(s.name))
       if (members.length) {
+        const compact = parseCompactSkill(line)
         const level = parseNumbers(line, /Lv\.?\s*(\d+)/i)
         const bond = parseNumbers(line, /絆\s*(\d+)/)
-        const ex = parseNumbers(line, /EX(?:スキル)?\s*(\d+)/i)
-        const ns = parseNumbers(line, /NS(?:スキル)?\s*(\d+)/i)
-        const ps = parseNumbers(line, /PS(?:スキル)?\s*(\d+)/i)
-        const ss = parseNumbers(line, /SS(?:スキル)?\s*(\d+)/i)
+        const ex =
+          parseNumbers(line, /EX(?:スキル)?\s*(\d+|M)/i, 5) ?? compact.ex
+        const ns =
+          parseNumbers(line, /NS(?:スキル)?\s*(\d+|M)/i, 10) ?? compact.ns
+        const ps =
+          parseNumbers(line, /PS(?:スキル)?\s*(\d+|M)/i, 10) ?? compact.ps
+        const ss =
+          parseNumbers(line, /SS(?:スキル)?\s*(\d+|M)/i, 10) ?? compact.ss
         const gearMatches = [...line.matchAll(/T(\d+)/gi)].map((m) => Number(m[1]))
         const ue = parseNumbers(line, /(?:愛用品|UE)\s*T?(\d+)/i)
         result.push(

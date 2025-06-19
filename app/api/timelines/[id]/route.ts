@@ -8,11 +8,20 @@ const supabase = createClient(
 
 export async function PUT(request: NextRequest) {
   try {
-    const { season, score, guide, formationStatus } = (await request.json()) as {
+    const {
+      season,
+      score,
+      guide,
+      formationStatus,
+      armor,
+      formation,
+    } = (await request.json()) as {
       season?: string
       score?: string
       guide?: boolean
       formationStatus?: string
+      armor?: string
+      formation?: string
     }
     if (!season) {
       return NextResponse.json({ success: false }, { status: 400 })
@@ -24,6 +33,8 @@ export async function PUT(request: NextRequest) {
     if (guide !== undefined) update.guide = guide
     if (formationStatus !== undefined)
       update.formation_status = formationStatus
+    if (armor !== undefined) update.armor = armor
+    if (formation !== undefined) update.formation = formation
     const { error } = await supabase
       .from(table)
       .update(update)

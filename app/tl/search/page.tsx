@@ -59,6 +59,8 @@ export default function TLSearchPage() {
   const [editScore, setEditScore] = useState('')
   const [editGuide, setEditGuide] = useState(false)
   const [editFormationStatus, setEditFormationStatus] = useState('none')
+  const [editArmor, setEditArmor] = useState('')
+  const [editFormation, setEditFormation] = useState('')
   const [filterGuide, setFilterGuide] = useState(false)
   const [filterFormationAdded, setFilterFormationAdded] = useState(false)
   const [filterFormationConfirmed, setFilterFormationConfirmed] = useState(false)
@@ -222,6 +224,8 @@ export default function TLSearchPage() {
           score: editScore,
           guide: editGuide,
           formationStatus: editFormationStatus,
+          armor: editArmor,
+          formation: editFormation,
         }),
       })
       if (res.ok) {
@@ -233,6 +237,8 @@ export default function TLSearchPage() {
                   score: editScore,
                   guide: editGuide,
                   formationStatus: editFormationStatus,
+                  armor: editArmor,
+                  formation: editFormation,
                 }
               : t
           )
@@ -244,6 +250,8 @@ export default function TLSearchPage() {
     setEditTl(null)
     setEditGuide(false)
     setEditFormationStatus('none')
+    setEditArmor('')
+    setEditFormation('')
   }
 }
 
@@ -262,6 +270,8 @@ export default function TLSearchPage() {
             setEditScore(t.score)
             setEditGuide(Boolean(t.guide))
             setEditFormationStatus(t.formationStatus || 'none')
+            setEditArmor(t.armor)
+            setEditFormation(t.formation)
           }}
           >
             編集
@@ -670,12 +680,38 @@ export default function TLSearchPage() {
                 <option value="manual">manual</option>
               </select>
             </label>
+            <label className="flex items-center gap-2">
+              <span>装甲:</span>
+              <select
+                value={editArmor}
+                onChange={(e) => setEditArmor(e.target.value)}
+                className="border rounded p-1 flex-1"
+              >
+                <option value="">未設定</option>
+                {armors.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+                <option value="不明">不明</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span>編成(JSON):</span>
+              <textarea
+                value={editFormation}
+                onChange={(e) => setEditFormation(e.target.value)}
+                className="border rounded p-1 text-sm h-24"
+              />
+            </label>
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => {
                   setEditTl(null)
                   setEditGuide(false)
                   setEditFormationStatus('none')
+                  setEditArmor('')
+                  setEditFormation('')
                 }}
                 className="border px-2 py-1"
               >
