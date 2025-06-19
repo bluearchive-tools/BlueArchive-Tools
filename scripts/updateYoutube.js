@@ -57,11 +57,22 @@ function extractDifficulty(text) {
 
 function extractScore(text) {
   const cleaned = text.replace(/,/g, '')
-  const m = cleaned.match(/([0-9]{4,})/)
-  if (!m) return ''
-  const digits = m[1]
-  if (digits.length === 4) return digits + '0000'
-  return digits
+  const regex = /\d{4,}/g
+  const matches = cleaned.matchAll(regex)
+  for (const m of matches) {
+    const digits = m[0]
+    const num = parseInt(digits)
+    if (
+      ((digits.length === 4 && num >= 1900 && num <= 2100) ||
+        (digits.length === 6 && digits.startsWith('20')) ||
+        (digits.length === 8 && digits.startsWith('20')))
+    ) {
+      continue
+    }
+    if (digits.length === 4) return digits + '0000'
+    return digits
+  }
+  return ''
 }
 
 function extractGuide(text) {
@@ -73,79 +84,19 @@ async function extractFormation(text) {
     const file = path.join(__dirname, '..', 'data', 'students.json')
     const raw = await fs.readFile(file, 'utf-8')
     const students = JSON.parse(raw)
-    const ids = students.filter((s) => text.includes(s.name)).map((s) => s.id)
-    const userMap = {}
-    if (ids.length) {
-      const { data } = await supabase
-        .from('user_students')
-        .select('*')
-        .in('student_id', ids)
-      if (data) {
-        for (const row of data) {
-          userMap[row.student_id] = row
-        }
-      }
-    }
     const lines = text.split(/\r?\n/)
     const result = []
     for (const line of lines) {
       const members = students.filter((s) => line.includes(s.name))
       if (members.length) {
-        const get = (re, max) => {
-          const m = line.match(re)
-          if (!m) return undefined
-          const val = m[1].toUpperCase()
-          return val === 'M' && max ? max : Number(val)
-        }
-        const compact = (() => {
-          const m = line.match(/\b([M\d]{4})\b/)
-          if (!m) return {}
-          const [e, n, p, s] = m[1].split('')
-          return {
-            ex: e === 'M' ? 5 : Number(e),
-            ns: n === 'M' ? 10 : Number(n),
-            ps: p === 'M' ? 10 : Number(p),
-            ss: s === 'M' ? 10 : Number(s),
-          }
-        })()
-        const gears = [...line.matchAll(/T(\d+)/gi)].map((m) => Number(m[1]))
-        const info = {
-          level: get(/Lv\.?\s*(\d+)/i),
-          bond: get(/絆\s*(\d+)/),
-          ex_skill: get(/EX(?:スキル)?\s*(\d+|M)/i, 5) ?? compact.ex,
-          normal_skill: get(/NS(?:スキル)?\s*(\d+|M)/i, 10) ?? compact.ns,
-          passive_skill: get(/PS(?:スキル)?\s*(\d+|M)/i, 10) ?? compact.ps,
-          sub_skill: get(/SS(?:スキル)?\s*(\d+|M)/i, 10) ?? compact.ss,
-          equip1: gears[0],
-          equip2: gears[1],
-          equip3: gears[2],
-          item_tier: get(/(?:愛用品|UE)\s*T?(\d+)/i),
-        }
-        result.push(
-          members.map((m) => {
-            const base = userMap[m.id] || {}
-            return Object.assign({}, m, {
-              level: info.level ?? base.level,
-              bond: info.bond ?? base.bond,
-              ex_skill: info.ex_skill ?? base.ex_skill,
-              normal_skill: info.normal_skill ?? base.normal_skill,
-              passive_skill: info.passive_skill ?? base.passive_skill,
-              sub_skill: info.sub_skill ?? base.sub_skill,
-              equip1: info.equip1 ?? base.equip1,
-              equip2: info.equip2 ?? base.equip2,
-              equip3: info.equip3 ?? base.equip3,
-              item_tier: info.item_tier ?? base.item_tier,
-            })
-          })
-        )
+        result.push(members.map((m) => m.id))
       }
     }
     if (!result.length) {
       const names = students.filter((s) => text.includes(s.name))
-      if (names.length)
-        result.push(
-          names.map((m) => Object.assign({}, m, userMap[m.id] || {}))
-        )
+      if (names.length) {
+        result.push(names.map((m) => m.id))
+      }
     }
     return JSON.stringify(result)
   } catch {
@@ -278,7 +229,6 @@ async function update() {
       }
     } else {
       const update = {}
-      if (exist.armor !== armor) update.armor = armor
       if (exist.difficulty !== difficulty) update.difficulty = difficulty
       if (exist.score !== score) update.score = score
       if (exist.guide !== guide) update.guide = guide

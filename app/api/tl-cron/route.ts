@@ -120,11 +120,21 @@ function extractDifficulty(text: string): string {
 
 function extractScore(text: string): string {
   const cleaned = text.replace(/,/g, '')
-  const m = cleaned.match(/([0-9]{4,})/)
-  if (!m) return ''
-  const digits = m[1]
-  if (digits.length === 4) return digits + '0000'
-  return digits
+  const regex = /\d{4,}/g
+  for (const m of cleaned.matchAll(regex)) {
+    const digits = m[0]
+    const num = parseInt(digits)
+    if (
+      ((digits.length === 4 && num >= 1900 && num <= 2100) ||
+        (digits.length === 6 && digits.startsWith('20')) ||
+        (digits.length === 8 && digits.startsWith('20')))
+    ) {
+      continue
+    }
+    if (digits.length === 4) return digits + '0000'
+    return digits
+  }
+  return ''
 }
 
 function extractGuide(text: string): boolean {
@@ -146,112 +156,25 @@ interface Student {
   position: string
 }
 
-interface Member extends Student {
-  level?: number
-  bond?: number
-  ex_skill?: number
-  normal_skill?: number
-  passive_skill?: number
-  sub_skill?: number
-  equip1?: number
-  equip2?: number
-  equip3?: number
-  item_tier?: number
-}
-
-interface UserStudent extends Member {
-  student_id: string
-}
-
-function parseNumbers(
-  line: string,
-  regex: RegExp,
-  maxValue?: number
-): number | undefined {
-  const m = line.match(regex)
-  if (!m) return undefined
-  const val = m[1].toUpperCase()
-  if (val === 'M' && maxValue) return maxValue
-  return Number(val)
-}
-
-function parseCompactSkill(line: string) {
-  const m = line.match(/\b([M\d]{4})\b/)
-  if (!m) return {}
-  const [e, n, p, s] = m[1].split('')
-  return {
-    ex: e === 'M' ? 5 : Number(e),
-    ns: n === 'M' ? 10 : Number(n),
-    ps: p === 'M' ? 10 : Number(p),
-    ss: s === 'M' ? 10 : Number(s),
-  }
-}
 
 async function extractFormation(text: string): Promise<string> {
   try {
     const file = path.join(process.cwd(), 'data', 'students.json')
     const raw = await fs.readFile(file, 'utf-8')
     const students = JSON.parse(raw) as Student[]
-    const ids = students.filter((s) => text.includes(s.name)).map((s) => s.id)
-    const userMap: Record<string, Member> = {}
-    if (ids.length) {
-      const { data } = await supabase
-        .from('user_students')
-        .select('*')
-        .in('student_id', ids)
-      if (data) {
-        for (const row of data as UserStudent[]) {
-          userMap[row.student_id] = row as Member
-        }
-      }
-    }
     const lines = text.split(/\r?\n/)
-    const result: Member[][] = []
+    const result: string[][] = []
     for (const line of lines) {
       const members = students.filter((s) => line.includes(s.name))
       if (members.length) {
-        const compact = parseCompactSkill(line)
-        const level = parseNumbers(line, /Lv\.?\s*(\d+)/i)
-        const bond = parseNumbers(line, /絆\s*(\d+)/)
-        const ex =
-          parseNumbers(line, /EX(?:スキル)?\s*(\d+|M)/i, 5) ?? compact.ex
-        const ns =
-          parseNumbers(line, /NS(?:スキル)?\s*(\d+|M)/i, 10) ?? compact.ns
-        const ps =
-          parseNumbers(line, /PS(?:スキル)?\s*(\d+|M)/i, 10) ?? compact.ps
-        const ss =
-          parseNumbers(line, /SS(?:スキル)?\s*(\d+|M)/i, 10) ?? compact.ss
-        const gearMatches = [...line.matchAll(/T(\d+)/gi)].map((m) => Number(m[1]))
-        const ue = parseNumbers(line, /(?:愛用品|UE)\s*T?(\d+)/i)
-        result.push(
-          members.map((m) => {
-            const base = userMap[m.id] || {}
-            return {
-              ...m,
-              level: level ?? base.level,
-              bond: bond ?? base.bond,
-              ex_skill: ex ?? base.ex_skill,
-              normal_skill: ns ?? base.normal_skill,
-              passive_skill: ps ?? base.passive_skill,
-              sub_skill: ss ?? base.sub_skill,
-              equip1: gearMatches[0] ?? base.equip1,
-              equip2: gearMatches[1] ?? base.equip2,
-              equip3: gearMatches[2] ?? base.equip3,
-              item_tier: ue ?? base.item_tier,
-            }
-          })
-        )
+        result.push(members.map((m) => m.id))
       }
     }
     if (!result.length) {
       const names = students.filter((s) => text.includes(s.name))
-      if (names.length)
-        result.push(
-          names.map((m) => ({
-            ...m,
-            ...(userMap[m.id] || {}),
-          }))
-        )
+      if (names.length) {
+        result.push(names.map((m) => m.id))
+      }
     }
     return JSON.stringify(result)
   } catch {
@@ -312,7 +235,6 @@ export async function GET() {
         if (!error) added++
       } else {
         const update: Record<string, unknown> = {}
-        if (exist.armor !== armor) update.armor = armor
         if (exist.difficulty !== difficulty) update.difficulty = difficulty
         if (exist.score !== score) update.score = score
         if (exist.guide !== guide) update.guide = guide
