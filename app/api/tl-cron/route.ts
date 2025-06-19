@@ -159,6 +159,10 @@ interface Member extends Student {
   item_tier?: number
 }
 
+interface UserStudent extends Member {
+  student_id: string
+}
+
 function parseNumbers(line: string, regex: RegExp): number | undefined {
   const m = line.match(regex)
   return m ? Number(m[1]) : undefined
@@ -169,6 +173,19 @@ async function extractFormation(text: string): Promise<string> {
     const file = path.join(process.cwd(), 'data', 'students.json')
     const raw = await fs.readFile(file, 'utf-8')
     const students = JSON.parse(raw) as Student[]
+    const ids = students.filter((s) => text.includes(s.name)).map((s) => s.id)
+    const userMap: Record<string, Member> = {}
+    if (ids.length) {
+      const { data } = await supabase
+        .from('user_students')
+        .select('*')
+        .in('student_id', ids)
+      if (data) {
+        for (const row of data as UserStudent[]) {
+          userMap[row.student_id] = row as Member
+        }
+      }
+    }
     const lines = text.split(/\r?\n/)
     const result: Member[][] = []
     for (const line of lines) {
@@ -183,25 +200,34 @@ async function extractFormation(text: string): Promise<string> {
         const gearMatches = [...line.matchAll(/T(\d+)/gi)].map((m) => Number(m[1]))
         const ue = parseNumbers(line, /(?:愛用品|UE)\s*T?(\d+)/i)
         result.push(
-          members.map((m) => ({
-            ...m,
-            level,
-            bond,
-            ex_skill: ex,
-            normal_skill: ns,
-            passive_skill: ps,
-            sub_skill: ss,
-            equip1: gearMatches[0],
-            equip2: gearMatches[1],
-            equip3: gearMatches[2],
-            item_tier: ue,
-          }))
+          members.map((m) => {
+            const base = userMap[m.id] || {}
+            return {
+              ...m,
+              level: level ?? base.level,
+              bond: bond ?? base.bond,
+              ex_skill: ex ?? base.ex_skill,
+              normal_skill: ns ?? base.normal_skill,
+              passive_skill: ps ?? base.passive_skill,
+              sub_skill: ss ?? base.sub_skill,
+              equip1: gearMatches[0] ?? base.equip1,
+              equip2: gearMatches[1] ?? base.equip2,
+              equip3: gearMatches[2] ?? base.equip3,
+              item_tier: ue ?? base.item_tier,
+            }
+          })
         )
       }
     }
     if (!result.length) {
       const names = students.filter((s) => text.includes(s.name))
-      if (names.length) result.push(names.map((m) => ({ ...m })))
+      if (names.length)
+        result.push(
+          names.map((m) => ({
+            ...m,
+            ...(userMap[m.id] || {}),
+          }))
+        )
     }
     return JSON.stringify(result)
   } catch {
