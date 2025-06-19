@@ -77,11 +77,30 @@ async function extractFormation(text) {
     const result = []
     for (const line of lines) {
       const members = students.filter((s) => line.includes(s.name))
-      if (members.length) result.push(members)
+      if (members.length) {
+        const get = (re) => {
+          const m = line.match(re)
+          return m ? Number(m[1]) : undefined
+        }
+        const gears = [...line.matchAll(/T(\d+)/gi)].map((m) => Number(m[1]))
+        const info = {
+          level: get(/Lv\.?\s*(\d+)/i),
+          bond: get(/絆\s*(\d+)/),
+          ex_skill: get(/EX(?:スキル)?\s*(\d+)/i),
+          normal_skill: get(/NS(?:スキル)?\s*(\d+)/i),
+          passive_skill: get(/PS(?:スキル)?\s*(\d+)/i),
+          sub_skill: get(/SS(?:スキル)?\s*(\d+)/i),
+          equip1: gears[0],
+          equip2: gears[1],
+          equip3: gears[2],
+          item_tier: get(/(?:愛用品|UE)\s*T?(\d+)/i),
+        }
+        result.push(members.map((m) => Object.assign({}, m, info)))
+      }
     }
     if (!result.length) {
       const names = students.filter((s) => text.includes(s.name))
-      if (names.length) result.push(names)
+      if (names.length) result.push(names.map((m) => Object.assign({}, m)))
     }
     return JSON.stringify(result)
   } catch {
