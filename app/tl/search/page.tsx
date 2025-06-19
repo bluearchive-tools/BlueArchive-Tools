@@ -6,19 +6,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUser, faUserSlash } from '@fortawesome/free-solid-svg-icons'
 import { Timeline } from '../../../types/timeline'
 
-interface Member {
+interface Student {
   id: string
   name: string
-  level?: number
-  bond?: number
-  ex_skill?: number
-  normal_skill?: number
-  passive_skill?: number
-  sub_skill?: number
-  equip1?: number
-  equip2?: number
-  equip3?: number
-  item_tier?: number
 }
 
 interface Season {
@@ -55,6 +45,7 @@ export default function TLSearchPage() {
   const [loadingMessage, setLoadingMessage] = useState('')
   const [openTl, setOpenTl] = useState<Timeline | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [students, setStudents] = useState<Student[]>([])
   const [editTl, setEditTl] = useState<Timeline | null>(null)
   const [editScore, setEditScore] = useState('')
   const [editGuide, setEditGuide] = useState(false)
@@ -99,6 +90,11 @@ export default function TLSearchPage() {
               new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
           )
           setRaidData(data)
+          const stuRes = await fetch('/api/students')
+          if (stuRes.ok) {
+            const stu: Student[] = await stuRes.json()
+            setStudents(stu)
+          }
           const latest = data.seasons[0]
           if (latest) {
             setSeason(latest.number)
@@ -613,23 +609,13 @@ export default function TLSearchPage() {
             />
             <h3 className="font-bold mb-2">{openTl.title}</h3>
             <p className="whitespace-pre-wrap text-sm">{openTl.description}</p>
-            {openTl.formation && openTl.formation !== '[]' && (
+            {openTl.formation && openTl.formation !== '[]' && students.length > 0 && (
               <div className="mt-2 space-y-1 text-sm">
-                {JSON.parse(openTl.formation).map((team: Member[], idx: number) => (
+                {JSON.parse(openTl.formation).map((team: string[], idx: number) => (
                   <div key={idx}>
-                    {team.map((m: Member, i: number) => {
-                      const parts: string[] = [m.name]
-                      if (m.level) parts.push(`Lv${m.level}`)
-                      if (m.bond) parts.push(`絆${m.bond}`)
-                      if (m.ex_skill) parts.push(`EX${m.ex_skill}`)
-                      if (m.normal_skill) parts.push(`NS${m.normal_skill}`)
-                      if (m.passive_skill) parts.push(`PS${m.passive_skill}`)
-                      if (m.sub_skill) parts.push(`SS${m.sub_skill}`)
-                      if (m.equip1) parts.push(`T${m.equip1}`)
-                      if (m.equip2) parts.push(`T${m.equip2}`)
-                      if (m.equip3) parts.push(`T${m.equip3}`)
-                      if (m.item_tier) parts.push(`UE${m.item_tier}`)
-                      return <p key={i}>{parts.join(' ')}</p>
+                    {team.map((id: string, i: number) => {
+                      const student = students.find((s) => s.id === id)
+                      return <p key={i}>{student ? student.name : id}</p>
                     })}
                   </div>
                 ))}
