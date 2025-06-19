@@ -233,26 +233,53 @@ export async function GET() {
       if (seasonNum !== latest.number) continue
       const { data: exist } = await supabase
         .from(table)
-        .select('id')
+        .select('*')
         .eq('videoid', vid)
         .maybeSingle()
+
+      const text = `${info.snippet.title || ''}\n${info.snippet.description || ''}`
+      const armor = extractArmor(text) || (latest.defenseArmors && latest.defenseArmors[0]) || ''
+      const difficulty = extractDifficulty(text) || latest.maxDifficulty || ''
+      const score = extractScore(text)
+      const formation = await extractFormation(text)
+      const guide = extractGuide(text)
+      const formationStatus = formation && formation !== '[]' ? 'auto' : 'none'
+      const entry = {
+        armor,
+        difficulty,
+        videoid: vid,
+        score,
+        formation,
+        guide,
+        formation_status: formationStatus,
+        title: info.snippet.title || '',
+        description: info.snippet.description || '',
+        publishedAt: info.snippet.publishedAt,
+      }
+
       if (!exist) {
-        const text = `${info.snippet.title || ''}\n${info.snippet.description || ''}`
-        const formation = await extractFormation(text)
-        const entry = {
-          armor: extractArmor(text) || (latest.defenseArmors && latest.defenseArmors[0]) || '',
-          difficulty: extractDifficulty(text) || latest.maxDifficulty || '',
-          videoid: vid,
-          score: extractScore(text),
-          formation,
-          guide: extractGuide(text),
-          formation_status: formation && formation !== '[]' ? 'auto' : 'none',
-          title: info.snippet.title || '',
-          description: info.snippet.description || '',
-          publishedAt: info.snippet.publishedAt,
-        }
         const { error } = await supabase.from(table).insert(entry)
         if (!error) added++
+      } else {
+        const update: Record<string, unknown> = {}
+        if (exist.armor !== armor) update.armor = armor
+        if (exist.difficulty !== difficulty) update.difficulty = difficulty
+        if (exist.score !== score) update.score = score
+        if (exist.guide !== guide) update.guide = guide
+        if (exist.title !== entry.title) update.title = entry.title
+        if (exist.description !== entry.description) update.description = entry.description
+        if (exist.publishedAt !== entry.publishedAt) update.publishedAt = entry.publishedAt
+        if (exist.formation_status !== 'manual' && exist.formation !== formation) {
+          update.formation = formation
+          update.formation_status = formationStatus
+        }
+        if (Object.keys(update).length > 0) {
+          const { error } = await supabase
+            .from(table)
+            .update(update)
+            .eq('id', exist.id)
+          if (!error) added++
+        }
       }
     }
 
