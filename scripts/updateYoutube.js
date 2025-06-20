@@ -85,19 +85,59 @@ async function extractFormation(text) {
     const raw = await fs.readFile(file, 'utf-8')
     const students = JSON.parse(raw)
     const lines = text.split(/\r?\n/)
-    const result = []
+    const teams = []
+    const ids = new Set()
     for (const line of lines) {
       const members = students.filter((s) => line.includes(s.name))
       if (members.length) {
-        result.push(members.map((m) => m.id))
+        teams.push(members)
+        members.forEach((m) => ids.add(m.id))
       }
     }
-    if (!result.length) {
-      const names = students.filter((s) => text.includes(s.name))
-      if (names.length) {
-        result.push(names.map((m) => m.id))
+    if (teams.length === 0) {
+      const members = students.filter((s) => text.includes(s.name))
+      if (members.length) {
+        teams.push(members)
+        members.forEach((m) => ids.add(m.id))
       }
     }
+    if (ids.size === 0) return '[]'
+    const { data } = await supabase
+      .from('user_students')
+      .select('*')
+      .in('student_id', Array.from(ids))
+    const rows = data || []
+    const map = {}
+    for (const r of rows) {
+      map[r.student_id] = r
+    }
+    const result = teams.map((team) =>
+      team.map((m) => ({
+        id: m.id,
+        name: m.name,
+        level: map[m.id]?.level ?? null,
+        star: map[m.id]?.star ?? null,
+        unique_star: map[m.id]?.unique_star ?? null,
+        unique_level: map[m.id]?.unique_level ?? null,
+        bond: map[m.id]?.bond ?? null,
+        hp: map[m.id]?.hp ?? null,
+        hp_wb: map[m.id]?.hp_wb ?? null,
+        attack: map[m.id]?.attack ?? null,
+        attack_wb: map[m.id]?.attack_wb ?? null,
+        defense: map[m.id]?.defense ?? null,
+        heal: map[m.id]?.heal ?? null,
+        heal_wb: map[m.id]?.heal_wb ?? null,
+        ex_skill: map[m.id]?.ex_skill ?? null,
+        normal_skill: map[m.id]?.normal_skill ?? null,
+        passive_skill: map[m.id]?.passive_skill ?? null,
+        sub_skill: map[m.id]?.sub_skill ?? null,
+        equip1: map[m.id]?.equip1 ?? null,
+        equip2: map[m.id]?.equip2 ?? null,
+        equip3: map[m.id]?.equip3 ?? null,
+        item_tier: map[m.id]?.item_tier ?? null,
+        alt_bonds: map[m.id]?.alt_bonds ?? null,
+      }))
+    )
     return JSON.stringify(result)
   } catch {
     return '[]'

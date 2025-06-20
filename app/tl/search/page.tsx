@@ -611,11 +611,17 @@ export default function TLSearchPage() {
             <p className="whitespace-pre-wrap text-sm">{openTl.description}</p>
             {openTl.formation && openTl.formation !== '[]' && students.length > 0 && (
               <div className="mt-2 space-y-1 text-sm">
-                {JSON.parse(openTl.formation).map((team: string[], idx: number) => (
+                {JSON.parse(openTl.formation).map((team: unknown[], idx: number) => (
                   <div key={idx}>
-                    {team.map((id: string, i: number) => {
+                    {team.map((member: unknown, i: number) => {
+                      const obj = member as { id?: string; name?: string; level?: number } | string
+                      const id = typeof obj === 'string' ? obj : obj.id || ''
+                      const name = typeof obj === 'object' && obj && 'name' in obj ? (obj as { name?: string }).name : undefined
+                      const lv = typeof obj === 'object' && obj && 'level' in obj && obj.level ? ` Lv${obj.level}` : ''
                       const student = students.find((s) => s.id === id)
-                      return <p key={i}>{student ? student.name : id}</p>
+                      return (
+                        <p key={i}>{student ? student.name : name || id}{lv}</p>
+                      )
                     })}
                   </div>
                 ))}
