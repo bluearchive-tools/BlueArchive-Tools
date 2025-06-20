@@ -4936,5 +4936,2365 @@
       "slot3": ["shoes"],
       "accessory": ["accessory"]
     }
+  },
+  {
+    "id": "123",
+    "name": "ハルナ(正月)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "124",
+    "name": "フウカ(正月)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "SPECIAL",
+    "characterType": "サポーター",
+    "position": "BACK",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "125",
+    "name": "ジュンコ(正月)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 1,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "126",
+    "name": "ミネ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "タンク",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "127",
+    "name": "ミカ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "軽装備",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "128",
+    "name": "メグ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "129",
+    "name": "カンナ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "SPECIAL",
+    "characterType": "アタッカー",
+    "position": "BACK",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "130",
+    "name": "サクラコ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "131",
+    "name": "トキ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "弾力装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "132",
+    "name": "ナギサ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "SPECIAL",
+    "characterType": "アタッカー",
+    "position": "BACK",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "133",
+    "name": "コユキ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "134",
+    "name": "カヨコ(正月)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "サポーター",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "135",
+    "name": "ハルカ(正月)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "SPECIAL",
+    "characterType": "サポーター",
+    "position": "BACK",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "136",
+    "name": "カホ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "重装甲",
+    "hasAccessory": true,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "137",
+    "name": "アリス(メイド)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "軽装備",
+    "hasAccessory": true,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "138",
+    "name": "トキ(バニーガール)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "139",
+    "name": "ユズ(メイド)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "弾力装甲",
+    "hasAccessory": false,
+    "initialStars": 1,
+    "role": "SPECIAL",
+    "characterType": "アタッカー",
+    "position": "BACK",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "140",
+    "name": "レイサ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "タンク",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "141",
+    "name": "ルミ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "ヒーラー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "142",
+    "name": "ミナ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "サポーター",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "143",
+    "name": "ミノリ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "SPECIAL",
+    "characterType": "アタッカー",
+    "position": "BACK",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "144",
+    "name": "ミヤコ(水着)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "タンク",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "145",
+    "name": "サキ(水着)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "サポーター",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "146",
+    "name": "ミユ(水着)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": false,
+    "initialStars": 1,
+    "role": "SPECIAL",
+    "characterType": "アタッカー",
+    "position": "BACK",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "147",
+    "name": "シロコ(水着)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "軽装備",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "SPECIAL",
+    "characterType": "アタッカー",
+    "position": "BACK",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "148",
+    "name": "ウイ(水着)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "弾力装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "サポーター",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "149",
+    "name": "ヒナタ(水着)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "SPECIAL",
+    "characterType": "アタッカー",
+    "position": "BACK",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "150",
+    "name": "コハル(水着)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 1,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "151",
+    "name": "ハナコ(水着)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "振動",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "152",
+    "name": "ミモリ(水着)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "SPECIAL",
+    "characterType": "サポーター",
+    "position": "BACK",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "153",
+    "name": "メル",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "軽装備",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "154",
+    "name": "モミジ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "振動",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 2,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "155",
+    "name": "コトリ(応援団)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "156",
+    "name": "ハルナ(体操服)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "振動",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "SPECIAL",
+    "characterType": "ヒーラー",
+    "position": "BACK",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "157",
+    "name": "イチカ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "振動",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "158",
+    "name": "カスミ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "振動",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "159",
+    "name": "シグレ(温泉)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "SPECIAL",
+    "characterType": "ヒーラー",
+    "position": "BACK",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "160",
+    "name": "御坂美琴",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "161",
+    "name": "食蜂操祈",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "サポーター",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "162",
+    "name": "佐天涙子",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false,
+    "initialStars": 1,
+    "role": "SPECIAL",
+    "characterType": "アタッカー",
+    "position": "BACK",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "163",
+    "name": "ユカリ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "振動",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "164",
+    "name": "レンゲ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "振動",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "165",
+    "name": "キキョウ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "振動",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "サポーター",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "166",
+    "name": "エイミ(水着)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "SPECIAL",
+    "characterType": "サポーター",
+    "position": "BACK",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "167",
+    "name": "コタマ(キャンプ)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "サポーター",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "168",
+    "name": "ハレ(キャンプ)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "軽装備",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "サポーター",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "169",
+    "name": "アコ(ドレス)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "サポーター",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "170",
+    "name": "イブキ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 1,
+    "role": "STRIKER",
+    "characterType": "サポーター",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "171",
+    "name": "マコト",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "SPECIAL",
+    "characterType": "アタッカー",
+    "position": "BACK",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "172",
+    "name": "ヒナ(ドレス)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "弾力装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "173",
+    "name": "カヨコ(ドレス)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "軽装備",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "174",
+    "name": "アル(ドレス)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "サポーター",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "175",
+    "name": "アカリ(正月)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "T.S.",
+    "position": "BACK",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "176",
+    "name": "ウミカ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "神秘",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "177",
+    "name": "ツバキ(ガイド)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "貫通",
+    "defenseType": "重装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "SPECIAL",
+    "characterType": "サポーター",
+    "position": "BACK",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "178",
+    "name": "カズサ(バンド)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "179",
+    "name": "ヨシミ(バンド)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "180",
+    "name": "アイリ(バンド)",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "爆発",
+    "defenseType": "特殊装甲",
+    "hasAccessory": false,
+    "initialStars": 1,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
+  },
+  {
+    "id": "181",
+    "name": "キララ",
+    "image": "https://via.placeholder.com/150?text=C",
+    "attackType": "振動",
+    "defenseType": "軽装備",
+    "hasAccessory": false,
+    "initialStars": 3,
+    "role": "STRIKER",
+    "characterType": "アタッカー",
+    "position": "FRONT",
+    "skills": {
+      "ex": {
+        "title": "サンプルEX",
+        "text": "対象に{damage}%のダメージ",
+        "values": {"damage": [100, 110, 120, 130, 140]}
+      },
+      "normal": {
+        "title": "サンプルNS",
+        "text": "30秒間{buff}%攻撃力増加",
+        "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+      },
+      "passive": {
+        "title": "サンプルPS",
+        "text": "攻撃力{passive}%増加",
+        "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}
+      },
+      "sub": {
+        "title": "サンプルSS",
+        "text": "クリ率{crit}%増加",
+        "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}
+      }
+    },
+    "equipmentSlots": {
+      "slot1": ["weapon"],
+      "slot2": ["gloves"],
+      "slot3": ["shoes"],
+      "accessory": ["accessory"]
+    }
   }
 ]
