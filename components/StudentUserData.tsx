@@ -36,6 +36,8 @@ interface Student {
   attackType: string
   defenseType: string
   hasAccessory?: boolean
+  styleIds?: string[]
+  styleOf?: string
   altIds?: string[]
   altOf?: string
   initialStars: number
@@ -120,11 +122,13 @@ export default function StudentUserData({
   }, [])
   const loadData = async () => {
     if (!session) return
+    const student = students.find((s) => s.id === studentId)
+    const baseId = student?.styleOf || studentId
     const { data } = await supabase
       .from('user_students')
       .select('*')
       .eq('user_id', session.user.id)
-      .eq('student_id', studentId)
+      .eq('student_id', baseId)
       .maybeSingle()
     if (data) setData(data as UserStudent)
   }
@@ -132,16 +136,17 @@ export default function StudentUserData({
   useEffect(() => {
     loadData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, supabase, studentId])
+  }, [session, supabase, studentId, students])
 
   const student = students.find((s) => s.id === studentId)
+  const baseId = student?.styleOf || studentId
 
   if (!session) return null
 
   if (!data) return <p>未登録</p>
 
   const bondEntries = Object.entries(
-    data.alt_bonds ?? { [studentId]: data.bond }
+    data.alt_bonds ?? { [baseId]: data.bond }
   )
 
   return (
@@ -485,7 +490,7 @@ export default function StudentUserData({
               .from('user_students')
               .update({ [editField.field]: v })
               .eq('user_id', session!.user.id)
-              .eq('student_id', studentId)
+              .eq('student_id', baseId)
             setEditField(null)
             loadData()
           }}
@@ -493,16 +498,16 @@ export default function StudentUserData({
       )}
       {editBonds && (
         <EditBondsModal
-          bonds={{ [studentId]: data.bond, ...(data.alt_bonds || {}) }}
+          bonds={{ [baseId]: data.bond, ...(data.alt_bonds || {}) }}
           students={students}
           onClose={() => setEditBonds(false)}
           onSave={async (vals) => {
-            const main = vals[studentId] || 0
+            const main = vals[baseId] || 0
             await supabase
               .from('user_students')
               .update({ bond: main, alt_bonds: vals })
               .eq('user_id', session!.user.id)
-              .eq('student_id', studentId)
+              .eq('student_id', baseId)
             setEditBonds(false)
             loadData()
           }}
