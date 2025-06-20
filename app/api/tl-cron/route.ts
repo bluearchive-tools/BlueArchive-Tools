@@ -148,6 +148,8 @@ interface Student {
   attackType: string
   defenseType: string
   hasAccessory?: boolean
+  styleIds?: string[]
+  styleOf?: string
   altIds?: string[]
   altOf?: string
   initialStars: number
