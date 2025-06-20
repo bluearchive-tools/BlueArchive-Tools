@@ -7621,7 +7621,7 @@
 
   {
     "id": "190",
-    "name": "ホシノ(臨戦)別スタイル",
+    "name": "ホシノ(臨戦)",
     "image": "https://via.placeholder.com/150?text=C",
     "attackType": "神秘",
     "defenseType": "重装甲",
@@ -7629,7 +7629,7 @@
     "styleOf": "189",
     "initialStars": 3,
     "role": "STRIKER",
-    "characterType": "タンク",
+    "characterType": "アタッカー",
     "position": "FRONT",
     "skills": {
       "ex": {"title": "サンプルEX", "text": "対象に{damage}%のダメージ", "values": {"damage": [100,110,120,130,140]}},
