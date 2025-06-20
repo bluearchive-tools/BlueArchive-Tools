@@ -82,9 +82,11 @@ interface UserStudent {
 export default function StudentUserData({
   studentId,
   editMode,
+  previewMax,
 }: {
   studentId: string
   editMode: boolean
+  previewMax?: boolean
 }) {
   const session = useSession()
   const supabase = useSupabaseClient()
@@ -141,12 +143,58 @@ export default function StudentUserData({
   const student = students.find((s) => s.id === studentId)
   const baseId = student?.styleOf || studentId
 
-  if (!session) return null
+  const isRegistered = !!data
 
-  if (!data) return <p>未登録</p>
+  const placeholderMin: UserStudent = {
+    level: 1,
+    star: 1,
+    unique_star: 0,
+    unique_level: 0,
+    bond: 0,
+    hp: 0,
+    hp_wb: 0,
+    attack: 0,
+    attack_wb: 0,
+    defense: 0,
+    heal: 0,
+    heal_wb: 0,
+    ex_skill: 1,
+    normal_skill: 1,
+    passive_skill: 1,
+    sub_skill: 1,
+    equip1: 1,
+    equip2: 1,
+    equip3: 1,
+    item_tier: 0,
+  }
+
+  const placeholderMax: UserStudent = {
+    level: 90,
+    star: 5,
+    unique_star: 3,
+    unique_level: 50,
+    bond: 100,
+    hp: 0,
+    hp_wb: 25,
+    attack: 0,
+    attack_wb: 25,
+    defense: 0,
+    heal: 0,
+    heal_wb: 25,
+    ex_skill: 5,
+    normal_skill: 10,
+    passive_skill: 10,
+    sub_skill: 10,
+    equip1: 10,
+    equip2: 10,
+    equip3: 9,
+    item_tier: 2,
+  }
+
+  const display = data || (previewMax ? placeholderMax : placeholderMin)
 
   const bondEntries = Object.entries(
-    data.alt_bonds ?? { [baseId]: data.bond }
+    (isRegistered ? data.alt_bonds ?? { [baseId]: data.bond } : { [baseId]: display.bond })
   )
 
   return (
@@ -165,7 +213,7 @@ export default function StudentUserData({
             <button
               type="button"
               onClick={() => setShowBonds(true)}
-              className={`relative text-pink-300${editMode ? ' edit-highlight' : ''}`}
+              className={`relative text-pink-300${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
               <FontAwesomeIcon
                 icon={faHeart}
@@ -179,12 +227,12 @@ export default function StudentUserData({
                 }}
               />
               <span className="absolute inset-0 flex items-center justify-center text-black text-sm font-bold drop-shadow-[0_0_2px_white]">
-                {data.bond}
+                {display.bond}
               </span>
             </button>
             <span className="flex-1 text-left text-2xl">{student?.name}</span>
             <span className="flex items-center -space-x-1 justify-end">
-              {Array.from({ length: data.star }).map((_, i) => (
+              {Array.from({ length: display.star }).map((_, i) => (
                 <FontAwesomeIcon key={i} icon={faStar} className="text-yellow-400" />
               ))}
             </span>
@@ -194,7 +242,7 @@ export default function StudentUserData({
               {student?.role}
             </span>
           </div>
-          <div className="bg-[#114073] bg-opacity-90 px-1 inline-block w-20 text-center">Lv. {data.level}</div>
+          <div className="bg-[#114073] bg-opacity-90 px-1 inline-block w-20 text-center">Lv. {display.level}</div>
           <div className="flex gap-1">
             <span className="inline-block skew-x-12">
               <span className="-skew-x-12 bg-white text-[#114073] italic px-1 inline-block w-20 text-center">
@@ -226,54 +274,54 @@ export default function StudentUserData({
           <div className="grid grid-cols-2 gap-1 pb-1 border-b border-gray-300">
             <div
               onClick={() =>
-                editMode && setEditField({ field: 'hp', label: 'HP', value: data.hp })
+                editMode && isRegistered && setEditField({ field: 'hp', label: 'HP', value: display.hp })
               }
-              className={`cursor-pointer${editMode ? ' edit-highlight' : ''}`}
+              className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              HP {data.hp}{' '}
+              HP {isRegistered ? display.hp : '-'}{' '}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
-                  if (editMode) {
-                    setEditField({ field: 'hp_wb', label: 'HPWB', value: data.hp_wb, min: 0, max: 25 })
+                  if (editMode && isRegistered) {
+                    setEditField({ field: 'hp_wb', label: 'HPWB', value: display.hp_wb, min: 0, max: 25 })
                   }
                 }}
                 className={`bg-[#114073] px-1 text-white relative inline-block ml-1${
-                  data.hp_wb >= 25 ? ' text-yellow-400' : ''
+                  display.hp_wb >= 25 ? ' text-yellow-400' : ''
                 }`}
               >
-                Lv.{data.hp_wb}
-                {data.hp_wb >= 25 && (
+                Lv.{display.hp_wb}
+                {display.hp_wb >= 25 && (
                   <span className="absolute -top-1 right-0 text-[10px] max-gradient">MAX</span>
                 )}
               </span>
             </div>
             <div
               onClick={() =>
-                editMode && setEditField({ field: 'attack', label: '攻撃力', value: data.attack })
+                editMode && isRegistered && setEditField({ field: 'attack', label: '攻撃力', value: display.attack })
               }
-              className={`cursor-pointer${editMode ? ' edit-highlight' : ''}`}
+              className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              攻撃力 {data.attack}{' '}
+              攻撃力 {isRegistered ? display.attack : '-'}{' '}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
-                  if (editMode) {
+                  if (editMode && isRegistered) {
                     setEditField({
                       field: 'attack_wb',
                       label: '攻撃力WB',
-                      value: data.attack_wb,
+                      value: display.attack_wb,
                       min: 0,
                       max: 25,
                     })
                   }
                 }}
                 className={`bg-[#114073] px-1 text-white relative inline-block ml-1${
-                  data.attack_wb >= 25 ? ' text-yellow-400' : ''
+                  display.attack_wb >= 25 ? ' text-yellow-400' : ''
                 }`}
               >
-                Lv.{data.attack_wb}
-                {data.attack_wb >= 25 && (
+                Lv.{display.attack_wb}
+                {display.attack_wb >= 25 && (
                   <span className="absolute -top-1 right-0 text-[10px] max-gradient">MAX</span>
                 )}
               </span>
@@ -282,38 +330,38 @@ export default function StudentUserData({
           <div className="grid grid-cols-2 gap-1 pt-1">
             <div
               onClick={() =>
-                editMode && setEditField({ field: 'defense', label: '防御力', value: data.defense })
+                editMode && isRegistered && setEditField({ field: 'defense', label: '防御力', value: display.defense })
               }
-              className={`cursor-pointer${editMode ? ' edit-highlight' : ''}`}
+              className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              防御力 {data.defense}
+              防御力 {isRegistered ? display.defense : '-'}
             </div>
             <div
               onClick={() =>
-                editMode && setEditField({ field: 'heal', label: '治癒力', value: data.heal })
+                editMode && isRegistered && setEditField({ field: 'heal', label: '治癒力', value: display.heal })
               }
-              className={`cursor-pointer${editMode ? ' edit-highlight' : ''}`}
+              className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              治癒力 {data.heal}{' '}
+              治癒力 {isRegistered ? display.heal : '-'}{' '}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
-                  if (editMode) {
+                  if (editMode && isRegistered) {
                     setEditField({
                       field: 'heal_wb',
                       label: '治癒力WB',
-                      value: data.heal_wb,
+                      value: display.heal_wb,
                       min: 0,
                       max: 25,
                     })
                   }
                 }}
                 className={`bg-[#114073] px-1 text-white relative inline-block ml-1${
-                  data.heal_wb >= 25 ? ' text-yellow-400' : ''
+                  display.heal_wb >= 25 ? ' text-yellow-400' : ''
                 }`}
               >
-                Lv.{data.heal_wb}
-                {data.heal_wb >= 25 && (
+                Lv.{display.heal_wb}
+                {display.heal_wb >= 25 && (
                   <span className="absolute -top-1 right-0 text-[10px] max-gradient">MAX</span>
                 )}
               </span>
@@ -322,16 +370,16 @@ export default function StudentUserData({
         </div>
         <div className="grid grid-cols-4 gap-1 text-center">
           {[
-            { label: 'EXスキル', value: data.ex_skill, field: 'ex_skill', key: 'ex', ex: true, max: 5 },
-            { label: data.item_tier >= 2 ? 'ノーマルスキル+' : 'ノーマルスキル', value: data.normal_skill, field: 'normal_skill', key: 'normal', max: 10 },
-            { label: data.unique_star >= 2  ? "パッシブスキル+" : "パッシブスキル", value: data.passive_skill, field: "passive_skill", key: 'passive', max: 10 },
-            { label: 'サブスキル', value: data.sub_skill, field: 'sub_skill', key: 'sub', max: 10 },
+            { label: 'EXスキル', value: display.ex_skill, field: 'ex_skill', key: 'ex', ex: true, max: 5 },
+            { label: display.item_tier >= 2 ? 'ノーマルスキル+' : 'ノーマルスキル', value: display.normal_skill, field: 'normal_skill', key: 'normal', max: 10 },
+            { label: display.unique_star >= 2  ? "パッシブスキル+" : "パッシブスキル", value: display.passive_skill, field: "passive_skill", key: 'passive', max: 10 },
+            { label: 'サブスキル', value: display.sub_skill, field: 'sub_skill', key: 'sub', max: 10 },
           ].map((skill, i) => (
             <div key={i} className="skew-x-12">
               <div
-                className={`-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1 cursor-pointer${editMode ? ' edit-highlight' : ''}`}
+                className={`-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1 cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
                 onClick={() => {
-                  if (editMode) {
+                  if (editMode && isRegistered) {
                     setEditField({
                       field: skill.field,
                       label: skill.label,
@@ -341,8 +389,8 @@ export default function StudentUserData({
                     })
                   } else if (student) {
                     let key = skill.key
-                    if (skill.key === 'normal' && data.item_tier >= 2) key = 'normalPlus'
-                    if (skill.key === 'passive' && data.unique_star >= 2) key = 'passivePlus'
+                    if (skill.key === 'normal' && display.item_tier >= 2) key = 'normalPlus'
+                    if (skill.key === 'passive' && display.unique_star >= 2) key = 'passivePlus'
                     const sk = student.skills?.[key] || student.skills?.[skill.key]
                     if (sk) setSkillDetail({ skill: sk, level: skill.value })
                   }
@@ -378,24 +426,24 @@ export default function StudentUserData({
         <div className="grid grid-cols-1 gap-1 text-center">
           <div className="skew-x-12">
             <div
-              className={`-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1 space-y-1 cursor-pointer${editMode ? ' edit-highlight' : ''}`}
+              className={`-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1 space-y-1 cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
               onClick={() =>
-                editMode &&
-                setEditField({ field: 'unique_level', label: '固有武器Lv', value: data.unique_level, min: 0 })
+                editMode && isRegistered &&
+                setEditField({ field: 'unique_level', label: '固有武器Lv', value: display.unique_level, min: 0 })
               }
             >
               <span className="text-sm">固有武器</span>
-              <span>Lv. {data.unique_level}</span>
+              <span>Lv. {display.unique_level}</span>
               <div
-                className={`space-x-px${editMode ? ' edit-highlight cursor-pointer' : ''}`}
+                className={`space-x-px${editMode && isRegistered ? ' edit-highlight cursor-pointer' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation()
-                  if (editMode) {
-                    setEditField({ field: 'unique_star', label: '固有武器星', value: data.unique_star, min: 0 })
+                  if (editMode && isRegistered) {
+                    setEditField({ field: 'unique_star', label: '固有武器星', value: display.unique_star, min: 0 })
                   }
                 }}
               >
-                {Array.from({ length: data.unique_star }).map((_, i) => (
+                {Array.from({ length: display.unique_star }).map((_, i) => (
                   <FontAwesomeIcon key={i} icon={faStar} className="text-sky-400" />
                 ))}
               </div>
@@ -404,10 +452,10 @@ export default function StudentUserData({
         </div>
         <div className="grid grid-cols-4 gap-1 text-center">
           {[
-            { value: data.equip1, field: 'equip1', slot: 'slot1' },
-            { value: data.equip2, field: 'equip2', slot: 'slot2' },
-            { value: data.equip3, field: 'equip3', slot: 'slot3' },
-            { value: student?.hasAccessory ? data.item_tier : 'EMPTY', field: 'item_tier', slot: 'accessory' },
+            { value: display.equip1, field: 'equip1', slot: 'slot1' },
+            { value: display.equip2, field: 'equip2', slot: 'slot2' },
+            { value: display.equip3, field: 'equip3', slot: 'slot3' },
+            { value: student?.hasAccessory ? display.item_tier : 'EMPTY', field: 'item_tier', slot: 'accessory' },
           ].map((gear, i) => (
             <div key={i} className="skew-x-12">
               <div
@@ -415,7 +463,7 @@ export default function StudentUserData({
                   i === 3 && !student?.hasAccessory ? 'bg-gray-300 text-gray-500 border-black' : 'text-[#4298f5] border-black'
                 } ${editMode ? 'cursor-pointer edit-highlight' : ''}`}
                 onClick={() => {
-                  if (editMode && (i < 3 || student?.hasAccessory)) {
+                  if (editMode && isRegistered && (i < 3 || student?.hasAccessory)) {
                     setEditField({
                       field: gear.field,
                       label: i === 3 ? '愛用品Tier' : `装備${i + 1}Tier`,
@@ -498,7 +546,7 @@ export default function StudentUserData({
       )}
       {editBonds && (
         <EditBondsModal
-          bonds={{ [baseId]: data.bond, ...(data.alt_bonds || {}) }}
+          bonds={{ [baseId]: display.bond, ...(data?.alt_bonds || {}) }}
           students={students}
           onClose={() => setEditBonds(false)}
           onSave={async (vals) => {
