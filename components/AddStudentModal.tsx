@@ -51,9 +51,16 @@ interface AddStudentModalProps {
   addStudent: (student: Student) => void
   onAdded: () => void
   close: () => void
+  defaultStudentId?: string
 }
 
-export default function AddStudentModal({ addStudents, addStudent, onAdded, close }: AddStudentModalProps) {
+export default function AddStudentModal({
+  addStudents,
+  addStudent,
+  onAdded,
+  close,
+  defaultStudentId,
+}: AddStudentModalProps) {
   const { dark } = useTheme()
   const [mode, setMode] = useState<'menu' | 'manual' | 'image'>('menu')
   const [visible, setVisible] = useState(false)
@@ -109,6 +116,12 @@ export default function AddStudentModal({ addStudents, addStudent, onAdded, clos
     love: '0',
   })
   const [bonds, setBonds] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    if (mode === 'manual' && defaultStudentId && !form.studentId) {
+      setForm((prev) => ({ ...prev, studentId: defaultStudentId }))
+    }
+  }, [mode, defaultStudentId, form.studentId])
 
   useEffect(() => {
     if (Number(form.star) < 5) {
@@ -481,7 +494,16 @@ export default function AddStudentModal({ addStudents, addStudent, onAdded, clos
             <button type="button" className="border rounded w-full p-2" onClick={() => setMode('image')}>
               画像から追加
             </button>
-            <button type="button" className="border rounded w-full p-2" onClick={() => setMode('manual')}>
+            <button
+              type="button"
+              className="border rounded w-full p-2"
+              onClick={() => {
+                setMode('manual')
+                if (defaultStudentId) {
+                  setForm((prev) => ({ ...prev, studentId: defaultStudentId }))
+                }
+              }}
+            >
               手動追加
             </button>
             <button type="button" className="border rounded w-full p-2" onClick={() => fileRef.current?.click()}>

@@ -130,6 +130,7 @@ export default function StudentDetailClient({ studentId }: { studentId: string }
           addStudent={(s) => setStudents((prev) => [...prev, s])}
           onAdded={refreshRegistered}
           close={() => setAddOpen(false)}
+          defaultStudentId={current}
         />
       )}
     </div>
