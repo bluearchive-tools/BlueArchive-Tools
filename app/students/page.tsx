@@ -126,15 +126,33 @@ export default function StudentsPage() {
   }
 
   const refreshUserStats = useCallback(async () => {
-    if (!session) return
-    const { data } = await supabase
-      .from('user_students')
-      .select('*')
-      .eq('user_id', session.user.id)
-    if (data) {
+    if (session) {
+      const { data } = await supabase
+        .from('user_students')
+        .select('*')
+        .eq('user_id', session.user.id)
+      if (data) {
+        const map: Record<string, UserStudent> = {}
+        for (const row of data) {
+          map[row.student_id as string] = row as UserStudent
+        }
+        setUserStats(map)
+      }
+    } else {
       const map: Record<string, UserStudent> = {}
-      for (const row of data) {
-        map[row.student_id as string] = row as UserStudent
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && key.startsWith('userStudent:')) {
+          const id = key.substring('userStudent:'.length)
+          const val = localStorage.getItem(key)
+          if (val) {
+            try {
+              map[id] = JSON.parse(val) as UserStudent
+            } catch {
+              /* ignore */
+            }
+          }
+        }
       }
       setUserStats(map)
     }

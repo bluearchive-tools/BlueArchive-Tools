@@ -1,10 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 import StudentUserData from './StudentUserData'
+import AddStudentModal from './AddStudentModal'
+import {
+  useSession,
+  useSupabaseClient,
+} from '@supabase/auth-helpers-react'
 
 interface Student {
   id: string
@@ -14,9 +19,14 @@ interface Student {
 }
 
 export default function StudentDetailClient({ studentId }: { studentId: string }) {
+  const session = useSession()
+  const supabase = useSupabaseClient()
   const [editMode, setEditMode] = useState(false)
   const [students, setStudents] = useState<Student[]>([])
   const [current, setCurrent] = useState(studentId)
+  const [registered, setRegistered] = useState(false)
+  const [addOpen, setAddOpen] = useState(false)
+  const [previewMax, setPreviewMax] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -30,9 +40,49 @@ export default function StudentDetailClient({ studentId }: { studentId: string }
     load()
   }, [])
 
+  const checkRegistered = useCallback(async () => {
+    const student = students.find((s) => s.id === current)
+    const mainId = student?.styleOf || student?.altOf || current
+    if (session) {
+      const { data } = await supabase
+        .from('user_students')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .eq('student_id', current)
+        .maybeSingle()
+      if (!data && mainId !== current) {
+        const { data: alt } = await supabase
+          .from('user_students')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .eq('student_id', mainId)
+          .maybeSingle()
+        setRegistered(!!alt)
+      } else {
+        setRegistered(!!data)
+      }
+    } else {
+      let local = localStorage.getItem(`userStudent:${current}`)
+      if (!local && mainId !== current) {
+        local = localStorage.getItem(`userStudent:${mainId}`)
+      }
+      setRegistered(!!local)
+    }
+  }, [session, supabase, students, current])
+
+  useEffect(() => {
+    if (students.length) {
+      checkRegistered()
+    }
+  }, [checkRegistered, students])
+
   const student = students.find((s) => s.id === current)
   const baseId = student?.styleOf || student?.id
   const styles = students.filter((s) => (s.styleOf || s.id) === baseId)
+
+  const refreshRegistered = useCallback(async () => {
+    await checkRegistered()
+  }, [checkRegistered])
 
   return (
     <div className="space-y-4">
@@ -40,15 +90,36 @@ export default function StudentDetailClient({ studentId }: { studentId: string }
         <Link href="/students" aria-label="一覧に戻る" className="text-lg inline-block">
           <FontAwesomeIcon icon={faArrowLeft} />
         </Link>
-        <label className="inline-flex items-center gap-1 text-sm">
-          <span>編集</span>
-          <input
-            type="checkbox"
-            checked={editMode}
-            onChange={(e) => setEditMode(e.target.checked)}
-            className="form-checkbox"
-          />
-        </label>
+        <div className="flex items-center gap-2">
+          {!registered && (
+            <button
+              type="button"
+              onClick={() => setPreviewMax((p) => !p)}
+              className="border rounded px-2 py-1 text-sm"
+            >
+              {previewMax ? '最小' : '最大'}プレビュー
+            </button>
+          )}
+          {registered ? (
+            <label className="inline-flex items-center gap-1 text-sm">
+              <span>編集</span>
+              <input
+                type="checkbox"
+                checked={editMode}
+                onChange={(e) => setEditMode(e.target.checked)}
+                className="form-checkbox"
+              />
+            </label>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAddOpen(true)}
+              className="border rounded px-2 py-1 text-sm"
+            >
+              追加
+            </button>
+          )}
+        </div>
       </div>
       {styles.length > 1 && (
         <select
@@ -63,7 +134,20 @@ export default function StudentDetailClient({ studentId }: { studentId: string }
           ))}
         </select>
       )}
-      <StudentUserData studentId={current} editMode={editMode} />
+      <StudentUserData
+        studentId={current}
+        editMode={registered ? editMode : false}
+        previewMax={!registered && previewMax}
+      />
+      {addOpen && (
+        <AddStudentModal
+          addStudents={(arr) => setStudents((prev) => [...prev, ...arr])}
+          addStudent={(s) => setStudents((prev) => [...prev, s])}
+          onAdded={refreshRegistered}
+          close={() => setAddOpen(false)}
+          defaultStudentId={current}
+        />
+      )}
     </div>
   )
 }
