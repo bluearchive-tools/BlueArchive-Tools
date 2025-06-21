@@ -51,9 +51,16 @@ interface AddStudentModalProps {
   addStudent: (student: Student) => void
   onAdded: () => void
   close: () => void
+  defaultStudentId?: string
 }
 
-export default function AddStudentModal({ addStudents, addStudent, onAdded, close }: AddStudentModalProps) {
+export default function AddStudentModal({
+  addStudents,
+  addStudent,
+  onAdded,
+  close,
+  defaultStudentId,
+}: AddStudentModalProps) {
   const { dark } = useTheme()
   const [mode, setMode] = useState<'menu' | 'manual' | 'image'>('menu')
   const [visible, setVisible] = useState(false)
@@ -109,6 +116,12 @@ export default function AddStudentModal({ addStudents, addStudent, onAdded, clos
     love: '0',
   })
   const [bonds, setBonds] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    if (mode === 'manual' && defaultStudentId && !form.studentId) {
+      setForm((prev) => ({ ...prev, studentId: defaultStudentId }))
+    }
+  }, [mode, defaultStudentId, form.studentId])
 
   useEffect(() => {
     if (Number(form.star) < 5) {
@@ -177,19 +190,20 @@ export default function AddStudentModal({ addStudents, addStudent, onAdded, clos
 
   useEffect(() => {
     const load = async () => {
-      if (!session || !form.studentId) {
+      if (!form.studentId) {
         setExisting(null)
         return
       }
-      const { data } = await supabase
-        .from('user_students')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .eq('student_id', form.studentId)
-        .maybeSingle()
-      if (data) {
-        const d = data as UserStudent
-        setExisting(d)
+      if (session) {
+        const { data } = await supabase
+          .from('user_students')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('student_id', form.studentId)
+          .maybeSingle()
+        if (data) {
+          const d = data as UserStudent
+          setExisting(d)
         setForm({
           studentId: form.studentId,
           level: d.level.toString(),
@@ -240,52 +254,115 @@ export default function AddStudentModal({ addStudents, addStudent, onAdded, clos
           }
           setBonds(obj)
         }
+        } else {
+          setExisting(null)
+          if (selectedStudent) {
+            const baseId = selectedStudent.altOf || selectedStudent.id
+            if (selectedStudent.altOf) {
+              const { data: baseRow } = await supabase
+                .from('user_students')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .eq('student_id', baseId)
+                .maybeSingle()
+              if (baseRow) {
+                const baseData = baseRow as UserStudent
+                const alt = baseData.alt_bonds || null
+                const ids = [
+                  selectedStudent.id,
+                  baseId,
+                  ...((students.find((s) => s.id === baseId)?.altIds || []).filter(
+                    (id) => id !== selectedStudent.id
+                  )),
+                ]
+                const obj: Record<string, string> = {}
+                for (const id of ids) {
+                  if (id === selectedStudent.id) {
+                    obj[id] = String(alt?.[id] ?? 1)
+                  } else if (id === baseId) {
+                    obj[id] = baseData.bond.toString()
+                  } else {
+                    obj[id] = String(alt?.[id] ?? 1)
+                  }
+                }
+                setBonds(obj)
+                return
+              }
+            }
+            const base = students.find((s) => s.id === baseId)
+            const ids = [
+              baseId,
+              ...((base?.altIds || []).filter((id) => id !== selectedStudent.id)),
+            ]
+            if (selectedStudent.altOf) ids.unshift(selectedStudent.id)
+            const obj: Record<string, string> = {}
+            for (const id of ids) {
+              obj[id] = '1'
+            }
+            setBonds(obj)
+          }
+        }
       } else {
-        setExisting(null)
-        if (selectedStudent) {
-          const baseId = selectedStudent.altOf || selectedStudent.id
-          if (selectedStudent.altOf) {
-            const { data: baseRow } = await supabase
-              .from('user_students')
-              .select('*')
-              .eq('user_id', session.user.id)
-              .eq('student_id', baseId)
-              .maybeSingle()
-            if (baseRow) {
-              const baseData = baseRow as UserStudent
-              const alt = baseData.alt_bonds || null
-              const ids = [
-                selectedStudent.id,
-                baseId,
-                ...((students.find((s) => s.id === baseId)?.altIds || []).filter(
-                  (id) => id !== selectedStudent.id
-                )),
-              ]
+        const local = localStorage.getItem(`userStudent:${form.studentId}`)
+        if (local) {
+          try {
+            const d = JSON.parse(local) as UserStudent
+            setExisting(d)
+            setForm({
+              studentId: form.studentId,
+              level: d.level.toString(),
+              star: d.star.toString(),
+              uniqueStar: d.unique_star.toString(),
+              uniqueLevel: d.unique_level.toString(),
+              hp: d.hp.toString(),
+              hpwb: d.hp_wb.toString(),
+              attack: d.attack.toString(),
+              attackwb: d.attack_wb.toString(),
+              defense: d.defense.toString(),
+              heal: d.heal.toString(),
+              healwb: d.heal_wb.toString(),
+              ex: d.ex_skill.toString(),
+              normal: d.normal_skill.toString(),
+              passive: d.passive_skill.toString(),
+              sub: d.sub_skill.toString(),
+              gear1: d.equip1.toString(),
+              gear2: d.equip2.toString(),
+              gear3: d.equip3.toString(),
+              love: d.item_tier.toString(),
+            })
+            const alt = d.alt_bonds || null
+            if (selectedStudent) {
+              const baseId = selectedStudent.altOf || selectedStudent.id
+              const base = students.find((s) => s.id === baseId)
+              let ids: string[] = []
+              if (selectedStudent.altOf) {
+                ids = [
+                  selectedStudent.id,
+                  baseId,
+                  ...(base?.altIds?.filter((id) => id !== selectedStudent.id) || []),
+                ]
+              } else {
+                ids = [baseId, ...(base?.altIds || [])]
+              }
               const obj: Record<string, string> = {}
               for (const id of ids) {
-                if (id === selectedStudent.id) {
-                  obj[id] = String(alt?.[id] ?? 1)
+                if (alt && alt[id] !== undefined) {
+                  obj[id] = String(alt[id])
+                } else if (id === selectedStudent.id) {
+                  obj[id] = d.bond.toString()
                 } else if (id === baseId) {
-                  obj[id] = baseData.bond.toString()
+                  obj[id] = selectedStudent.id === baseId ? d.bond.toString() : String(alt?.[id] ?? d.bond)
                 } else {
-                  obj[id] = String(alt?.[id] ?? 1)
+                  obj[id] = '1'
                 }
               }
               setBonds(obj)
-              return
             }
+          } catch {
+            setExisting(null)
           }
-          const base = students.find((s) => s.id === baseId)
-          const ids = [
-            baseId,
-            ...((base?.altIds || []).filter((id) => id !== selectedStudent.id)),
-          ]
-          if (selectedStudent.altOf) ids.unshift(selectedStudent.id)
-          const obj: Record<string, string> = {}
-          for (const id of ids) {
-            obj[id] = '1'
-          }
-          setBonds(obj)
+        } else {
+          setExisting(null)
         }
       }
     }
@@ -328,10 +405,6 @@ export default function AddStudentModal({ addStudents, addStudent, onAdded, clos
   }
 
   const submitManual = async () => {
-    if (!session) {
-      alert('ログインが必要です')
-      return
-    }
     if (!form.studentId) return
 
     if (existing) {
@@ -345,37 +418,66 @@ export default function AddStudentModal({ addStudents, addStudent, onAdded, clos
       altData[k] = Number(v) || 0
     }
 
-    const { error } = await supabase.from('user_students').upsert({
-      user_id: session.user.id,
-      student_id: form.studentId,
-      level: Number(form.level) || 0,
-      star: Number(form.star) || 0,
-      unique_star: Number(form.uniqueStar) || 0,
-      unique_level: Number(form.uniqueLevel) || 0,
-      bond: altData[mainId] || 0,
-      hp: Number(form.hp) || 0,
-      hp_wb: Number(form.hpwb) || 0,
-      attack: Number(form.attack) || 0,
-      attack_wb: Number(form.attackwb) || 0,
-      defense: Number(form.defense) || 0,
-      heal: Number(form.heal) || 0,
-      heal_wb: Number(form.healwb) || 0,
-      ex_skill: Number(form.ex) || 0,
-      normal_skill: Number(form.normal) || 0,
-      passive_skill: Number(form.passive) || 0,
-      sub_skill: Number(form.sub) || 0,
-      equip1: Number(form.gear1) || 0,
-      equip2: Number(form.gear2) || 0,
-      equip3: Number(form.gear3) || 0,
-      item_tier: Number(form.love) || 0,
-      alt_bonds: altData,
-    })
-    if (error) {
-      alert(error.message)
-      return
+    if (session) {
+      const { error } = await supabase.from('user_students').upsert({
+        user_id: session.user.id,
+        student_id: form.studentId,
+        level: Number(form.level) || 0,
+        star: Number(form.star) || 0,
+        unique_star: Number(form.uniqueStar) || 0,
+        unique_level: Number(form.uniqueLevel) || 0,
+        bond: altData[mainId] || 0,
+        hp: Number(form.hp) || 0,
+        hp_wb: Number(form.hpwb) || 0,
+        attack: Number(form.attack) || 0,
+        attack_wb: Number(form.attackwb) || 0,
+        defense: Number(form.defense) || 0,
+        heal: Number(form.heal) || 0,
+        heal_wb: Number(form.healwb) || 0,
+        ex_skill: Number(form.ex) || 0,
+        normal_skill: Number(form.normal) || 0,
+        passive_skill: Number(form.passive) || 0,
+        sub_skill: Number(form.sub) || 0,
+        equip1: Number(form.gear1) || 0,
+        equip2: Number(form.gear2) || 0,
+        equip3: Number(form.gear3) || 0,
+        item_tier: Number(form.love) || 0,
+        alt_bonds: altData,
+      })
+      if (error) {
+        alert(error.message)
+        return
+      }
+      onAdded()
+      handleClose()
+    } else {
+      const obj = {
+        level: Number(form.level) || 0,
+        star: Number(form.star) || 0,
+        unique_star: Number(form.uniqueStar) || 0,
+        unique_level: Number(form.uniqueLevel) || 0,
+        bond: altData[mainId] || 0,
+        hp: Number(form.hp) || 0,
+        hp_wb: Number(form.hpwb) || 0,
+        attack: Number(form.attack) || 0,
+        attack_wb: Number(form.attackwb) || 0,
+        defense: Number(form.defense) || 0,
+        heal: Number(form.heal) || 0,
+        heal_wb: Number(form.healwb) || 0,
+        ex_skill: Number(form.ex) || 0,
+        normal_skill: Number(form.normal) || 0,
+        passive_skill: Number(form.passive) || 0,
+        sub_skill: Number(form.sub) || 0,
+        equip1: Number(form.gear1) || 0,
+        equip2: Number(form.gear2) || 0,
+        equip3: Number(form.gear3) || 0,
+        item_tier: Number(form.love) || 0,
+        alt_bonds: altData,
+      } as UserStudent
+      localStorage.setItem(`userStudent:${form.studentId}`, JSON.stringify(obj))
+      onAdded()
+      handleClose()
     }
-    onAdded()
-    handleClose()
   }
 
   return (
@@ -392,7 +494,16 @@ export default function AddStudentModal({ addStudents, addStudent, onAdded, clos
             <button type="button" className="border rounded w-full p-2" onClick={() => setMode('image')}>
               画像から追加
             </button>
-            <button type="button" className="border rounded w-full p-2" onClick={() => setMode('manual')}>
+            <button
+              type="button"
+              className="border rounded w-full p-2"
+              onClick={() => {
+                setMode('manual')
+                if (defaultStudentId) {
+                  setForm((prev) => ({ ...prev, studentId: defaultStudentId }))
+                }
+              }}
+            >
               手動追加
             </button>
             <button type="button" className="border rounded w-full p-2" onClick={() => fileRef.current?.click()}>
