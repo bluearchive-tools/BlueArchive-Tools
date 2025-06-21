@@ -36,6 +36,9 @@ export default function DataSyncModal() {
   const [localData, setLocalData] = useState<Record<string, UserStudent>>({})
   const [dbData, setDbData] = useState<Record<string, UserStudent>>({})
   const [diffIds, setDiffIds] = useState<string[]>([])
+  const [diffMap, setDiffMap] = useState<
+    Record<string, { field: string; local: unknown; db: unknown }[]>
+  >({})
 
   useEffect(() => {
     const run = async () => {
@@ -75,13 +78,32 @@ export default function DataSyncModal() {
       setDbData(db)
       const ids = new Set([...Object.keys(local), ...Object.keys(db)])
       const diff: string[] = []
+      const map: Record<string, { field: string; local: unknown; db: unknown }[]> = {}
       ids.forEach((id) => {
         const l = local[id]
         const d = db[id]
-        if (!l || !d || JSON.stringify(l) !== JSON.stringify(d)) diff.push(id)
+        if (!l || !d || JSON.stringify(l) !== JSON.stringify(d)) {
+          diff.push(id)
+          const fields = new Set([
+            ...Object.keys(l || {}),
+            ...Object.keys(d || {}),
+          ])
+          const arr: { field: string; local: unknown; db: unknown }[] = []
+          fields.forEach((f) => {
+            const lv = l ? (l as any)[f] : undefined
+            const dv = d ? (d as any)[f] : undefined
+            const leq = typeof lv === 'object' ? JSON.stringify(lv) : lv
+            const deq = typeof dv === 'object' ? JSON.stringify(dv) : dv
+            if (leq !== deq) {
+              arr.push({ field: f, local: lv, db: dv })
+            }
+          })
+          map[id] = arr
+        }
       })
       if (diff.length) {
         setDiffIds(diff)
+        setDiffMap(map)
         setVisible(true)
       } else {
         localStorage.setItem(doneKey, '1')
@@ -139,6 +161,49 @@ export default function DataSyncModal() {
     setVisible(false)
   }
 
+  const mergeData = async () => {
+    if (!session) return
+    for (const [id, row] of Object.entries(localData)) {
+      await supabase.from('user_students').upsert({
+        user_id: session.user.id,
+        student_id: id,
+        level: row.level,
+        star: row.star,
+        unique_star: row.unique_star,
+        unique_level: row.unique_level,
+        bond: row.bond,
+        hp: row.hp,
+        hp_wb: row.hp_wb,
+        attack: row.attack,
+        attack_wb: row.attack_wb,
+        defense: row.defense,
+        heal: row.heal,
+        heal_wb: row.heal_wb,
+        ex_skill: row.ex_skill,
+        normal_skill: row.normal_skill,
+        passive_skill: row.passive_skill,
+        sub_skill: row.sub_skill,
+        equip1: row.equip1,
+        equip2: row.equip2,
+        equip3: row.equip3,
+        item_tier: row.item_tier,
+        alt_bonds: row.alt_bonds || null,
+      })
+    }
+    const { data } = await supabase
+      .from('user_students')
+      .select('*')
+      .eq('user_id', session.user.id)
+    if (data) {
+      for (const row of data) {
+        const key = `userStudent:${row.student_id}`
+        localStorage.setItem(key, JSON.stringify(row))
+      }
+    }
+    localStorage.setItem(`sync_done_${session.user.id}`, '1')
+    setVisible(false)
+  }
+
   if (!visible) return null
 
   return (
@@ -150,9 +215,41 @@ export default function DataSyncModal() {
         className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 rounded space-y-2 w-80`}
         onClick={(e) => e.stopPropagation()}
       >
-        <p>ブラウザに保存されたデータがあります。どちらのデータを使用しますか？</p>
+        <p>ブラウザに保存されたデータがあります。どのように同期しますか？</p>
         {diffIds.length > 0 && (
-          <p className="text-sm">差分のある生徒ID: {diffIds.join(', ')}</p>
+          <div className="max-h-60 overflow-auto space-y-4 border-t pt-2 mt-2">
+            {diffIds.map((id) => (
+              <div key={id}>
+                <p className="text-sm font-bold">{id}</p>
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="border px-1">項目</th>
+                      <th className="border px-1">ローカル</th>
+                      <th className="border px-1">データベース</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {diffMap[id]?.map((d) => (
+                      <tr key={d.field}>
+                        <td className="border px-1">{d.field}</td>
+                        <td className="border px-1 bg-red-100 dark:bg-red-900">
+                          {typeof d.local === 'object'
+                            ? JSON.stringify(d.local)
+                            : d.local ?? '-'}
+                        </td>
+                        <td className="border px-1 bg-red-100 dark:bg-red-900">
+                          {typeof d.db === 'object'
+                            ? JSON.stringify(d.db)
+                            : d.db ?? '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))}
+          </div>
         )}
         <div className="flex gap-2 justify-end pt-2">
           <button type="button" onClick={useLocal} className="border rounded px-2 py-1">
@@ -160,6 +257,9 @@ export default function DataSyncModal() {
           </button>
           <button type="button" onClick={useDb} className="border rounded px-2 py-1">
             データベースを使用
+          </button>
+          <button type="button" onClick={mergeData} className="border rounded px-2 py-1">
+            統合
           </button>
           <button type="button" onClick={close} className="border rounded px-2 py-1">
             キャンセル
