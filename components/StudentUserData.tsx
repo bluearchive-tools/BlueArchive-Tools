@@ -92,6 +92,7 @@ export default function StudentUserData({
   const supabase = useSupabaseClient()
   const { dark } = useTheme()
   const [data, setData] = useState<UserStudent | null>(null)
+  const [dataId, setDataId] = useState<string | null>(null)
   const [students, setStudents] = useState<Student[]>([])
   const [showBonds, setShowBonds] = useState(false)
   const [editField, setEditField] = useState<
@@ -124,23 +125,48 @@ export default function StudentUserData({
   }, [])
   const loadData = async () => {
     const student = students.find((s) => s.id === studentId)
-    const baseId = student?.styleOf || studentId
+    const mainId = student?.styleOf || student?.altOf || studentId
     if (session) {
-      const { data } = await supabase
+      let { data } = await supabase
         .from('user_students')
         .select('*')
         .eq('user_id', session.user.id)
-        .eq('student_id', baseId)
+        .eq('student_id', studentId)
         .maybeSingle()
-      if (data) setData(data as UserStudent)
+      if (!data && mainId !== studentId) {
+        const { data: alt } = await supabase
+          .from('user_students')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('student_id', mainId)
+          .maybeSingle()
+        data = alt || null
+      }
+      if (data) {
+        setData(data as UserStudent)
+        setDataId(data.student_id as string)
+      } else {
+        setDataId(null)
+      }
     } else {
-      const local = localStorage.getItem(`userStudent:${baseId}`)
+      let local = localStorage.getItem(`userStudent:${studentId}`)
+      if (!local && mainId !== studentId) {
+        local = localStorage.getItem(`userStudent:${mainId}`)
+      }
       if (local) {
         try {
           setData(JSON.parse(local) as UserStudent)
+          setDataId(
+            mainId !== studentId && !localStorage.getItem(`userStudent:${studentId}`)
+              ? mainId
+              : studentId
+          )
         } catch {
           /* ignore */
         }
+      } else {
+        setData(null)
+        setDataId(null)
       }
     }
   }
@@ -151,7 +177,7 @@ export default function StudentUserData({
   }, [session, supabase, studentId, students])
 
   const student = students.find((s) => s.id === studentId)
-  const baseId = student?.styleOf || studentId
+  const baseId = student?.styleOf || student?.altOf || studentId
 
   const isRegistered = !!data
 
@@ -572,14 +598,15 @@ export default function StudentUserData({
                 .from('user_students')
                 .update({ [editField.field]: v })
                 .eq('user_id', session.user.id)
-                .eq('student_id', baseId)
+                .eq('student_id', dataId ?? baseId)
               setEditField(null)
               loadData()
             } else {
-              const local = localStorage.getItem(`userStudent:${baseId}`)
+              const key = `userStudent:${dataId ?? baseId}`
+              const local = localStorage.getItem(key)
               const obj: UserStudent = local ? JSON.parse(local) : { ...placeholderMin }
               const newObj = { ...obj, [editField.field]: v }
-              localStorage.setItem(`userStudent:${baseId}`, JSON.stringify(newObj))
+              localStorage.setItem(key, JSON.stringify(newObj))
               setEditField(null)
               setData(newObj)
             }
@@ -598,14 +625,15 @@ export default function StudentUserData({
                 .from('user_students')
                 .update({ bond: main, alt_bonds: vals })
                 .eq('user_id', session.user.id)
-                .eq('student_id', baseId)
+                .eq('student_id', dataId ?? baseId)
               setEditBonds(false)
               loadData()
             } else {
-              const local = localStorage.getItem(`userStudent:${baseId}`)
+              const key = `userStudent:${dataId ?? baseId}`
+              const local = localStorage.getItem(key)
               const obj: UserStudent = local ? JSON.parse(local) : { ...placeholderMin }
               const newObj = { ...obj, bond: main, alt_bonds: vals }
-              localStorage.setItem(`userStudent:${baseId}`, JSON.stringify(newObj))
+              localStorage.setItem(key, JSON.stringify(newObj))
               setEditBonds(false)
               setData(newObj)
             }

@@ -16,6 +16,7 @@ interface Student {
   name: string
   styleIds?: string[]
   styleOf?: string
+  altOf?: string
 }
 
 export default function StudentDetailClient({ studentId }: { studentId: string }) {
@@ -42,17 +43,30 @@ export default function StudentDetailClient({ studentId }: { studentId: string }
 
   const checkRegistered = useCallback(async () => {
     const student = students.find((s) => s.id === current)
-    const base = student?.styleOf || current
+    const mainId = student?.styleOf || student?.altOf || current
     if (session) {
       const { data } = await supabase
         .from('user_students')
         .select('id')
         .eq('user_id', session.user.id)
-        .eq('student_id', base)
+        .eq('student_id', current)
         .maybeSingle()
-      setRegistered(!!data)
+      if (!data && mainId !== current) {
+        const { data: alt } = await supabase
+          .from('user_students')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .eq('student_id', mainId)
+          .maybeSingle()
+        setRegistered(!!alt)
+      } else {
+        setRegistered(!!data)
+      }
     } else {
-      const local = localStorage.getItem(`userStudent:${base}`)
+      let local = localStorage.getItem(`userStudent:${current}`)
+      if (!local && mainId !== current) {
+        local = localStorage.getItem(`userStudent:${mainId}`)
+      }
       setRegistered(!!local)
     }
   }, [session, supabase, students, current])
