@@ -124,86 +124,60 @@ export default function DataSyncModal() {
     setVisible(false)
   }
 
-  const useLocal = async () => {
-    if (!session) return
-    for (const [id, row] of Object.entries(localData)) {
-      await supabase.from('user_students').upsert({
-        user_id: session.user.id,
-        student_id: id,
-        level: row.level,
-        star: row.star,
-        unique_star: row.unique_star,
-        unique_level: row.unique_level,
-        bond: row.bond,
-        hp: row.hp,
-        hp_wb: row.hp_wb,
-        attack: row.attack,
-        attack_wb: row.attack_wb,
-        defense: row.defense,
-        heal: row.heal,
-        heal_wb: row.heal_wb,
-        ex_skill: row.ex_skill,
-        normal_skill: row.normal_skill,
-        passive_skill: row.passive_skill,
-        sub_skill: row.sub_skill,
-        equip1: row.equip1,
-        equip2: row.equip2,
-        equip3: row.equip3,
-        item_tier: row.item_tier,
-        alt_bonds: row.alt_bonds || null,
-      })
-    }
-    localStorage.setItem(`sync_done_${session.user.id}`, '1')
-    setVisible(false)
-  }
-
-  const useDb = () => {
-    if (!session) return
-    for (const [id, row] of Object.entries(dbData)) {
-      localStorage.setItem(`userStudent:${id}`, JSON.stringify(row))
-    }
-    localStorage.setItem(`sync_done_${session.user.id}`, '1')
-    setVisible(false)
-  }
-
-  const mergeData = async () => {
-    if (!session) return
-    for (const [id, row] of Object.entries(localData)) {
-      await supabase.from('user_students').upsert({
-        user_id: session.user.id,
-        student_id: id,
-        level: row.level,
-        star: row.star,
-        unique_star: row.unique_star,
-        unique_level: row.unique_level,
-        bond: row.bond,
-        hp: row.hp,
-        hp_wb: row.hp_wb,
-        attack: row.attack,
-        attack_wb: row.attack_wb,
-        defense: row.defense,
-        heal: row.heal,
-        heal_wb: row.heal_wb,
-        ex_skill: row.ex_skill,
-        normal_skill: row.normal_skill,
-        passive_skill: row.passive_skill,
-        sub_skill: row.sub_skill,
-        equip1: row.equip1,
-        equip2: row.equip2,
-        equip3: row.equip3,
-        item_tier: row.item_tier,
-        alt_bonds: row.alt_bonds || null,
-      })
-    }
-    const { data } = await supabase
-      .from('user_students')
-      .select('*')
-      .eq('user_id', session.user.id)
-    if (data) {
-      for (const row of data) {
-        const key = `userStudent:${row.student_id}`
-        localStorage.setItem(key, JSON.stringify(row))
+  const mergeToLocal = (priority: 'local' | 'db') => {
+    const ids = new Set([
+      ...Object.keys(localData),
+      ...Object.keys(dbData),
+    ])
+    ids.forEach((id) => {
+      const local = localData[id]
+      const db = dbData[id]
+      const chosen =
+        priority === 'local' ? local ?? db : db ?? local
+      if (chosen) {
+        localStorage.setItem(`userStudent:${id}`, JSON.stringify(chosen))
       }
+    })
+    if (session) localStorage.setItem(`sync_done_${session.user.id}`, '1')
+    setVisible(false)
+  }
+
+  const mergeToDb = async (priority: 'local' | 'db') => {
+    if (!session) return
+    const ids = new Set([
+      ...Object.keys(localData),
+      ...Object.keys(dbData),
+    ])
+    for (const id of ids) {
+      const local = localData[id]
+      const db = dbData[id]
+      const row = priority === 'local' ? local ?? db : db ?? local
+      if (!row) continue
+      await supabase.from('user_students').upsert({
+        user_id: session.user.id,
+        student_id: id,
+        level: row.level,
+        star: row.star,
+        unique_star: row.unique_star,
+        unique_level: row.unique_level,
+        bond: row.bond,
+        hp: row.hp,
+        hp_wb: row.hp_wb,
+        attack: row.attack,
+        attack_wb: row.attack_wb,
+        defense: row.defense,
+        heal: row.heal,
+        heal_wb: row.heal_wb,
+        ex_skill: row.ex_skill,
+        normal_skill: row.normal_skill,
+        passive_skill: row.passive_skill,
+        sub_skill: row.sub_skill,
+        equip1: row.equip1,
+        equip2: row.equip2,
+        equip3: row.equip3,
+        item_tier: row.item_tier,
+        alt_bonds: row.alt_bonds || null,
+      })
     }
     localStorage.setItem(`sync_done_${session.user.id}`, '1')
     setVisible(false)
@@ -256,17 +230,40 @@ export default function DataSyncModal() {
             ))}
           </div>
         )}
-        <div className="flex gap-2 justify-end pt-2">
-          <button type="button" onClick={useLocal} className="border rounded px-2 py-1">
-            ローカルを使用
+        <div className="flex flex-col gap-2 pt-2">
+          <button
+            type="button"
+            onClick={() => mergeToLocal('local')}
+            className="border rounded px-2 py-1"
+          >
+            ローカル優先でローカル環境に統合
           </button>
-          <button type="button" onClick={useDb} className="border rounded px-2 py-1">
-            データベースを使用
+          <button
+            type="button"
+            onClick={() => mergeToLocal('db')}
+            className="border rounded px-2 py-1"
+          >
+            データベース優先でローカル環境に統合
           </button>
-          <button type="button" onClick={mergeData} className="border rounded px-2 py-1">
-            統合
+          <button
+            type="button"
+            onClick={() => mergeToDb('local')}
+            className="border rounded px-2 py-1"
+          >
+            ローカル優先でデータベースに統合
           </button>
-          <button type="button" onClick={close} className="border rounded px-2 py-1">
+          <button
+            type="button"
+            onClick={() => mergeToDb('db')}
+            className="border rounded px-2 py-1"
+          >
+            データベース優先でデータベースに統合
+          </button>
+          <button
+            type="button"
+            onClick={close}
+            className="border rounded px-2 py-1"
+          >
             キャンセル
           </button>
         </div>
