@@ -222,7 +222,13 @@ export default function StudentUserData({
           <div className="flex flex-wrap gap-1 items-center bg-[#114073] bg-opacity-90 px-1">
             <button
               type="button"
-              onClick={() => setShowBonds(true)}
+              onClick={() => {
+                if (editMode && isRegistered) {
+                  setEditBonds(true)
+                } else {
+                  setShowBonds(true)
+                }
+              }}
               className={`relative text-pink-300${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
               <FontAwesomeIcon
@@ -252,7 +258,24 @@ export default function StudentUserData({
               {student?.role}
             </span>
           </div>
-          <div className="bg-[#114073] bg-opacity-90 px-1 inline-block w-20 text-center">Lv. {display.level}</div>
+          <div
+            className={`bg-[#114073] bg-opacity-90 px-1 inline-block w-20 text-center${
+              editMode && isRegistered ? ' edit-highlight cursor-pointer' : ''
+            }`}
+            onClick={() => {
+              if (editMode && isRegistered) {
+                setEditField({
+                  field: 'level',
+                  label: 'レベル',
+                  value: display.level,
+                  min: 1,
+                  max: 90,
+                })
+              }
+            }}
+          >
+            Lv. {display.level}
+          </div>
           <div className="flex gap-1">
             <span className="inline-block skew-x-12">
               <span className="-skew-x-12 bg-white text-[#114073] italic px-1 inline-block w-20 text-center">
