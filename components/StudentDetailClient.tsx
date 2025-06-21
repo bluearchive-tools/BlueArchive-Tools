@@ -16,6 +16,7 @@ interface Student {
   name: string
   styleIds?: string[]
   styleOf?: string
+  altOf?: string
 }
 
 export default function StudentDetailClient({ studentId }: { studentId: string }) {
