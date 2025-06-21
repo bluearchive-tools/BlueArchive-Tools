@@ -69,6 +69,7 @@ export default function SquadPage() {
     }
   }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadGroups() }, [session])
 
   const saveGroups = async (gs: SquadGroup[]) => {
@@ -89,7 +90,7 @@ export default function SquadPage() {
   }
 
   const addSquad = async (gid: string) => {
-    if (form.strikers.some((s) => !s) || form.specials.some((s) => !s)) return
+    if (!form.strikers.some((s) => s)) return
     const newSquad: Squad = { strikers: [...form.strikers], specials: [...form.specials] }
     const newGroups = groups.map((g) =>
       g.id === gid ? { ...g, squads: [...g.squads, newSquad] } : g
@@ -100,7 +101,7 @@ export default function SquadPage() {
     await saveGroups(newGroups)
   }
 
-  const displayName = (id: string) => students.find((s) => s.id === id)?.name || id
+  const findStudent = (id: string) => students.find((s) => s.id === id)
 
   const strikers = students.filter((s) => s.role === 'STRIKER')
   const specials = students.filter((s) => s.role === 'SPECIAL')
@@ -120,60 +121,102 @@ export default function SquadPage() {
           追加
         </button>
       </div>
-      {groups.map((g) => (
-        <div key={g.id} className="border rounded p-2 space-y-2">
-          <h3 className="font-bold">{g.name}</h3>
-          {g.squads.map((sq, i) => (
-            <div key={i} className="border p-2">
-              <p className="text-sm">STRIKER: {sq.strikers.map(displayName).join(', ')}</p>
-              <p className="text-sm">SPECIAL: {sq.specials.map(displayName).join(', ')}</p>
-            </div>
-          ))}
-          {editGroup === g.id ? (
-            <div className="space-y-2">
-              {form.strikers.map((v, i) => (
-                <StudentSelect
-                  key={`st${i}`}
-                  students={strikers}
-                  value={v}
-                  onChange={(id) =>
-                    setForm((prev) => ({ ...prev, strikers: prev.strikers.map((x, j) => (i === j ? id : x)) }))
-                  }
-                />
-              ))}
-              {form.specials.map((v, i) => (
-                <StudentSelect
-                  key={`sp${i}`}
-                  students={specials}
-                  value={v}
-                  onChange={(id) =>
-                    setForm((prev) => ({ ...prev, specials: prev.specials.map((x, j) => (i === j ? id : x)) }))
-                  }
-                />
-              ))}
-              <div className="flex gap-2">
-                <button type="button" onClick={() => addSquad(g.id)} className="border rounded px-2 py-1">
-                  保存
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditGroup(null)
-                    setForm({ strikers: ['', '', '', ''], specials: ['', ''] })
-                  }}
-                  className="border rounded px-2 py-1"
-                >
-                  キャンセル
-                </button>
+      {groups.map((g) => {
+        const used = new Set<string>()
+        g.squads.forEach((sq) => {
+          ;[...sq.strikers, ...sq.specials].forEach((id) => {
+            if (id) used.add(id)
+          })
+        })
+        const availableStrikers = strikers.filter((s) => !used.has(s.id))
+        const availableSpecials = specials.filter((s) => !used.has(s.id))
+        return (
+          <div key={g.id} className="border rounded p-2 space-y-2">
+            <h3 className="font-bold">{g.name}</h3>
+            {g.squads.map((sq, i) => (
+              <div key={i} className="border p-2">
+                <div className="grid grid-cols-6 gap-1">
+                  {sq.strikers.map((id, idx) => {
+                    const st = findStudent(id)
+                    return id && st ? (
+                      <img
+                        key={`st-${idx}`}
+                        src={st.image}
+                        alt={st.name}
+                        className="w-12 h-12 object-cover rounded"
+                      />
+                    ) : (
+                      <div key={`st-${idx}`} className="w-12 h-12 border rounded" />
+                    )
+                  })}
+                  {sq.specials.map((id, idx) => {
+                    const st = findStudent(id)
+                    return id && st ? (
+                      <img
+                        key={`sp-${idx}`}
+                        src={st.image}
+                        alt={st.name}
+                        className="w-12 h-12 object-cover rounded"
+                      />
+                    ) : (
+                      <div key={`sp-${idx}`} className="w-12 h-12 border rounded" />
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          ) : (
-            <button type="button" onClick={() => setEditGroup(g.id)} className="border rounded px-2 py-1">
-              部隊追加
-            </button>
-          )}
-        </div>
-      ))}
+            ))}
+            {editGroup === g.id ? (
+              <div className="space-y-2">
+                {form.strikers.map((v, i) => (
+                  <StudentSelect
+                    key={`st${i}`}
+                    students={availableStrikers}
+                    value={v}
+                    onChange={(id) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        strikers: prev.strikers.map((x, j) => (i === j ? id : x)),
+                      }))
+                    }
+                  />
+                ))}
+                {form.specials.map((v, i) => (
+                  <StudentSelect
+                    key={`sp${i}`}
+                    students={availableSpecials}
+                    value={v}
+                    onChange={(id) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        specials: prev.specials.map((x, j) => (i === j ? id : x)),
+                      }))
+                    }
+                  />
+                ))}
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => addSquad(g.id)} className="border rounded px-2 py-1">
+                    保存
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditGroup(null)
+                      setForm({ strikers: ['', '', '', ''], specials: ['', ''] })
+                    }}
+                    className="border rounded px-2 py-1"
+                  >
+                    キャンセル
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" onClick={() => setEditGroup(g.id)} className="border rounded px-2 py-1">
+                部隊追加
+              </button>
+            )}
+          </div>
+        )
+      })}
     </main>
   )
 }
