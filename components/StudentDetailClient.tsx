@@ -43,31 +43,37 @@ export default function StudentDetailClient({ studentId }: { studentId: string }
 
   const checkRegistered = useCallback(async () => {
     const student = students.find((s) => s.id === current)
-    const mainId = student?.styleOf || student?.altOf || current
+    if (!student) return
+
+    const baseId = student.styleOf || student.altOf || student.id
+    const variantIds = new Set<string>([
+      student.id,
+      baseId,
+      ...(student.styleIds || []),
+      ...(student.altIds || []),
+    ])
+
+    const baseStudent = students.find((s) => s.id === baseId)
+    if (baseStudent) {
+      ;(baseStudent.styleIds || []).forEach((id) => variantIds.add(id))
+      ;(baseStudent.altIds || []).forEach((id) => variantIds.add(id))
+    }
+
+    const ids = Array.from(variantIds)
+
     if (session) {
       const { data } = await supabase
         .from('user_students')
-        .select('id')
+        .select('student_id')
         .eq('user_id', session.user.id)
-        .eq('student_id', current)
-        .maybeSingle()
-      if (!data && mainId !== current) {
-        const { data: alt } = await supabase
-          .from('user_students')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .eq('student_id', mainId)
-          .maybeSingle()
-        setRegistered(!!alt)
-      } else {
-        setRegistered(!!data)
-      }
+        .in('student_id', ids)
+
+      setRegistered((data?.length || 0) > 0)
     } else {
-      let local = localStorage.getItem(`userStudent:${current}`)
-      if (!local && mainId !== current) {
-        local = localStorage.getItem(`userStudent:${mainId}`)
-      }
-      setRegistered(!!local)
+      const found = ids.some((id) =>
+        localStorage.getItem(`userStudent:${id}`)
+      )
+      setRegistered(found)
     }
   }, [session, supabase, students, current])
 
@@ -78,8 +84,10 @@ export default function StudentDetailClient({ studentId }: { studentId: string }
   }, [checkRegistered, students])
 
   const student = students.find((s) => s.id === current)
-  const baseId = student?.styleOf || student?.id
-  const styles = students.filter((s) => (s.styleOf || s.id) === baseId)
+  const baseId = student?.styleOf || student?.altOf || student?.id
+  const styles = students.filter((s) =>
+    (s.styleOf || s.altOf || s.id) === baseId
+  )
 
   const refreshRegistered = useCallback(async () => {
     await checkRegistered()
