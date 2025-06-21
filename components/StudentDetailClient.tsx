@@ -47,14 +47,14 @@ export default function StudentDetailClient({ studentId }: { studentId: string }
     if (session) {
       const { data } = await supabase
         .from('user_students')
-        .select('id')
+        .select('*')
         .eq('user_id', session.user.id)
         .eq('student_id', current)
         .maybeSingle()
       if (!data && mainId !== current) {
         const { data: alt } = await supabase
           .from('user_students')
-          .select('id')
+          .select('*')
           .eq('user_id', session.user.id)
           .eq('student_id', mainId)
           .maybeSingle()

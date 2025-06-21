@@ -18,7 +18,9 @@ export default function Home() {
             <FeatureItem title="生徒データ確認" description="現在保存されている生徒のデータを表示します" />
           </Link>
           <FeatureItem title="生徒データインポート" description="画像から生徒のデータをインポートできます" />
-          <FeatureItem title="部隊管理" description="部隊を構成できます" />
+          <Link href="/squads">
+            <FeatureItem title="部隊管理" description="部隊を構成できます" />
+          </Link>
         </div>
       </CollapsibleBox>
         <CollapsibleBox title="TLツール(β)" description="TL作成に役立つツールです">
