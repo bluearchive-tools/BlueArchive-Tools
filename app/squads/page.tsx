@@ -11,6 +11,8 @@ import {
   faPen,
   faGripVertical,
   faNoteSticky,
+  faArrowUp,
+  faArrowDown,
 } from '@fortawesome/free-solid-svg-icons'
 
 interface Student {
@@ -162,6 +164,31 @@ export default function SquadPage() {
 
   const findStudent = (id: string) => students.find((s) => s.id === id)
 
+  const moveUp = (gid: string, index: number) => {
+    if (index === 0) return
+    const newGroups = groups.map((g) => {
+      if (g.id !== gid) return g
+      const arr = [...g.squads]
+      ;[arr[index - 1], arr[index]] = [arr[index], arr[index - 1]]
+      return { ...g, squads: arr }
+    })
+    setGroups(newGroups)
+    saveGroups(newGroups)
+  }
+
+  const moveDown = (gid: string, index: number) => {
+    const group = groups.find((g) => g.id === gid)
+    if (!group || index >= group.squads.length - 1) return
+    const newGroups = groups.map((g) => {
+      if (g.id !== gid) return g
+      const arr = [...g.squads]
+      ;[arr[index], arr[index + 1]] = [arr[index + 1], arr[index]]
+      return { ...g, squads: arr }
+    })
+    setGroups(newGroups)
+    saveGroups(newGroups)
+  }
+
   const strikers = students.filter((s) => s.role === 'STRIKER')
   const specials = students.filter((s) => s.role === 'SPECIAL')
 
@@ -223,7 +250,10 @@ export default function SquadPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setEditing({ gid: g.id, index: -1 })}
+                  onClick={() => {
+                    setEditing({ gid: g.id, index: -1 })
+                    setForm({ strikers: ['', '', '', ''], specials: ['', ''], memo: '' })
+                  }}
                   className="border rounded p-1"
                   aria-label="部隊追加"
                 >
@@ -284,10 +314,13 @@ export default function SquadPage() {
                     )
                   })}
                 </div>
-                <div className="mt-2 flex gap-2">
+                <div className="mt-2 flex gap-2 justify-end">
                   <button
                     type="button"
-                    onClick={() => setEditing({ gid: g.id, index: i })}
+                    onClick={() => {
+                      setEditing({ gid: g.id, index: i })
+                      setForm(sq)
+                    }}
                     className="border rounded p-1"
                     aria-label="編集"
                   >
@@ -303,6 +336,22 @@ export default function SquadPage() {
                     aria-label="メモ編集"
                   >
                     <FontAwesomeIcon icon={faNoteSticky} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveUp(g.id, i)}
+                    className="border rounded p-1"
+                    aria-label="上へ移動"
+                  >
+                    <FontAwesomeIcon icon={faArrowUp} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveDown(g.id, i)}
+                    className="border rounded p-1"
+                    aria-label="下へ移動"
+                  >
+                    <FontAwesomeIcon icon={faArrowDown} />
                   </button>
                   <span className="cursor-move p-1" aria-hidden="true">
                     <FontAwesomeIcon icon={faGripVertical} />
