@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import NoticeModal from './NoticeModal'
+import DataSyncModal from './DataSyncModal'
 import type { NextRouter } from 'next/router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBell, faCog, faChevronDown, faMoon, faSun } from '@fortawesome/free-solid-svg-icons'
@@ -83,6 +84,19 @@ export default function Header() {
     if (error) console.error(error.message)
   }
   const signOut = async () => {
+    if (session) {
+      const { data } = await supabase
+        .from('user_students')
+        .select('*')
+        .eq('user_id', session.user.id)
+      if (data) {
+        for (const row of data) {
+          const key = `userStudent:${row.student_id}`
+          localStorage.setItem(key, JSON.stringify(row))
+        }
+      }
+      localStorage.removeItem(`sync_done_${session.user.id}`)
+    }
     await supabase.auth.signOut()
   }
 
@@ -140,6 +154,7 @@ export default function Header() {
       </div>
       <div className={`absolute bottom-0 left-0 h-1 bg-blue-500 transition-all duration-300 ${loading ? 'w-full' : 'w-0'}`}></div>
       <NoticeModal />
+      <DataSyncModal />
     </header>
   )
 }
