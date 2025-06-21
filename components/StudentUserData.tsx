@@ -123,16 +123,26 @@ export default function StudentUserData({
     loadEquip()
   }, [])
   const loadData = async () => {
-    if (!session) return
     const student = students.find((s) => s.id === studentId)
     const baseId = student?.styleOf || studentId
-    const { data } = await supabase
-      .from('user_students')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .eq('student_id', baseId)
-      .maybeSingle()
-    if (data) setData(data as UserStudent)
+    if (session) {
+      const { data } = await supabase
+        .from('user_students')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .eq('student_id', baseId)
+        .maybeSingle()
+      if (data) setData(data as UserStudent)
+    } else {
+      const local = localStorage.getItem(`userStudent:${baseId}`)
+      if (local) {
+        try {
+          setData(JSON.parse(local) as UserStudent)
+        } catch {
+          /* ignore */
+        }
+      }
+    }
   }
 
   useEffect(() => {
@@ -534,13 +544,22 @@ export default function StudentUserData({
           max={editField.max}
           onClose={() => setEditField(null)}
           onSave={async (v) => {
-            await supabase
-              .from('user_students')
-              .update({ [editField.field]: v })
-              .eq('user_id', session!.user.id)
-              .eq('student_id', baseId)
-            setEditField(null)
-            loadData()
+            if (session) {
+              await supabase
+                .from('user_students')
+                .update({ [editField.field]: v })
+                .eq('user_id', session.user.id)
+                .eq('student_id', baseId)
+              setEditField(null)
+              loadData()
+            } else {
+              const local = localStorage.getItem(`userStudent:${baseId}`)
+              const obj: UserStudent = local ? JSON.parse(local) : { ...placeholderMin }
+              const newObj = { ...obj, [editField.field]: v }
+              localStorage.setItem(`userStudent:${baseId}`, JSON.stringify(newObj))
+              setEditField(null)
+              setData(newObj)
+            }
           }}
         />
       )}
@@ -551,13 +570,22 @@ export default function StudentUserData({
           onClose={() => setEditBonds(false)}
           onSave={async (vals) => {
             const main = vals[baseId] || 0
-            await supabase
-              .from('user_students')
-              .update({ bond: main, alt_bonds: vals })
-              .eq('user_id', session!.user.id)
-              .eq('student_id', baseId)
-            setEditBonds(false)
-            loadData()
+            if (session) {
+              await supabase
+                .from('user_students')
+                .update({ bond: main, alt_bonds: vals })
+                .eq('user_id', session.user.id)
+                .eq('student_id', baseId)
+              setEditBonds(false)
+              loadData()
+            } else {
+              const local = localStorage.getItem(`userStudent:${baseId}`)
+              const obj: UserStudent = local ? JSON.parse(local) : { ...placeholderMin }
+              const newObj = { ...obj, bond: main, alt_bonds: vals }
+              localStorage.setItem(`userStudent:${baseId}`, JSON.stringify(newObj))
+              setEditBonds(false)
+              setData(newObj)
+            }
           }}
         />
       )}

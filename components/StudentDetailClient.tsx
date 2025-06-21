@@ -45,7 +45,8 @@ export default function StudentDetailClient({ studentId }: { studentId: string }
           .maybeSingle()
         setRegistered(!!data)
       } else {
-        setRegistered(false)
+        const local = localStorage.getItem(`userStudent:${studentId}`)
+        setRegistered(!!local)
       }
     }
     load()
@@ -56,14 +57,18 @@ export default function StudentDetailClient({ studentId }: { studentId: string }
   const styles = students.filter((s) => (s.styleOf || s.id) === baseId)
 
   const refreshRegistered = useCallback(async () => {
-    if (!session) return
-    const { data } = await supabase
-      .from('user_students')
-      .select('id')
-      .eq('user_id', session.user.id)
-      .eq('student_id', current)
-      .maybeSingle()
-    setRegistered(!!data)
+    if (session) {
+      const { data } = await supabase
+        .from('user_students')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .eq('student_id', current)
+        .maybeSingle()
+      setRegistered(!!data)
+    } else {
+      const local = localStorage.getItem(`userStudent:${current}`)
+      setRegistered(!!local)
+    }
   }, [session, supabase, current])
 
   return (
