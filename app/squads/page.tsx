@@ -1,0 +1,382 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import StudentSelect from '../../components/StudentSelect'
+import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  faPlus,
+  faFloppyDisk,
+  faXmark,
+  faPen,
+  faGripVertical,
+  faNoteSticky,
+} from '@fortawesome/free-solid-svg-icons'
+
+interface Student {
+  id: string
+  name: string
+  image: string
+  attackType: string
+  defenseType: string
+  hasAccessory?: boolean
+  styleIds?: string[]
+  styleOf?: string
+  altIds?: string[]
+  altOf?: string
+  initialStars: number
+  role: string
+  characterType: string
+  position: string
+}
+
+interface Squad {
+  strikers: string[]
+  specials: string[]
+  memo?: string
+}
+
+interface SquadGroup {
+  id: string
+  name: string
+  squads: Squad[]
+}
+
+export default function SquadPage() {
+  const [students, setStudents] = useState<Student[]>([])
+  const [groups, setGroups] = useState<SquadGroup[]>([])
+  const [groupName, setGroupName] = useState('')
+  const [renameId, setRenameId] = useState<string | null>(null)
+  const [renameValue, setRenameValue] = useState('')
+  const [editing, setEditing] = useState<{ gid: string; index: number } | null>(null)
+  const [form, setForm] = useState<Squad>({ strikers: ['', '', '', ''], specials: ['', ''], memo: '' })
+  const [memoTarget, setMemoTarget] = useState<{ gid: string; index: number } | null>(null)
+  const [memoValue, setMemoValue] = useState('')
+  const session = useSession()
+  const supabase = useSupabaseClient()
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch('/api/students')
+        if (res.ok) setStudents(await res.json())
+      } catch {
+        /* ignore */
+      }
+    }
+    load()
+  }, [])
+
+  const loadGroups = async () => {
+    if (session) {
+      const { data } = await supabase
+        .from('user_squad_groups')
+        .select('groups')
+        .eq('user_id', session.user.id)
+        .maybeSingle()
+      if (data) setGroups((data as { groups: SquadGroup[] }).groups || [])
+    } else {
+      const raw = localStorage.getItem('squadGroups')
+      if (raw) {
+        try { setGroups(JSON.parse(raw) as SquadGroup[]) } catch { /* ignore */ }
+      }
+    }
+  }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadGroups() }, [session])
+
+  const saveGroups = async (gs: SquadGroup[]) => {
+    if (session) {
+      await supabase.from('user_squad_groups').upsert({ user_id: session.user.id, groups: gs })
+    } else {
+      localStorage.setItem('squadGroups', JSON.stringify(gs))
+    }
+  }
+
+  const addGroup = async () => {
+    if (!groupName.trim()) return
+    const g: SquadGroup = { id: Date.now().toString(), name: groupName.trim(), squads: [] }
+    const newGroups = [...groups, g]
+    setGroups(newGroups)
+    setGroupName('')
+    await saveGroups(newGroups)
+  }
+
+  const saveSquad = async () => {
+    if (!editing) return
+    if (!form.strikers.some((s) => s)) return
+    const newGroups = groups.map((g) => {
+      if (g.id !== editing.gid) return g
+      const squads = [...g.squads]
+      const data: Squad = {
+        strikers: [...form.strikers],
+        specials: [...form.specials],
+        memo: form.memo,
+      }
+      if (editing.index >= 0) {
+        squads[editing.index] = data
+      } else {
+        squads.push(data)
+      }
+      return { ...g, squads }
+    })
+    setGroups(newGroups)
+    setEditing(null)
+    setForm({ strikers: ['', '', '', ''], specials: ['', ''], memo: '' })
+    await saveGroups(newGroups)
+  }
+
+  const cancelEdit = () => {
+    setEditing(null)
+    setForm({ strikers: ['', '', '', ''], specials: ['', ''], memo: '' })
+  }
+
+  const saveMemo = async () => {
+    if (!memoTarget) return
+    const newGroups = groups.map((g) => {
+      if (g.id !== memoTarget.gid) return g
+      const squads = [...g.squads]
+      const sq = squads[memoTarget.index]
+      squads[memoTarget.index] = { ...sq, memo: memoValue }
+      return { ...g, squads }
+    })
+    setGroups(newGroups)
+    setMemoTarget(null)
+    setMemoValue('')
+    await saveGroups(newGroups)
+  }
+
+  const saveGroupName = async () => {
+    if (!renameId) return
+    const name = renameValue.trim()
+    if (!name) return
+    const newGroups = groups.map((g) =>
+      g.id === renameId ? { ...g, name } : g
+    )
+    setGroups(newGroups)
+    setRenameId(null)
+    setRenameValue('')
+    await saveGroups(newGroups)
+  }
+
+  const findStudent = (id: string) => students.find((s) => s.id === id)
+
+  const strikers = students.filter((s) => s.role === 'STRIKER')
+  const specials = students.filter((s) => s.role === 'SPECIAL')
+
+  return (
+    <main className="p-4 space-y-4">
+      <h2 className="text-xl">部隊管理</h2>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={groupName}
+          onChange={(e) => setGroupName(e.target.value)}
+          placeholder="グループ名"
+          className="border rounded p-1 flex-1"
+        />
+        <button type="button" onClick={addGroup} className="border rounded px-2 py-1">
+          <FontAwesomeIcon icon={faPlus} />
+        </button>
+      </div>
+      {groups.map((g) => {
+        const used = new Set<string>()
+        g.squads.forEach((sq, si) => {
+          if (editing && editing.gid === g.id && editing.index === si) return
+          ;[...sq.strikers, ...sq.specials].forEach((id) => {
+            if (id) used.add(id)
+          })
+        })
+        const availableStrikers = strikers.filter((s) => !used.has(s.id))
+        const availableSpecials = specials.filter((s) => !used.has(s.id))
+        return (
+          <div key={g.id} className="border rounded p-2 space-y-2">
+            {renameId === g.id ? (
+              <div className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  className="border rounded p-1 flex-1"
+                />
+                <button type="button" onClick={saveGroupName} className="border rounded p-1">
+                  <FontAwesomeIcon icon={faFloppyDisk} />
+                </button>
+                <button type="button" onClick={() => setRenameId(null)} className="border rounded p-1">
+                  <FontAwesomeIcon icon={faXmark} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold flex-1">{g.name}</h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRenameId(g.id)
+                    setRenameValue(g.name)
+                  }}
+                  className="border rounded p-1"
+                  aria-label="グループ名変更"
+                >
+                  <FontAwesomeIcon icon={faPen} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditing({ gid: g.id, index: -1 })}
+                  className="border rounded p-1"
+                  aria-label="部隊追加"
+                >
+                  <FontAwesomeIcon icon={faPlus} />
+                </button>
+              </div>
+            )}
+            {g.squads.map((sq, i) => (
+              <div
+                key={i}
+                className="border p-2 relative flex flex-col items-center"
+                draggable
+                onDragStart={(e) => e.dataTransfer.setData('text/plain', i.toString())}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  const from = Number(e.dataTransfer.getData('text/plain'))
+                  if (from === i) return
+                  const newGroups = groups.map((gg) => {
+                    if (gg.id !== g.id) return gg
+                    const arr = [...gg.squads]
+                    const [item] = arr.splice(from, 1)
+                    arr.splice(i, 0, item)
+                    return { ...gg, squads: arr }
+                  })
+                  setGroups(newGroups)
+                  saveGroups(newGroups)
+                }}
+              >
+                <div className="absolute left-2 top-1 text-sm flex gap-2 items-center">
+                  <span>部隊{i + 1}</span>
+                  {sq.memo && <span>{sq.memo}</span>}
+                </div>
+                <div className="mt-4 grid grid-cols-6 gap-1">
+                  {sq.strikers.map((id, idx) => {
+                    const st = findStudent(id)
+                    return id && st ? (
+                      <img
+                        key={`st-${idx}`}
+                        src={st.image}
+                        alt={st.name}
+                        className="w-12 h-12 object-cover rounded"
+                      />
+                    ) : (
+                      <div key={`st-${idx}`} className="w-12 h-12 border rounded" />
+                    )
+                  })}
+                  {sq.specials.map((id, idx) => {
+                    const st = findStudent(id)
+                    return id && st ? (
+                      <img
+                        key={`sp-${idx}`}
+                        src={st.image}
+                        alt={st.name}
+                        className="w-12 h-12 object-cover rounded"
+                      />
+                    ) : (
+                      <div key={`sp-${idx}`} className="w-12 h-12 border rounded" />
+                    )
+                  })}
+                </div>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditing({ gid: g.id, index: i })}
+                    className="border rounded p-1"
+                    aria-label="編集"
+                  >
+                    <FontAwesomeIcon icon={faPen} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMemoTarget({ gid: g.id, index: i })
+                      setMemoValue(sq.memo ?? '')
+                    }}
+                    className="border rounded p-1"
+                    aria-label="メモ編集"
+                  >
+                    <FontAwesomeIcon icon={faNoteSticky} />
+                  </button>
+                  <span className="cursor-move p-1" aria-hidden="true">
+                    <FontAwesomeIcon icon={faGripVertical} />
+                  </span>
+                </div>
+                {memoTarget && memoTarget.gid === g.id && memoTarget.index === i && (
+                  <div className="mt-2 flex gap-2 w-full">
+                    <input
+                      type="text"
+                      value={memoValue}
+                      onChange={(e) => setMemoValue(e.target.value)}
+                      className="border rounded p-1 flex-1"
+                    />
+                    <button type="button" onClick={saveMemo} className="border rounded p-1">
+                      <FontAwesomeIcon icon={faFloppyDisk} />
+                    </button>
+                    <button type="button" onClick={() => setMemoTarget(null)} className="border rounded p-1">
+                      <FontAwesomeIcon icon={faXmark} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+            {editing && editing.gid === g.id && (
+              <div className="space-y-2">
+                <label className="flex items-center gap-2">
+                  <span className="whitespace-nowrap text-sm">メモ</span>
+                  <input
+                    type="text"
+                    value={form.memo}
+                    onChange={(e) => setForm({ ...form, memo: e.target.value })}
+                    className="border rounded p-1 flex-1"
+                  />
+                </label>
+                {form.strikers.map((v, i) => (
+                  <StudentSelect
+                    key={`st${i}`}
+                    students={availableStrikers}
+                    value={v}
+                    onChange={(id) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        strikers: prev.strikers.map((x, j) => (i === j ? id : x)),
+                      }))
+                    }
+                  />
+                ))}
+                {form.specials.map((v, i) => (
+                  <StudentSelect
+                    key={`sp${i}`}
+                    students={availableSpecials}
+                    value={v}
+                    onChange={(id) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        specials: prev.specials.map((x, j) => (i === j ? id : x)),
+                      }))
+                    }
+                  />
+                ))}
+                <div className="flex gap-2">
+                  <button type="button" onClick={saveSquad} className="border rounded px-2 py-1">
+                    <FontAwesomeIcon icon={faFloppyDisk} />
+                  </button>
+                  <button type="button" onClick={cancelEdit} className="border rounded px-2 py-1">
+                    <FontAwesomeIcon icon={faXmark} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </main>
+  )
+}
+
