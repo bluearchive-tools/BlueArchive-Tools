@@ -36,40 +36,40 @@ export default function StudentDetailClient({ studentId }: { studentId: string }
       } catch {
         /* ignore */
       }
-      if (session) {
-        const { data } = await supabase
-          .from('user_students')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .eq('student_id', studentId)
-          .maybeSingle()
-        setRegistered(!!data)
-      } else {
-        const local = localStorage.getItem(`userStudent:${studentId}`)
-        setRegistered(!!local)
-      }
     }
     load()
-  }, [session, supabase, studentId])
+  }, [])
+
+  const checkRegistered = useCallback(async () => {
+    const student = students.find((s) => s.id === current)
+    const base = student?.styleOf || current
+    if (session) {
+      const { data } = await supabase
+        .from('user_students')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .eq('student_id', base)
+        .maybeSingle()
+      setRegistered(!!data)
+    } else {
+      const local = localStorage.getItem(`userStudent:${base}`)
+      setRegistered(!!local)
+    }
+  }, [session, supabase, students, current])
+
+  useEffect(() => {
+    if (students.length) {
+      checkRegistered()
+    }
+  }, [checkRegistered, students])
 
   const student = students.find((s) => s.id === current)
   const baseId = student?.styleOf || student?.id
   const styles = students.filter((s) => (s.styleOf || s.id) === baseId)
 
   const refreshRegistered = useCallback(async () => {
-    if (session) {
-      const { data } = await supabase
-        .from('user_students')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .eq('student_id', current)
-        .maybeSingle()
-      setRegistered(!!data)
-    } else {
-      const local = localStorage.getItem(`userStudent:${current}`)
-      setRegistered(!!local)
-    }
-  }, [session, supabase, current])
+    await checkRegistered()
+  }, [checkRegistered])
 
   return (
     <div className="space-y-4">
@@ -78,13 +78,15 @@ export default function StudentDetailClient({ studentId }: { studentId: string }
           <FontAwesomeIcon icon={faArrowLeft} />
         </Link>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setPreviewMax((p) => !p)}
-            className="border rounded px-2 py-1 text-sm"
-          >
-            {previewMax ? '最小' : '最大'}プレビュー
-          </button>
+          {!registered && (
+            <button
+              type="button"
+              onClick={() => setPreviewMax((p) => !p)}
+              className="border rounded px-2 py-1 text-sm"
+            >
+              {previewMax ? '最小' : '最大'}プレビュー
+            </button>
+          )}
           {registered ? (
             <label className="inline-flex items-center gap-1 text-sm">
               <span>編集</span>
