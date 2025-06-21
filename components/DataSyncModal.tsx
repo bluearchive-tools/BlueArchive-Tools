@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useTheme } from './ThemeProvider'
 
@@ -236,12 +236,12 @@ export default function DataSyncModal() {
                         <td className="border px-1 bg-red-100 dark:bg-red-900">
                           {typeof d.local === 'object'
                             ? JSON.stringify(d.local)
-                            : d.local ?? '-'}
+                            : ((d.local ?? '-') as ReactNode)}
                         </td>
                         <td className="border px-1 bg-red-100 dark:bg-red-900">
                           {typeof d.db === 'object'
                             ? JSON.stringify(d.db)
-                            : d.db ?? '-'}
+                            : ((d.db ?? '-') as ReactNode)}
                         </td>
                       </tr>
                     ))}
