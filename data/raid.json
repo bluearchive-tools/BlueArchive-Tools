@@ -819,6 +819,16 @@
       "endDate": "2025-06-04"
     },
     {
+      "number": "S79",
+      "boss": "ゴズ",
+      "terrain": "屋内",
+      "type": "総力戦",
+      "defenseArmors": ["特殊装甲"],
+      "maxDifficulty": "Lunatic",
+      "startDate": "2025-07-02",
+      "endDate": "2025-07-09"
+    },
+    {
       "number": "BD1",
       "boss": "ビナー",
       "terrain": "市街地",
