@@ -13,6 +13,7 @@ export default function Settings() {
   const [delNotice, setDelNotice] = useState(false)
   const [delOpts, setDelOpts] = useState(false)
   const [delSync, setDelSync] = useState(false)
+  const [delSquad, setDelSquad] = useState(false)
 
   const clearLocal = () => {
     if (!confirm('選択したデータを削除しますか？')) return
@@ -39,6 +40,7 @@ export default function Settings() {
       }
       keys.forEach((k) => localStorage.removeItem(k))
     }
+    if (delSquad) localStorage.removeItem('squadGroups')
     alert('削除しました')
   }
 
@@ -98,6 +100,15 @@ export default function Settings() {
             onChange={(e) => setDelSync(e.target.checked)}
           />
           同期完了フラグ
+        </label>
+        <label className="block text-sm">
+          <input
+            type="checkbox"
+            className="mr-1"
+            checked={delSquad}
+            onChange={(e) => setDelSquad(e.target.checked)}
+          />
+          部隊データ
         </label>
         <button onClick={clearLocal} className="mt-2 px-4 py-2 border rounded w-full">
           選択したデータを削除

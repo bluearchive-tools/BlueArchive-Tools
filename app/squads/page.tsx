@@ -329,7 +329,7 @@ export default function SquadPage() {
                 <span>部隊{i + 1}</span>
                 {sq.memo && <span>{sq.memo}</span>}
               </div>
-              <div className="mt-4 grid grid-cols-6 gap-1 mx-auto flex-1">
+              <div className="mt-4 grid grid-cols-6 gap-1 w-fit mx-auto">
                 {sq.strikers.map((id, idx) => {
                   const st = findStudent(id)
                   return id && st ? (
@@ -497,7 +497,7 @@ export default function SquadPage() {
                   {sq.memo && <span>{sq.memo}</span>}
                 </div>
                 <div className="mt-4 flex items-start gap-2">
-                  <div className="grid grid-cols-6 gap-1 mx-auto flex-1">
+                  <div className="grid grid-cols-6 gap-1 w-fit mx-auto">
                   {sq.strikers.map((id, idx) => {
                     const st = findStudent(id)
                     return (
