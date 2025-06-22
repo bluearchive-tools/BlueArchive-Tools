@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react'
 import StudentSelect from '../../components/StudentSelect'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
+import {
+  compressToEncodedURIComponent,
+  decompressFromEncodedURIComponent,
+} from 'lz-string'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faPlus,
@@ -58,6 +62,7 @@ export default function SquadPage() {
   const [dragInfo, setDragInfo] = useState<
     { gid: string; sIndex: number; role: 'striker' | 'special'; index: number } | null
   >(null)
+  const [touchSquad, setTouchSquad] = useState<{ gid: string; index: number } | null>(null)
   const [sharedGroup, setSharedGroup] = useState<SquadGroup | null>(null)
   const session = useSession()
   const supabase = useSupabaseClient()
@@ -79,10 +84,11 @@ export default function SquadPage() {
     const share = params.get('share')
     if (share) {
       try {
-        const g: SquadGroup = JSON.parse(
-          decodeURIComponent(atob(share))
-        )
-        setSharedGroup(g)
+        const decoded = decompressFromEncodedURIComponent(share)
+        if (decoded) {
+          const g: SquadGroup = JSON.parse(decoded)
+          setSharedGroup(g)
+        }
       } catch {
         /* ignore */
       }
@@ -245,7 +251,7 @@ export default function SquadPage() {
   }
 
   const copyShareLink = (g: SquadGroup) => {
-    const encoded = btoa(encodeURIComponent(JSON.stringify(g)))
+    const encoded = compressToEncodedURIComponent(JSON.stringify(g))
     const url = `${location.origin}/squads?share=${encoded}`
     navigator.clipboard.writeText(url)
       .then(() => alert('リンクをコピーしました'))
@@ -387,8 +393,9 @@ export default function SquadPage() {
             {g.squads.map((sq, i) => (
               <div
                 key={i}
-                className="border p-2 relative flex flex-col items-center"
+                className="border p-2 relative"
                 draggable
+                data-sindex={i}
                 onDragStart={(e) => e.dataTransfer.setData('text/plain', i.toString())}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
@@ -404,12 +411,36 @@ export default function SquadPage() {
                   setGroups(newGroups)
                   saveGroups(newGroups)
                 }}
+                onTouchStart={() => setTouchSquad({ gid: g.id, index: i })}
+                onTouchEnd={(e) => {
+                  if (!touchSquad) return
+                  const t = e.changedTouches[0]
+                  const el = document.elementFromPoint(t.clientX, t.clientY) as HTMLElement | null
+                  const target = el?.closest('[data-sindex]') as HTMLElement | null
+                  if (target && target.dataset.sindex) {
+                    const to = Number(target.dataset.sindex)
+                    const from = touchSquad.index
+                    if (to !== from && touchSquad.gid === g.id) {
+                      const newGroups = groups.map((gg) => {
+                        if (gg.id !== g.id) return gg
+                        const arr = [...gg.squads]
+                        const [item] = arr.splice(from, 1)
+                        arr.splice(to, 0, item)
+                        return { ...gg, squads: arr }
+                      })
+                      setGroups(newGroups)
+                      saveGroups(newGroups)
+                    }
+                  }
+                  setTouchSquad(null)
+                }}
               >
                 <div className="absolute left-2 top-1 text-sm flex gap-2 items-center">
                   <span>部隊{i + 1}</span>
                   {sq.memo && <span>{sq.memo}</span>}
                 </div>
-                <div className="mt-4 grid grid-cols-6 gap-1">
+                <div className="mt-4 flex items-start gap-2">
+                  <div className="grid grid-cols-6 gap-1">
                   {sq.strikers.map((id, idx) => {
                     const st = findStudent(id)
                     return (
@@ -417,6 +448,8 @@ export default function SquadPage() {
                         key={`st-${idx}`}
                         className="w-12 h-12 border rounded overflow-hidden"
                         draggable
+                        data-role="striker"
+                        data-idx={idx}
                         onDragStart={(e) => {
                           e.stopPropagation()
                           setDragInfo({ gid: g.id, sIndex: i, role: 'striker', index: idx })
@@ -425,6 +458,18 @@ export default function SquadPage() {
                         onDrop={(e) => {
                           e.stopPropagation()
                           handleStudentDrop(g.id, i, 'striker', idx)
+                        }}
+                        onTouchStart={() =>
+                          setDragInfo({ gid: g.id, sIndex: i, role: 'striker', index: idx })
+                        }
+                        onTouchEnd={(e) => {
+                          const t = e.changedTouches[0]
+                          const el = document.elementFromPoint(t.clientX, t.clientY) as HTMLElement | null
+                          const target = el?.closest('[data-role="striker"]') as HTMLElement | null
+                          if (target && target.dataset.idx) {
+                            handleStudentDrop(g.id, i, 'striker', Number(target.dataset.idx))
+                          }
+                          setDragInfo(null)
                         }}
                       >
                         {id && st && (
@@ -444,6 +489,8 @@ export default function SquadPage() {
                         key={`sp-${idx}`}
                         className="w-12 h-12 border rounded overflow-hidden"
                         draggable
+                        data-role="special"
+                        data-idx={idx}
                         onDragStart={(e) => {
                           e.stopPropagation()
                           setDragInfo({ gid: g.id, sIndex: i, role: 'special', index: idx })
@@ -452,6 +499,18 @@ export default function SquadPage() {
                         onDrop={(e) => {
                           e.stopPropagation()
                           handleStudentDrop(g.id, i, 'special', idx)
+                        }}
+                        onTouchStart={() =>
+                          setDragInfo({ gid: g.id, sIndex: i, role: 'special', index: idx })
+                        }
+                        onTouchEnd={(e) => {
+                          const t = e.changedTouches[0]
+                          const el = document.elementFromPoint(t.clientX, t.clientY) as HTMLElement | null
+                          const target = el?.closest('[data-role="special"]') as HTMLElement | null
+                          if (target && target.dataset.idx) {
+                            handleStudentDrop(g.id, i, 'special', Number(target.dataset.idx))
+                          }
+                          setDragInfo(null)
                         }}
                       >
                         {id && st && (
@@ -465,7 +524,7 @@ export default function SquadPage() {
                     )
                   })}
                 </div>
-                <div className="mt-2 flex gap-2 justify-end">
+                <div className="ml-auto flex flex-col gap-2">
                   <button
                     type="button"
                     onClick={() => {
@@ -508,7 +567,8 @@ export default function SquadPage() {
                     <FontAwesomeIcon icon={faGripVertical} />
                   </span>
                 </div>
-                {memoTarget && memoTarget.gid === g.id && memoTarget.index === i && (
+              </div>
+              {memoTarget && memoTarget.gid === g.id && memoTarget.index === i && (
                   <div className="mt-2 flex gap-2 w-full">
                     <input
                       type="text"
