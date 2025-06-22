@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPlus, faFileImport } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faFileImport, faCaretDown } from '@fortawesome/free-solid-svg-icons'
 
 interface Student {
   id: string
@@ -40,6 +40,9 @@ export default function TLMakerPage() {
   const [showForm, setShowForm] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [squads, setSquads] = useState<{ name: string; members: string[] }[]>([])
+  const [showMenu, setShowMenu] = useState(false)
+  const [selectedType, setSelectedType] = useState<'skill' | 'event' | null>(null)
+  const [timeScale, setTimeScale] = useState(20) // px per second
 
   const addRow = () => setRowStudents((prev) => [...prev, ''])
 
@@ -81,25 +84,64 @@ export default function TLMakerPage() {
     setEvents([...events, { id, row, start, end, label }])
     setLabel('')
     setShowForm(false)
+    setSelectedType(null)
   }
 
-  const timeScale = 20 // px per second
-  const rowHeight = 40 // px
+  const rowHeight = 42 // px
   const rows = rowStudents.length
-  const totalSeconds = 60
+  const totalSeconds = 240
 
   return (
     <main className="p-4 space-y-4">
       <h2 className="text-xl font-bold">TLメーカー</h2>
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => setShowForm(true)}
-          className="border rounded p-1"
-          aria-label="イベント追加"
-        >
-          <FontAwesomeIcon icon={faPlus} />
-        </button>
+      <div className="flex gap-2 relative">
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowMenu(!showMenu)}
+            className="border rounded p-1"
+            aria-label="追加"
+          >
+            <FontAwesomeIcon icon={faPlus} />
+            <FontAwesomeIcon icon={faCaretDown} className="ml-1" />
+          </button>
+          {showMenu && (
+            <div className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedType('skill')
+                  setShowForm(true)
+                  setShowMenu(false)
+                }}
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+              >
+                スキル追加
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedType('event')
+                  setShowForm(true)
+                  setShowMenu(false)
+                }}
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+              >
+                イベント追加
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  addRow()
+                  setShowMenu(false)
+                }}
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+              >
+                行追加
+              </button>
+            </div>
+          )}
+        </div>
         <button
           type="button"
           onClick={() => setShowImport(true)}
@@ -108,13 +150,25 @@ export default function TLMakerPage() {
         >
           <FontAwesomeIcon icon={faFileImport} />
         </button>
-        <button type="button" onClick={addRow} className="border rounded p-1" aria-label="行追加">
-          <FontAwesomeIcon icon={faPlus} />
-        </button>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-sm">拡大</span>
+        <input
+          type="range"
+          min="10"
+          max="80"
+          step="5"
+          value={timeScale}
+          onChange={(e) => setTimeScale(parseInt(e.target.value))}
+        />
+        <span className="text-sm">{timeScale}px/s</span>
       </div>
 
       {showForm && (
         <div className="space-y-2 border p-2 rounded">
+          {selectedType && (
+            <div className="text-sm font-bold">{selectedType === 'skill' ? 'スキル' : 'イベント'}</div>
+          )}
           <label className="flex items-center gap-2">
             <span>行:</span>
             <input
@@ -177,8 +231,8 @@ export default function TLMakerPage() {
         </div>
       )}
 
-      <div className="flex gap-2">
-        <div className="flex flex-col gap-1">
+      <div className="flex gap-2 max-h-96 overflow-y-auto">
+        <div className="flex flex-col">
           {rowStudents.map((id, i) => {
             const st = students.find((s) => s.id === id)
             return (
@@ -207,7 +261,7 @@ export default function TLMakerPage() {
                 width: '100%',
                 height: rows * rowHeight,
                 backgroundImage:
-                  'repeating-linear-gradient(to right, #555 0, #555 1px, transparent 1px, transparent 20px), repeating-linear-gradient(to bottom, #555 0, #555 1px, transparent 1px, transparent 40px)',
+                  `repeating-linear-gradient(to right, #555 0, #555 1px, transparent 1px, transparent 20px), repeating-linear-gradient(to bottom, #555 0, #555 1px, transparent 1px, transparent ${rowHeight}px)`,
               }}
             >
               {events.map((ev) => (
