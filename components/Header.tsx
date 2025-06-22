@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import NoticeModal from './NoticeModal'
 import DataSyncModal from './DataSyncModal'
+import SquadSyncModal from './SquadSyncModal'
 import type { NextRouter } from 'next/router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBell, faCog, faChevronDown, faMoon, faSun } from '@fortawesome/free-solid-svg-icons'
@@ -155,6 +156,7 @@ export default function Header() {
       <div className={`absolute bottom-0 left-0 h-1 bg-blue-500 transition-all duration-300 ${loading ? 'w-full' : 'w-0'}`}></div>
       <NoticeModal />
       <DataSyncModal />
+      <SquadSyncModal />
     </header>
   )
 }
