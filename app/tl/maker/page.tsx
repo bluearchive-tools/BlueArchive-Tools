@@ -91,6 +91,9 @@ export default function TLMakerPage() {
   const rows = rowStudents.length
   const totalSeconds = 240
 
+  const tickStep = timeScale >= 40 ? 0.5 : 1
+  const labelStep = timeScale < 20 ? 5 : 1
+
   return (
     <main className="p-4 space-y-4">
       <h2 className="text-xl font-bold">TLメーカー</h2>
@@ -233,11 +236,14 @@ export default function TLMakerPage() {
 
       <div className="flex gap-2 max-h-96 overflow-y-auto">
         <div className="flex flex-col">
+          <div className="h-5" />
           {rowStudents.map((id, i) => {
             const st = students.find((s) => s.id === id)
             return (
               <div key={i} className="w-10 h-10 border rounded overflow-hidden">
-                {st && <img src={st.image} alt={st.name} className="w-full h-full object-cover" />}
+                {st && (
+                  <img src={st.image} alt={st.name} className="w-full h-full object-cover" />
+                )}
               </div>
             )
           })}
@@ -245,15 +251,19 @@ export default function TLMakerPage() {
         <div className="overflow-x-auto w-full">
           <div className="relative" style={{ width: totalSeconds * timeScale }}>
             <div className="flex text-xs h-5">
-              {Array.from({ length: totalSeconds + 1 }, (_, i) => (
-                <div
-                  key={i}
-                  className="border-l border-gray-500"
-                  style={{ width: timeScale }}
-                >
-                  {i % 5 === 0 ? i : ''}
-                </div>
-              ))}
+              {Array.from({ length: totalSeconds / tickStep + 1 }, (_, idx) => {
+                const t = idx * tickStep
+                const showLabel = Number.isInteger(t) && t % labelStep === 0
+                return (
+                  <div
+                    key={idx}
+                    className="border-l border-gray-500"
+                    style={{ width: timeScale * tickStep }}
+                  >
+                    {showLabel ? t : ''}
+                  </div>
+                )
+              })}
             </div>
             <div
               className="relative border bg-gray-900"
@@ -261,7 +271,11 @@ export default function TLMakerPage() {
                 width: '100%',
                 height: rows * rowHeight,
                 backgroundImage:
-                  `repeating-linear-gradient(to right, #555 0, #555 1px, transparent 1px, transparent 20px), repeating-linear-gradient(to bottom, #555 0, #555 1px, transparent 1px, transparent ${rowHeight}px)`,
+                  `repeating-linear-gradient(to right, #555 0, #555 1px, transparent 1px, transparent ${timeScale}px)` +
+                  (timeScale >= 40
+                    ? `, repeating-linear-gradient(to right, rgba(85,85,85,0.5) 0, rgba(85,85,85,0.5) 1px, transparent 1px, transparent ${timeScale / 2}px)`
+                    : '') +
+                  `, repeating-linear-gradient(to bottom, #555 0, #555 1px, transparent 1px, transparent ${rowHeight}px)`,
               }}
             >
               {events.map((ev) => (
