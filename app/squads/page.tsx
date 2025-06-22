@@ -13,6 +13,7 @@ import {
   faNoteSticky,
   faArrowUp,
   faArrowDown,
+  faLink,
 } from '@fortawesome/free-solid-svg-icons'
 
 interface Student {
@@ -54,6 +55,10 @@ export default function SquadPage() {
   const [form, setForm] = useState<Squad>({ strikers: ['', '', '', ''], specials: ['', ''], memo: '' })
   const [memoTarget, setMemoTarget] = useState<{ gid: string; index: number } | null>(null)
   const [memoValue, setMemoValue] = useState('')
+  const [dragInfo, setDragInfo] = useState<
+    { gid: string; sIndex: number; role: 'striker' | 'special'; index: number } | null
+  >(null)
+  const [sharedGroup, setSharedGroup] = useState<SquadGroup | null>(null)
   const session = useSession()
   const supabase = useSupabaseClient()
 
@@ -67,6 +72,21 @@ export default function SquadPage() {
       }
     }
     load()
+  }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const share = params.get('share')
+    if (share) {
+      try {
+        const g: SquadGroup = JSON.parse(
+          decodeURIComponent(atob(share))
+        )
+        setSharedGroup(g)
+      } catch {
+        /* ignore */
+      }
+    }
   }, [])
 
   const loadGroups = async () => {
@@ -164,6 +184,41 @@ export default function SquadPage() {
 
   const findStudent = (id: string) => students.find((s) => s.id === id)
 
+  const handleStudentDrop = (
+    gid: string,
+    sIndex: number,
+    role: 'striker' | 'special',
+    index: number
+  ) => {
+    if (
+      !dragInfo ||
+      dragInfo.gid !== gid ||
+      dragInfo.sIndex !== sIndex ||
+      dragInfo.role !== role ||
+      dragInfo.index === index
+    )
+      return
+    const newGroups = groups.map((g) => {
+      if (g.id !== gid) return g
+      const arr = [...g.squads]
+      const sq = { ...arr[sIndex] }
+      const list = role === 'striker' ? [...sq.strikers] : [...sq.specials]
+      const temp = list[dragInfo.index]
+      list[dragInfo.index] = list[index]
+      list[index] = temp
+      if (role === 'striker') {
+        sq.strikers = list
+      } else {
+        sq.specials = list
+      }
+      arr[sIndex] = sq
+      return { ...g, squads: arr }
+    })
+    setGroups(newGroups)
+    saveGroups(newGroups)
+    setDragInfo(null)
+  }
+
   const moveUp = (gid: string, index: number) => {
     if (index === 0) return
     const newGroups = groups.map((g) => {
@@ -189,6 +244,14 @@ export default function SquadPage() {
     saveGroups(newGroups)
   }
 
+  const copyShareLink = (g: SquadGroup) => {
+    const encoded = btoa(encodeURIComponent(JSON.stringify(g)))
+    const url = `${location.origin}/squads?share=${encoded}`
+    navigator.clipboard.writeText(url)
+      .then(() => alert('リンクをコピーしました'))
+      .catch(() => alert('コピーに失敗しました'))
+  }
+
   const strikers = students.filter((s) => s.role === 'STRIKER')
   const specials = students.filter((s) => s.role === 'SPECIAL')
 
@@ -207,6 +270,50 @@ export default function SquadPage() {
           <FontAwesomeIcon icon={faPlus} />
         </button>
       </div>
+      {sharedGroup && (
+        <div className="border rounded p-2 space-y-2">
+          <h3 className="font-bold">{sharedGroup.name}</h3>
+          {sharedGroup.squads.map((sq, i) => (
+            <div
+              key={i}
+              className="border p-2 relative flex flex-col items-center"
+            >
+              <div className="absolute left-2 top-1 text-sm flex gap-2 items-center">
+                <span>部隊{i + 1}</span>
+                {sq.memo && <span>{sq.memo}</span>}
+              </div>
+              <div className="mt-4 grid grid-cols-6 gap-1">
+                {sq.strikers.map((id, idx) => {
+                  const st = findStudent(id)
+                  return id && st ? (
+                    <img
+                      key={`s-${idx}`}
+                      src={st.image}
+                      alt={st.name}
+                      className="w-12 h-12 object-cover rounded"
+                    />
+                  ) : (
+                    <div key={`s-${idx}`} className="w-12 h-12 border rounded" />
+                  )
+                })}
+                {sq.specials.map((id, idx) => {
+                  const st = findStudent(id)
+                  return id && st ? (
+                    <img
+                      key={`p-${idx}`}
+                      src={st.image}
+                      alt={st.name}
+                      className="w-12 h-12 object-cover rounded"
+                    />
+                  ) : (
+                    <div key={`p-${idx}`} className="w-12 h-12 border rounded" />
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {groups.map((g) => {
         const used = new Set<string>()
         g.squads.forEach((sq, si) => {
@@ -220,7 +327,7 @@ export default function SquadPage() {
         return (
           <div key={g.id} className="border rounded p-2 space-y-2">
             {renameId === g.id ? (
-              <div className="flex gap-2 items-center">
+              <div className="flex gap-2 items-center justify-end">
                 <input
                   type="text"
                   value={renameValue}
@@ -233,9 +340,17 @@ export default function SquadPage() {
                 <button type="button" onClick={() => setRenameId(null)} className="border rounded p-1">
                   <FontAwesomeIcon icon={faXmark} />
                 </button>
+                <button
+                  type="button"
+                  onClick={() => copyShareLink(g)}
+                  className="border rounded p-1"
+                  aria-label="共有リンク"
+                >
+                  <FontAwesomeIcon icon={faLink} />
+                </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 justify-end">
                 <h3 className="font-bold flex-1">{g.name}</h3>
                 <button
                   type="button"
@@ -258,6 +373,14 @@ export default function SquadPage() {
                   aria-label="部隊追加"
                 >
                   <FontAwesomeIcon icon={faPlus} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => copyShareLink(g)}
+                  className="border rounded p-1"
+                  aria-label="共有リンク"
+                >
+                  <FontAwesomeIcon icon={faLink} />
                 </button>
               </div>
             )}
@@ -289,28 +412,56 @@ export default function SquadPage() {
                 <div className="mt-4 grid grid-cols-6 gap-1">
                   {sq.strikers.map((id, idx) => {
                     const st = findStudent(id)
-                    return id && st ? (
-                      <img
+                    return (
+                      <div
                         key={`st-${idx}`}
-                        src={st.image}
-                        alt={st.name}
-                        className="w-12 h-12 object-cover rounded"
-                      />
-                    ) : (
-                      <div key={`st-${idx}`} className="w-12 h-12 border rounded" />
+                        className="w-12 h-12 border rounded overflow-hidden"
+                        draggable
+                        onDragStart={(e) => {
+                          e.stopPropagation()
+                          setDragInfo({ gid: g.id, sIndex: i, role: 'striker', index: idx })
+                        }}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.stopPropagation()
+                          handleStudentDrop(g.id, i, 'striker', idx)
+                        }}
+                      >
+                        {id && st && (
+                          <img
+                            src={st.image}
+                            alt={st.name}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
                     )
                   })}
                   {sq.specials.map((id, idx) => {
                     const st = findStudent(id)
-                    return id && st ? (
-                      <img
+                    return (
+                      <div
                         key={`sp-${idx}`}
-                        src={st.image}
-                        alt={st.name}
-                        className="w-12 h-12 object-cover rounded"
-                      />
-                    ) : (
-                      <div key={`sp-${idx}`} className="w-12 h-12 border rounded" />
+                        className="w-12 h-12 border rounded overflow-hidden"
+                        draggable
+                        onDragStart={(e) => {
+                          e.stopPropagation()
+                          setDragInfo({ gid: g.id, sIndex: i, role: 'special', index: idx })
+                        }}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.stopPropagation()
+                          handleStudentDrop(g.id, i, 'special', idx)
+                        }}
+                      >
+                        {id && st && (
+                          <img
+                            src={st.image}
+                            alt={st.name}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
                     )
                   })}
                 </div>
