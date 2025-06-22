@@ -18,6 +18,7 @@ import {
   faArrowUp,
   faArrowDown,
   faLink,
+  faCopy,
 } from '@fortawesome/free-solid-svg-icons'
 
 interface Student {
@@ -258,6 +259,18 @@ export default function SquadPage() {
       .catch(() => alert('コピーに失敗しました'))
   }
 
+  const importSharedGroup = async () => {
+    if (!sharedGroup) return
+    const newG: SquadGroup = {
+      ...sharedGroup,
+      id: Date.now().toString(),
+    }
+    const newGroups = [...groups, newG]
+    setGroups(newGroups)
+    await saveGroups(newGroups)
+    alert('保存しました')
+  }
+
   const strikers = students.filter((s) => s.role === 'STRIKER')
   const specials = students.filter((s) => s.role === 'SPECIAL')
 
@@ -277,8 +290,16 @@ export default function SquadPage() {
         </button>
       </div>
       {sharedGroup && (
-        <div className="border rounded p-2 space-y-2">
+        <div className="border rounded p-2 space-y-2 relative">
           <h3 className="font-bold">{sharedGroup.name}</h3>
+          <button
+            type="button"
+            onClick={importSharedGroup}
+            className="absolute right-2 top-2 border rounded p-1"
+            aria-label="コピー"
+          >
+            <FontAwesomeIcon icon={faCopy} />
+          </button>
           {sharedGroup.squads.map((sq, i) => (
             <div
               key={i}
@@ -524,7 +545,7 @@ export default function SquadPage() {
                     )
                   })}
                 </div>
-                <div className="ml-auto flex flex-col gap-2">
+                <div className="ml-auto flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => {
