@@ -19,6 +19,7 @@ import {
   faArrowDown,
   faLink,
   faCopy,
+  faTrash,
 } from '@fortawesome/free-solid-svg-icons'
 
 interface Student {
@@ -189,6 +190,25 @@ export default function SquadPage() {
     await saveGroups(newGroups)
   }
 
+  const deleteGroup = async (id: string) => {
+    if (!confirm('このグループを削除しますか？')) return
+    const newGroups = groups.filter((g) => g.id !== id)
+    setGroups(newGroups)
+    await saveGroups(newGroups)
+  }
+
+  const deleteSquad = async (gid: string, index: number) => {
+    if (!confirm('この部隊を削除しますか？')) return
+    const newGroups = groups.map((g) => {
+      if (g.id !== gid) return g
+      const squads = [...g.squads]
+      squads.splice(index, 1)
+      return { ...g, squads }
+    })
+    setGroups(newGroups)
+    await saveGroups(newGroups)
+  }
+
   const findStudent = (id: string) => students.find((s) => s.id === id)
 
   const handleStudentDrop = (
@@ -309,7 +329,7 @@ export default function SquadPage() {
                 <span>部隊{i + 1}</span>
                 {sq.memo && <span>{sq.memo}</span>}
               </div>
-              <div className="mt-4 grid grid-cols-6 gap-1">
+              <div className="mt-4 grid grid-cols-6 gap-1 mx-auto flex-1">
                 {sq.strikers.map((id, idx) => {
                   const st = findStudent(id)
                   return id && st ? (
@@ -375,6 +395,14 @@ export default function SquadPage() {
                 >
                   <FontAwesomeIcon icon={faLink} />
                 </button>
+                <button
+                  type="button"
+                  onClick={() => deleteGroup(g.id)}
+                  className="border rounded p-1 text-red-600"
+                  aria-label="削除"
+                >
+                  <FontAwesomeIcon icon={faTrash} />
+                </button>
               </div>
             ) : (
               <div className="flex items-center gap-2 justify-end">
@@ -408,6 +436,14 @@ export default function SquadPage() {
                   aria-label="共有リンク"
                 >
                   <FontAwesomeIcon icon={faLink} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteGroup(g.id)}
+                  className="border rounded p-1 text-red-600"
+                  aria-label="削除"
+                >
+                  <FontAwesomeIcon icon={faTrash} />
                 </button>
               </div>
             )}
@@ -461,7 +497,7 @@ export default function SquadPage() {
                   {sq.memo && <span>{sq.memo}</span>}
                 </div>
                 <div className="mt-4 flex items-start gap-2">
-                  <div className="grid grid-cols-6 gap-1">
+                  <div className="grid grid-cols-6 gap-1 mx-auto flex-1">
                   {sq.strikers.map((id, idx) => {
                     const st = findStudent(id)
                     return (
@@ -578,15 +614,23 @@ export default function SquadPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => moveDown(g.id, i)}
-                    className="border rounded p-1"
-                    aria-label="下へ移動"
-                  >
-                    <FontAwesomeIcon icon={faArrowDown} />
-                  </button>
-                  <span className="cursor-move p-1" aria-hidden="true">
-                    <FontAwesomeIcon icon={faGripVertical} />
-                  </span>
+                  onClick={() => moveDown(g.id, i)}
+                  className="border rounded p-1"
+                  aria-label="下へ移動"
+                >
+                  <FontAwesomeIcon icon={faArrowDown} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteSquad(g.id, i)}
+                  className="border rounded p-1 text-red-600"
+                  aria-label="削除"
+                >
+                  <FontAwesomeIcon icon={faTrash} />
+                </button>
+                <span className="cursor-move p-1" aria-hidden="true">
+                  <FontAwesomeIcon icon={faGripVertical} />
+                </span>
                 </div>
               </div>
               {memoTarget && memoTarget.gid === g.id && memoTarget.index === i && (
