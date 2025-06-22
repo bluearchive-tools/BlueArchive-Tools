@@ -40,7 +40,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -57,7 +57,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -113,7 +113,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -127,7 +127,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -186,7 +186,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -203,7 +203,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -234,7 +234,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -262,7 +262,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -290,7 +290,7 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -304,7 +304,7 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -346,7 +346,7 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -360,7 +360,7 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -374,7 +374,7 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -388,7 +388,7 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -416,7 +416,7 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -430,7 +430,7 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -486,7 +486,7 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -514,7 +514,7 @@
     "initialStars": 1,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -542,7 +542,7 @@
     "initialStars": 1,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -584,7 +584,7 @@
     "initialStars": 1,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -640,7 +640,7 @@
     "initialStars": 1,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -713,7 +713,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -727,7 +727,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -741,7 +741,7 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -755,7 +755,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -783,7 +783,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -800,7 +800,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -828,7 +828,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "ヒーラー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -843,7 +843,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -903,7 +903,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -918,7 +918,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -933,7 +933,7 @@
     "initialStars": 1,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -948,7 +948,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -963,7 +963,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -977,7 +977,7 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1022,7 +1022,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1037,7 +1037,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1123,7 +1123,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1137,7 +1137,7 @@
     "initialStars": 1,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1167,7 +1167,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1211,7 +1211,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1225,7 +1225,7 @@
     "initialStars": 1,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1267,7 +1267,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1281,7 +1281,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1295,7 +1295,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1351,7 +1351,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1421,7 +1421,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1463,7 +1463,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1477,7 +1477,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1547,7 +1547,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1561,7 +1561,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1589,7 +1589,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1603,7 +1603,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "ヒーラー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1631,7 +1631,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1645,7 +1645,7 @@
     "initialStars": 1,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1687,7 +1687,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "ヒーラー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1701,7 +1701,7 @@
     "initialStars": 1,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1729,7 +1729,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1743,7 +1743,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1771,7 +1771,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1799,7 +1799,7 @@
     "initialStars": 1,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1869,7 +1869,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1883,7 +1883,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1911,7 +1911,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1925,7 +1925,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1953,7 +1953,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1967,7 +1967,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -1981,7 +1981,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2037,7 +2037,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2079,7 +2079,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2121,7 +2121,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2149,7 +2149,7 @@
     "initialStars": 1,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2163,7 +2163,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2191,7 +2191,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2205,7 +2205,7 @@
     "initialStars": 2,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2219,7 +2219,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2247,7 +2247,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2261,7 +2261,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2289,7 +2289,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2303,7 +2303,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2331,7 +2331,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2345,7 +2345,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2359,7 +2359,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2387,7 +2387,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2401,7 +2401,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2415,7 +2415,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2429,7 +2429,7 @@
     "initialStars": 1,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2457,7 +2457,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2471,7 +2471,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2485,7 +2485,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2497,7 +2497,7 @@
     "defenseType": "特殊装甲",
     "hasAccessory": false,
     "initialStars": 3,
-    "role": "STRIKER",
+    "role": "SPECIAL",
     "characterType": "T.S.",
     "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
@@ -2513,7 +2513,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2541,7 +2541,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2555,7 +2555,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2583,7 +2583,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2597,7 +2597,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2611,7 +2611,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2639,7 +2639,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "サポーター",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2681,7 +2681,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2727,7 +2727,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2755,7 +2755,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "MIDDLE",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2769,7 +2769,7 @@
     "initialStars": 3,
     "role": "STRIKER",
     "characterType": "アタッカー",
-    "position": "FRONT",
+    "position": "BACK",
     "skills": {"ex":{"title":"サンプルEX","text":"対象に{damage}%のダメージ","values":{"damage":[100,110,120,130,140]}},"normal":{"title":"サンプルNS","text":"30秒間{buff}%攻撃力増加","values":{"buff":[10,11,12,13,14,15,16,17,18,19]}},"passive":{"title":"サンプルPS","text":"攻撃力{passive}%増加","values":{"passive":[5,6,7,8,9,10,11,12,13,14]}},"sub":{"title":"サンプルSS","text":"クリ率{crit}%増加","values":{"crit":[2,3,4,5,6,7,8,9,10,11]}}},
     "equipmentSlots": {"slot1":["weapon"],"slot2":["gloves"],"slot3":["shoes"],"accessory":["accessory"]}
   },
@@ -2805,7 +2805,7 @@
     "id": "197",
     "name": "レイジョ",
     "image": "https://via.placeholder.com/150?text=C",
-    "attackType": "振動",
+    "attackType": "神秘",
     "defenseType": "重装甲",
     "hasAccessory": false,
     "initialStars": 3,
