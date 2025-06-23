@@ -65,11 +65,18 @@ export default function TLMakerPage() {
   const [selectedType, setSelectedType] = useState<'skill' | 'event' | null>(null)
   const [timeScale, setTimeScale] = useState(20) // px per second
   const containerRef = useRef<HTMLDivElement>(null)
+  const [playhead, setPlayhead] = useState(0)
+  const [selected, setSelected] = useState<{ type: 'skill' | 'marker'; id: number } | null>(null)
+  const [copied, setCopied] = useState<{ type: 'skill' | 'marker'; data: SkillEvent | MarkerEvent } | null>(null)
+  const [showEditMenu, setShowEditMenu] = useState(false)
+  const [dragging, setDragging] = useState(false)
 
   const hidePopups = () => {
     if (menuInfo) setMenuInfo(null)
     if (eventMenu) setEventMenu(null)
     setMarkers((prev) => prev.map((m) => (m.show ? { ...m, show: false } : m)))
+    setShowEditMenu(false)
+    setSelected(null)
   }
 
   const addRow = () => setRowStudents((prev) => [...prev, ''])
@@ -172,6 +179,14 @@ export default function TLMakerPage() {
   const labelStep =
     tickStep < 1 ? tickStep : timeScale < 20 ? 5 : 1
 
+  const getTimeFromClientX = (x: number) => {
+    if (!containerRef.current) return 0
+    const rect = containerRef.current.getBoundingClientRect()
+    const pos = x - rect.left + containerRef.current.scrollLeft
+    const clamped = Math.max(0, Math.min(pos, totalSeconds * timeScale))
+    return clamped / timeScale
+  }
+
   return (
     <main className="p-4 space-y-4 select-none overflow-y-hidden" onClick={hidePopups}>
       <div className="sticky top-0 z-20 flex items-center gap-4 bg-gray-200 dark:bg-gray-700 p-2 text-sm">
@@ -181,7 +196,7 @@ export default function TLMakerPage() {
             追加
           </button>
           {showMenu && (
-            <div className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm">
+            <div className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-32">
               <button
                 type="button"
                 onClick={() => {
@@ -217,7 +232,85 @@ export default function TLMakerPage() {
             </div>
           )}
         </div>
-        <button type="button" className="px-1">編集</button>
+        <div className="relative">
+          <button type="button" onClick={() => setShowEditMenu(!showEditMenu)} className="px-1">
+            編集
+          </button>
+          {showEditMenu && (
+            <div className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-32" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (selected) {
+                    if (selected.type === 'skill') {
+                      const ev = skills.find((s) => s.id === selected.id)
+                      if (ev) {
+                        setCopied({ type: 'skill', data: { ...ev } })
+                        removeSkill(ev.id)
+                        setSelected(null)
+                      }
+                    } else {
+                      const mk = markers.find((m) => m.id === selected.id)
+                      if (mk) {
+                        setCopied({ type: 'marker', data: { ...mk } })
+                        removeMarker(mk.id)
+                        setSelected(null)
+                      }
+                    }
+                  }
+                  setShowEditMenu(false)
+                }}
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+              >
+                カット
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (selected) {
+                    if (selected.type === 'skill') {
+                      const ev = skills.find((s) => s.id === selected.id)
+                      if (ev) setCopied({ type: 'skill', data: { ...ev } })
+                    } else {
+                      const mk = markers.find((m) => m.id === selected.id)
+                      if (mk) setCopied({ type: 'marker', data: { ...mk } })
+                    }
+                  }
+                  setShowEditMenu(false)
+                }}
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+              >
+                コピー
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (copied) {
+                    const id = Date.now()
+                    if (copied.type === 'skill') {
+                      const ev = copied.data as SkillEvent
+                      const duration = ev.end - ev.start
+                      setSkills((prev) => [
+                        ...prev,
+                        { ...ev, id, start: playhead, end: playhead + duration },
+                      ])
+                    } else {
+                      const mk = copied.data as MarkerEvent
+                      setMarkers((prev) => [
+                        ...prev,
+                        { ...mk, id, time: playhead },
+                      ])
+                    }
+                  }
+                  setShowEditMenu(false)
+                }}
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+              >
+                ペースト
+              </button>
+            </div>
+          )}
+        </div>
         <button type="button" className="px-1">ツール</button>
         <button type="button" className="px-1">再生</button>
         <button
@@ -462,7 +555,32 @@ export default function TLMakerPage() {
                     : '') +
                   `, repeating-linear-gradient(to bottom, #555 0, #555 1px, transparent 1px, transparent ${rowHeight}px)`,
               }}
+              onMouseDown={(e) => {
+                if (e.target === e.currentTarget) {
+                  setDragging(true)
+                  setPlayhead(getTimeFromClientX(e.clientX))
+                }
+              }}
+              onMouseMove={(e) => {
+                if (dragging) setPlayhead(getTimeFromClientX(e.clientX))
+              }}
+              onMouseUp={() => setDragging(false)}
+              onMouseLeave={() => setDragging(false)}
+              onTouchStart={(e) => {
+                const t = e.touches[0]
+                setDragging(true)
+                setPlayhead(getTimeFromClientX(t.clientX))
+              }}
+              onTouchMove={(e) => {
+                if (dragging) setPlayhead(getTimeFromClientX(e.touches[0].clientX))
+              }}
+              onTouchEnd={() => setDragging(false)}
+              onTouchCancel={() => setDragging(false)}
             >
+              <div
+                className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none"
+                style={{ left: playhead * timeScale }}
+              />
               {markers.map((m) => {
                 let timer: NodeJS.Timeout | null = null
                 const startTouch = (e: React.TouchEvent) => {
@@ -477,7 +595,9 @@ export default function TLMakerPage() {
                 return (
                   <div
                     key={m.id}
-                    className="absolute bg-yellow-400 cursor-pointer opacity-70"
+                    className={`absolute bg-yellow-400 cursor-pointer opacity-70 ${
+                      selected?.type === 'marker' && selected.id === m.id ? 'ring-2 ring-red-500' : ''
+                    }`}
                     style={{
                       left: m.time * timeScale,
                       top: 0,
@@ -487,11 +607,13 @@ export default function TLMakerPage() {
                     }}
                     onClick={(e) => {
                       e.stopPropagation()
-                      setMarkers((prev) =>
-                        prev.map((mk) =>
-                          mk.id === m.id ? { ...mk, show: !mk.show } : mk
+                      if (selected?.type === 'marker' && selected.id === m.id) {
+                        setMarkers((prev) =>
+                          prev.map((mk) => (mk.id === m.id ? { ...mk, show: !mk.show } : mk))
                         )
-                      )
+                      } else {
+                        setSelected({ type: 'marker', id: m.id })
+                      }
                     }}
                     onContextMenu={(e) => {
                       e.preventDefault()
@@ -523,7 +645,9 @@ export default function TLMakerPage() {
                 return (
                   <div
                     key={ev.id}
-                    className="absolute bg-blue-500 text-white text-xs px-1 overflow-hidden"
+                    className={`absolute bg-blue-500 text-white text-xs px-1 overflow-hidden ${
+                      selected?.type === 'skill' && selected.id === ev.id ? 'ring-2 ring-red-500' : ''
+                    }`}
                     style={{
                       left: ev.start * timeScale,
                       top: ev.row * rowHeight,
@@ -534,6 +658,10 @@ export default function TLMakerPage() {
                     onContextMenu={(e) => {
                       e.preventDefault()
                       setEventMenu({ type: 'skill', id: ev.id, x: e.clientX, y: e.clientY })
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSelected({ type: 'skill', id: ev.id })
                     }}
                     onTouchStart={startTouch}
                     onTouchEnd={clearTouch}
