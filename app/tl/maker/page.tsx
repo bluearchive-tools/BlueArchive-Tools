@@ -21,7 +21,7 @@ interface Student {
   position: string
 }
 
-interface TlEvent {
+interface SkillEvent {
   id: number
   row: number
   start: number
@@ -29,10 +29,19 @@ interface TlEvent {
   label: string
 }
 
+interface MarkerEvent {
+  id: number
+  time: number
+  label: string
+  show?: boolean
+}
+
 export default function TLMakerPage() {
   const [students, setStudents] = useState<Student[]>([])
   const [rowStudents, setRowStudents] = useState<string[]>(['', '', '', '', '', ''])
-  const [events, setEvents] = useState<TlEvent[]>([])
+  const [skills, setSkills] = useState<SkillEvent[]>([])
+  const [markers, setMarkers] = useState<MarkerEvent[]>([])
+  const [menuInfo, setMenuInfo] = useState<{ index: number; x: number; y: number } | null>(null)
   const [row, setRow] = useState(0)
   const [start, setStart] = useState(0)
   const [end, setEnd] = useState(1)
@@ -45,6 +54,15 @@ export default function TLMakerPage() {
   const [timeScale, setTimeScale] = useState(20) // px per second
 
   const addRow = () => setRowStudents((prev) => [...prev, ''])
+
+  const removeRow = (idx: number) => {
+    setRowStudents((prev) => prev.filter((_, i) => i !== idx))
+    setSkills((prev) =>
+      prev
+        .filter((ev) => ev.row !== idx)
+        .map((ev) => ({ ...ev, row: ev.row > idx ? ev.row - 1 : ev.row }))
+    )
+  }
 
   const importSquad = (members: string[]) => {
     setRowStudents(members.concat(Array(Math.max(0, 6 - members.length)).fill('')))
@@ -79,9 +97,13 @@ export default function TLMakerPage() {
   }, [])
 
   const addEvent = () => {
-    if (end <= start) return
     const id = Date.now()
-    setEvents([...events, { id, row, start, end, label }])
+    if (selectedType === 'skill') {
+      if (end <= start) return
+      setSkills([...skills, { id, row, start, end, label }])
+    } else if (selectedType === 'event') {
+      setMarkers([...markers, { id, time: start, label }])
+    }
     setLabel('')
     setShowForm(false)
     setSelectedType(null)
@@ -95,7 +117,7 @@ export default function TLMakerPage() {
   const labelStep = timeScale < 20 ? 5 : 1
 
   return (
-    <main className="p-4 space-y-4">
+    <main className="p-4 space-y-4" onClick={() => menuInfo && setMenuInfo(null)}>
       <h2 className="text-xl font-bold">TLメーカー</h2>
       <div className="flex gap-2 relative">
         <div>
@@ -172,35 +194,50 @@ export default function TLMakerPage() {
           {selectedType && (
             <div className="text-sm font-bold">{selectedType === 'skill' ? 'スキル' : 'イベント'}</div>
           )}
-          <label className="flex items-center gap-2">
-            <span>行:</span>
-            <input
-              type="number"
-              value={row}
-              onChange={(e) => setRow(parseInt(e.target.value))}
-              className="border rounded p-1 w-16"
-              min={0}
-              max={rows - 1}
-            />
-          </label>
-          <label className="flex items-center gap-2">
-            <span>開始:</span>
-            <input
-              type="number"
-              value={start}
-              onChange={(e) => setStart(parseFloat(e.target.value))}
-              className="border rounded p-1 w-24"
-            />
-          </label>
-          <label className="flex items-center gap-2">
-            <span>終了:</span>
-            <input
-              type="number"
-              value={end}
-              onChange={(e) => setEnd(parseFloat(e.target.value))}
-              className="border rounded p-1 w-24"
-            />
-          </label>
+          {selectedType === 'skill' && (
+            <>
+              <label className="flex items-center gap-2">
+                <span>行:</span>
+                <input
+                  type="number"
+                  value={row}
+                  onChange={(e) => setRow(parseInt(e.target.value))}
+                  className="border rounded p-1 w-16"
+                  min={0}
+                  max={rows - 1}
+                />
+              </label>
+              <label className="flex items-center gap-2">
+                <span>開始:</span>
+                <input
+                  type="number"
+                  value={start}
+                  onChange={(e) => setStart(parseFloat(e.target.value))}
+                  className="border rounded p-1 w-24"
+                />
+              </label>
+              <label className="flex items-center gap-2">
+                <span>終了:</span>
+                <input
+                  type="number"
+                  value={end}
+                  onChange={(e) => setEnd(parseFloat(e.target.value))}
+                  className="border rounded p-1 w-24"
+                />
+              </label>
+            </>
+          )}
+          {selectedType === 'event' && (
+            <label className="flex items-center gap-2">
+              <span>時間:</span>
+              <input
+                type="number"
+                value={start}
+                onChange={(e) => setStart(parseFloat(e.target.value))}
+                className="border rounded p-1 w-24"
+              />
+            </label>
+          )}
           <label className="flex items-center gap-2">
             <span>ラベル:</span>
             <input
@@ -210,10 +247,7 @@ export default function TLMakerPage() {
               className="border rounded p-1 flex-1"
             />
           </label>
-          <button
-            onClick={addEvent}
-            className="border px-2 py-1 bg-blue-500 text-white rounded"
-          >
+          <button onClick={addEvent} className="border px-2 py-1 bg-blue-500 text-white rounded">
             <FontAwesomeIcon icon={faPlus} />
           </button>
         </div>
@@ -234,13 +268,35 @@ export default function TLMakerPage() {
         </div>
       )}
 
-      <div className="flex gap-2 max-h-96 overflow-y-auto">
+      <div className="flex gap-0 max-h-96 overflow-y-auto">
         <div className="flex flex-col">
           <div className="h-5" />
           {rowStudents.map((id, i) => {
             const st = students.find((s) => s.id === id)
+            const handleContext = (e: React.MouseEvent) => {
+              e.preventDefault()
+              setMenuInfo({ index: i, x: e.clientX, y: e.clientY })
+            }
+            let touchTimer: NodeJS.Timeout | null = null
+            const handleTouchStart = (e: React.TouchEvent) => {
+              touchTimer = setTimeout(() => {
+                const t = e.touches[0]
+                setMenuInfo({ index: i, x: t.clientX, y: t.clientY })
+              }, 600)
+            }
+            const clearTouch = () => {
+              if (touchTimer) clearTimeout(touchTimer)
+            }
             return (
-              <div key={i} className="w-10 h-10 border rounded overflow-hidden">
+              <div
+                key={i}
+                onContextMenu={handleContext}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={clearTouch}
+                onTouchCancel={clearTouch}
+                className="border border-gray-500 overflow-hidden"
+                style={{ width: rowHeight, height: rowHeight }}
+              >
                 {st && (
                   <img src={st.image} alt={st.name} className="w-full h-full object-cover" />
                 )}
@@ -278,7 +334,32 @@ export default function TLMakerPage() {
                   `, repeating-linear-gradient(to bottom, #555 0, #555 1px, transparent 1px, transparent ${rowHeight}px)`,
               }}
             >
-              {events.map((ev) => (
+              {markers.map((m) => (
+                <div
+                  key={m.id}
+                  className="absolute bg-yellow-400 cursor-pointer"
+                  style={{
+                    left: m.time * timeScale - 2,
+                    top: 0,
+                    width: 4,
+                    height: rows * rowHeight,
+                  }}
+                  onClick={() =>
+                    setMarkers((prev) =>
+                      prev.map((mk) =>
+                        mk.id === m.id ? { ...mk, show: !mk.show } : mk
+                      )
+                    )
+                  }
+                >
+                  {m.show && (
+                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-yellow-200 border px-1 rounded whitespace-nowrap text-xs">
+                      {m.label}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {skills.map((ev) => (
                 <div
                   key={ev.id}
                   className="absolute bg-blue-500 text-white text-xs px-1 overflow-hidden"
@@ -296,6 +377,24 @@ export default function TLMakerPage() {
           </div>
         </div>
       </div>
+      {menuInfo && (
+        <div
+          className="fixed bg-white border rounded shadow text-sm z-20"
+          style={{ left: menuInfo.x, top: menuInfo.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              removeRow(menuInfo.index)
+              setMenuInfo(null)
+            }}
+            className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+          >
+            行削除
+          </button>
+        </div>
+      )}
     </main>
   )
 }
