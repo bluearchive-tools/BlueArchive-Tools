@@ -107,6 +107,7 @@ export default function TLMakerPage() {
   const [initialized, setInitialized] = useState(false)
   const [showTools, setShowTools] = useState(false)
   const [showSquadMenu, setShowSquadMenu] = useState(false)
+  const [showFileMenu, setShowFileMenu] = useState(false)
 
   const hidePopups = () => {
     if (menuInfo) setMenuInfo(null)
@@ -118,6 +119,15 @@ export default function TLMakerPage() {
     if (playheadMenu) setPlayheadMenu(null)
     setShowMenu(false)
     setShowTools(false)
+    setShowSquadMenu(false)
+    setShowFileMenu(false)
+  }
+
+  const closeMenus = () => {
+    setShowMenu(false)
+    setShowEditMenu(false)
+    setShowTools(false)
+    setShowFileMenu(false)
     setShowSquadMenu(false)
   }
 
@@ -499,12 +509,52 @@ export default function TLMakerPage() {
       {initialized && (
         <>
       <div className="sticky top-0 z-20 flex items-center gap-4 bg-gray-200 dark:bg-gray-700 p-2 text-sm">
-        <button type="button" className="px-1">ファイル</button>
         <div className="relative">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation()
+              closeMenus()
+              setShowFileMenu(!showFileMenu)
+            }}
+            className="px-1"
+          >
+            ファイル
+          </button>
+          {showFileMenu && (
+            <div
+              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-32"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreateModal(true)
+                  closeMenus()
+                }}
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+              >
+                TLを作成
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  saveProject()
+                  closeMenus()
+                }}
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+              >
+                TLを保存
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              closeMenus()
               setShowMenu(!showMenu)
             }}
             className="px-1"
@@ -562,6 +612,7 @@ export default function TLMakerPage() {
             type="button"
             onClick={(e) => {
               e.stopPropagation()
+              closeMenus()
               setShowEditMenu(!showEditMenu)
             }}
             className="px-1"
@@ -673,6 +724,7 @@ export default function TLMakerPage() {
             type="button"
             onClick={(e) => {
               e.stopPropagation()
+              closeMenus()
               setShowTools(!showTools)
             }}
             className="px-1"
