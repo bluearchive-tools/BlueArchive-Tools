@@ -2,7 +2,12 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPlus, faFileImport, faTimes } from '@fortawesome/free-solid-svg-icons'
+import {
+  faPlus,
+  faFileImport,
+  faTimes,
+  faCrosshairs,
+} from '@fortawesome/free-solid-svg-icons'
 
 interface Student {
   id: string
@@ -64,6 +69,7 @@ export default function TLMakerPage() {
   const [showMenu, setShowMenu] = useState(false)
   const [selectedType, setSelectedType] = useState<'skill' | 'event' | null>(null)
   const [timeScale, setTimeScale] = useState(20) // px per second
+  const [zoomByPlayhead, setZoomByPlayhead] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const playheadTimer = useRef<NodeJS.Timeout | null>(null)
   const [playhead, setPlayhead] = useState(0)
@@ -71,6 +77,7 @@ export default function TLMakerPage() {
   const [copied, setCopied] = useState<{ type: 'skill' | 'marker'; data: SkillEvent | MarkerEvent } | null>(null)
   const [showEditMenu, setShowEditMenu] = useState(false)
   const [dragging, setDragging] = useState(false)
+  const scrollLock = useRef(0)
   const [playheadMenu, setPlayheadMenu] = useState<{ x: number; y: number } | null>(null)
 
   const hidePopups = () => {
@@ -336,11 +343,21 @@ export default function TLMakerPage() {
               const newScale = parseInt(e.target.value)
               if (containerRef.current) {
                 const { scrollLeft, clientWidth } = containerRef.current
-                const center = (scrollLeft + clientWidth / 2) / timeScale
+                const pivot = zoomByPlayhead
+                  ? playhead * timeScale - scrollLeft
+                  : clientWidth / 2
+                const centerTime =
+                  zoomByPlayhead
+                    ? playhead
+                    : (scrollLeft + clientWidth / 2) / timeScale
                 setTimeScale(newScale)
                 requestAnimationFrame(() => {
                   if (containerRef.current) {
-                    containerRef.current.scrollLeft = center * newScale - clientWidth / 2
+                    if (zoomByPlayhead) {
+                      containerRef.current.scrollLeft = playhead * newScale - pivot
+                    } else {
+                      containerRef.current.scrollLeft = centerTime * newScale - clientWidth / 2
+                    }
                   }
                 })
               } else {
@@ -349,6 +366,14 @@ export default function TLMakerPage() {
             }}
           />
           <span className="text-sm">{timeScale}px/s</span>
+          <button
+            type="button"
+            onClick={() => setZoomByPlayhead(!zoomByPlayhead)}
+            className="border rounded px-1"
+          >
+            <FontAwesomeIcon icon={faCrosshairs} className="mr-1" />
+            {zoomByPlayhead ? '操作線' : '画面中心'}
+          </button>
         </div>
       </div>
       {showForm && (
@@ -515,7 +540,14 @@ export default function TLMakerPage() {
             )
           })}
         </div>
-        <div ref={containerRef} className="overflow-x-auto w-full touch-pan-x">
+        <div
+          ref={containerRef}
+          className="overflow-x-auto w-full"
+          style={{ touchAction: dragging ? 'none' : 'pan-x' }}
+          onWheel={(e) => {
+            if (dragging) e.preventDefault()
+          }}
+        >
           <div className="relative" style={{ width: totalSeconds * timeScale }}>
             <div className="flex text-xs h-5">
               {Array.from({ length: totalSeconds / tickStep }, (_, idx) => {
@@ -559,15 +591,53 @@ export default function TLMakerPage() {
                   `, repeating-linear-gradient(to bottom, #555 0, #555 1px, transparent 1px, transparent ${rowHeight}px)`,
               }}
               onMouseMove={(e) => {
-                if (dragging) setPlayhead(getTimeFromClientX(e.clientX))
+                if (dragging) {
+                  if (playheadTimer.current) {
+                    clearTimeout(playheadTimer.current)
+                    playheadTimer.current = null
+                  }
+                  setPlayhead(getTimeFromClientX(e.clientX))
+                  if (containerRef.current) containerRef.current.scrollLeft = scrollLock.current
+                }
               }}
-              onMouseUp={() => setDragging(false)}
-              onMouseLeave={() => setDragging(false)}
+              onMouseUp={() => {
+                if (playheadTimer.current) {
+                  clearTimeout(playheadTimer.current)
+                  playheadTimer.current = null
+                }
+                setDragging(false)
+              }}
+              onMouseLeave={() => {
+                if (playheadTimer.current) {
+                  clearTimeout(playheadTimer.current)
+                  playheadTimer.current = null
+                }
+                setDragging(false)
+              }}
               onTouchMove={(e) => {
-                if (dragging) setPlayhead(getTimeFromClientX(e.touches[0].clientX))
+                if (dragging) {
+                  if (playheadTimer.current) {
+                    clearTimeout(playheadTimer.current)
+                    playheadTimer.current = null
+                  }
+                  setPlayhead(getTimeFromClientX(e.touches[0].clientX))
+                  if (containerRef.current) containerRef.current.scrollLeft = scrollLock.current
+                }
               }}
-              onTouchEnd={() => setDragging(false)}
-              onTouchCancel={() => setDragging(false)}
+              onTouchEnd={() => {
+                if (playheadTimer.current) {
+                  clearTimeout(playheadTimer.current)
+                  playheadTimer.current = null
+                }
+                setDragging(false)
+              }}
+              onTouchCancel={() => {
+                if (playheadTimer.current) {
+                  clearTimeout(playheadTimer.current)
+                  playheadTimer.current = null
+                }
+                setDragging(false)
+              }}
             >
               <div
                 className="absolute top-0 bottom-0 w-0.5 bg-red-500"
@@ -577,17 +647,33 @@ export default function TLMakerPage() {
                   className="absolute -left-2 top-0 bottom-0 w-4 cursor-ew-resize"
                   onMouseDown={(e) => {
                     e.stopPropagation()
+                    if (playheadTimer.current) {
+                      clearTimeout(playheadTimer.current)
+                      playheadTimer.current = null
+                    }
+                    setPlayheadMenu(null)
+                    scrollLock.current = containerRef.current?.scrollLeft ?? 0
                     setDragging(true)
                     setPlayhead(getTimeFromClientX(e.clientX))
                   }}
                   onContextMenu={(e) => {
                     e.preventDefault()
-                    setPlayheadMenu({ x: e.clientX, y: e.clientY })
+                    if (playheadTimer.current) {
+                      clearTimeout(playheadTimer.current)
+                      playheadTimer.current = null
+                    }
                     setDragging(false)
+                    setPlayheadMenu({ x: e.clientX, y: e.clientY })
                   }}
                   onTouchStart={(e) => {
                     e.stopPropagation()
                     const t = e.touches[0]
+                    if (playheadTimer.current) {
+                      clearTimeout(playheadTimer.current)
+                      playheadTimer.current = null
+                    }
+                    setPlayheadMenu(null)
+                    scrollLock.current = containerRef.current?.scrollLeft ?? 0
                     setDragging(true)
                     setPlayhead(getTimeFromClientX(t.clientX))
                     playheadTimer.current = setTimeout(() => {
@@ -729,6 +815,70 @@ export default function TLMakerPage() {
           style={{ left: eventMenu.x, top: eventMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >
+          <button
+            type="button"
+            onClick={() => {
+              if (eventMenu.type === 'skill') {
+                const ev = skills.find((s) => s.id === eventMenu.id)
+                if (ev) {
+                  setCopied({ type: 'skill', data: { ...ev } })
+                  removeSkill(ev.id)
+                }
+              } else {
+                const mk = markers.find((m) => m.id === eventMenu.id)
+                if (mk) {
+                  setCopied({ type: 'marker', data: { ...mk } })
+                  removeMarker(mk.id)
+                }
+              }
+              setEventMenu(null)
+            }}
+            className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+          >
+            カット
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (eventMenu.type === 'skill') {
+                const ev = skills.find((s) => s.id === eventMenu.id)
+                if (ev) setCopied({ type: 'skill', data: { ...ev } })
+              } else {
+                const mk = markers.find((m) => m.id === eventMenu.id)
+                if (mk) setCopied({ type: 'marker', data: { ...mk } })
+              }
+              setEventMenu(null)
+            }}
+            className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+          >
+            コピー
+          </button>
+          {copied && (
+            <button
+              type="button"
+              onClick={() => {
+                const id = Date.now()
+                if (copied.type === 'skill') {
+                  const ev = copied.data as SkillEvent
+                  const duration = ev.end - ev.start
+                  setSkills((prev) => [
+                    ...prev,
+                    { ...ev, id, start: playhead, end: playhead + duration },
+                  ])
+                } else {
+                  const mk = copied.data as MarkerEvent
+                  setMarkers((prev) => [
+                    ...prev,
+                    { ...mk, id, time: playhead },
+                  ])
+                }
+                setEventMenu(null)
+              }}
+              className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+            >
+              ペースト
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {
