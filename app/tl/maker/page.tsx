@@ -51,6 +51,18 @@ interface EventTemplate {
   skillable: boolean
 }
 
+interface Squad {
+  strikers: string[]
+  specials: string[]
+  memo?: string
+}
+
+interface SquadGroup {
+  id: string
+  name: string
+  squads: Squad[]
+}
+
 export default function TLMakerPage() {
   const [students, setStudents] = useState<Student[]>([])
   const [rowStudents, setRowStudents] = useState<string[]>(['', '', '', '', '', ''])
@@ -80,6 +92,15 @@ export default function TLMakerPage() {
   const [dragging, setDragging] = useState(false)
   const scrollLock = useRef(0)
   const [playheadMenu, setPlayheadMenu] = useState<{ x: number; y: number } | null>(null)
+  const [groups, setGroups] = useState<SquadGroup[]>([])
+  const [selectedGroup, setSelectedGroup] = useState<SquadGroup | null>(null)
+  const [squadIndex, setSquadIndex] = useState(0)
+  const [projectName, setProjectName] = useState('')
+  const [showStartMenu, setShowStartMenu] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [hasCache, setHasCache] = useState(false)
+  const [initialized, setInitialized] = useState(false)
+  const [showTools, setShowTools] = useState(false)
 
   const hidePopups = () => {
     if (menuInfo) setMenuInfo(null)
@@ -89,6 +110,8 @@ export default function TLMakerPage() {
     setShowEditMenu(false)
     setSelected(null)
     if (playheadMenu) setPlayheadMenu(null)
+    setShowMenu(false)
+    setShowTools(false)
   }
 
   const addRow = () => setRowStudents((prev) => [...prev, ''])
@@ -110,9 +133,21 @@ export default function TLMakerPage() {
     setMarkers((prev) => prev.filter((m) => m.id !== id))
   }
 
-  const importSquad = (members: string[]) => {
+  const applyMembers = (members: string[]) => {
     setRowStudents(members.concat(Array(Math.max(0, 6 - members.length)).fill('')))
+  }
+
+  const importSquad = (members: string[]) => {
+    applyMembers(members)
     setShowImport(false)
+  }
+
+  const switchSquad = (index: number) => {
+    if (!selectedGroup) return
+    const sq = selectedGroup.squads[index]
+    if (!sq) return
+    applyMembers([...sq.strikers, ...sq.specials])
+    setSquadIndex(index)
   }
 
   useEffect(() => {
@@ -135,11 +170,13 @@ export default function TLMakerPage() {
     loadStudents()
     loadEvents()
     const raw = localStorage.getItem('squadGroups')
+    let parsed: SquadGroup[] = []
     if (raw) {
       try {
-        const groups: { id: string; name: string; squads: { strikers: string[]; specials: string[]; memo?: string }[] }[] = JSON.parse(raw)
+        parsed = JSON.parse(raw) as SquadGroup[]
+        setGroups(parsed)
         const list: { name: string; members: string[] }[] = []
-        groups.forEach(g => {
+        parsed.forEach((g) => {
           g.squads.forEach((sq, idx) => {
             list.push({ name: `${g.name} #${idx + 1}`, members: [...sq.strikers, ...sq.specials] })
           })
@@ -148,6 +185,32 @@ export default function TLMakerPage() {
       } catch {
         /* ignore */
       }
+    }
+    const saved = localStorage.getItem('tlMakerProject')
+    if (saved) {
+      try {
+        const data = JSON.parse(saved) as {
+          projectName: string
+          groupId: string
+          squadIndex: number
+          rowStudents: string[]
+          skills: SkillEvent[]
+          markers: MarkerEvent[]
+        }
+        setProjectName(data.projectName)
+        setSkills(data.skills || [])
+        setMarkers(data.markers || [])
+        applyMembers(data.rowStudents || [])
+        const g = parsed.find((gr) => gr.id === data.groupId) || null
+        setSelectedGroup(g)
+        setSquadIndex(data.squadIndex || 0)
+        setInitialized(true)
+      } catch {
+        setShowStartMenu(true)
+      }
+    } else {
+      if (localStorage.getItem('tlMakerCache')) setHasCache(true)
+      setShowStartMenu(true)
     }
   }, [])
 
@@ -159,6 +222,20 @@ export default function TLMakerPage() {
       }
     }
   }, [templateId, selectedType, eventTemplates])
+
+  useEffect(() => {
+    if (!initialized) return
+    const data = {
+      projectName,
+      groupId: selectedGroup?.id ?? '',
+      squadIndex,
+      rowStudents,
+      skills,
+      markers,
+    }
+    localStorage.setItem('tlMakerProject', JSON.stringify(data))
+    localStorage.setItem('tlMakerCache', JSON.stringify(data))
+  }, [initialized, projectName, selectedGroup, squadIndex, rowStudents, skills, markers])
 
   const addEvent = () => {
     const id = Date.now()
@@ -212,6 +289,62 @@ export default function TLMakerPage() {
 
   return (
     <main className="p-4 space-y-4 select-none overflow-y-hidden" onClick={hidePopups}>
+      {showStartMenu && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center" onClick={() => setShowStartMenu(false)}>
+          <div className="bg-white border rounded p-4 space-y-2" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="border px-4 py-1 rounded w-40" onClick={() => setShowCreateModal(true)}>
+              TLを作成
+            </button>
+            <label className="border px-4 py-1 rounded w-40 text-center cursor-pointer">
+              TLをインポート
+              <input type="file" accept="application/json" className="hidden" onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                file.text().then(txt => {
+                  try {
+                    const data = JSON.parse(txt)
+                    setProjectName(data.projectName || '')
+                    setSkills(data.skills || [])
+                    setMarkers(data.markers || [])
+                    applyMembers(data.rowStudents || [])
+                    const g = groups.find(gr => gr.id === data.groupId) || null
+                    setSelectedGroup(g)
+                    setSquadIndex(data.squadIndex || 0)
+                    setInitialized(true)
+                    setShowStartMenu(false)
+                  } catch {
+                    /* ignore */
+                  }
+                })
+              }} />
+            </label>
+            {hasCache && (
+              <button type="button" className="border px-4 py-1 rounded w-40" onClick={() => {
+                const raw = localStorage.getItem('tlMakerCache')
+                if (!raw) return
+                try {
+                  const data = JSON.parse(raw)
+                  setProjectName(data.projectName || '')
+                  setSkills(data.skills || [])
+                  setMarkers(data.markers || [])
+                  applyMembers(data.rowStudents || [])
+                  const g = groups.find(gr => gr.id === data.groupId) || null
+                  setSelectedGroup(g)
+                  setSquadIndex(data.squadIndex || 0)
+                  setInitialized(true)
+                  setShowStartMenu(false)
+                } catch {
+                  /* ignore */
+                }
+              }}>
+                キャッシュから復元
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      {initialized && (
+        <>
       <div className="sticky top-0 z-20 flex items-center gap-4 bg-gray-200 dark:bg-gray-700 p-2 text-sm">
         <button type="button" className="px-1">ファイル</button>
         <div className="relative">
@@ -359,7 +492,26 @@ export default function TLMakerPage() {
             </div>
           )}
         </div>
-        <button type="button" className="px-1">ツール</button>
+        <div className="relative">
+          <button type="button" onClick={() => setShowTools(!showTools)} className="px-1">ツール</button>
+          {showTools && selectedGroup && selectedGroup.squads.length > 1 && (
+            <div className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-40">
+              {selectedGroup.squads.map((sq, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    switchSquad(idx)
+                    setShowTools(false)
+                  }}
+                  className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                >
+                  {selectedGroup.name} #{idx + 1}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <button type="button" className="px-1">再生</button>
         <button
           type="button"
@@ -538,6 +690,69 @@ export default function TLMakerPage() {
                 {sq.name}
               </button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {showCreateModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+          onClick={() => setShowCreateModal(false)}
+        >
+          <div
+            className="border rounded p-4 bg-white space-y-2 w-72"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowCreateModal(false)}
+              className="absolute top-1 right-1"
+              aria-label="閉じる"
+            >
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+            <div className="text-sm font-bold">TL作成</div>
+            <label className="flex items-center gap-2">
+              <span>名前:</span>
+              <input
+                type="text"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                className="border rounded p-1 flex-1"
+              />
+            </label>
+            <label className="flex items-center gap-2">
+              <span>編成:</span>
+              <select
+                value={selectedGroup?.id || ''}
+                onChange={(e) => {
+                  const g = groups.find((gr) => gr.id === e.target.value) || null
+                  setSelectedGroup(g)
+                }}
+                className="border rounded p-1 flex-1"
+              >
+                <option value="">--</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                if (!selectedGroup) return
+                switchSquad(0)
+                setSquadIndex(0)
+                setInitialized(true)
+                setShowCreateModal(false)
+                setShowStartMenu(false)
+              }}
+              className="border px-2 py-1 bg-blue-500 text-white rounded"
+            >
+              作成
+            </button>
           </div>
         </div>
       )}
@@ -1018,9 +1233,11 @@ export default function TLMakerPage() {
             onClick={() => setPlayheadMenu(null)}
             className="block w-full text-left px-2 py-1 hover:bg-gray-200"
           >
-            閉じる
-          </button>
-        </div>
+          閉じる
+        </button>
+      </div>
+      )}
+      </>
       )}
     </main>
   )
