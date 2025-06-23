@@ -193,10 +193,13 @@ export default function TLMakerPage() {
   const labelStep =
     tickStep < 1 ? tickStep : timeScale < 20 ? 5 : 1
 
-  const SNAP_INTERVAL = 0.033
-
-  const snapTime = (t: number) =>
-    parseFloat((Math.round(t / SNAP_INTERVAL) * SNAP_INTERVAL).toFixed(3))
+  const snapTime = (t: number) => {
+    const n = Math.round((t * 1000) / 33)
+    const group = Math.floor(n / 3)
+    const offsetIndex = n % 3
+    const offset = offsetIndex === 1 ? 33 : offsetIndex === 2 ? 66 : 0
+    return parseFloat(((group * 100 + offset) / 1000).toFixed(3))
+  }
 
   const getTimeFromClientX = (x: number) => {
     if (!containerRef.current) return 0
@@ -315,13 +318,18 @@ export default function TLMakerPage() {
                       const duration = ev.end - ev.start
                       setSkills((prev) => [
                         ...prev,
-                        { ...ev, id, start: playhead, end: playhead + duration },
+                        {
+                          ...ev,
+                          id,
+                          start: snapTime(playhead),
+                          end: snapTime(playhead + duration),
+                        },
                       ])
                     } else {
                       const mk = copied.data as MarkerEvent
                       setMarkers((prev) => [
                         ...prev,
-                        { ...mk, id, time: playhead },
+                        { ...mk, id, time: snapTime(playhead) },
                       ])
                     }
                   }
