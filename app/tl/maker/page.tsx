@@ -96,7 +96,6 @@ export default function TLMakerPage() {
   const [selectedGroup, setSelectedGroup] = useState<SquadGroup | null>(null)
   const [squadIndex, setSquadIndex] = useState(0)
   const [projectName, setProjectName] = useState('')
-  const [showStartMenu, setShowStartMenu] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [hasCache, setHasCache] = useState(false)
   const [initialized, setInitialized] = useState(false)
@@ -206,11 +205,10 @@ export default function TLMakerPage() {
         setSquadIndex(data.squadIndex || 0)
         setInitialized(true)
       } catch {
-        setShowStartMenu(true)
+        /* ignore */
       }
     } else {
       if (localStorage.getItem('tlMakerCache')) setHasCache(true)
-      setShowStartMenu(true)
     }
   }, [])
 
@@ -289,37 +287,47 @@ export default function TLMakerPage() {
 
   return (
     <main className="p-4 space-y-4 select-none overflow-y-hidden" onClick={hidePopups}>
-      {showStartMenu && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center" onClick={() => setShowStartMenu(false)}>
-          <div className="bg-white border rounded p-4 space-y-2" onClick={(e) => e.stopPropagation()}>
-            <button type="button" className="border px-4 py-1 rounded w-40" onClick={() => setShowCreateModal(true)}>
-              TLを作成
-            </button>
-            <label className="border px-4 py-1 rounded w-40 text-center cursor-pointer">
-              TLをインポート
-              <input type="file" accept="application/json" className="hidden" onChange={(e) => {
+      {!initialized && (
+        <div className="flex flex-col items-center justify-center py-20 space-y-2">
+          <button
+            type="button"
+            className="border px-4 py-1 rounded w-40"
+            onClick={() => setShowCreateModal(true)}
+          >
+            TLを作成
+          </button>
+          <label className="border px-4 py-1 rounded w-40 text-center cursor-pointer">
+            TLをインポート
+            <input
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={(e) => {
                 const file = e.target.files?.[0]
                 if (!file) return
-                file.text().then(txt => {
+                file.text().then((txt) => {
                   try {
                     const data = JSON.parse(txt)
                     setProjectName(data.projectName || '')
                     setSkills(data.skills || [])
                     setMarkers(data.markers || [])
                     applyMembers(data.rowStudents || [])
-                    const g = groups.find(gr => gr.id === data.groupId) || null
+                    const g = groups.find((gr) => gr.id === data.groupId) || null
                     setSelectedGroup(g)
                     setSquadIndex(data.squadIndex || 0)
                     setInitialized(true)
-                    setShowStartMenu(false)
                   } catch {
                     /* ignore */
                   }
                 })
-              }} />
-            </label>
-            {hasCache && (
-              <button type="button" className="border px-4 py-1 rounded w-40" onClick={() => {
+              }}
+            />
+          </label>
+          {hasCache && (
+            <button
+              type="button"
+              className="border px-4 py-1 rounded w-40"
+              onClick={() => {
                 const raw = localStorage.getItem('tlMakerCache')
                 if (!raw) return
                 try {
@@ -328,19 +336,18 @@ export default function TLMakerPage() {
                   setSkills(data.skills || [])
                   setMarkers(data.markers || [])
                   applyMembers(data.rowStudents || [])
-                  const g = groups.find(gr => gr.id === data.groupId) || null
+                  const g = groups.find((gr) => gr.id === data.groupId) || null
                   setSelectedGroup(g)
                   setSquadIndex(data.squadIndex || 0)
                   setInitialized(true)
-                  setShowStartMenu(false)
                 } catch {
                   /* ignore */
                 }
-              }}>
-                キャッシュから復元
-              </button>
-            )}
-          </div>
+              }}
+            >
+              キャッシュから復元
+            </button>
+          )}
         </div>
       )}
       {initialized && (
@@ -742,12 +749,14 @@ export default function TLMakerPage() {
             <button
               type="button"
               onClick={() => {
-                if (!selectedGroup) return
-                switchSquad(0)
-                setSquadIndex(0)
+                if (selectedGroup) {
+                  switchSquad(0)
+                  setSquadIndex(0)
+                } else {
+                  applyMembers(Array(6).fill(''))
+                }
                 setInitialized(true)
                 setShowCreateModal(false)
-                setShowStartMenu(false)
               }}
               className="border px-2 py-1 bg-blue-500 text-white rounded"
             >
