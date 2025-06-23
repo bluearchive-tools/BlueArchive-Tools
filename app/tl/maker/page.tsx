@@ -65,11 +65,13 @@ export default function TLMakerPage() {
   const [selectedType, setSelectedType] = useState<'skill' | 'event' | null>(null)
   const [timeScale, setTimeScale] = useState(20) // px per second
   const containerRef = useRef<HTMLDivElement>(null)
+  const playheadTimer = useRef<NodeJS.Timeout | null>(null)
   const [playhead, setPlayhead] = useState(0)
   const [selected, setSelected] = useState<{ type: 'skill' | 'marker'; id: number } | null>(null)
   const [copied, setCopied] = useState<{ type: 'skill' | 'marker'; data: SkillEvent | MarkerEvent } | null>(null)
   const [showEditMenu, setShowEditMenu] = useState(false)
   const [dragging, setDragging] = useState(false)
+  const [playheadMenu, setPlayheadMenu] = useState<{ x: number; y: number } | null>(null)
 
   const hidePopups = () => {
     if (menuInfo) setMenuInfo(null)
@@ -77,6 +79,7 @@ export default function TLMakerPage() {
     setMarkers((prev) => prev.map((m) => (m.show ? { ...m, show: false } : m)))
     setShowEditMenu(false)
     setSelected(null)
+    if (playheadMenu) setPlayheadMenu(null)
   }
 
   const addRow = () => setRowStudents((prev) => [...prev, ''])
@@ -555,22 +558,11 @@ export default function TLMakerPage() {
                     : '') +
                   `, repeating-linear-gradient(to bottom, #555 0, #555 1px, transparent 1px, transparent ${rowHeight}px)`,
               }}
-              onMouseDown={(e) => {
-                if (e.target === e.currentTarget) {
-                  setDragging(true)
-                  setPlayhead(getTimeFromClientX(e.clientX))
-                }
-              }}
               onMouseMove={(e) => {
                 if (dragging) setPlayhead(getTimeFromClientX(e.clientX))
               }}
               onMouseUp={() => setDragging(false)}
               onMouseLeave={() => setDragging(false)}
-              onTouchStart={(e) => {
-                const t = e.touches[0]
-                setDragging(true)
-                setPlayhead(getTimeFromClientX(t.clientX))
-              }}
               onTouchMove={(e) => {
                 if (dragging) setPlayhead(getTimeFromClientX(e.touches[0].clientX))
               }}
@@ -578,9 +570,47 @@ export default function TLMakerPage() {
               onTouchCancel={() => setDragging(false)}
             >
               <div
-                className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none"
+                className="absolute top-0 bottom-0 w-0.5 bg-red-500"
                 style={{ left: playhead * timeScale }}
-              />
+              >
+                <div
+                  className="absolute -left-2 top-0 bottom-0 w-4 cursor-ew-resize"
+                  onMouseDown={(e) => {
+                    e.stopPropagation()
+                    setDragging(true)
+                    setPlayhead(getTimeFromClientX(e.clientX))
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault()
+                    setPlayheadMenu({ x: e.clientX, y: e.clientY })
+                    setDragging(false)
+                  }}
+                  onTouchStart={(e) => {
+                    e.stopPropagation()
+                    const t = e.touches[0]
+                    setDragging(true)
+                    setPlayhead(getTimeFromClientX(t.clientX))
+                    playheadTimer.current = setTimeout(() => {
+                      setPlayheadMenu({ x: t.clientX, y: t.clientY })
+                      setDragging(false)
+                    }, 600)
+                  }}
+                  onTouchEnd={() => {
+                    if (playheadTimer.current) {
+                      clearTimeout(playheadTimer.current)
+                      playheadTimer.current = null
+                    }
+                    setDragging(false)
+                  }}
+                  onTouchCancel={() => {
+                    if (playheadTimer.current) {
+                      clearTimeout(playheadTimer.current)
+                      playheadTimer.current = null
+                    }
+                    setDragging(false)
+                  }}
+                />
+              </div>
               {markers.map((m) => {
                 let timer: NodeJS.Timeout | null = null
                 const startTouch = (e: React.TouchEvent) => {
@@ -712,6 +742,47 @@ export default function TLMakerPage() {
             className="block w-full text-left px-2 py-1 hover:bg-gray-200"
           >
             削除
+          </button>
+        </div>
+      )}
+      {playheadMenu && (
+        <div
+          className="fixed bg-white border rounded shadow text-sm z-50"
+          style={{ left: playheadMenu.x, top: playheadMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {copied && (
+            <button
+              type="button"
+              onClick={() => {
+                const id = Date.now()
+                if (copied.type === 'skill') {
+                  const ev = copied.data as SkillEvent
+                  const duration = ev.end - ev.start
+                  setSkills((prev) => [
+                    ...prev,
+                    { ...ev, id, start: playhead, end: playhead + duration },
+                  ])
+                } else {
+                  const mk = copied.data as MarkerEvent
+                  setMarkers((prev) => [
+                    ...prev,
+                    { ...mk, id, time: playhead },
+                  ])
+                }
+                setPlayheadMenu(null)
+              }}
+              className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+            >
+              ここにペースト
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setPlayheadMenu(null)}
+            className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+          >
+            閉じる
           </button>
         </div>
       )}
