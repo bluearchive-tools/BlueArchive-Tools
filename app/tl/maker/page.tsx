@@ -542,8 +542,11 @@ export default function TLMakerPage() {
         </div>
         <div
           ref={containerRef}
-          className="overflow-x-auto w-full"
-          style={{ touchAction: dragging ? 'none' : 'pan-x' }}
+          className="w-full"
+          style={{
+            overflowX: dragging ? 'hidden' : 'auto',
+            touchAction: dragging ? 'none' : 'pan-x',
+          }}
           onWheel={(e) => {
             if (dragging) e.preventDefault()
           }}
@@ -702,6 +705,7 @@ export default function TLMakerPage() {
                 const startTouch = (e: React.TouchEvent) => {
                   timer = setTimeout(() => {
                     const t = e.touches[0]
+                    setSelected({ type: 'marker', id: m.id })
                     setEventMenu({ type: 'marker', id: m.id, x: t.clientX, y: t.clientY })
                   }, 600)
                 }
@@ -752,6 +756,7 @@ export default function TLMakerPage() {
                 const startTouch = (e: React.TouchEvent) => {
                   timer = setTimeout(() => {
                     const t = e.touches[0]
+                    setSelected({ type: 'skill', id: ev.id })
                     setEventMenu({ type: 'skill', id: ev.id, x: t.clientX, y: t.clientY })
                   }, 600)
                 }
