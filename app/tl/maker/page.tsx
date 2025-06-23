@@ -73,7 +73,7 @@ export default function TLMakerPage() {
   const [zoomByPlayhead, setZoomByPlayhead] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const playheadTimer = useRef<NodeJS.Timeout | null>(null)
-  const [playhead, setPlayhead] = useState(0)
+  const [playhead, setPlayhead] = useState(2)
   const [selected, setSelected] = useState<{ type: 'skill' | 'marker'; id: number } | null>(null)
   const [copied, setCopied] = useState<{ type: 'skill' | 'marker'; data: SkillEvent | MarkerEvent } | null>(null)
   const [showEditMenu, setShowEditMenu] = useState(false)
@@ -194,11 +194,11 @@ export default function TLMakerPage() {
     tickStep < 1 ? tickStep : timeScale < 20 ? 5 : 1
 
   const snapTime = (t: number) => {
-    const n = Math.round((t * 1000) / 33)
+    const n = Math.round(t * 30)
     const group = Math.floor(n / 3)
     const offsetIndex = n % 3
-    const offset = offsetIndex === 1 ? 33 : offsetIndex === 2 ? 66 : 0
-    return parseFloat(((group * 100 + offset) / 1000).toFixed(3))
+    const offset = offsetIndex === 1 ? 0.033 : offsetIndex === 2 ? 0.066 : 0
+    return parseFloat((group * 0.1 + offset).toFixed(3))
   }
 
   const getTimeFromClientX = (x: number) => {
@@ -681,7 +681,7 @@ export default function TLMakerPage() {
               }}
             >
               <div
-                className="absolute top-0 bottom-0 w-0.5 bg-red-500"
+                className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-30"
                 style={{ left: playhead * timeScale }}
               >
                 <div
