@@ -32,6 +32,7 @@ interface SkillEvent {
   start: number
   end: number
   label: string
+  show?: boolean
 }
 
 interface MarkerEvent {
@@ -84,6 +85,7 @@ export default function TLMakerPage() {
     if (menuInfo) setMenuInfo(null)
     if (eventMenu) setEventMenu(null)
     setMarkers((prev) => prev.map((m) => (m.show ? { ...m, show: false } : m)))
+    setSkills((prev) => prev.map((s) => (s.show ? { ...s, show: false } : s)))
     setShowEditMenu(false)
     setSelected(null)
     if (playheadMenu) setPlayheadMenu(null)
@@ -189,12 +191,15 @@ export default function TLMakerPage() {
   const labelStep =
     tickStep < 1 ? tickStep : timeScale < 20 ? 5 : 1
 
+  const snap = 0.033
+
   const getTimeFromClientX = (x: number) => {
     if (!containerRef.current) return 0
     const rect = containerRef.current.getBoundingClientRect()
     const pos = x - rect.left + containerRef.current.scrollLeft
     const clamped = Math.max(0, Math.min(pos, totalSeconds * timeScale))
-    return clamped / timeScale
+    const t = clamped / timeScale
+    return Math.round(t / snap) * snap
   }
 
   return (
@@ -211,6 +216,8 @@ export default function TLMakerPage() {
                 type="button"
                 onClick={() => {
                   setSelectedType('skill')
+                  setStart(playhead)
+                  setEnd(playhead + 1)
                   setShowForm(true)
                   setShowMenu(false)
                 }}
@@ -222,6 +229,7 @@ export default function TLMakerPage() {
                 type="button"
                 onClick={() => {
                   setSelectedType('event')
+                  setStart(playhead)
                   setShowForm(true)
                   setShowMenu(false)
                 }}
@@ -336,7 +344,7 @@ export default function TLMakerPage() {
           <input
             type="range"
             min="10"
-            max="200"
+            max="250"
             step="5"
             value={timeScale}
             onChange={(e) => {
@@ -706,6 +714,11 @@ export default function TLMakerPage() {
                   timer = setTimeout(() => {
                     const t = e.touches[0]
                     setSelected({ type: 'marker', id: m.id })
+                    if (m.label) {
+                      setMarkers((prev) =>
+                        prev.map((mk) => ({ ...mk, show: mk.id === m.id }))
+                      )
+                    }
                     setEventMenu({ type: 'marker', id: m.id, x: t.clientX, y: t.clientY })
                   }, 600)
                 }
@@ -733,6 +746,11 @@ export default function TLMakerPage() {
                         )
                       } else {
                         setSelected({ type: 'marker', id: m.id })
+                        if (m.label) {
+                          setMarkers((prev) =>
+                            prev.map((mk) => ({ ...mk, show: mk.id === m.id }))
+                          )
+                        }
                       }
                     }}
                     onContextMenu={(e) => {
@@ -757,6 +775,11 @@ export default function TLMakerPage() {
                   timer = setTimeout(() => {
                     const t = e.touches[0]
                     setSelected({ type: 'skill', id: ev.id })
+                    if (ev.label) {
+                      setSkills((prev) =>
+                        prev.map((sk) => ({ ...sk, show: sk.id === ev.id }))
+                      )
+                    }
                     setEventMenu({ type: 'skill', id: ev.id, x: t.clientX, y: t.clientY })
                   }, 600)
                 }
@@ -782,13 +805,31 @@ export default function TLMakerPage() {
                     }}
                     onClick={(e) => {
                       e.stopPropagation()
-                      setSelected({ type: 'skill', id: ev.id })
+                      if (selected?.type === 'skill' && selected.id === ev.id) {
+                        setSkills((prev) =>
+                          prev.map((sk) =>
+                            sk.id === ev.id ? { ...sk, show: !sk.show } : sk
+                          )
+                        )
+                      } else {
+                        setSelected({ type: 'skill', id: ev.id })
+                        if (ev.label) {
+                          setSkills((prev) =>
+                            prev.map((sk) => ({ ...sk, show: sk.id === ev.id }))
+                          )
+                        }
+                      }
                     }}
                     onTouchStart={startTouch}
                     onTouchEnd={clearTouch}
                     onTouchCancel={clearTouch}
                   >
                     {ev.label}
+                    {ev.show && ev.label && (
+                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-blue-200 border px-1 rounded whitespace-nowrap text-xs text-black">
+                        {ev.label}
+                      </div>
+                    )}
                   </div>
                 )
               })}
