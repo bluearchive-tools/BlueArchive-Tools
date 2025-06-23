@@ -191,7 +191,23 @@ export default function TLMakerPage() {
   const labelStep =
     tickStep < 1 ? tickStep : timeScale < 20 ? 5 : 1
 
-  const snap = 0.033
+  const snapValues = [0.033, 0.066, 0.1]
+
+  const snapTime = (t: number) => {
+    let best = snapValues[0]
+    let snapped = Math.round(t / best) * best
+    let diff = Math.abs(snapped - t)
+    for (const s of snapValues.slice(1)) {
+      const cand = Math.round(t / s) * s
+      const d = Math.abs(cand - t)
+      if (d < diff) {
+        diff = d
+        best = s
+        snapped = cand
+      }
+    }
+    return parseFloat(snapped.toFixed(3))
+  }
 
   const getTimeFromClientX = (x: number) => {
     if (!containerRef.current) return 0
@@ -199,7 +215,7 @@ export default function TLMakerPage() {
     const pos = x - rect.left + containerRef.current.scrollLeft
     const clamped = Math.max(0, Math.min(pos, totalSeconds * timeScale))
     const t = clamped / timeScale
-    return Math.round(t / snap) * snap
+    return snapTime(t)
   }
 
   return (
@@ -325,6 +341,23 @@ export default function TLMakerPage() {
                 className="block w-full text-left px-2 py-1 hover:bg-gray-200"
               >
                 ペースト
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (selected) {
+                    if (selected.type === 'skill') {
+                      removeSkill(selected.id)
+                    } else {
+                      removeMarker(selected.id)
+                    }
+                    setSelected(null)
+                  }
+                  setShowEditMenu(false)
+                }}
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+              >
+                削除
               </button>
             </div>
           )}
