@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPlus, faFileImport, faCaretDown } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faFileImport, faCaretDown, faTimes } from '@fortawesome/free-solid-svg-icons'
 
 interface Student {
   id: string
@@ -36,17 +36,25 @@ interface MarkerEvent {
   show?: boolean
 }
 
+interface EventTemplate {
+  id: string
+  label: string
+  duration: number
+}
+
 export default function TLMakerPage() {
   const [students, setStudents] = useState<Student[]>([])
   const [rowStudents, setRowStudents] = useState<string[]>(['', '', '', '', '', ''])
   const [skills, setSkills] = useState<SkillEvent[]>([])
   const [markers, setMarkers] = useState<MarkerEvent[]>([])
+  const [eventTemplates, setEventTemplates] = useState<EventTemplate[]>([])
   const [menuInfo, setMenuInfo] = useState<{ index: number; x: number; y: number } | null>(null)
   const [eventMenu, setEventMenu] = useState<{ type: 'skill' | 'marker'; id: number; x: number; y: number } | null>(null)
   const [row, setRow] = useState(0)
   const [start, setStart] = useState(0)
   const [end, setEnd] = useState(1)
   const [label, setLabel] = useState('')
+  const [templateId, setTemplateId] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [squads, setSquads] = useState<{ name: string; members: string[] }[]>([])
@@ -94,7 +102,16 @@ export default function TLMakerPage() {
         /* ignore */
       }
     }
+    const loadEvents = async () => {
+      try {
+        const res = await fetch('/api/events')
+        if (res.ok) setEventTemplates(await res.json())
+      } catch {
+        /* ignore */
+      }
+    }
     loadStudents()
+    loadEvents()
     const raw = localStorage.getItem('squadGroups')
     if (raw) {
       try {
@@ -111,6 +128,15 @@ export default function TLMakerPage() {
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (selectedType === 'event') {
+      const tpl = eventTemplates.find((t) => t.id === templateId)
+      if (tpl) {
+        setLabel(tpl.label)
+      }
+    }
+  }, [templateId, selectedType, eventTemplates])
 
   const addEvent = () => {
     const id = Date.now()
@@ -136,7 +162,7 @@ export default function TLMakerPage() {
   return (
     <main className="p-4 space-y-4 select-none overflow-y-hidden" onClick={hidePopups}>
       <h2 className="text-xl font-bold">TLメーカー</h2>
-      <div className="flex gap-2 relative">
+      <div className="sticky top-16 z-20 flex items-center gap-2 bg-gray-200 dark:bg-gray-700 p-2 relative text-sm">
         <div>
           <button
             type="button"
@@ -192,8 +218,7 @@ export default function TLMakerPage() {
         >
           <FontAwesomeIcon icon={faFileImport} />
         </button>
-      </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 ml-auto">
         <span className="text-sm">拡大</span>
         <input
           type="range"
@@ -219,9 +244,24 @@ export default function TLMakerPage() {
         />
         <span className="text-sm">{timeScale}px/s</span>
       </div>
-
+      </div>
       {showForm && (
-        <div className="space-y-2 border p-2 rounded select-text">
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+          onClick={() => setShowForm(false)}
+        >
+          <div
+            className="space-y-2 border p-4 rounded bg-white select-text relative w-72"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="absolute top-1 right-1"
+              aria-label="閉じる"
+            >
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
           {selectedType && (
             <div className="text-sm font-bold">{selectedType === 'skill' ? 'スキル' : 'イベント'}</div>
           )}
@@ -259,15 +299,32 @@ export default function TLMakerPage() {
             </>
           )}
           {selectedType === 'event' && (
-            <label className="flex items-center gap-2">
-              <span>時間:</span>
-              <input
-                type="number"
-                value={start}
-                onChange={(e) => setStart(parseFloat(e.target.value))}
-                className="border rounded p-1 w-24"
-              />
-            </label>
+            <>
+              <label className="flex items-center gap-2">
+                <span>テンプレ:</span>
+                <select
+                  value={templateId}
+                  onChange={(e) => setTemplateId(e.target.value)}
+                  className="border rounded p-1 flex-1"
+                >
+                  <option value="">--</option>
+                  {eventTemplates.map((tpl) => (
+                    <option key={tpl.id} value={tpl.id}>
+                      {tpl.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex items-center gap-2">
+                <span>時間:</span>
+                <input
+                  type="number"
+                  value={start}
+                  onChange={(e) => setStart(parseFloat(e.target.value))}
+                  className="border rounded p-1 w-24"
+                />
+              </label>
+            </>
           )}
           <label className="flex items-center gap-2">
             <span>ラベル:</span>
@@ -282,20 +339,37 @@ export default function TLMakerPage() {
             <FontAwesomeIcon icon={faPlus} />
           </button>
         </div>
+        </div>
       )}
 
       {showImport && squads.length > 0 && (
-        <div className="border rounded p-2 space-y-1 select-text">
-          {squads.map((sq, i) => (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+          onClick={() => setShowImport(false)}
+        >
+          <div
+            className="border rounded p-2 space-y-1 bg-white relative w-60"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
-              key={i}
               type="button"
-              onClick={() => importSquad(sq.members)}
-              className="border rounded w-full text-left p-1"
+              onClick={() => setShowImport(false)}
+              className="absolute top-1 right-1"
+              aria-label="閉じる"
             >
-              {sq.name}
+              <FontAwesomeIcon icon={faTimes} />
             </button>
-          ))}
+            {squads.map((sq, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => importSquad(sq.members)}
+                className="border rounded w-full text-left p-1"
+              >
+                {sq.name}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

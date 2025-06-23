@@ -1,0 +1,4 @@
+[
+  { "id": "spawn", "label": "敵出現", "duration": 2 },
+  { "id": "skill", "label": "ボススキル", "duration": 1.5 }
+]
