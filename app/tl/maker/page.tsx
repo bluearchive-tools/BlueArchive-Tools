@@ -335,15 +335,15 @@ export default function TLMakerPage() {
             )
           })}
         </div>
-        <div ref={containerRef} className="overflow-x-auto w-full">
+        <div ref={containerRef} className="overflow-x-auto w-full touch-pan-x">
           <div className="relative" style={{ width: totalSeconds * timeScale }}>
             <div className="flex text-xs h-5">
-              {Array.from({ length: totalSeconds / tickStep + 1 }, (_, idx) => {
+              {Array.from({ length: totalSeconds / tickStep }, (_, idx) => {
                 const t = +(idx * tickStep).toFixed(1)
                 const ratio = t / labelStep
                 const showLabel = Math.abs(ratio - Math.round(ratio)) < 1e-6
                 const borderClass =
-                  tickStep === 0.1 && (idx % 5 !== 0)
+                  tickStep === 0.1 && idx % 5 !== 0
                     ? 'border-dotted border-gray-400'
                     : 'border-gray-500'
                 return (
@@ -356,6 +356,12 @@ export default function TLMakerPage() {
                   </div>
                 )
               })}
+              <div
+                className="border-l border-gray-500"
+                style={{ width: 0 }}
+              >
+                {totalSeconds}
+              </div>
             </div>
             <div
               className="relative border bg-gray-900"
@@ -393,6 +399,7 @@ export default function TLMakerPage() {
                       top: 0,
                       width: 4,
                       height: rows * rowHeight,
+                      touchAction: 'pan-x',
                     }}
                     onClick={(e) => {
                       e.stopPropagation()
@@ -438,6 +445,7 @@ export default function TLMakerPage() {
                       top: ev.row * rowHeight,
                       width: (ev.end - ev.start) * timeScale,
                       height: rowHeight - 2,
+                      touchAction: 'pan-x',
                     }}
                     onContextMenu={(e) => {
                       e.preventDefault()
