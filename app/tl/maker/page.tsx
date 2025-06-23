@@ -163,15 +163,17 @@ export default function TLMakerPage() {
   const addEvent = () => {
     const id = Date.now()
     if (selectedType === 'skill') {
-      if (end <= start) return
-      setSkills([...skills, { id, row, start, end, label }])
+      const s = snapTime(start)
+      const e = snapTime(end)
+      if (e <= s) return
+      setSkills([...skills, { id, row, start: s, end: e, label }])
     } else if (selectedType === 'event') {
       const tpl = eventTemplates.find((t) => t.id === templateId)
       setMarkers([
         ...markers,
         {
           id,
-          time: start,
+          time: snapTime(start),
           label: label || tpl?.label || '',
           duration: tpl?.duration ?? 0,
           skillable: tpl?.skillable ?? false,
@@ -191,23 +193,10 @@ export default function TLMakerPage() {
   const labelStep =
     tickStep < 1 ? tickStep : timeScale < 20 ? 5 : 1
 
-  const snapValues = [0.033, 0.066, 0.1]
+  const SNAP_INTERVAL = 0.033
 
-  const snapTime = (t: number) => {
-    let best = snapValues[0]
-    let snapped = Math.round(t / best) * best
-    let diff = Math.abs(snapped - t)
-    for (const s of snapValues.slice(1)) {
-      const cand = Math.round(t / s) * s
-      const d = Math.abs(cand - t)
-      if (d < diff) {
-        diff = d
-        best = s
-        snapped = cand
-      }
-    }
-    return parseFloat(snapped.toFixed(3))
-  }
+  const snapTime = (t: number) =>
+    parseFloat((Math.round(t / SNAP_INTERVAL) * SNAP_INTERVAL).toFixed(3))
 
   const getTimeFromClientX = (x: number) => {
     if (!containerRef.current) return 0
@@ -232,8 +221,8 @@ export default function TLMakerPage() {
                 type="button"
                 onClick={() => {
                   setSelectedType('skill')
-                  setStart(playhead)
-                  setEnd(playhead + 1)
+                  setStart(snapTime(playhead))
+                  setEnd(snapTime(playhead + 1))
                   setShowForm(true)
                   setShowMenu(false)
                 }}
@@ -245,7 +234,7 @@ export default function TLMakerPage() {
                 type="button"
                 onClick={() => {
                   setSelectedType('event')
-                  setStart(playhead)
+                  setStart(snapTime(playhead))
                   setShowForm(true)
                   setShowMenu(false)
                 }}
@@ -942,13 +931,18 @@ export default function TLMakerPage() {
                   const duration = ev.end - ev.start
                   setSkills((prev) => [
                     ...prev,
-                    { ...ev, id, start: playhead, end: playhead + duration },
+                    {
+                      ...ev,
+                      id,
+                      start: snapTime(playhead),
+                      end: snapTime(playhead + duration),
+                    },
                   ])
                 } else {
                   const mk = copied.data as MarkerEvent
                   setMarkers((prev) => [
                     ...prev,
-                    { ...mk, id, time: playhead },
+                    { ...mk, id, time: snapTime(playhead) },
                   ])
                 }
                 setEventMenu(null)
@@ -990,13 +984,18 @@ export default function TLMakerPage() {
                   const duration = ev.end - ev.start
                   setSkills((prev) => [
                     ...prev,
-                    { ...ev, id, start: playhead, end: playhead + duration },
+                    {
+                      ...ev,
+                      id,
+                      start: snapTime(playhead),
+                      end: snapTime(playhead + duration),
+                    },
                   ])
                 } else {
                   const mk = copied.data as MarkerEvent
                   setMarkers((prev) => [
                     ...prev,
-                    { ...mk, id, time: playhead },
+                    { ...mk, id, time: snapTime(playhead) },
                   ])
                 }
                 setPlayheadMenu(null)
