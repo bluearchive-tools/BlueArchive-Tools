@@ -24,6 +24,12 @@ interface Student {
   role: string
   characterType: string
   position: string
+  exDuration?: number
+  normalDuration?: number
+  normalInterval?: number
+  skills?: {
+    normal?: { title?: string }
+  }
 }
 
 interface SkillEvent {
