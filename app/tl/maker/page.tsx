@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPlus, faFileImport, faCaretDown, faTimes } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faFileImport, faTimes } from '@fortawesome/free-solid-svg-icons'
 
 interface Student {
   id: string
@@ -33,6 +33,8 @@ interface MarkerEvent {
   id: number
   time: number
   label: string
+  duration: number
+  skillable: boolean
   show?: boolean
 }
 
@@ -40,6 +42,7 @@ interface EventTemplate {
   id: string
   label: string
   duration: number
+  skillable: boolean
 }
 
 export default function TLMakerPage() {
@@ -144,7 +147,17 @@ export default function TLMakerPage() {
       if (end <= start) return
       setSkills([...skills, { id, row, start, end, label }])
     } else if (selectedType === 'event') {
-      setMarkers([...markers, { id, time: start, label }])
+      const tpl = eventTemplates.find((t) => t.id === templateId)
+      setMarkers([
+        ...markers,
+        {
+          id,
+          time: start,
+          label: label || tpl?.label || '',
+          duration: tpl?.duration ?? 0,
+          skillable: tpl?.skillable ?? false,
+        },
+      ])
     }
     setLabel('')
     setShowForm(false)
@@ -161,17 +174,11 @@ export default function TLMakerPage() {
 
   return (
     <main className="p-4 space-y-4 select-none overflow-y-hidden" onClick={hidePopups}>
-      <h2 className="text-xl font-bold">TLメーカー</h2>
-      <div className="sticky top-16 z-20 flex items-center gap-2 bg-gray-200 dark:bg-gray-700 p-2 relative text-sm">
-        <div>
-          <button
-            type="button"
-            onClick={() => setShowMenu(!showMenu)}
-            className="border rounded p-1"
-            aria-label="追加"
-          >
-            <FontAwesomeIcon icon={faPlus} />
-            <FontAwesomeIcon icon={faCaretDown} className="ml-1" />
+      <div className="sticky top-0 z-20 flex items-center gap-4 bg-gray-200 dark:bg-gray-700 p-2 text-sm">
+        <button type="button" className="px-1">ファイル</button>
+        <div className="relative">
+          <button type="button" onClick={() => setShowMenu(!showMenu)} className="px-1">
+            追加
           </button>
           {showMenu && (
             <div className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm">
@@ -210,40 +217,43 @@ export default function TLMakerPage() {
             </div>
           )}
         </div>
+        <button type="button" className="px-1">編集</button>
+        <button type="button" className="px-1">ツール</button>
+        <button type="button" className="px-1">再生</button>
         <button
           type="button"
           onClick={() => setShowImport(true)}
-          className="border rounded p-1"
+          className="border rounded p-1 ml-2"
           aria-label="部隊インポート"
         >
           <FontAwesomeIcon icon={faFileImport} />
         </button>
-      <div className="flex items-center gap-2 ml-auto">
-        <span className="text-sm">拡大</span>
-        <input
-          type="range"
-          min="10"
-          max="200"
-          step="5"
-          value={timeScale}
-          onChange={(e) => {
-            const newScale = parseInt(e.target.value)
-            if (containerRef.current) {
-              const { scrollLeft, clientWidth } = containerRef.current
-              const center = (scrollLeft + clientWidth / 2) / timeScale
-              setTimeScale(newScale)
-              requestAnimationFrame(() => {
-                if (containerRef.current) {
-                  containerRef.current.scrollLeft = center * newScale - clientWidth / 2
-                }
-              })
-            } else {
-              setTimeScale(newScale)
-            }
-          }}
-        />
-        <span className="text-sm">{timeScale}px/s</span>
-      </div>
+        <div className="flex items-center gap-2 ml-auto">
+          <span className="text-sm">拡大</span>
+          <input
+            type="range"
+            min="10"
+            max="200"
+            step="5"
+            value={timeScale}
+            onChange={(e) => {
+              const newScale = parseInt(e.target.value)
+              if (containerRef.current) {
+                const { scrollLeft, clientWidth } = containerRef.current
+                const center = (scrollLeft + clientWidth / 2) / timeScale
+                setTimeScale(newScale)
+                requestAnimationFrame(() => {
+                  if (containerRef.current) {
+                    containerRef.current.scrollLeft = center * newScale - clientWidth / 2
+                  }
+                })
+              } else {
+                setTimeScale(newScale)
+              }
+            }}
+          />
+          <span className="text-sm">{timeScale}px/s</span>
+        </div>
       </div>
       {showForm && (
         <div
@@ -467,11 +477,11 @@ export default function TLMakerPage() {
                 return (
                   <div
                     key={m.id}
-                    className="absolute bg-yellow-400 cursor-pointer"
+                    className="absolute bg-yellow-400 cursor-pointer opacity-70"
                     style={{
-                      left: m.time * timeScale - 2,
+                      left: m.time * timeScale,
                       top: 0,
-                      width: 4,
+                      width: Math.max(m.duration * timeScale, 4),
                       height: rows * rowHeight,
                       touchAction: 'pan-x',
                     }}
