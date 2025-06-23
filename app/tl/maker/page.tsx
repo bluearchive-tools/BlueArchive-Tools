@@ -350,6 +350,72 @@ export default function TLMakerPage() {
           )}
         </div>
       )}
+
+      {showCreateModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+          onClick={() => setShowCreateModal(false)}
+        >
+          <div
+            className="border rounded p-4 bg-white space-y-2 w-72"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowCreateModal(false)}
+              className="absolute top-1 right-1"
+              aria-label="閉じる"
+            >
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+            <div className="text-sm font-bold">TL作成</div>
+            <label className="flex items-center gap-2">
+              <span>名前:</span>
+              <input
+                type="text"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                className="border rounded p-1 flex-1"
+              />
+            </label>
+            <label className="flex items-center gap-2">
+              <span>編成:</span>
+              <select
+                value={selectedGroup?.id || ''}
+                onChange={(e) => {
+                  const g = groups.find((gr) => gr.id === e.target.value) || null
+                  setSelectedGroup(g)
+                }}
+                className="border rounded p-1 flex-1"
+              >
+                <option value="">--</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                if (selectedGroup) {
+                  switchSquad(0)
+                  setSquadIndex(0)
+                } else {
+                  applyMembers(Array(6).fill(''))
+                }
+                setInitialized(true)
+                setShowCreateModal(false)
+              }}
+              className="border px-2 py-1 bg-blue-500 text-white rounded"
+            >
+              作成
+            </button>
+          </div>
+        </div>
+      )}
+
       {initialized && (
         <>
       <div className="sticky top-0 z-20 flex items-center gap-4 bg-gray-200 dark:bg-gray-700 p-2 text-sm">
@@ -701,70 +767,6 @@ export default function TLMakerPage() {
         </div>
       )}
 
-      {showCreateModal && (
-        <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
-          onClick={() => setShowCreateModal(false)}
-        >
-          <div
-            className="border rounded p-4 bg-white space-y-2 w-72"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setShowCreateModal(false)}
-              className="absolute top-1 right-1"
-              aria-label="閉じる"
-            >
-              <FontAwesomeIcon icon={faTimes} />
-            </button>
-            <div className="text-sm font-bold">TL作成</div>
-            <label className="flex items-center gap-2">
-              <span>名前:</span>
-              <input
-                type="text"
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                className="border rounded p-1 flex-1"
-              />
-            </label>
-            <label className="flex items-center gap-2">
-              <span>編成:</span>
-              <select
-                value={selectedGroup?.id || ''}
-                onChange={(e) => {
-                  const g = groups.find((gr) => gr.id === e.target.value) || null
-                  setSelectedGroup(g)
-                }}
-                className="border rounded p-1 flex-1"
-              >
-                <option value="">--</option>
-                {groups.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              onClick={() => {
-                if (selectedGroup) {
-                  switchSquad(0)
-                  setSquadIndex(0)
-                } else {
-                  applyMembers(Array(6).fill(''))
-                }
-                setInitialized(true)
-                setShowCreateModal(false)
-              }}
-              className="border px-2 py-1 bg-blue-500 text-white rounded"
-            >
-              作成
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="flex gap-0 max-h-96 overflow-y-hidden touch-pan-x overscroll-none select-none">
         <div className="flex flex-col">
