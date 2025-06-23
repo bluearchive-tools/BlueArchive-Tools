@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlus, faFileImport, faCaretDown } from '@fortawesome/free-solid-svg-icons'
 
@@ -52,6 +52,7 @@ export default function TLMakerPage() {
   const [showMenu, setShowMenu] = useState(false)
   const [selectedType, setSelectedType] = useState<'skill' | 'event' | null>(null)
   const [timeScale, setTimeScale] = useState(20) // px per second
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const hidePopups = () => {
     if (menuInfo) setMenuInfo(null)
@@ -118,11 +119,12 @@ export default function TLMakerPage() {
   const rows = rowStudents.length
   const totalSeconds = 240
 
-  const tickStep = timeScale >= 40 ? 0.5 : 1
-  const labelStep = timeScale < 20 ? 5 : 1
+  const tickStep = timeScale >= 160 ? 0.1 : timeScale >= 40 ? 0.5 : 1
+  const labelStep =
+    tickStep < 1 ? tickStep : timeScale < 20 ? 5 : 1
 
   return (
-    <main className="p-4 space-y-4 select-none" onClick={hidePopups}>
+    <main className="p-4 space-y-4 select-none overflow-y-hidden" onClick={hidePopups}>
       <h2 className="text-xl font-bold">TLメーカー</h2>
       <div className="flex gap-2 relative">
         <div>
@@ -189,7 +191,21 @@ export default function TLMakerPage() {
           max="160"
           step="5"
           value={timeScale}
-          onChange={(e) => setTimeScale(parseInt(e.target.value))}
+          onChange={(e) => {
+            const newScale = parseInt(e.target.value)
+            if (containerRef.current) {
+              const { scrollLeft, clientWidth } = containerRef.current
+              const center = (scrollLeft + clientWidth / 2) / timeScale
+              setTimeScale(newScale)
+              requestAnimationFrame(() => {
+                if (containerRef.current) {
+                  containerRef.current.scrollLeft = center * newScale - clientWidth / 2
+                }
+              })
+            } else {
+              setTimeScale(newScale)
+            }
+          }}
         />
         <span className="text-sm">{timeScale}px/s</span>
       </div>
@@ -309,16 +325,21 @@ export default function TLMakerPage() {
             )
           })}
         </div>
-        <div className="overflow-x-auto w-full">
+        <div ref={containerRef} className="overflow-x-auto w-full">
           <div className="relative" style={{ width: totalSeconds * timeScale }}>
             <div className="flex text-xs h-5">
               {Array.from({ length: totalSeconds / tickStep + 1 }, (_, idx) => {
-                const t = idx * tickStep
-                const showLabel = Number.isInteger(t) && t % labelStep === 0
+                const t = +(idx * tickStep).toFixed(1)
+                const ratio = t / labelStep
+                const showLabel = Math.abs(ratio - Math.round(ratio)) < 1e-6
+                const borderClass =
+                  tickStep === 0.1 && (idx % 5 !== 0)
+                    ? 'border-dotted border-gray-400'
+                    : 'border-gray-500'
                 return (
                   <div
                     key={idx}
-                    className="border-l border-gray-500"
+                    className={`border-l ${borderClass}`}
                     style={{ width: timeScale * tickStep }}
                   >
                     {showLabel ? t : ''}
@@ -335,6 +356,9 @@ export default function TLMakerPage() {
                   `repeating-linear-gradient(to right, #555 0, #555 1px, transparent 1px, transparent ${timeScale}px)` +
                   (timeScale >= 40
                     ? `, repeating-linear-gradient(to right, rgba(85,85,85,0.5) 0, rgba(85,85,85,0.5) 1px, transparent 1px, transparent ${timeScale / 2}px)`
+                    : '') +
+                  (timeScale >= 160
+                    ? `, repeating-linear-gradient(to right, rgba(85,85,85,0.3) 0, rgba(85,85,85,0.3) 1px, transparent 1px, transparent ${timeScale / 10}px)`
                     : '') +
                   `, repeating-linear-gradient(to bottom, #555 0, #555 1px, transparent 1px, transparent ${rowHeight}px)`,
               }}
@@ -385,7 +409,7 @@ export default function TLMakerPage() {
       </div>
       {menuInfo && (
         <div
-          className="fixed bg-white border rounded shadow text-sm z-20"
+          className="fixed bg-white border rounded shadow text-sm z-50"
           style={{ left: menuInfo.x, top: menuInfo.y }}
           onClick={(e) => e.stopPropagation()}
         >
