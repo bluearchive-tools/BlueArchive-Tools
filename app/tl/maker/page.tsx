@@ -42,6 +42,7 @@ export default function TLMakerPage() {
   const [skills, setSkills] = useState<SkillEvent[]>([])
   const [markers, setMarkers] = useState<MarkerEvent[]>([])
   const [menuInfo, setMenuInfo] = useState<{ index: number; x: number; y: number } | null>(null)
+  const [eventMenu, setEventMenu] = useState<{ type: 'skill' | 'marker'; id: number; x: number; y: number } | null>(null)
   const [row, setRow] = useState(0)
   const [start, setStart] = useState(0)
   const [end, setEnd] = useState(1)
@@ -56,6 +57,7 @@ export default function TLMakerPage() {
 
   const hidePopups = () => {
     if (menuInfo) setMenuInfo(null)
+    if (eventMenu) setEventMenu(null)
     setMarkers((prev) => prev.map((m) => (m.show ? { ...m, show: false } : m)))
   }
 
@@ -68,6 +70,14 @@ export default function TLMakerPage() {
         .filter((ev) => ev.row !== idx)
         .map((ev) => ({ ...ev, row: ev.row > idx ? ev.row - 1 : ev.row }))
     )
+  }
+
+  const removeSkill = (id: number) => {
+    setSkills((prev) => prev.filter((ev) => ev.id !== id))
+  }
+
+  const removeMarker = (id: number) => {
+    setMarkers((prev) => prev.filter((m) => m.id !== id))
   }
 
   const importSquad = (members: string[]) => {
@@ -119,7 +129,7 @@ export default function TLMakerPage() {
   const rows = rowStudents.length
   const totalSeconds = 240
 
-  const tickStep = timeScale >= 160 ? 0.1 : timeScale >= 40 ? 0.5 : 1
+  const tickStep = timeScale >= 180 ? 0.1 : timeScale >= 40 ? 0.5 : 1
   const labelStep =
     tickStep < 1 ? tickStep : timeScale < 20 ? 5 : 1
 
@@ -188,7 +198,7 @@ export default function TLMakerPage() {
         <input
           type="range"
           min="10"
-          max="160"
+          max="200"
           step="5"
           value={timeScale}
           onChange={(e) => {
@@ -357,52 +367,90 @@ export default function TLMakerPage() {
                   (timeScale >= 40
                     ? `, repeating-linear-gradient(to right, rgba(85,85,85,0.5) 0, rgba(85,85,85,0.5) 1px, transparent 1px, transparent ${timeScale / 2}px)`
                     : '') +
-                  (timeScale >= 160
-                    ? `, repeating-linear-gradient(to right, rgba(85,85,85,0.3) 0, rgba(85,85,85,0.3) 1px, transparent 1px, transparent ${timeScale / 10}px)`
+                  (timeScale >= 180
+                    ? `, repeating-linear-gradient(to right, transparent 0, transparent ${timeScale / 10}px, rgba(85,85,85,0.3) ${timeScale / 10}px, rgba(85,85,85,0.3) ${timeScale / 10 + 1}px)`
                     : '') +
                   `, repeating-linear-gradient(to bottom, #555 0, #555 1px, transparent 1px, transparent ${rowHeight}px)`,
               }}
             >
-              {markers.map((m) => (
-                <div
-                  key={m.id}
-                  className="absolute bg-yellow-400 cursor-pointer"
-                  style={{
-                    left: m.time * timeScale - 2,
-                    top: 0,
-                    width: 4,
-                    height: rows * rowHeight,
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setMarkers((prev) =>
-                      prev.map((mk) =>
-                        mk.id === m.id ? { ...mk, show: !mk.show } : mk
+              {markers.map((m) => {
+                let timer: NodeJS.Timeout | null = null
+                const startTouch = (e: React.TouchEvent) => {
+                  timer = setTimeout(() => {
+                    const t = e.touches[0]
+                    setEventMenu({ type: 'marker', id: m.id, x: t.clientX, y: t.clientY })
+                  }, 600)
+                }
+                const clearTouch = () => {
+                  if (timer) clearTimeout(timer)
+                }
+                return (
+                  <div
+                    key={m.id}
+                    className="absolute bg-yellow-400 cursor-pointer"
+                    style={{
+                      left: m.time * timeScale - 2,
+                      top: 0,
+                      width: 4,
+                      height: rows * rowHeight,
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setMarkers((prev) =>
+                        prev.map((mk) =>
+                          mk.id === m.id ? { ...mk, show: !mk.show } : mk
+                        )
                       )
-                    )
-                  }}
-                >
-                  {m.show && (
-                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-yellow-200 border px-1 rounded whitespace-nowrap text-xs">
-                      {m.label}
-                    </div>
-                  )}
-                </div>
-              ))}
-              {skills.map((ev) => (
-                <div
-                  key={ev.id}
-                  className="absolute bg-blue-500 text-white text-xs px-1 overflow-hidden"
-                  style={{
-                    left: ev.start * timeScale,
-                    top: ev.row * rowHeight,
-                    width: (ev.end - ev.start) * timeScale,
-                    height: rowHeight - 2,
-                  }}
-                >
-                  {ev.label}
-                </div>
-              ))}
+                    }}
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      setEventMenu({ type: 'marker', id: m.id, x: e.clientX, y: e.clientY })
+                    }}
+                    onTouchStart={startTouch}
+                    onTouchEnd={clearTouch}
+                    onTouchCancel={clearTouch}
+                  >
+                    {m.show && (
+                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-yellow-200 border px-1 rounded whitespace-nowrap text-xs">
+                        {m.label}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+              {skills.map((ev) => {
+                let timer: NodeJS.Timeout | null = null
+                const startTouch = (e: React.TouchEvent) => {
+                  timer = setTimeout(() => {
+                    const t = e.touches[0]
+                    setEventMenu({ type: 'skill', id: ev.id, x: t.clientX, y: t.clientY })
+                  }, 600)
+                }
+                const clearTouch = () => {
+                  if (timer) clearTimeout(timer)
+                }
+                return (
+                  <div
+                    key={ev.id}
+                    className="absolute bg-blue-500 text-white text-xs px-1 overflow-hidden"
+                    style={{
+                      left: ev.start * timeScale,
+                      top: ev.row * rowHeight,
+                      width: (ev.end - ev.start) * timeScale,
+                      height: rowHeight - 2,
+                    }}
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      setEventMenu({ type: 'skill', id: ev.id, x: e.clientX, y: e.clientY })
+                    }}
+                    onTouchStart={startTouch}
+                    onTouchEnd={clearTouch}
+                    onTouchCancel={clearTouch}
+                  >
+                    {ev.label}
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>
@@ -422,6 +470,28 @@ export default function TLMakerPage() {
             className="block w-full text-left px-2 py-1 hover:bg-gray-200"
           >
             行削除
+          </button>
+        </div>
+      )}
+      {eventMenu && (
+        <div
+          className="fixed bg-white border rounded shadow text-sm z-50"
+          style={{ left: eventMenu.x, top: eventMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              if (eventMenu.type === 'skill') {
+                removeSkill(eventMenu.id)
+              } else {
+                removeMarker(eventMenu.id)
+              }
+              setEventMenu(null)
+            }}
+            className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+          >
+            削除
           </button>
         </div>
       )}
