@@ -53,6 +53,11 @@ export default function TLMakerPage() {
   const [selectedType, setSelectedType] = useState<'skill' | 'event' | null>(null)
   const [timeScale, setTimeScale] = useState(20) // px per second
 
+  const hidePopups = () => {
+    if (menuInfo) setMenuInfo(null)
+    setMarkers((prev) => prev.map((m) => (m.show ? { ...m, show: false } : m)))
+  }
+
   const addRow = () => setRowStudents((prev) => [...prev, ''])
 
   const removeRow = (idx: number) => {
@@ -117,7 +122,7 @@ export default function TLMakerPage() {
   const labelStep = timeScale < 20 ? 5 : 1
 
   return (
-    <main className="p-4 space-y-4" onClick={() => menuInfo && setMenuInfo(null)}>
+    <main className="p-4 space-y-4 select-none" onClick={hidePopups}>
       <h2 className="text-xl font-bold">TLメーカー</h2>
       <div className="flex gap-2 relative">
         <div>
@@ -181,7 +186,7 @@ export default function TLMakerPage() {
         <input
           type="range"
           min="10"
-          max="80"
+          max="160"
           step="5"
           value={timeScale}
           onChange={(e) => setTimeScale(parseInt(e.target.value))}
@@ -190,7 +195,7 @@ export default function TLMakerPage() {
       </div>
 
       {showForm && (
-        <div className="space-y-2 border p-2 rounded">
+        <div className="space-y-2 border p-2 rounded select-text">
           {selectedType && (
             <div className="text-sm font-bold">{selectedType === 'skill' ? 'スキル' : 'イベント'}</div>
           )}
@@ -254,7 +259,7 @@ export default function TLMakerPage() {
       )}
 
       {showImport && squads.length > 0 && (
-        <div className="border rounded p-2 space-y-1">
+        <div className="border rounded p-2 space-y-1 select-text">
           {squads.map((sq, i) => (
             <button
               key={i}
@@ -268,7 +273,7 @@ export default function TLMakerPage() {
         </div>
       )}
 
-      <div className="flex gap-0 max-h-96 overflow-y-auto">
+      <div className="flex gap-0 max-h-96 overflow-y-hidden touch-pan-x overscroll-none select-none">
         <div className="flex flex-col">
           <div className="h-5" />
           {rowStudents.map((id, i) => {
@@ -344,13 +349,14 @@ export default function TLMakerPage() {
                     width: 4,
                     height: rows * rowHeight,
                   }}
-                  onClick={() =>
+                  onClick={(e) => {
+                    e.stopPropagation()
                     setMarkers((prev) =>
                       prev.map((mk) =>
                         mk.id === m.id ? { ...mk, show: !mk.show } : mk
                       )
                     )
-                  }
+                  }}
                 >
                   {m.show && (
                     <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-yellow-200 border px-1 rounded whitespace-nowrap text-xs">
