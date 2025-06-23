@@ -421,11 +421,21 @@ export default function TLMakerPage() {
       <div className="sticky top-0 z-20 flex items-center gap-4 bg-gray-200 dark:bg-gray-700 p-2 text-sm">
         <button type="button" className="px-1">ファイル</button>
         <div className="relative">
-          <button type="button" onClick={() => setShowMenu(!showMenu)} className="px-1">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowMenu(!showMenu)
+            }}
+            className="px-1"
+          >
             追加
           </button>
           {showMenu && (
-            <div className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-32">
+            <div
+              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-32"
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
                 type="button"
                 onClick={() => {
@@ -465,11 +475,21 @@ export default function TLMakerPage() {
           )}
         </div>
         <div className="relative">
-          <button type="button" onClick={() => setShowEditMenu(!showEditMenu)} className="px-1">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowEditMenu(!showEditMenu)
+            }}
+            className="px-1"
+          >
             編集
           </button>
           {showEditMenu && (
-            <div className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-32" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-32"
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
                 type="button"
                 onClick={() => {
@@ -566,9 +586,21 @@ export default function TLMakerPage() {
           )}
         </div>
         <div className="relative">
-          <button type="button" onClick={() => setShowTools(!showTools)} className="px-1">ツール</button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowTools(!showTools)
+            }}
+            className="px-1"
+          >
+            ツール
+          </button>
           {showTools && selectedGroup && selectedGroup.squads.length > 1 && (
-            <div className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-40">
+            <div
+              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-40"
+              onClick={(e) => e.stopPropagation()}
+            >
               {selectedGroup.squads.map((sq, idx) => (
                 <button
                   key={idx}
