@@ -1136,11 +1136,11 @@ export default function TLMakerPage() {
           ref={containerRef}
           className="w-full"
           style={{
-            overflowX: dragging ? 'hidden' : 'auto',
-            touchAction: dragging ? 'none' : 'pan-x',
+            overflowX: dragging || movingSkill ? 'hidden' : 'auto',
+            touchAction: dragging || movingSkill ? 'none' : 'pan-x',
           }}
           onWheel={(e) => {
-            if (dragging) e.preventDefault()
+            if (dragging || movingSkill) e.preventDefault()
           }}
         >
           <div className="relative" style={{ width: totalSeconds * timeScale }}>
@@ -1193,6 +1193,8 @@ export default function TLMakerPage() {
                   }
                   setPlayhead(getTimeFromClientX(e.clientX))
                   if (containerRef.current) containerRef.current.scrollLeft = scrollLock.current
+                } else if (movingSkill) {
+                  if (containerRef.current) containerRef.current.scrollLeft = scrollLock.current
                 }
               }}
               onMouseUp={() => {
@@ -1216,6 +1218,8 @@ export default function TLMakerPage() {
                     playheadTimer.current = null
                   }
                   setPlayhead(getTimeFromClientX(e.touches[0].clientX))
+                  if (containerRef.current) containerRef.current.scrollLeft = scrollLock.current
+                } else if (movingSkill) {
                   if (containerRef.current) containerRef.current.scrollLeft = scrollLock.current
                 }
               }}
@@ -1355,15 +1359,52 @@ export default function TLMakerPage() {
               })}
               {skills.map((ev) => {
                 let timer: NodeJS.Timeout | null = null
+                let startX = 0
+                let startY = 0
+                let moved = false
+                let longPress = false
                 const startTouch = (e: React.TouchEvent) => {
-                  const clientX = e.touches[0].clientX
+                  startX = e.touches[0].clientX
+                  startY = e.touches[0].clientY
+                  moved = false
+                  longPress = false
                   timer = setTimeout(() => {
-                    if (selected?.type === 'skill' && selected.id === ev.id) {
-                      setMovingSkill({ id: ev.id, offset: clientX - ev.start * timeScale })
-                    } else {
-                      setEventMenu({ type: 'skill', id: ev.id, x: clientX, y: e.touches[0].clientY })
+                    longPress = true
+                    if (!moved) {
+                      setEventMenu({ type: 'skill', id: ev.id, x: startX, y: startY })
                     }
                   }, 600)
+                }
+                const moveTouch = (e: React.TouchEvent) => {
+                  const clientX = e.touches[0].clientX
+                  if (!longPress) {
+                    if (Math.abs(clientX - startX) > 5) {
+                      moved = true
+                      if (timer) {
+                        clearTimeout(timer)
+                        timer = null
+                      }
+                    }
+                    return
+                  }
+                  if (timer) {
+                    clearTimeout(timer)
+                    timer = null
+                  }
+                  if (!movingSkill && selected?.type === 'skill' && selected.id === ev.id) {
+                    setEventMenu(null)
+                    scrollLock.current = containerRef.current?.scrollLeft ?? 0
+                    setMovingSkill({ id: ev.id, offset: clientX - ev.start * timeScale })
+                  } else if (movingSkill && movingSkill.id === ev.id) {
+                    const newStart = snapTime((clientX - movingSkill.offset) / timeScale)
+                    const delta = newStart - ev.start
+                    setSkills((prev) =>
+                      prev.map((sk) =>
+                        sk.id === ev.id ? { ...sk, start: newStart, end: sk.end + delta } : sk
+                      )
+                    )
+                    if (containerRef.current) containerRef.current.scrollLeft = scrollLock.current
+                  }
                 }
                 const clearTouch = () => {
                   if (timer) {
@@ -1387,8 +1428,10 @@ export default function TLMakerPage() {
                     }}
                     onMouseDown={(e) => {
                       if (selected?.type === 'skill' && selected.id === ev.id) {
+                        const clientX = e.clientX
                         moveTimer.current = setTimeout(() => {
-                          setMovingSkill({ id: ev.id, offset: e.clientX - ev.start * timeScale })
+                          scrollLock.current = containerRef.current?.scrollLeft ?? 0
+                          setMovingSkill({ id: ev.id, offset: clientX - ev.start * timeScale })
                         }, 600)
                       }
                     }}
@@ -1401,6 +1444,7 @@ export default function TLMakerPage() {
                             sk.id === ev.id ? { ...sk, start: newStart, end: sk.end + delta } : sk
                           )
                         )
+                        if (containerRef.current) containerRef.current.scrollLeft = scrollLock.current
                       }
                     }}
                     onMouseUp={() => {
@@ -1439,18 +1483,7 @@ export default function TLMakerPage() {
                       }
                     }}
                     onTouchStart={startTouch}
-                    onTouchMove={(e) => {
-                      if (movingSkill && movingSkill.id === ev.id) {
-                        const clientX = e.touches[0].clientX
-                        const newStart = snapTime((clientX - movingSkill.offset) / timeScale)
-                        const delta = newStart - ev.start
-                        setSkills((prev) =>
-                          prev.map((sk) =>
-                            sk.id === ev.id ? { ...sk, start: newStart, end: sk.end + delta } : sk
-                          )
-                        )
-                      }
-                    }}
+                    onTouchMove={moveTouch}
                     onTouchEnd={() => {
                       clearTouch()
                     }}
