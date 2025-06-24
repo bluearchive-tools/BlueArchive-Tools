@@ -84,6 +84,7 @@ export default function TLMakerPage() {
   const [menuInfo, setMenuInfo] = useState<{ index: number; x: number; y: number } | null>(null)
   const [eventMenu, setEventMenu] = useState<{ type: 'skill' | 'marker'; id: number; x: number; y: number } | null>(null)
   const [buffMenu, setBuffMenu] = useState<{ id: number; x: number; y: number } | null>(null)
+  const [buffPopup, setBuffPopup] = useState<{ row: number; x: number; y: number; buffs: string[] } | null>(null)
   const [row, setRow] = useState(0)
   const [start, setStart] = useState(0)
   const [end, setEnd] = useState(1)
@@ -132,6 +133,7 @@ export default function TLMakerPage() {
     setSelected(null)
     if (playheadMenu) setPlayheadMenu(null)
     if (buffMenu) setBuffMenu(null)
+    if (buffPopup) setBuffPopup(null)
     setShowMenu(false)
     setShowTools(false)
     setShowSquadMenu(false)
@@ -145,6 +147,7 @@ export default function TLMakerPage() {
     setShowFileMenu(false)
     setShowSquadMenu(false)
     if (buffMenu) setBuffMenu(null)
+    if (buffPopup) setBuffPopup(null)
   }
 
   const addRow = () => setRowStudents((prev) => [...prev, ''])
@@ -417,6 +420,18 @@ export default function TLMakerPage() {
       return st.skills.normal?.type === 'buff'
     }
     return false
+  }
+
+  const getActiveBuffs = (rowIdx: number, t: number) => {
+    return skills
+      .filter((ev) => isBuffSkill(ev))
+      .filter((ev) => {
+        const target = ev.target ?? ev.row
+        if (target !== rowIdx) return false
+        const start = ev.start + (ev.travel || 0)
+        return start <= t && t <= ev.end
+      })
+      .map((ev) => ev.label)
   }
 
   return (
@@ -1044,6 +1059,12 @@ export default function TLMakerPage() {
               <div
                 key={i}
                 onContextMenu={handleContext}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
+                  const buffs = getActiveBuffs(i, playhead)
+                  setBuffPopup({ row: i, x: rect.right, y: rect.top, buffs })
+                }}
                 onTouchStart={handleTouchStart}
                 onTouchEnd={clearTouch}
                 onTouchCancel={clearTouch}
@@ -1564,6 +1585,19 @@ export default function TLMakerPage() {
               </button>
             )
           })}
+        </div>
+      )}
+      {buffPopup && (
+        <div
+          className="fixed bg-white border rounded shadow text-sm z-50 px-2 py-1"
+          style={{ left: buffPopup.x, top: buffPopup.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {buffPopup.buffs.length ? (
+            buffPopup.buffs.map((b, i) => <div key={i}>{b}</div>)
+          ) : (
+            <div>バフなし</div>
+          )}
         </div>
       )}
       </>
