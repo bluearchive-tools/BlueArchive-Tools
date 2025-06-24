@@ -328,6 +328,13 @@ export default function TLMakerPage() {
   }, [templateId, selectedType, eventTemplates])
 
   useEffect(() => {
+    if (!initialized || !selectedGroup) return
+    if (rowStudents.every((id) => id === '') && selectedGroup.squads.length > 0) {
+      switchSquad(0)
+    }
+  }, [initialized, selectedGroup])
+
+  useEffect(() => {
     if (selectedType !== 'skill') return
     const st = students.find((s) => s.id === rowStudents[row])
     if (st && st.exDuration !== undefined) {
@@ -791,7 +798,7 @@ export default function TLMakerPage() {
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => {
+                    onMouseDown={() => {
                       switchSquad(idx)
                       setShowSquadMenu(false)
                       setShowTools(false)
