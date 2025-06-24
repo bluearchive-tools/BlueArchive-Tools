@@ -3789,13 +3789,13 @@
     "role": "SPECIAL",
     "characterType": "サポーター",
     "position": "BACK",
-    "exDuration": 0,
-    "normalDuration": 0,
-    "normalInterval": 0,
+    "exDuration": 15,
+    "normalDuration": 17,
+    "normalInterval": 35,
     "skills": {"ex": {"title": "サンプルEX", "type": "attack", "text": "対象に{damage}%のダメージ", "values": {"damage": [100, 110, 120, 130, 140]}}, "normal": {"title": "サンプルNS", "type": "buff", "text": "30秒間{buff}%攻撃力増加", "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}}, "passive": {"title": "サンプルPS", "text": "攻撃力{passive}%増加", "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}}, "sub": {"title": "サンプルSS", "text": "クリ率{crit}%増加", "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}}},
     "equipmentSlots": {"slot1": ["weapon"], "slot2": ["gloves"], "slot3": ["shoes"], "accessory": ["accessory"]},
-    "exHitDelay": 0,
-    "normalHitDelay": 0
+    "exHitDelay": 1.7,
+    "normalHitDelay": 1.9
   },
   {
     "id": "199",
@@ -4017,13 +4017,13 @@
     "role": "SPECIAL",
     "characterType": "サポーター",
     "position": "BACK",
-    "exDuration": 6.7,
+    "exDuration": 20,
     "normalDuration": 19,
     "normalInterval": 30,
-    "skills": {"ex": {"title": "サンプルEX", "type": "attack", "text": "対象に{damage}%のダメージ", "values": {"damage": [100, 110, 120, 130, 140]}}, "normal": {"title": "サンプルNS", "type": "buff", "text": "30秒間{buff}%攻撃力増加", "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}}, "passive": {"title": "サンプルPS", "text": "攻撃力{passive}%増加", "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}}, "sub": {"title": "サンプルSS", "text": "クリ率{crit}%増加", "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}}},
+    "skills": {"ex": {"title": "ビッグシスター", "type": "buff", "text": "対象に{damage}%のダメージ", "values": {"damage": [100, 110, 120, 130, 140]}}, "normal": {"title": "サンプルNS", "type": "buff", "text": "30秒間{buff}%攻撃力増加", "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}}, "passive": {"title": "サンプルPS", "text": "攻撃力{passive}%増加", "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}}, "sub": {"title": "サンプルSS", "text": "クリ率{crit}%増加", "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}}},
     "equipmentSlots": {"slot1": ["weapon"], "slot2": ["gloves"], "slot3": ["shoes"], "accessory": ["accessory"]},
-    "exHitDelay": 0,
-    "normalHitDelay": 0
+    "exHitDelay": 3.9,
+    "normalHitDelay": 1
   },
   {
     "id": "211",
