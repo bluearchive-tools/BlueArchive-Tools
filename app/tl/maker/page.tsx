@@ -102,11 +102,13 @@ export default function TLMakerPage() {
   const [zoomByPlayhead, setZoomByPlayhead] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const playheadTimer = useRef<NodeJS.Timeout | null>(null)
+  const moveTimer = useRef<NodeJS.Timeout | null>(null)
   const [playhead, setPlayhead] = useState(2)
   const [selected, setSelected] = useState<{ type: 'skill' | 'marker'; id: number } | null>(null)
   const [copied, setCopied] = useState<{ type: 'skill' | 'marker'; data: SkillEvent | MarkerEvent } | null>(null)
   const [showEditMenu, setShowEditMenu] = useState(false)
   const [dragging, setDragging] = useState(false)
+  const [movingSkill, setMovingSkill] = useState<{ id: number; offset: number } | null>(null)
   const scrollLock = useRef(0)
   const [playheadMenu, setPlayheadMenu] = useState<{ x: number; y: number } | null>(null)
   const [groups, setGroups] = useState<SquadGroup[]>([])
@@ -377,7 +379,9 @@ export default function TLMakerPage() {
           : st?.normalHitDelay || 0
       const duration = end - start
       const s = snapTime(applyTravel ? start - travel : start)
-      const e = snapTime(s + duration)
+      const e = snapTime(
+        applyTravel ? start + duration : start + travel + duration
+      )
       if (e <= s) return
       const lbl =
         label ||
@@ -393,7 +397,7 @@ export default function TLMakerPage() {
           start: s,
           end: e,
           label: lbl,
-          travel: applyTravel ? travel : 0,
+          travel,
           type: skillKind,
         },
       ])
@@ -1352,28 +1356,26 @@ export default function TLMakerPage() {
               {skills.map((ev) => {
                 let timer: NodeJS.Timeout | null = null
                 const startTouch = (e: React.TouchEvent) => {
+                  const clientX = e.touches[0].clientX
                   timer = setTimeout(() => {
-                    const t = e.touches[0]
-                    setSelected({ type: 'skill', id: ev.id })
-                    if (ev.label) {
-                      setSkills((prev) =>
-                        prev.map((sk) => ({ ...sk, show: sk.id === ev.id }))
-                      )
-                    }
-                    if (isBuffSkill(ev)) {
-                      setBuffMenu({ id: ev.id, x: t.clientX, y: t.clientY })
+                    if (selected?.type === 'skill' && selected.id === ev.id) {
+                      setMovingSkill({ id: ev.id, offset: clientX - ev.start * timeScale })
                     } else {
-                      setEventMenu({ type: 'skill', id: ev.id, x: t.clientX, y: t.clientY })
+                      setEventMenu({ type: 'skill', id: ev.id, x: clientX, y: e.touches[0].clientY })
                     }
                   }, 600)
                 }
                 const clearTouch = () => {
-                  if (timer) clearTimeout(timer)
+                  if (timer) {
+                    clearTimeout(timer)
+                    timer = null
+                  }
+                  if (movingSkill && movingSkill.id === ev.id) setMovingSkill(null)
                 }
                 return (
                   <div
                     key={ev.id}
-                    className={`absolute text-white text-xs px-1 overflow-hidden z-10 ${
+                    className={`absolute text-white text-xs px-1 overflow-hidden z-10 relative ${
                       selected?.type === 'skill' && selected.id === ev.id ? 'ring-2 ring-red-500' : ''
                     }`}
                     style={{
@@ -1382,6 +1384,38 @@ export default function TLMakerPage() {
                       width: (ev.end - ev.start) * timeScale,
                       height: rowHeight - 2,
                       touchAction: 'pan-x',
+                    }}
+                    onMouseDown={(e) => {
+                      if (selected?.type === 'skill' && selected.id === ev.id) {
+                        moveTimer.current = setTimeout(() => {
+                          setMovingSkill({ id: ev.id, offset: e.clientX - ev.start * timeScale })
+                        }, 600)
+                      }
+                    }}
+                    onMouseMove={(e) => {
+                      if (movingSkill && movingSkill.id === ev.id) {
+                        const newStart = snapTime((e.clientX - movingSkill.offset) / timeScale)
+                        const delta = newStart - ev.start
+                        setSkills((prev) =>
+                          prev.map((sk) =>
+                            sk.id === ev.id ? { ...sk, start: newStart, end: sk.end + delta } : sk
+                          )
+                        )
+                      }
+                    }}
+                    onMouseUp={() => {
+                      if (moveTimer.current) {
+                        clearTimeout(moveTimer.current)
+                        moveTimer.current = null
+                      }
+                      if (movingSkill && movingSkill.id === ev.id) setMovingSkill(null)
+                    }}
+                    onMouseLeave={() => {
+                      if (moveTimer.current) {
+                        clearTimeout(moveTimer.current)
+                        moveTimer.current = null
+                      }
+                      if (movingSkill && movingSkill.id === ev.id) setMovingSkill(null)
                     }}
                     onContextMenu={(e) => {
                       e.preventDefault()
@@ -1405,23 +1439,39 @@ export default function TLMakerPage() {
                       }
                     }}
                     onTouchStart={startTouch}
-                    onTouchEnd={clearTouch}
-                    onTouchCancel={clearTouch}
+                    onTouchMove={(e) => {
+                      if (movingSkill && movingSkill.id === ev.id) {
+                        const clientX = e.touches[0].clientX
+                        const newStart = snapTime((clientX - movingSkill.offset) / timeScale)
+                        const delta = newStart - ev.start
+                        setSkills((prev) =>
+                          prev.map((sk) =>
+                            sk.id === ev.id ? { ...sk, start: newStart, end: sk.end + delta } : sk
+                          )
+                        )
+                      }
+                    }}
+                    onTouchEnd={() => {
+                      clearTouch()
+                    }}
+                    onTouchCancel={() => {
+                      clearTouch()
+                    }}
                   >
                     <div
-                      className="absolute inset-y-0 left-0 bg-blue-500 opacity-50"
+                      className="absolute inset-y-0 left-0 bg-blue-500 opacity-50 z-0"
                       style={{ width: Math.min(ev.travel || 0, ev.end - ev.start) * timeScale }}
                     />
                     <div
-                      className="absolute inset-y-0 bg-blue-500"
+                      className="absolute inset-y-0 bg-blue-500 z-0"
                       style={{
                         left: (ev.travel || 0) * timeScale,
                         width: (ev.end - ev.start - (ev.travel || 0)) * timeScale,
                       }}
                     />
-                    {ev.label}
+                    <span className="relative z-10 pointer-events-none">{ev.label}</span>
                     {ev.show && ev.label && (
-                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-blue-200 border px-1 rounded whitespace-nowrap text-xs text-black">
+                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-blue-200 border px-1 rounded whitespace-nowrap text-xs text-black z-20">
                         {ev.label}
                       </div>
                     )}
