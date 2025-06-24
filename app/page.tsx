@@ -28,7 +28,9 @@ export default function Home() {
             <Link href="/tl/search">
               <FeatureItem title="TL検索" description="既存のTLを検索できます" />
             </Link>
-            <FeatureItem title="TLメーカー" description="TLを作成できます" />
+            <Link href="/tl/maker">
+              <FeatureItem title="TLメーカー" description="TLを作成できます" />
+            </Link>
             <FeatureItem title="動画toTL" description="動画からTLを自動生成できます" />
           </div>
         </CollapsibleBox>
