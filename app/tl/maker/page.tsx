@@ -113,6 +113,12 @@ export default function TLMakerPage() {
   const [showSquadMenu, setShowSquadMenu] = useState(false)
   const [showFileMenu, setShowFileMenu] = useState(false)
 
+  useEffect(() => {
+    if (showCreateModal && !selectedGroup && groups.length > 0) {
+      setSelectedGroup(groups[0])
+    }
+  }, [showCreateModal, selectedGroup, groups])
+
   const hidePopups = () => {
     if (menuInfo) setMenuInfo(null)
     if (eventMenu) setEventMenu(null)
@@ -185,6 +191,7 @@ export default function TLMakerPage() {
 
   const importSquad = (members: string[]) => {
     applyMembers(members)
+    addNormalSkills(members)
     setShowImport(false)
   }
 
