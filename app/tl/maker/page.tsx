@@ -1375,7 +1375,7 @@ export default function TLMakerPage() {
                 return (
                   <div
                     key={ev.id}
-                    className={`absolute text-white text-xs px-1 overflow-hidden z-10 relative ${
+                    className={`absolute text-white text-xs px-1 overflow-hidden z-10 ${
                       selected?.type === 'skill' && selected.id === ev.id ? 'ring-2 ring-red-500' : ''
                     }`}
                     style={{
