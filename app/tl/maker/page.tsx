@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faPlus,
@@ -28,7 +29,8 @@ interface Student {
   normalDuration?: number
   normalInterval?: number
   skills?: {
-    normal?: { title?: string }
+    ex?: { title?: string; type?: string }
+    normal?: { title?: string; type?: string }
   }
 }
 
@@ -38,6 +40,7 @@ interface SkillEvent {
   start: number
   end: number
   label: string
+  target?: number
   show?: boolean
 }
 
@@ -77,6 +80,7 @@ export default function TLMakerPage() {
   const [eventTemplates, setEventTemplates] = useState<EventTemplate[]>([])
   const [menuInfo, setMenuInfo] = useState<{ index: number; x: number; y: number } | null>(null)
   const [eventMenu, setEventMenu] = useState<{ type: 'skill' | 'marker'; id: number; x: number; y: number } | null>(null)
+  const [buffMenu, setBuffMenu] = useState<{ id: number; x: number; y: number } | null>(null)
   const [row, setRow] = useState(0)
   const [start, setStart] = useState(0)
   const [end, setEnd] = useState(1)
@@ -117,6 +121,7 @@ export default function TLMakerPage() {
     setShowEditMenu(false)
     setSelected(null)
     if (playheadMenu) setPlayheadMenu(null)
+    if (buffMenu) setBuffMenu(null)
     setShowMenu(false)
     setShowTools(false)
     setShowSquadMenu(false)
@@ -129,6 +134,7 @@ export default function TLMakerPage() {
     setShowTools(false)
     setShowFileMenu(false)
     setShowSquadMenu(false)
+    if (buffMenu) setBuffMenu(null)
   }
 
   const addRow = () => setRowStudents((prev) => [...prev, ''])
@@ -372,6 +378,19 @@ export default function TLMakerPage() {
     const clamped = Math.max(0, Math.min(pos, totalSeconds * timeScale))
     const t = clamped / timeScale
     return snapTime(t)
+  }
+
+  const isBuffSkill = (ev: SkillEvent) => {
+    const st = students.find((s) => s.id === rowStudents[ev.row])
+    if (!st || !st.skills) return false
+    if (st.skills.ex && st.skills.ex.title === ev.label) {
+      return st.skills.ex.type === 'buff'
+    }
+    const normalTitle = st.skills.normal?.title || 'NS'
+    if (ev.label === normalTitle) {
+      return st.skills.normal?.type === 'buff'
+    }
+    return false
   }
 
   return (
@@ -743,6 +762,13 @@ export default function TLMakerPage() {
               >
                 部隊の変更
               </button>
+              <Link
+                href="/tl/damage"
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                onClick={() => closeMenus()}
+              >
+                ダメージ計算
+              </Link>
             </div>
           )}
           {showSquadMenu && selectedGroup && selectedGroup.squads.length > 1 && (
@@ -1220,7 +1246,11 @@ export default function TLMakerPage() {
                         prev.map((sk) => ({ ...sk, show: sk.id === ev.id }))
                       )
                     }
-                    setEventMenu({ type: 'skill', id: ev.id, x: t.clientX, y: t.clientY })
+                    if (isBuffSkill(ev)) {
+                      setBuffMenu({ id: ev.id, x: t.clientX, y: t.clientY })
+                    } else {
+                      setEventMenu({ type: 'skill', id: ev.id, x: t.clientX, y: t.clientY })
+                    }
                   }, 600)
                 }
                 const clearTouch = () => {
@@ -1301,6 +1331,24 @@ export default function TLMakerPage() {
           style={{ left: eventMenu.x, top: eventMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >
+          {eventMenu.type === 'skill' && (() => {
+            const ev = skills.find((s) => s.id === eventMenu.id)
+            if (ev && isBuffSkill(ev)) {
+              return (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBuffMenu({ id: eventMenu.id, x: eventMenu.x, y: eventMenu.y })
+                    setEventMenu(null)
+                  }}
+                  className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                >
+                  バフ先設定
+                </button>
+              )
+            }
+            return null
+          })()}
           <button
             type="button"
             onClick={() => {
@@ -1430,7 +1478,35 @@ export default function TLMakerPage() {
           >
           閉じる
         </button>
-      </div>
+        </div>
+      )}
+      {buffMenu && (
+        <div
+          className="fixed bg-white border rounded shadow text-sm z-50"
+          style={{ left: buffMenu.x, top: buffMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {rowStudents.map((id, idx) => {
+            const st = students.find((s) => s.id === id)
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  setSkills((prev) =>
+                    prev.map((sk) =>
+                      sk.id === buffMenu.id ? { ...sk, target: idx } : sk
+                    )
+                  )
+                  setBuffMenu(null)
+                }}
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+              >
+                {st ? st.name : `行${idx + 1}`}
+              </button>
+            )
+          })}
+        </div>
       )}
       </>
       )}
