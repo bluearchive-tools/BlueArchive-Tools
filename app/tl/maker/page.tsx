@@ -880,15 +880,21 @@ export default function TLMakerPage() {
           {selectedType === 'skill' && (
             <>
               <label className="flex items-center gap-2">
-                <span>行:</span>
-                <input
-                  type="number"
+                <span>生徒:</span>
+                <select
                   value={row}
                   onChange={(e) => setRow(parseInt(e.target.value))}
-                  className="border rounded p-1 w-16"
-                  min={0}
-                  max={rows - 1}
-                />
+                  className="border rounded p-1 w-24"
+                >
+                  {rowStudents.map((id, idx) => {
+                    const st = students.find((s) => s.id === id)
+                    return (
+                      <option key={idx} value={idx}>
+                        {st ? st.name : `行${idx + 1}`}
+                      </option>
+                    )
+                  })}
+                </select>
               </label>
               <label className="flex items-center gap-2">
                 <span>開始:</span>
