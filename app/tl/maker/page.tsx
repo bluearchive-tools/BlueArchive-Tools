@@ -42,6 +42,7 @@ interface SkillEvent {
   start: number
   end: number
   label: string
+  type?: string
   travel?: number
   target?: number
   show?: boolean
@@ -95,6 +96,7 @@ export default function TLMakerPage() {
   const [squads, setSquads] = useState<{ name: string; members: string[] }[]>([])
   const [showMenu, setShowMenu] = useState(false)
   const [selectedType, setSelectedType] = useState<'skill' | 'event' | null>(null)
+  const [skillKind, setSkillKind] = useState<'ex' | 'normal'>('ex')
   const [timeScale, setTimeScale] = useState(20) // px per second
   const [applyTravel, setApplyTravel] = useState(false)
   const [zoomByPlayhead, setZoomByPlayhead] = useState(false)
@@ -171,6 +173,7 @@ export default function TLMakerPage() {
           end,
           label: st.skills?.normal?.title || 'NS',
           travel,
+          type: 'normal',
         })
       }
     })
@@ -346,10 +349,18 @@ export default function TLMakerPage() {
   useEffect(() => {
     if (selectedType !== 'skill') return
     const st = students.find((s) => s.id === rowStudents[row])
-    if (st && st.exDuration !== undefined) {
-      setEnd(snapTime(start + st.exDuration))
+    if (!st) return
+    const dur =
+      skillKind === 'ex' ? st.exDuration : st.normalDuration
+    if (dur !== undefined) {
+      const travel =
+        skillKind === 'ex'
+          ? st.exHitDelay || 0
+          : st.normalHitDelay || 0
+      const extra = applyTravel ? 0 : travel
+      setEnd(snapTime(start + dur + extra))
     }
-  }, [row, start, selectedType, rowStudents, students])
+  }, [row, start, selectedType, rowStudents, students, applyTravel, skillKind])
 
   useEffect(() => {
     if (!initialized) return
@@ -360,12 +371,32 @@ export default function TLMakerPage() {
     const id = Date.now()
     if (selectedType === 'skill') {
       const st = students.find((s) => s.id === rowStudents[row])
-      const travel = st?.exHitDelay || 0
+      const travel =
+        skillKind === 'ex'
+          ? st?.exHitDelay || 0
+          : st?.normalHitDelay || 0
       const duration = end - start
       const s = snapTime(applyTravel ? start - travel : start)
       const e = snapTime(s + duration)
       if (e <= s) return
-      setSkills([...skills, { id, row, start: s, end: e, label, travel: applyTravel ? travel : 0 }])
+      const lbl =
+        label ||
+        (skillKind === 'ex'
+          ? st?.skills?.ex?.title
+          : st?.skills?.normal?.title) ||
+        ''
+      setSkills([
+        ...skills,
+        {
+          id,
+          row,
+          start: s,
+          end: e,
+          label: lbl,
+          travel: applyTravel ? travel : 0,
+          type: skillKind,
+        },
+      ])
     } else if (selectedType === 'event') {
       const tpl = eventTemplates.find((t) => t.id === templateId)
       setMarkers([
@@ -412,6 +443,12 @@ export default function TLMakerPage() {
   const isBuffSkill = (ev: SkillEvent) => {
     const st = students.find((s) => s.id === rowStudents[ev.row])
     if (!st || !st.skills) return false
+    if (ev.type === 'ex' && st.skills.ex) {
+      return st.skills.ex.type === 'buff'
+    }
+    if (ev.type === 'normal' && st.skills.normal) {
+      return st.skills.normal.type === 'buff'
+    }
     if (st.skills.ex && st.skills.ex.title === ev.label) {
       return st.skills.ex.type === 'buff'
     }
@@ -630,6 +667,7 @@ export default function TLMakerPage() {
                 type="button"
                 onClick={() => {
                   setSelectedType('skill')
+                  setSkillKind('ex')
                   setRow(0)
                   const st = students.find((s) => s.id === rowStudents[0])
                   const dur = st?.exDuration ?? 1
@@ -746,6 +784,7 @@ export default function TLMakerPage() {
                           start: snapTime(playhead),
                           end: snapTime(playhead + duration),
                           travel,
+                          type: ev.type,
                         },
                       ])
                     } else {
@@ -930,6 +969,17 @@ export default function TLMakerPage() {
                       </option>
                     )
                   })}
+                </select>
+              </label>
+              <label className="flex items-center gap-2">
+                <span>種類:</span>
+                <select
+                  value={skillKind}
+                  onChange={(e) => setSkillKind(e.target.value as 'ex' | 'normal')}
+                  className="border rounded p-1 w-24"
+                >
+                  <option value="ex">EX</option>
+                  <option value="normal">NS</option>
                 </select>
               </label>
               <label className="flex items-center gap-2">
@@ -1323,7 +1373,7 @@ export default function TLMakerPage() {
                 return (
                   <div
                     key={ev.id}
-                    className={`absolute text-white text-xs px-1 overflow-hidden ${
+                    className={`absolute text-white text-xs px-1 overflow-hidden z-10 ${
                       selected?.type === 'skill' && selected.id === ev.id ? 'ring-2 ring-red-500' : ''
                     }`}
                     style={{
@@ -1479,6 +1529,7 @@ export default function TLMakerPage() {
                       start: snapTime(playhead),
                       end: snapTime(playhead + duration),
                       travel,
+                      type: ev.type,
                     },
                   ])
                 } else {
@@ -1534,6 +1585,7 @@ export default function TLMakerPage() {
                       start: snapTime(playhead),
                       end: snapTime(playhead + duration),
                       travel,
+                      type: ev.type,
                     },
                   ])
                 } else {
