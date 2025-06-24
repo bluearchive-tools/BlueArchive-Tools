@@ -2,7 +2,7 @@
   {
     "id": "1",
     "name": "アル",
-    "image": "https://via.placeholder.com/150?text=A",
+    "image": "/image/face/1.png",
     "attackType": "爆発",
     "defenseType": "軽装備",
     "hasAccessory": true,
