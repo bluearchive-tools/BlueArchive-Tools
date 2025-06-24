@@ -21,6 +21,8 @@ interface Student {
   role: string
   characterType: string
   position: string
+  exHitDelay?: number
+  normalHitDelay?: number
 }
 
 export default async function StudentDetail({ params }: RouteProps<{ id: string }>) {

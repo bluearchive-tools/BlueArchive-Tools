@@ -44,6 +44,8 @@ interface Student {
   role: string
   characterType: string
   position: string
+  exHitDelay?: number
+  normalHitDelay?: number
   skills?: Record<string, Skill>
   equipmentSlots?: Record<string, string[]>
   accessory?: { tiers: { tier: number; name: string; description: string }[] }
