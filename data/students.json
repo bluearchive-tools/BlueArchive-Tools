@@ -3792,7 +3792,7 @@
     "exDuration": 15,
     "normalDuration": 17,
     "normalInterval": 35,
-    "skills": {"ex": {"title": "サンプルEX", "type": "attack", "text": "対象に{damage}%のダメージ", "values": {"damage": [100, 110, 120, 130, 140]}}, "normal": {"title": "サンプルNS", "type": "buff", "text": "30秒間{buff}%攻撃力増加", "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}}, "passive": {"title": "サンプルPS", "text": "攻撃力{passive}%増加", "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}}, "sub": {"title": "サンプルSS", "text": "クリ率{crit}%増加", "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}}},
+    "skills": {"ex": {"title": "詔令：格物致知", "type": "buff", "text": "味方1人に対して、EXスキルの与えるダメージ量を{ex}%加算（15秒間）", "values": {"ex": [42.4, 48.8, 61.5, 67.9, 80.7]}}, "normal": {"title": "勅令：修身斉家", "type": "shield", "text": "35秒毎に、HPが最も低い味方1人に対して治癒力の{shield}%分のシールド効果を発動（17秒間）", "values": {"shield": [69, 72.4, 75.9, 89.7, 93.1, 96.6, 110, 113, 117, 131]}}, "passive": {"title": "サンプルPS", "text": "攻撃力{passive}%増加", "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}}, "sub": {"title": "サンプルSS", "text": "クリ率{crit}%増加", "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}}},
     "equipmentSlots": {"slot1": ["weapon"], "slot2": ["gloves"], "slot3": ["shoes"], "accessory": ["accessory"]},
     "exHitDelay": 1.7,
     "normalHitDelay": 1.9
@@ -4020,7 +4020,7 @@
     "exDuration": 20,
     "normalDuration": 19,
     "normalInterval": 30,
-    "skills": {"ex": {"title": "ビッグシスター", "type": "buff", "text": "対象に{damage}%のダメージ", "values": {"damage": [100, 110, 120, 130, 140]}}, "normal": {"title": "サンプルNS", "type": "buff", "text": "30秒間{buff}%攻撃力増加", "values": {"buff": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}}, "passive": {"title": "サンプルPS", "text": "攻撃力{passive}%増加", "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}}, "sub": {"title": "サンプルSS", "text": "クリ率{crit}%増加", "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}}},
+    "skills": {"ex": {"title": "ビッグシスター", "type": "buff", "text": "EXスキルをすぐにドロー後、味方1人のEXスキルカードを複製（複製したカードの使用は1回まで）/ 対象の攻撃力を{attack}%増加（20秒間）/ （複製したカードは、対象のEXスキルのカード状態に従います） （複製したカードのコストは、対象のEXスキルの基本コストから1減少した値を持ちます）（最小0）", "values": {"attack": [35.4, 38.1, 43.4, 46.1, 51.4]}}, "normal": {"title": "ただ一つの解", "type": "debuff", "text": "30秒毎に、敵1人に対して防御力を{defense}%減少（19秒間）/ 攻撃力の{damage}%分のダメージ", "values": {"defense": [19.6, 19.6, 19.6, 21.5, 21.5, 21.5, 23.5, 23.5, 23.5, 25.5]}, "damage": [185, 195, 204, 223, 232, 241, 260, 269, 278, 297]}, "passive": {"title": "サンプルPS", "text": "攻撃力{passive}%増加", "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}}, "sub": {"title": "サンプルSS", "text": "クリ率{crit}%増加", "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}}},
     "equipmentSlots": {"slot1": ["weapon"], "slot2": ["gloves"], "slot3": ["shoes"], "accessory": ["accessory"]},
     "exHitDelay": 3.9,
     "normalHitDelay": 1
