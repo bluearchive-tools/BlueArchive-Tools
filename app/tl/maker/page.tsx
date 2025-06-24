@@ -190,6 +190,8 @@ export default function TLMakerPage() {
   }
 
   const importSquad = (members: string[]) => {
+    setSkills([])
+    setMarkers([])
     applyMembers(members)
     addNormalSkills(members)
     setShowImport(false)
