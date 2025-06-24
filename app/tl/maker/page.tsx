@@ -243,6 +243,7 @@ export default function TLMakerPage() {
 
   const switchSquad = (index: number) => {
     if (!selectedGroup) return
+    saveProject()
     const sq = selectedGroup.squads[index]
     if (!sq) return
     const members = [...sq.strikers, ...sq.specials]
