@@ -156,6 +156,8 @@ interface Student {
   role: string
   characterType: string
   position: string
+  exHitDelay?: number
+  normalHitDelay?: number
 }
 
 interface UserStudent {

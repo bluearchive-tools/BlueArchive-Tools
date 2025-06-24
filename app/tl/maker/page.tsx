@@ -26,8 +26,10 @@ interface Student {
   characterType: string
   position: string
   exDuration?: number
+  exHitDelay?: number
   normalDuration?: number
   normalInterval?: number
+  normalHitDelay?: number
   skills?: {
     ex?: { title?: string; type?: string }
     normal?: { title?: string; type?: string }
@@ -40,6 +42,7 @@ interface SkillEvent {
   start: number
   end: number
   label: string
+  travel?: number
   target?: number
   show?: boolean
 }
@@ -92,6 +95,7 @@ export default function TLMakerPage() {
   const [showMenu, setShowMenu] = useState(false)
   const [selectedType, setSelectedType] = useState<'skill' | 'event' | null>(null)
   const [timeScale, setTimeScale] = useState(20) // px per second
+  const [applyTravel, setApplyTravel] = useState(false)
   const [zoomByPlayhead, setZoomByPlayhead] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const playheadTimer = useRef<NodeJS.Timeout | null>(null)
@@ -153,6 +157,7 @@ export default function TLMakerPage() {
       if (!st || !st.normalInterval) return
       const interval = st.normalInterval
       const dur = st.normalDuration || 0
+      const travel = st.normalHitDelay || 0
       for (let t = interval; t <= totalSeconds; t += interval) {
         const start = snapTime(t)
         const end = snapTime(t + dur)
@@ -162,6 +167,7 @@ export default function TLMakerPage() {
           start,
           end,
           label: st.skills?.normal?.title || 'NS',
+          travel,
         })
       }
     })
@@ -350,10 +356,13 @@ export default function TLMakerPage() {
   const addEvent = () => {
     const id = Date.now()
     if (selectedType === 'skill') {
-      const s = snapTime(start)
-      const e = snapTime(end)
+      const st = students.find((s) => s.id === rowStudents[row])
+      const travel = st?.exHitDelay || 0
+      const duration = end - start
+      const s = snapTime(applyTravel ? start - travel : start)
+      const e = snapTime(s + duration)
       if (e <= s) return
-      setSkills([...skills, { id, row, start: s, end: e, label }])
+      setSkills([...skills, { id, row, start: s, end: e, label, travel: applyTravel ? travel : 0 }])
     } else if (selectedType === 'event') {
       const tpl = eventTemplates.find((t) => t.id === templateId)
       setMarkers([
@@ -609,6 +618,7 @@ export default function TLMakerPage() {
                   setRow(0)
                   const st = students.find((s) => s.id === rowStudents[0])
                   const dur = st?.exDuration ?? 1
+                  setApplyTravel(false)
                   setStart(snapTime(playhead))
                   setEnd(snapTime(playhead + dur))
                   setShowForm(true)
@@ -712,6 +722,7 @@ export default function TLMakerPage() {
                     if (copied.type === 'skill') {
                       const ev = copied.data as SkillEvent
                       const duration = ev.end - ev.start
+                      const travel = ev.travel || 0
                       setSkills((prev) => [
                         ...prev,
                         {
@@ -719,6 +730,7 @@ export default function TLMakerPage() {
                           id,
                           start: snapTime(playhead),
                           end: snapTime(playhead + duration),
+                          travel,
                         },
                       ])
                     } else {
@@ -922,6 +934,14 @@ export default function TLMakerPage() {
                   onChange={(e) => setEnd(parseFloat(e.target.value))}
                   className="border rounded p-1 w-24"
                 />
+              </label>
+              <label className="flex items-center gap-1">
+                <input
+                  type="checkbox"
+                  checked={applyTravel}
+                  onChange={(e) => setApplyTravel(e.target.checked)}
+                />
+                <span>着弾時間を考慮</span>
               </label>
             </>
           )}
@@ -1282,7 +1302,7 @@ export default function TLMakerPage() {
                 return (
                   <div
                     key={ev.id}
-                    className={`absolute bg-blue-500 text-white text-xs px-1 overflow-hidden ${
+                    className={`absolute text-white text-xs px-1 overflow-hidden ${
                       selected?.type === 'skill' && selected.id === ev.id ? 'ring-2 ring-red-500' : ''
                     }`}
                     style={{
@@ -1317,6 +1337,17 @@ export default function TLMakerPage() {
                     onTouchEnd={clearTouch}
                     onTouchCancel={clearTouch}
                   >
+                    <div
+                      className="absolute inset-y-0 left-0 bg-blue-500 opacity-50"
+                      style={{ width: Math.min(ev.travel || 0, ev.end - ev.start) * timeScale }}
+                    />
+                    <div
+                      className="absolute inset-y-0 bg-blue-500"
+                      style={{
+                        left: (ev.travel || 0) * timeScale,
+                        width: (ev.end - ev.start - (ev.travel || 0)) * timeScale,
+                      }}
+                    />
                     {ev.label}
                     {ev.show && ev.label && (
                       <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-blue-200 border px-1 rounded whitespace-nowrap text-xs text-black">
@@ -1418,6 +1449,7 @@ export default function TLMakerPage() {
                 if (copied.type === 'skill') {
                   const ev = copied.data as SkillEvent
                   const duration = ev.end - ev.start
+                  const travel = ev.travel || 0
                   setSkills((prev) => [
                     ...prev,
                     {
@@ -1425,6 +1457,7 @@ export default function TLMakerPage() {
                       id,
                       start: snapTime(playhead),
                       end: snapTime(playhead + duration),
+                      travel,
                     },
                   ])
                 } else {
@@ -1471,6 +1504,7 @@ export default function TLMakerPage() {
                 if (copied.type === 'skill') {
                   const ev = copied.data as SkillEvent
                   const duration = ev.end - ev.start
+                  const travel = ev.travel || 0
                   setSkills((prev) => [
                     ...prev,
                     {
@@ -1478,6 +1512,7 @@ export default function TLMakerPage() {
                       id,
                       start: snapTime(playhead),
                       end: snapTime(playhead + duration),
+                      travel,
                     },
                   ])
                 } else {
