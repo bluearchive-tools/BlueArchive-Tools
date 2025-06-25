@@ -85,7 +85,20 @@ export default function TLMakerPage() {
   const [menuInfo, setMenuInfo] = useState<{ index: number; x: number; y: number } | null>(null)
   const [eventMenu, setEventMenu] = useState<{ type: 'skill' | 'marker'; id: number; x: number; y: number } | null>(null)
   const [buffMenu, setBuffMenu] = useState<{ id: number; x: number; y: number } | null>(null)
-  const [buffPopup, setBuffPopup] = useState<{ row: number; x: number; y: number; buffs: string[] } | null>(null)
+  const [buffPopup, setBuffPopup] = useState<{
+    row: number
+    x: number
+    y: number
+    buffs: string[]
+    info: string[]
+  } | null>(null)
+  const [skillPopup, setSkillPopup] = useState<{
+    id: number
+    x: number
+    y: number
+    text: string
+    target?: string
+  } | null>(null)
   const [row, setRow] = useState(0)
   const [start, setStart] = useState(0)
   const [end, setEnd] = useState(1)
@@ -138,6 +151,7 @@ export default function TLMakerPage() {
     if (playheadMenu) setPlayheadMenu(null)
     if (buffMenu) setBuffMenu(null)
     if (buffPopup) setBuffPopup(null)
+    if (skillPopup) setSkillPopup(null)
     setShowMenu(false)
     setShowTools(false)
     setShowSquadMenu(false)
@@ -152,6 +166,7 @@ export default function TLMakerPage() {
     setShowSquadMenu(false)
     if (buffMenu) setBuffMenu(null)
     if (buffPopup) setBuffPopup(null)
+    if (skillPopup) setSkillPopup(null)
   }
 
   const addRow = () => setRowStudents((prev) => [...prev, ''])
@@ -1117,7 +1132,14 @@ export default function TLMakerPage() {
                   e.stopPropagation()
                   const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
                   const buffs = getActiveBuffs(i, playhead)
-                  setBuffPopup({ row: i, x: rect.right, y: rect.top, buffs })
+                  const info = st
+                    ? [
+                        st.name,
+                        `\u2605${st.initialStars}`,
+                        st.role,
+                      ]
+                    : [`行${i + 1}`]
+                  setBuffPopup({ row: i, x: rect.right, y: rect.top, buffs, info })
                 }}
                 onTouchStart={handleTouchStart}
                 onTouchEnd={clearTouch}
@@ -1411,6 +1433,32 @@ export default function TLMakerPage() {
                     clearTimeout(timer)
                     timer = null
                   }
+                  if (!moved && !longPress) {
+                    const rect = { right: startX, top: startY }
+                    const st = students.find((s) => s.id === rowStudents[ev.row])
+                    const text =
+                      ev.type === 'normal'
+                        ? st?.skills?.normal?.text
+                        : st?.skills?.ex?.text
+                    const targetId = ev.target ?? ev.row
+                    const targetName = isBuffSkill(ev)
+                      ? students.find((s) => s.id === rowStudents[targetId])?.name ||
+                        `行${targetId + 1}`
+                      : undefined
+                    setSelected({ type: 'skill', id: ev.id })
+                    if (ev.label) {
+                      setSkills((prev) =>
+                        prev.map((sk) => ({ ...sk, show: sk.id === ev.id }))
+                      )
+                    }
+                    setSkillPopup({
+                      id: ev.id,
+                      x: rect.right,
+                      y: rect.top,
+                      text: text || '',
+                      target: targetName,
+                    })
+                  }
                   if (movingSkill && movingSkill.id === ev.id) setMovingSkill(null)
                 }
                 return (
@@ -1467,12 +1515,37 @@ export default function TLMakerPage() {
                     }}
                     onClick={(e) => {
                       e.stopPropagation()
+                      const rect = (
+                        e.currentTarget as HTMLDivElement
+                      ).getBoundingClientRect()
+                      const st = students.find((s) => s.id === rowStudents[ev.row])
+                      const text =
+                        ev.type === 'normal'
+                          ? st?.skills?.normal?.text
+                          : st?.skills?.ex?.text
+                      const targetId = ev.target ?? ev.row
+                      const targetName = isBuffSkill(ev)
+                        ? students.find((s) => s.id === rowStudents[targetId])?.name ||
+                          `行${targetId + 1}`
+                        : undefined
                       if (selected?.type === 'skill' && selected.id === ev.id) {
+                        const newShow = !ev.show
                         setSkills((prev) =>
                           prev.map((sk) =>
-                            sk.id === ev.id ? { ...sk, show: !sk.show } : sk
+                            sk.id === ev.id ? { ...sk, show: newShow } : sk
                           )
                         )
+                        if (newShow) {
+                          setSkillPopup({
+                            id: ev.id,
+                            x: rect.right,
+                            y: rect.top,
+                            text: text || '',
+                            target: targetName,
+                          })
+                        } else if (skillPopup && skillPopup.id === ev.id) {
+                          setSkillPopup(null)
+                        }
                       } else {
                         setSelected({ type: 'skill', id: ev.id })
                         if (ev.label) {
@@ -1480,6 +1553,13 @@ export default function TLMakerPage() {
                             prev.map((sk) => ({ ...sk, show: sk.id === ev.id }))
                           )
                         }
+                        setSkillPopup({
+                          id: ev.id,
+                          x: rect.right,
+                          y: rect.top,
+                          text: text || '',
+                          target: targetName,
+                        })
                       }
                     }}
                     onTouchStart={startTouch}
@@ -1728,11 +1808,26 @@ export default function TLMakerPage() {
           style={{ left: buffPopup.x, top: buffPopup.y }}
           onClick={(e) => e.stopPropagation()}
         >
+          <div className="border-b mb-1 pb-1">
+            {buffPopup.info.map((inf, i) => (
+              <div key={i}>{inf}</div>
+            ))}
+          </div>
           {buffPopup.buffs.length ? (
             buffPopup.buffs.map((b, i) => <div key={i}>{b}</div>)
           ) : (
             <div>バフなし</div>
           )}
+        </div>
+      )}
+      {skillPopup && (
+        <div
+          className="fixed bg-white border rounded shadow text-sm z-50 px-2 py-1"
+          style={{ left: skillPopup.x, top: skillPopup.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="whitespace-pre-wrap mb-1">{skillPopup.text}</div>
+          {skillPopup.target && <div>対象: {skillPopup.target}</div>}
         </div>
       )}
       </>
