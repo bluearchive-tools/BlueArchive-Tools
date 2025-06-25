@@ -1594,7 +1594,7 @@
   {
     "id": "83",
     "name": "ワカモ",
-    "image": "https://via.placeholder.com/150?text=C",
+    "image": "/image/face/83.png",
     "attackType": "神秘",
     "defenseType": "軽装備",
     "hasAccessory": true,
@@ -2031,7 +2031,7 @@
   {
     "id": "106",
     "name": "イズナ(水着)",
-    "image": "https://via.placeholder.com/150?text=C",
+    "image": "/image/face/106.png",
     "attackType": "神秘",
     "defenseType": "特殊装甲",
     "hasAccessory": false,
@@ -2221,7 +2221,7 @@
   {
     "id": "116",
     "name": "ユウカ(体操服)",
-    "image": "https://via.placeholder.com/150?text=C",
+    "image": "/image/face/116.png",
     "attackType": "神秘",
     "defenseType": "特殊装甲",
     "hasAccessory": false,
@@ -2373,7 +2373,7 @@
   {
     "id": "124",
     "name": "フウカ(正月)",
-    "image": "https://via.placeholder.com/150?text=C",
+    "image": "/image/face/124.png",
     "attackType": "貫通",
     "defenseType": "特殊装甲",
     "hasAccessory": false,
@@ -2563,7 +2563,7 @@
   {
     "id": "134",
     "name": "カヨコ(正月)",
-    "image": "https://via.placeholder.com/150?text=C",
+    "image": "/image/face/134.png",
     "attackType": "神秘",
     "defenseType": "特殊装甲",
     "hasAccessory": false,
@@ -3781,7 +3781,7 @@
   {
     "id": "198",
     "name": "キサキ",
-    "image": "https://via.placeholder.com/150?text=C",
+    "image": "/image/face/198.png",
     "attackType": "振動",
     "defenseType": "弾力装甲",
     "hasAccessory": false,
@@ -4009,7 +4009,7 @@
   {
     "id": "210",
     "name": "リオ",
-    "image": "https://via.placeholder.com/150?text=C",
+    "image": "/image/face/210.png",
     "attackType": "神秘",
     "defenseType": "弾力装甲",
     "hasAccessory": false,
