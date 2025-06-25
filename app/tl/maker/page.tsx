@@ -415,7 +415,10 @@ export default function TLMakerPage() {
     setSelectedGroup(g)
     setSquadIndex(snap.squadIndex)
     prevSnapshot.current = snap
-    isRestoring.current = false
+    setTimeout(() => {
+      prevSnapshot.current = getSnapshot()
+      isRestoring.current = false
+    })
   }
 
   const switchSquad = (index: number) => {
