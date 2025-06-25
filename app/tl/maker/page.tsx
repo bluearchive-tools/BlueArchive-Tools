@@ -31,8 +31,8 @@ interface Student {
   normalInterval?: number
   normalHitDelay?: number
   skills?: {
-    ex?: { title?: string; type?: string }
-    normal?: { title?: string; type?: string }
+    ex?: { title?: string; type?: string; text?: string }
+    normal?: { title?: string; type?: string; text?: string }
   }
 }
 
