@@ -1602,14 +1602,14 @@
     "role": "STRIKER",
     "characterType": "アタッカー",
     "position": "BACK",
-    "exDuration": 0,
-    "exMotionDuration": 2,
-    "normalDuration": 0,
+    "exDuration": 10,
+    "exMotionDuration": 4.8,
+    "normalDuration": 0.8,
     "normalInterval": 25,
     "skills": {"ex": {"title": "深紅の花占い", "type": "attack", "text": "敵1人に対して、攻撃力の{damage}%分のダメージ その後、味方がその敵に与えたダメージは10秒間蓄積されていき、その後蓄積した分の神秘タイプのダメージを与えます。 （ダメージの蓄積は最大でワカモの攻撃力の{accumulation}%まで） （10秒後に発動する神秘タイプのダメージにおいては、会心が発動しません）", "values": {"damage": [100, 110, 120, 130, 325], "accumulation": [1017, 1017, 1169, 1169, 1322]}}, "normal": {"title": "乱れ散る花吹雪", "type": "attack", "text": "25秒毎に、敵1人に対して攻撃力の{damage}%分のダメージ", "values": {"damage": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}}, "passive": {"title": "サンプルPS", "text": "攻撃力{passive}%増加", "values": {"passive": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}}, "sub": {"title": "サンプルSS", "text": "クリ率{crit}%増加", "values": {"crit": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}}},
     "equipmentSlots": {"slot1": ["weapon"], "slot2": ["gloves"], "slot3": ["shoes"], "accessory": ["accessory"]},
-    "exHitDelay": 0,
-    "normalHitDelay": 0
+    "exHitDelay": 2,
+    "normalHitDelay": 2
   },
   {
     "id": "84",
