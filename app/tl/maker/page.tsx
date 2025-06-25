@@ -38,6 +38,8 @@ interface Student {
   skills?: {
     ex?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
     normal?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
+    passive?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
+    sub?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
   }
 }
 
