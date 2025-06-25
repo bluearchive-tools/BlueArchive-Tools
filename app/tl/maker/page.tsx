@@ -31,9 +31,17 @@ interface Student {
   normalInterval?: number
   normalHitDelay?: number
   skills?: {
-    ex?: { title?: string; type?: string; text?: string }
-    normal?: { title?: string; type?: string; text?: string }
+    ex?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
+    normal?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
   }
+}
+
+interface UserStudent {
+  ex_skill: number
+  normal_skill: number
+  passive_skill: number
+  sub_skill: number
+  [key: string]: number | Record<string, number> | undefined
 }
 
 interface SkillEvent {
@@ -130,6 +138,7 @@ export default function TLMakerPage() {
   const [projectName, setProjectName] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [hasCache, setHasCache] = useState(false)
+  const [userStats, setUserStats] = useState<Record<string, UserStudent>>({})
   const [initialized, setInitialized] = useState(false)
   const [showTools, setShowTools] = useState(false)
   const [showSquadMenu, setShowSquadMenu] = useState(false)
@@ -313,6 +322,22 @@ export default function TLMakerPage() {
     }
     loadStudents()
     loadEvents()
+    const map: Record<string, UserStudent> = {}
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && key.startsWith('userStudent:')) {
+        const id = key.substring('userStudent:'.length)
+        const val = localStorage.getItem(key)
+        if (val) {
+          try {
+            map[id] = JSON.parse(val) as UserStudent
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+    }
+    setUserStats(map)
     const raw = localStorage.getItem('squadGroups')
     let parsed: SquadGroup[] = []
     if (raw) {
@@ -450,6 +475,19 @@ export default function TLMakerPage() {
     return parseFloat((group * 0.1 + offset).toFixed(3))
   }
 
+  const formatSkillText = (
+    skill: { text?: string; values?: Record<string, number[]> } | undefined,
+    level: number
+  ) => {
+    if (!skill || !skill.text) return ''
+    return skill.text.replace(/\{(\w+)\}/g, (_, key) => {
+      const arr = skill.values?.[key]
+      if (!arr) return ''
+      const val = arr[level - 1]
+      return val !== undefined ? String(val) : ''
+    })
+  }
+
   const getTimeFromClientX = (x: number) => {
     if (!containerRef.current) return 0
     const rect = containerRef.current.getBoundingClientRect()
@@ -487,7 +525,21 @@ export default function TLMakerPage() {
         const start = ev.start + (ev.travel || 0)
         return start <= t && t <= ev.end
       })
-      .map((ev) => ev.label)
+      .map((ev) => {
+        const st = students.find((s) => s.id === rowStudents[ev.row])
+        const baseId = st?.styleOf || st?.altOf || st?.id || ''
+        const stats = userStats[baseId]
+        const level =
+          ev.type === 'normal'
+            ? stats?.normal_skill || 1
+            : stats?.ex_skill || 1
+        const skill =
+          ev.type === 'normal'
+            ? st?.skills?.normal
+            : st?.skills?.ex
+        const text = formatSkillText(skill, level)
+        return text ? `${ev.label}: ${text}` : ev.label
+      })
   }
 
   return (
@@ -1436,10 +1488,17 @@ export default function TLMakerPage() {
                   if (!moved && !longPress) {
                     const rect = { right: startX, top: startY }
                     const st = students.find((s) => s.id === rowStudents[ev.row])
-                    const text =
+                    const baseId = st?.styleOf || st?.altOf || st?.id || ''
+                    const stats = userStats[baseId]
+                    const level =
                       ev.type === 'normal'
-                        ? st?.skills?.normal?.text
-                        : st?.skills?.ex?.text
+                        ? stats?.normal_skill || 1
+                        : stats?.ex_skill || 1
+                    const skill =
+                      ev.type === 'normal'
+                        ? st?.skills?.normal
+                        : st?.skills?.ex
+                    const text = formatSkillText(skill, level)
                     const targetId = ev.target ?? ev.row
                     const targetName = isBuffSkill(ev)
                       ? students.find((s) => s.id === rowStudents[targetId])?.name ||
@@ -1519,10 +1578,17 @@ export default function TLMakerPage() {
                         e.currentTarget as HTMLDivElement
                       ).getBoundingClientRect()
                       const st = students.find((s) => s.id === rowStudents[ev.row])
-                      const text =
+                      const baseId = st?.styleOf || st?.altOf || st?.id || ''
+                      const stats = userStats[baseId]
+                      const level =
                         ev.type === 'normal'
-                          ? st?.skills?.normal?.text
-                          : st?.skills?.ex?.text
+                          ? stats?.normal_skill || 1
+                          : stats?.ex_skill || 1
+                      const skill =
+                        ev.type === 'normal'
+                          ? st?.skills?.normal
+                          : st?.skills?.ex
+                      const text = formatSkillText(skill, level)
                       const targetId = ev.target ?? ev.row
                       const targetName = isBuffSkill(ev)
                         ? students.find((s) => s.id === rowStudents[targetId])?.name ||
