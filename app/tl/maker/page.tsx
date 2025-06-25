@@ -26,6 +26,7 @@ interface Student {
   characterType: string
   position: string
   exDuration?: number
+  exMotionDuration?: number
   exHitDelay?: number
   normalDuration?: number
   normalInterval?: number
@@ -52,6 +53,7 @@ interface SkillEvent {
   label: string
   type?: string
   travel?: number
+  motion?: number
   target?: number
   show?: boolean
 }
@@ -420,10 +422,27 @@ export default function TLMakerPage() {
           ? st?.exHitDelay || 0
           : st?.normalHitDelay || 0
       const duration = end - start
-      const s = snapTime(applyTravel ? start - travel : start)
-      const e = snapTime(
+      let s = snapTime(applyTravel ? start - travel : start)
+      let e = snapTime(
         applyTravel ? start + duration : start + travel + duration
       )
+      const motion =
+        skillKind === 'ex'
+          ? Math.max(0, (st?.exMotionDuration || 0) - travel)
+          : undefined
+      if (skillKind === 'normal') {
+        skills.forEach((ev) => {
+          if (ev.row === row && ev.type === 'ex') {
+            const motionEnd =
+              ev.start + (ev.travel || 0) + (ev.motion || 0)
+            if (s >= ev.start && s < motionEnd) {
+              const delta = motionEnd - s
+              s = motionEnd
+              e = snapTime(e + delta)
+            }
+          }
+        })
+      }
       if (e <= s) return
       const lbl =
         label ||
@@ -440,6 +459,7 @@ export default function TLMakerPage() {
           end: e,
           label: lbl,
           travel,
+          motion,
           type: skillKind,
         },
       ])
@@ -849,6 +869,7 @@ export default function TLMakerPage() {
                       const ev = copied.data as SkillEvent
                       const duration = ev.end - ev.start
                       const travel = ev.travel || 0
+                      const motion = ev.motion
                       setSkills((prev) => [
                         ...prev,
                         {
@@ -857,6 +878,7 @@ export default function TLMakerPage() {
                           start: snapTime(playhead),
                           end: snapTime(playhead + duration),
                           travel,
+                          motion,
                           type: ev.type,
                         },
                       ])
@@ -1626,20 +1648,47 @@ export default function TLMakerPage() {
                       clearTouch()
                     }}
                   >
-                    <div
-                      className="absolute inset-y-0 left-0 bg-blue-500 opacity-50 z-0"
-                      style={{ width: Math.min(ev.travel || 0, ev.end - ev.start) * timeScale }}
-                    />
-                    <div
-                      className="absolute inset-y-0 bg-blue-500 z-0"
-                      style={{
-                        left: (ev.travel || 0) * timeScale,
-                        width: (ev.end - ev.start - (ev.travel || 0)) * timeScale,
-                      }}
-                    />
+                    {(() => {
+                      const color = ev.type === 'ex' ? 'bg-blue-500' : 'bg-green-500'
+                      const travelW = Math.min(ev.travel || 0, ev.end - ev.start)
+                      const motionW = Math.min(
+                        ev.motion || ev.end - ev.start - travelW,
+                        ev.end - ev.start - travelW
+                      )
+                      const restW =
+                        ev.end - ev.start - travelW - motionW
+                      return (
+                        <>
+                          <div
+                            className={`absolute inset-y-0 left-0 ${color} opacity-50 z-0`}
+                            style={{ width: travelW * timeScale }}
+                          />
+                          <div
+                            className={`absolute inset-y-0 ${color} z-0`}
+                            style={{
+                              left: travelW * timeScale,
+                              width: motionW * timeScale,
+                            }}
+                          />
+                          {restW > 0 && (
+                            <div
+                              className={`absolute inset-y-0 ${color} opacity-50 z-0`}
+                              style={{
+                                left: (travelW + motionW) * timeScale,
+                                width: restW * timeScale,
+                              }}
+                            />
+                          )}
+                        </>
+                      )
+                    })()}
                     <span className="relative z-10 pointer-events-none">{ev.label}</span>
                     {ev.show && ev.label && (
-                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-blue-200 border px-1 rounded whitespace-nowrap text-xs text-black z-20">
+                      <div
+                        className={`absolute -top-6 left-1/2 -translate-x-1/2 ${
+                          ev.type === 'ex' ? 'bg-blue-200' : 'bg-green-200'
+                        } border px-1 rounded whitespace-nowrap text-xs text-black z-20`}
+                      >
                         {ev.label}
                       </div>
                     )}
@@ -1751,6 +1800,7 @@ export default function TLMakerPage() {
                   const ev = copied.data as SkillEvent
                   const duration = ev.end - ev.start
                   const travel = ev.travel || 0
+                  const motion = ev.motion
                   setSkills((prev) => [
                     ...prev,
                     {
@@ -1759,6 +1809,7 @@ export default function TLMakerPage() {
                       start: snapTime(playhead),
                       end: snapTime(playhead + duration),
                       travel,
+                      motion,
                       type: ev.type,
                     },
                   ])
