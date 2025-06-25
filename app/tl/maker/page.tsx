@@ -1711,7 +1711,7 @@ export default function TLMakerPage() {
                 className="absolute -top-4 left-0 pointer-events-none"
                 style={{ left: playhead * timeScale }}
               >
-                <span className="absolute -translate-x-1/2 text-white whitespace-nowrap">
+                <span className="absolute -translate-x-1/2 text-black whitespace-nowrap">
                   {formatRemain(totalSeconds - playhead)}
                 </span>
               </div>
@@ -1785,8 +1785,8 @@ export default function TLMakerPage() {
               }}
             >
               <div
-                className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-0"
-                style={{ left: playhead * timeScale }}
+                className="absolute top-0 bottom-0 w-0.5 bg-red-500"
+                style={{ left: playhead * timeScale, zIndex: 15 }}
               >
                 <div
                   className="absolute -left-2 top-0 bottom-0 w-4 cursor-ew-resize"
