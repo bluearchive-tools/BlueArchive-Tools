@@ -1682,7 +1682,7 @@ export default function TLMakerPage() {
           }}
         >
           <div className="relative" style={{ width: totalSeconds * timeScale }}>
-            <div className="flex text-xs h-5">
+            <div className="flex text-xs h-5 relative">
               {Array.from({ length: totalSeconds / tickStep }, (_, idx) => {
                 const t = +(idx * tickStep).toFixed(1)
                 const ratio = t / labelStep
@@ -1706,6 +1706,14 @@ export default function TLMakerPage() {
                 style={{ width: 0 }}
               >
                 {totalSeconds}
+              </div>
+              <div
+                className="absolute -top-4 left-0 pointer-events-none"
+                style={{ left: playhead * timeScale }}
+              >
+                <span className="absolute -translate-x-1/2 text-white whitespace-nowrap">
+                  {formatRemain(totalSeconds - playhead)}
+                </span>
               </div>
             </div>
             <div
@@ -1780,11 +1788,6 @@ export default function TLMakerPage() {
                 className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-0"
                 style={{ left: playhead * timeScale }}
               >
-                <div
-                  className="absolute -top-4 left-1/2 -translate-x-1/2 text-white text-xs whitespace-nowrap pointer-events-none"
-                >
-                  {formatRemain(totalSeconds - playhead)}
-                </div>
                 <div
                   className="absolute -left-2 top-0 bottom-0 w-4 cursor-ew-resize"
                   onMouseDown={(e) => {
