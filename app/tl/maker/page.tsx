@@ -186,12 +186,6 @@ export default function TLMakerPage() {
     localStorage.setItem('tlDefaultSkillLevels', JSON.stringify(defaultLevels))
   }, [defaultLevels])
 
-  useEffect(() => {
-    if (initialized) {
-      prevSnapshot.current = getSnapshot()
-    }
-  }, [initialized, getSnapshot])
-
   const getSnapshot = useCallback((): ProjectSnapshot => ({
     projectName,
     rowStudents: [...rowStudents],
@@ -200,6 +194,12 @@ export default function TLMakerPage() {
     groupId: selectedGroup?.id ?? '',
     squadIndex,
   }), [projectName, rowStudents, skills, markers, selectedGroup, squadIndex])
+
+  useEffect(() => {
+    if (initialized) {
+      prevSnapshot.current = getSnapshot()
+    }
+  }, [initialized, getSnapshot])
 
   useEffect(() => {
     if (!initialized || isRestoring.current) return
