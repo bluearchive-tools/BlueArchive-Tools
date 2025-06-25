@@ -123,13 +123,13 @@ export default function TLMakerPage() {
   const [zoomByPlayhead, setZoomByPlayhead] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const playheadTimer = useRef<NodeJS.Timeout | null>(null)
-  const moveTimer = useRef<NodeJS.Timeout | null>(null)
   const [playhead, setPlayhead] = useState(2)
   const [selected, setSelected] = useState<{ type: 'skill' | 'marker'; id: number } | null>(null)
   const [copied, setCopied] = useState<{ type: 'skill' | 'marker'; data: SkillEvent | MarkerEvent } | null>(null)
   const [showEditMenu, setShowEditMenu] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [movingSkill, setMovingSkill] = useState<{ id: number; offset: number } | null>(null)
+  const [moveModeSkill, setMoveModeSkill] = useState<number | null>(null)
   const scrollLock = useRef(0)
   const [playheadMenu, setPlayheadMenu] = useState<{ x: number; y: number } | null>(null)
   const [groups, setGroups] = useState<SquadGroup[]>([])
@@ -161,6 +161,7 @@ export default function TLMakerPage() {
     if (buffMenu) setBuffMenu(null)
     if (buffPopup) setBuffPopup(null)
     if (skillPopup) setSkillPopup(null)
+    if (moveModeSkill !== null) setMoveModeSkill(null)
     setShowMenu(false)
     setShowTools(false)
     setShowSquadMenu(false)
@@ -176,6 +177,7 @@ export default function TLMakerPage() {
     if (buffMenu) setBuffMenu(null)
     if (buffPopup) setBuffPopup(null)
     if (skillPopup) setSkillPopup(null)
+    if (moveModeSkill !== null) setMoveModeSkill(null)
   }
 
   const addRow = () => setRowStudents((prev) => [...prev, ''])
@@ -1436,40 +1438,24 @@ export default function TLMakerPage() {
                 let startX = 0
                 let startY = 0
                 let moved = false
-                let longPress = false
                 const startTouch = (e: React.TouchEvent) => {
                   startX = e.touches[0].clientX
                   startY = e.touches[0].clientY
                   moved = false
-                  longPress = false
-                  timer = setTimeout(() => {
-                    longPress = true
-                    if (!moved) {
-                      setEventMenu({ type: 'skill', id: ev.id, x: startX, y: startY })
-                    }
-                  }, 600)
+                  if (moveModeSkill === ev.id) {
+                    scrollLock.current = containerRef.current?.scrollLeft ?? 0
+                    setMovingSkill({ id: ev.id, offset: startX - ev.start * timeScale })
+                  } else {
+                    timer = setTimeout(() => {
+                      if (!moved) {
+                        setEventMenu({ type: 'skill', id: ev.id, x: startX, y: startY })
+                      }
+                    }, 600)
+                  }
                 }
                 const moveTouch = (e: React.TouchEvent) => {
                   const clientX = e.touches[0].clientX
-                  if (!longPress) {
-                    if (Math.abs(clientX - startX) > 5) {
-                      moved = true
-                      if (timer) {
-                        clearTimeout(timer)
-                        timer = null
-                      }
-                    }
-                    return
-                  }
-                  if (timer) {
-                    clearTimeout(timer)
-                    timer = null
-                  }
-                  if (!movingSkill && selected?.type === 'skill' && selected.id === ev.id) {
-                    setEventMenu(null)
-                    scrollLock.current = containerRef.current?.scrollLeft ?? 0
-                    setMovingSkill({ id: ev.id, offset: clientX - ev.start * timeScale })
-                  } else if (movingSkill && movingSkill.id === ev.id) {
+                  if (movingSkill && movingSkill.id === ev.id) {
                     const newStart = snapTime((clientX - movingSkill.offset) / timeScale)
                     const delta = newStart - ev.start
                     setSkills((prev) =>
@@ -1478,6 +1464,10 @@ export default function TLMakerPage() {
                       )
                     )
                     if (containerRef.current) containerRef.current.scrollLeft = scrollLock.current
+                  } else if (timer && Math.abs(clientX - startX) > 5) {
+                    moved = true
+                    clearTimeout(timer)
+                    timer = null
                   }
                 }
                 const clearTouch = () => {
@@ -1485,7 +1475,12 @@ export default function TLMakerPage() {
                     clearTimeout(timer)
                     timer = null
                   }
-                  if (!moved && !longPress) {
+                  if (movingSkill && movingSkill.id === ev.id) {
+                    setMovingSkill(null)
+                    setMoveModeSkill(null)
+                    return
+                  }
+                  if (!moved) {
                     const rect = { right: startX, top: startY }
                     const st = students.find((s) => s.id === rowStudents[ev.row])
                     const baseId = st?.styleOf || st?.altOf || st?.id || ''
@@ -1518,7 +1513,6 @@ export default function TLMakerPage() {
                       target: targetName,
                     })
                   }
-                  if (movingSkill && movingSkill.id === ev.id) setMovingSkill(null)
                 }
                 return (
                   <div
@@ -1534,12 +1528,9 @@ export default function TLMakerPage() {
                       touchAction: 'pan-x',
                     }}
                     onMouseDown={(e) => {
-                      if (selected?.type === 'skill' && selected.id === ev.id) {
-                        const clientX = e.clientX
-                        moveTimer.current = setTimeout(() => {
-                          scrollLock.current = containerRef.current?.scrollLeft ?? 0
-                          setMovingSkill({ id: ev.id, offset: clientX - ev.start * timeScale })
-                        }, 600)
+                      if (moveModeSkill === ev.id) {
+                        scrollLock.current = containerRef.current?.scrollLeft ?? 0
+                        setMovingSkill({ id: ev.id, offset: e.clientX - ev.start * timeScale })
                       }
                     }}
                     onMouseMove={(e) => {
@@ -1555,18 +1546,16 @@ export default function TLMakerPage() {
                       }
                     }}
                     onMouseUp={() => {
-                      if (moveTimer.current) {
-                        clearTimeout(moveTimer.current)
-                        moveTimer.current = null
+                      if (movingSkill && movingSkill.id === ev.id) {
+                        setMovingSkill(null)
+                        setMoveModeSkill(null)
                       }
-                      if (movingSkill && movingSkill.id === ev.id) setMovingSkill(null)
                     }}
                     onMouseLeave={() => {
-                      if (moveTimer.current) {
-                        clearTimeout(moveTimer.current)
-                        moveTimer.current = null
+                      if (movingSkill && movingSkill.id === ev.id) {
+                        setMovingSkill(null)
+                        setMoveModeSkill(null)
                       }
-                      if (movingSkill && movingSkill.id === ev.id) setMovingSkill(null)
                     }}
                     onContextMenu={(e) => {
                       e.preventDefault()
@@ -1741,6 +1730,18 @@ export default function TLMakerPage() {
           >
             コピー
           </button>
+          {eventMenu.type === 'skill' && (
+            <button
+              type="button"
+              onClick={() => {
+                setMoveModeSkill(eventMenu.id)
+                setEventMenu(null)
+              }}
+              className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+            >
+              移動モード
+            </button>
+          )}
           {copied && (
             <button
               type="button"
