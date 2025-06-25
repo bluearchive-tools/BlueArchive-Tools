@@ -26,6 +26,7 @@ interface Student {
   characterType: string
   position: string
   exDuration?: number
+  exMotionDuration?: number
   exHitDelay?: number
   normalDuration?: number
   normalInterval?: number
@@ -420,10 +421,23 @@ export default function TLMakerPage() {
           ? st?.exHitDelay || 0
           : st?.normalHitDelay || 0
       const duration = end - start
-      const s = snapTime(applyTravel ? start - travel : start)
-      const e = snapTime(
+      let s = snapTime(applyTravel ? start - travel : start)
+      let e = snapTime(
         applyTravel ? start + duration : start + travel + duration
       )
+      if (skillKind === 'normal') {
+        skills
+          .filter((ev) => ev.row === row && ev.type === 'ex')
+          .forEach((ev) => {
+            const stEx = students.find((x) => x.id === rowStudents[ev.row])
+            const motionEnd = ev.start + (stEx?.exMotionDuration || 0)
+            if (s < motionEnd && e > ev.start) {
+              const diff = e - s
+              s = snapTime(motionEnd)
+              e = snapTime(motionEnd + diff)
+            }
+          })
+      }
       if (e <= s) return
       const lbl =
         label ||
@@ -1626,17 +1640,35 @@ export default function TLMakerPage() {
                       clearTouch()
                     }}
                   >
-                    <div
-                      className="absolute inset-y-0 left-0 bg-blue-500 opacity-50 z-0"
-                      style={{ width: Math.min(ev.travel || 0, ev.end - ev.start) * timeScale }}
-                    />
-                    <div
-                      className="absolute inset-y-0 bg-blue-500 z-0"
-                      style={{
-                        left: (ev.travel || 0) * timeScale,
-                        width: (ev.end - ev.start - (ev.travel || 0)) * timeScale,
-                      }}
-                    />
+                    {(() => {
+                      const st = students.find((s) => s.id === rowStudents[ev.row])
+                      const color = ev.type === 'normal' ? 'bg-green-500' : 'bg-blue-500'
+                      const travel = Math.min(ev.travel || 0, ev.end - ev.start)
+                      const motion =
+                        ev.type === 'ex'
+                          ? Math.max(0, (st?.exMotionDuration || 0) - travel)
+                          : 0
+                      const motionClamped = Math.min(motion, ev.end - ev.start - travel)
+                      const rest = Math.max(0, ev.end - ev.start - travel - motionClamped)
+                      return (
+                        <>
+                          <div
+                            className={`absolute inset-y-0 left-0 ${color} opacity-50 z-0`}
+                            style={{ width: travel * timeScale }}
+                          />
+                          <div
+                            className={`absolute inset-y-0 ${color} z-0`}
+                            style={{ left: travel * timeScale, width: motionClamped * timeScale }}
+                          />
+                          {rest > 0 && (
+                            <div
+                              className={`absolute inset-y-0 ${color} opacity-50 z-0`}
+                              style={{ left: (travel + motionClamped) * timeScale, width: rest * timeScale }}
+                            />
+                          )}
+                        </>
+                      )
+                    })()}
                     <span className="relative z-10 pointer-events-none">{ev.label}</span>
                     {ev.show && ev.label && (
                       <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-blue-200 border px-1 rounded whitespace-nowrap text-xs text-black z-20">
