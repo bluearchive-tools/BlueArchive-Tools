@@ -1623,7 +1623,7 @@ export default function TLMakerPage() {
                 const startTouch = (e: React.TouchEvent) => {
                   timer = setTimeout(() => {
                     const t = e.touches[0]
-                    setSelected({ type: 'marker', id: m.id })
+                    setSelected([{ type: 'marker', id: m.id }])
                     if (m.label) {
                       setMarkers((prev) =>
                         prev.map((mk) => ({ ...mk, show: mk.id === m.id }))
@@ -1750,27 +1750,19 @@ export default function TLMakerPage() {
                       ? students.find((s) => s.id === rowStudents[targetId])?.name ||
                         `行${targetId + 1}`
                       : undefined
-                    if (e.shiftKey) {
-                      setSelected((prev) => {
-                        const exists = prev.find((sel) => sel.type === 'skill' && sel.id === ev.id)
-                        if (exists) return prev.filter((sel) => !(sel.type === 'skill' && sel.id === ev.id))
-                        return [...prev, { type: 'skill', id: ev.id }]
-                      })
-                    } else {
-                      setSelected([{ type: 'skill', id: ev.id }])
-                      if (ev.label) {
-                        setSkills((prev) => prev.map((sk) => ({ ...sk, show: sk.id === ev.id })))
-                      }
-                      setSkillPopup({
-                        id: ev.id,
-                        x: rect.right,
-                        y: rect.top,
-                        text: text || '',
-                        target: targetName,
-                      })
+                    setSelected([{ type: 'skill', id: ev.id }])
+                    if (ev.label) {
+                      setSkills((prev) => prev.map((sk) => ({ ...sk, show: sk.id === ev.id })))
                     }
-                  }
-                }
+                    setSkillPopup({
+                      id: ev.id,
+                      x: rect.right,
+                      y: rect.top,
+                      text: text || '',
+                      target: targetName,
+                    })
+                 }
+               }
                 return (
                   <div
                     key={ev.id}
