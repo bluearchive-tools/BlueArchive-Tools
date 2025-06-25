@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -8,6 +8,8 @@ import {
   faFileImport,
   faTimes,
   faCrosshairs,
+  faUndo,
+  faRedo,
 } from '@fortawesome/free-solid-svg-icons'
 
 interface Student {
@@ -29,6 +31,7 @@ interface Student {
   exMotionDuration?: number
   exHitDelay?: number
   normalDuration?: number
+  normalMotionDuration?: number
   normalInterval?: number
   normalHitDelay?: number
   skills?: {
@@ -86,6 +89,15 @@ interface SquadGroup {
   squads: Squad[]
 }
 
+interface ProjectSnapshot {
+  projectName: string
+  rowStudents: string[]
+  skills: SkillEvent[]
+  markers: MarkerEvent[]
+  groupId: string
+  squadIndex: number
+}
+
 export default function TLMakerPage() {
   const [students, setStudents] = useState<Student[]>([])
   const [rowStudents, setRowStudents] = useState<string[]>(['', '', '', '', '', ''])
@@ -126,8 +138,8 @@ export default function TLMakerPage() {
   const containerRef = useRef<HTMLDivElement>(null)
   const playheadTimer = useRef<NodeJS.Timeout | null>(null)
   const [playhead, setPlayhead] = useState(2)
-  const [selected, setSelected] = useState<{ type: 'skill' | 'marker'; id: number } | null>(null)
-  const [copied, setCopied] = useState<{ type: 'skill' | 'marker'; data: SkillEvent | MarkerEvent } | null>(null)
+  const [selected, setSelected] = useState<{ type: 'skill' | 'marker'; id: number }[]>([])
+  const [copied, setCopied] = useState<{ skills: SkillEvent[]; markers: MarkerEvent[] } | null>(null)
   const [showEditMenu, setShowEditMenu] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [movingSkill, setMovingSkill] = useState<{ id: number; offset: number } | null>(null)
@@ -145,6 +157,13 @@ export default function TLMakerPage() {
   const [showTools, setShowTools] = useState(false)
   const [showSquadMenu, setShowSquadMenu] = useState(false)
   const [showFileMenu, setShowFileMenu] = useState(false)
+  const [showGroupMenu, setShowGroupMenu] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [defaultLevels, setDefaultLevels] = useState({ ex: 5, normal: 10, passive: 10, sub: 10 })
+  const prevSnapshot = useRef<ProjectSnapshot | null>(null)
+  const undoStack = useRef<ProjectSnapshot[]>([])
+  const redoStack = useRef<ProjectSnapshot[]>([])
+  const isRestoring = useRef(false)
 
   useEffect(() => {
     if (showCreateModal && !selectedGroup && groups.length > 0) {
@@ -152,13 +171,51 @@ export default function TLMakerPage() {
     }
   }, [showCreateModal, selectedGroup, groups])
 
+  useEffect(() => {
+    const raw = localStorage.getItem('tlDefaultSkillLevels')
+    if (raw) {
+      try {
+        setDefaultLevels(JSON.parse(raw))
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('tlDefaultSkillLevels', JSON.stringify(defaultLevels))
+  }, [defaultLevels])
+
+  const getSnapshot = useCallback((): ProjectSnapshot => ({
+    projectName,
+    rowStudents: [...rowStudents],
+    skills: skills.map((s) => ({ ...s })),
+    markers: markers.map((m) => ({ ...m })),
+    groupId: selectedGroup?.id ?? '',
+    squadIndex,
+  }), [projectName, rowStudents, skills, markers, selectedGroup, squadIndex])
+
+  useEffect(() => {
+    if (!initialized || isRestoring.current) return
+    const snap = getSnapshot()
+    if (
+      prevSnapshot.current &&
+      JSON.stringify(prevSnapshot.current) !== JSON.stringify(snap)
+    ) {
+      undoStack.current.push(prevSnapshot.current)
+      if (undoStack.current.length > 200) undoStack.current.shift()
+      redoStack.current = []
+    }
+    prevSnapshot.current = snap
+  }, [projectName, rowStudents, skills, markers, selectedGroup, squadIndex, initialized, getSnapshot])
+
   const hidePopups = () => {
     if (menuInfo) setMenuInfo(null)
     if (eventMenu) setEventMenu(null)
     setMarkers((prev) => prev.map((m) => (m.show ? { ...m, show: false } : m)))
     setSkills((prev) => prev.map((s) => (s.show ? { ...s, show: false } : s)))
     setShowEditMenu(false)
-    setSelected(null)
+    setSelected([])
     if (playheadMenu) setPlayheadMenu(null)
     if (buffMenu) setBuffMenu(null)
     if (buffPopup) setBuffPopup(null)
@@ -167,6 +224,8 @@ export default function TLMakerPage() {
     setShowMenu(false)
     setShowTools(false)
     setShowSquadMenu(false)
+    setShowGroupMenu(false)
+    setShowSettings(false)
     setShowFileMenu(false)
   }
 
@@ -176,6 +235,8 @@ export default function TLMakerPage() {
     setShowTools(false)
     setShowFileMenu(false)
     setShowSquadMenu(false)
+    setShowGroupMenu(false)
+    setShowSettings(false)
     if (buffMenu) setBuffMenu(null)
     if (buffPopup) setBuffPopup(null)
     if (skillPopup) setSkillPopup(null)
@@ -193,6 +254,7 @@ export default function TLMakerPage() {
       const interval = st.normalInterval
       const dur = st.normalDuration || 0
       const travel = st.normalHitDelay || 0
+      const motion = st.normalMotionDuration || 0
       for (let t = interval; t <= totalSeconds; t += interval) {
         let start = snapTime(t)
         let end = snapTime(t + dur)
@@ -215,6 +277,7 @@ export default function TLMakerPage() {
           end,
           label: st.skills?.normal?.title || 'NS',
           travel,
+          motion,
           type: 'normal',
         })
       }
@@ -302,6 +365,50 @@ export default function TLMakerPage() {
       markers,
     }))
     localStorage.setItem('tlMakerLastKey', key)
+  }
+
+  const downloadProject = () => {
+    const data = {
+      projectName,
+      rowStudents,
+      skills,
+      markers,
+      groupId: selectedGroup?.id ?? '',
+      squadIndex,
+    }
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${projectName || 'timeline'}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const undo = () => {
+    const snap = undoStack.current.pop()
+    if (!snap) return
+    redoStack.current.push(getSnapshot())
+    restoreSnapshot(snap)
+  }
+
+  const redo = () => {
+    const snap = redoStack.current.pop()
+    if (!snap) return
+    undoStack.current.push(getSnapshot())
+    restoreSnapshot(snap)
+  }
+
+  const restoreSnapshot = (snap: ProjectSnapshot) => {
+    isRestoring.current = true
+    setProjectName(snap.projectName)
+    setRowStudents([...snap.rowStudents])
+    setSkills(snap.skills.map((s) => ({ ...s })))
+    setMarkers(snap.markers.map((m) => ({ ...m })))
+    const g = groups.find((gr) => gr.id === snap.groupId) || null
+    setSelectedGroup(g)
+    setSquadIndex(snap.squadIndex)
+    isRestoring.current = false
   }
 
   const switchSquad = (index: number) => {
@@ -441,7 +548,7 @@ export default function TLMakerPage() {
       const motion =
         skillKind === 'ex'
           ? Math.max(0, (st?.exMotionDuration || 0) - travel)
-          : undefined
+          : Math.max(0, (st?.normalMotionDuration || 0) - travel)
       if (skillKind === 'normal') {
         skills.forEach((ev) => {
           if (ev.row === row && ev.type === 'ex') {
@@ -519,8 +626,16 @@ export default function TLMakerPage() {
       const arr = skill.values?.[key]
       if (!arr) return ''
       const val = arr[level - 1]
-      return val !== undefined ? String(val) : ''
-    })
+    return val !== undefined ? String(val) : ''
+  })
+  }
+
+  const getSkillLevel = (
+    type: 'ex' | 'normal',
+    stats: UserStudent | undefined
+  ) => {
+    if (type === 'normal') return stats?.normal_skill ?? defaultLevels.normal
+    return stats?.ex_skill ?? defaultLevels.ex
   }
 
   const getTimeFromClientX = (x: number) => {
@@ -564,10 +679,7 @@ export default function TLMakerPage() {
         const st = students.find((s) => s.id === rowStudents[ev.row])
         const baseId = st?.styleOf || st?.altOf || st?.id || ''
         const stats = userStats[baseId]
-        const level =
-          ev.type === 'normal'
-            ? stats?.normal_skill || 1
-            : stats?.ex_skill || 1
+        const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
         const skill =
           ev.type === 'normal'
             ? st?.skills?.normal
@@ -726,7 +838,7 @@ export default function TLMakerPage() {
           </button>
           {showFileMenu && (
             <div
-              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-32"
+              className="absolute left-0 mt-1 border border-gray-600 bg-gray-800 text-gray-100 rounded-sm shadow-lg z-10 text-sm w-32"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -735,19 +847,59 @@ export default function TLMakerPage() {
                   setShowCreateModal(true)
                   closeMenus()
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
               >
                 TLを作成
               </button>
               <button
                 type="button"
                 onClick={() => {
-                  saveProject()
+                  downloadProject()
                   closeMenus()
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
               >
                 TLを保存
+              </button>
+              <label className="block w-full text-left px-2 py-1 hover:bg-blue-600 cursor-pointer">
+                TLを読み込み
+                <input
+                  type="file"
+                  accept="application/json"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      file.text().then((txt) => {
+                        try {
+                          const data = JSON.parse(txt)
+                          setProjectName(data.projectName || '')
+                          setSkills(data.skills || [])
+                          setMarkers(data.markers || [])
+                          applyMembers(data.rowStudents || [])
+                          const g = groups.find((gr) => gr.id === data.groupId) || null
+                          setSelectedGroup(g)
+                          setSquadIndex(data.squadIndex || 0)
+                          setInitialized(true)
+                        } catch {
+                          /* ignore */
+                        }
+                      })
+                    }
+                    e.target.value = ''
+                    closeMenus()
+                  }}
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  closeMenus()
+                  setShowSettings(true)
+                }}
+                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+              >
+                設定
               </button>
             </div>
           )}
@@ -766,7 +918,7 @@ export default function TLMakerPage() {
           </button>
           {showMenu && (
             <div
-              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-32"
+              className="absolute left-0 mt-1 border border-gray-600 bg-gray-800 text-gray-100 rounded-sm shadow-lg z-10 text-sm w-32"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -783,7 +935,7 @@ export default function TLMakerPage() {
                   setShowForm(true)
                   setShowMenu(false)
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
               >
                 スキル追加
               </button>
@@ -795,7 +947,7 @@ export default function TLMakerPage() {
                   setShowForm(true)
                   setShowMenu(false)
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
               >
                 イベント追加
               </button>
@@ -805,7 +957,7 @@ export default function TLMakerPage() {
                   addRow()
                   setShowMenu(false)
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
               >
                 行追加
               </button>
@@ -826,50 +978,55 @@ export default function TLMakerPage() {
           </button>
           {showEditMenu && (
             <div
-              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-32"
+              className="absolute left-0 mt-1 border border-gray-600 bg-gray-800 text-gray-100 rounded-sm shadow-lg z-10 text-sm w-32"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 type="button"
                 onClick={() => {
-                  if (selected) {
-                    if (selected.type === 'skill') {
-                      const ev = skills.find((s) => s.id === selected.id)
-                      if (ev) {
-                        setCopied({ type: 'skill', data: { ...ev } })
-                        removeSkill(ev.id)
-                        setSelected(null)
-                      }
-                    } else {
-                      const mk = markers.find((m) => m.id === selected.id)
-                      if (mk) {
-                        setCopied({ type: 'marker', data: { ...mk } })
-                        removeMarker(mk.id)
-                        setSelected(null)
-                      }
+                  if (selected.length) {
+                    const cutSkills = skills.filter((s) =>
+                      selected.some((sel) => sel.type === 'skill' && sel.id === s.id)
+                    )
+                    const cutMarkers = markers.filter((m) =>
+                      selected.some((sel) => sel.type === 'marker' && sel.id === m.id)
+                    )
+                    if (cutSkills.length || cutMarkers.length) {
+                      setCopied({
+                        skills: cutSkills.map((s) => ({ ...s })),
+                        markers: cutMarkers.map((m) => ({ ...m })),
+                      })
+                      setSkills((prev) => prev.filter((s) => !cutSkills.some((c) => c.id === s.id)))
+                      setMarkers((prev) => prev.filter((m) => !cutMarkers.some((c) => c.id === m.id)))
+                      setSelected([])
                     }
                   }
                   setShowEditMenu(false)
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
               >
                 カット
               </button>
               <button
                 type="button"
                 onClick={() => {
-                  if (selected) {
-                    if (selected.type === 'skill') {
-                      const ev = skills.find((s) => s.id === selected.id)
-                      if (ev) setCopied({ type: 'skill', data: { ...ev } })
-                    } else {
-                      const mk = markers.find((m) => m.id === selected.id)
-                      if (mk) setCopied({ type: 'marker', data: { ...mk } })
+                  if (selected.length) {
+                    const cpSkills = skills.filter((s) =>
+                      selected.some((sel) => sel.type === 'skill' && sel.id === s.id)
+                    )
+                    const cpMarkers = markers.filter((m) =>
+                      selected.some((sel) => sel.type === 'marker' && sel.id === m.id)
+                    )
+                    if (cpSkills.length || cpMarkers.length) {
+                      setCopied({
+                        skills: cpSkills.map((s) => ({ ...s })),
+                        markers: cpMarkers.map((m) => ({ ...m })),
+                      })
                     }
                   }
                   setShowEditMenu(false)
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
               >
                 コピー
               </button>
@@ -877,9 +1034,9 @@ export default function TLMakerPage() {
                 type="button"
                 onClick={() => {
                   if (copied) {
-                    const id = Date.now()
-                    if (copied.type === 'skill') {
-                      const ev = copied.data as SkillEvent
+                    const base = snapTime(playhead)
+                    copied.skills.forEach((ev, idx) => {
+                      const id = Date.now() + idx
                       const duration = ev.end - ev.start
                       const travel = ev.travel || 0
                       const motion = ev.motion
@@ -888,41 +1045,43 @@ export default function TLMakerPage() {
                         {
                           ...ev,
                           id,
-                          start: snapTime(playhead),
-                          end: snapTime(playhead + duration),
+                          start: base,
+                          end: snapTime(base + duration),
                           travel,
                           motion,
                           type: ev.type,
                         },
                       ])
-                    } else {
-                      const mk = copied.data as MarkerEvent
+                    })
+                    copied.markers.forEach((mk, idx) => {
+                      const id = Date.now() + copied.skills.length + idx
                       setMarkers((prev) => [
                         ...prev,
-                        { ...mk, id, time: snapTime(playhead) },
+                        { ...mk, id, time: base },
                       ])
-                    }
+                    })
                   }
                   setShowEditMenu(false)
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
               >
                 ペースト
               </button>
               <button
                 type="button"
                 onClick={() => {
-                  if (selected) {
-                    if (selected.type === 'skill') {
-                      removeSkill(selected.id)
-                    } else {
-                      removeMarker(selected.id)
-                    }
-                    setSelected(null)
+                  if (selected.length) {
+                    setSkills((prev) =>
+                      prev.filter((s) => !selected.some((sel) => sel.type === 'skill' && sel.id === s.id))
+                    )
+                    setMarkers((prev) =>
+                      prev.filter((m) => !selected.some((sel) => sel.type === 'marker' && sel.id === m.id))
+                    )
+                    setSelected([])
                   }
                   setShowEditMenu(false)
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
               >
                 削除
               </button>
@@ -943,19 +1102,33 @@ export default function TLMakerPage() {
           </button>
           {showTools && (
             <div
-              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm"
+              className="absolute left-0 mt-1 border border-gray-600 bg-gray-800 text-gray-100 rounded-sm shadow-lg z-10 text-sm"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 type="button"
                 onClick={() => setShowSquadMenu(!showSquadMenu)}
-                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
               >
                 部隊の変更
               </button>
+              <button
+                type="button"
+                onClick={() => setShowGroupMenu(!showGroupMenu)}
+                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+              >
+                グループの変更
+              </button>
+              <Link
+                href="/squads"
+                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+                onClick={() => closeMenus()}
+              >
+                部隊の編集
+              </Link>
               <Link
                 href="/tl/damage"
-                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
                 onClick={() => closeMenus()}
               >
                 ダメージ計算
@@ -964,7 +1137,7 @@ export default function TLMakerPage() {
           )}
           {showSquadMenu && selectedGroup && selectedGroup.squads.length > 1 && (
             <div
-              className="absolute left-0 mt-1 border bg-white rounded shadow z-20 text-sm px-2 py-1"
+              className="absolute left-0 mt-1 border border-gray-600 bg-gray-800 text-gray-100 rounded-sm shadow-lg z-20 text-sm px-2 py-1"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex gap-1">
@@ -977,7 +1150,7 @@ export default function TLMakerPage() {
                       setShowSquadMenu(false)
                       setShowTools(false)
                     }}
-                    className="px-2 py-1 hover:bg-gray-200 whitespace-nowrap"
+                    className="px-2 py-1 hover:bg-blue-600 whitespace-nowrap"
                   >
                     {selectedGroup.name} #{idx + 1}
                   </button>
@@ -985,8 +1158,48 @@ export default function TLMakerPage() {
               </div>
             </div>
           )}
+          {showGroupMenu && groups.length > 0 && (
+            <div
+              className="absolute left-0 mt-1 border border-gray-600 bg-gray-800 text-gray-100 rounded-sm shadow-lg z-20 text-sm px-2 py-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex gap-1">
+                {groups.map((g) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onMouseDown={() => {
+                      setSelectedGroup(g)
+                      switchSquad(0)
+                      setShowGroupMenu(false)
+                      setShowTools(false)
+                    }}
+                    className="px-2 py-1 hover:bg-blue-600 whitespace-nowrap"
+                  >
+                    {g.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <button type="button" className="px-1">再生</button>
+        <button
+          type="button"
+          onClick={undo}
+          className="border rounded p-1 ml-2"
+          aria-label="元に戻す"
+        >
+          <FontAwesomeIcon icon={faUndo} />
+        </button>
+        <button
+          type="button"
+          onClick={redo}
+          className="border rounded p-1 ml-1"
+          aria-label="やり直す"
+        >
+          <FontAwesomeIcon icon={faRedo} />
+        </button>
         <button
           type="button"
           onClick={() => setShowImport(true)}
@@ -1189,6 +1402,87 @@ export default function TLMakerPage() {
                 {sq.name}
               </button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {showSettings && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+          onClick={() => setShowSettings(false)}
+        >
+          <div
+            className="border rounded p-4 bg-white space-y-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowSettings(false)}
+              className="absolute top-1 right-1"
+              aria-label="閉じる"
+            >
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+            <div className="text-sm font-bold">デフォルトスキルレベル</div>
+            <label className="flex items-center gap-2">
+              <span>EX:</span>
+              <input
+                type="number"
+                min="1"
+                max="10"
+                value={defaultLevels.ex}
+                onChange={(e) =>
+                  setDefaultLevels({ ...defaultLevels, ex: parseInt(e.target.value) || 1 })
+                }
+                className="border rounded p-1 w-16"
+              />
+            </label>
+            <label className="flex items-center gap-2">
+              <span>NS:</span>
+              <input
+                type="number"
+                min="1"
+                max="10"
+                value={defaultLevels.normal}
+                onChange={(e) =>
+                  setDefaultLevels({ ...defaultLevels, normal: parseInt(e.target.value) || 1 })
+                }
+                className="border rounded p-1 w-16"
+              />
+            </label>
+            <label className="flex items-center gap-2">
+              <span>PS:</span>
+              <input
+                type="number"
+                min="1"
+                max="10"
+                value={defaultLevels.passive}
+                onChange={(e) =>
+                  setDefaultLevels({ ...defaultLevels, passive: parseInt(e.target.value) || 1 })
+                }
+                className="border rounded p-1 w-16"
+              />
+            </label>
+            <label className="flex items-center gap-2">
+              <span>SS:</span>
+              <input
+                type="number"
+                min="1"
+                max="10"
+                value={defaultLevels.sub}
+                onChange={(e) =>
+                  setDefaultLevels({ ...defaultLevels, sub: parseInt(e.target.value) || 1 })
+                }
+                className="border rounded p-1 w-16"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowSettings(false)}
+              className="border px-2 py-1 bg-blue-500 text-white rounded"
+            >
+              OK
+            </button>
           </div>
         </div>
       )}
@@ -1412,7 +1706,7 @@ export default function TLMakerPage() {
                 const startTouch = (e: React.TouchEvent) => {
                   timer = setTimeout(() => {
                     const t = e.touches[0]
-                    setSelected({ type: 'marker', id: m.id })
+                    setSelected([{ type: 'marker', id: m.id }])
                     if (m.label) {
                       setMarkers((prev) =>
                         prev.map((mk) => ({ ...mk, show: mk.id === m.id }))
@@ -1428,7 +1722,9 @@ export default function TLMakerPage() {
                   <div
                     key={m.id}
                     className={`absolute bg-yellow-400 cursor-pointer opacity-70 ${
-                      selected?.type === 'marker' && selected.id === m.id ? 'ring-2 ring-red-500' : ''
+                      selected.some((sel) => sel.type === 'marker' && sel.id === m.id)
+                        ? 'ring-2 ring-red-500'
+                        : ''
                     }`}
                     style={{
                       left: m.time * timeScale,
@@ -1439,12 +1735,18 @@ export default function TLMakerPage() {
                     }}
                     onClick={(e) => {
                       e.stopPropagation()
-                      if (selected?.type === 'marker' && selected.id === m.id) {
+                      if (e.shiftKey) {
+                        setSelected((prev) => {
+                          const exists = prev.find((sel) => sel.type === 'marker' && sel.id === m.id)
+                          if (exists) return prev.filter((sel) => !(sel.type === 'marker' && sel.id === m.id))
+                          return [...prev, { type: 'marker', id: m.id }]
+                        })
+                      } else if (selected.length === 1 && selected[0].type === 'marker' && selected[0].id === m.id) {
                         setMarkers((prev) =>
                           prev.map((mk) => (mk.id === m.id ? { ...mk, show: !mk.show } : mk))
                         )
                       } else {
-                        setSelected({ type: 'marker', id: m.id })
+                        setSelected([{ type: 'marker', id: m.id }])
                         if (m.label) {
                           setMarkers((prev) =>
                             prev.map((mk) => ({ ...mk, show: mk.id === m.id }))
@@ -1520,10 +1822,7 @@ export default function TLMakerPage() {
                     const st = students.find((s) => s.id === rowStudents[ev.row])
                     const baseId = st?.styleOf || st?.altOf || st?.id || ''
                     const stats = userStats[baseId]
-                    const level =
-                      ev.type === 'normal'
-                        ? stats?.normal_skill || 1
-                        : stats?.ex_skill || 1
+                    const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
                     const skill =
                       ev.type === 'normal'
                         ? st?.skills?.normal
@@ -1534,11 +1833,9 @@ export default function TLMakerPage() {
                       ? students.find((s) => s.id === rowStudents[targetId])?.name ||
                         `行${targetId + 1}`
                       : undefined
-                    setSelected({ type: 'skill', id: ev.id })
+                    setSelected([{ type: 'skill', id: ev.id }])
                     if (ev.label) {
-                      setSkills((prev) =>
-                        prev.map((sk) => ({ ...sk, show: sk.id === ev.id }))
-                      )
+                      setSkills((prev) => prev.map((sk) => ({ ...sk, show: sk.id === ev.id })))
                     }
                     setSkillPopup({
                       id: ev.id,
@@ -1547,13 +1844,15 @@ export default function TLMakerPage() {
                       text: text || '',
                       target: targetName,
                     })
-                  }
-                }
+                 }
+               }
                 return (
                   <div
                     key={ev.id}
                     className={`absolute text-white text-xs px-1 overflow-hidden z-10 ${
-                      selected?.type === 'skill' && selected.id === ev.id ? 'ring-2 ring-red-500' : ''
+                      selected.some((sel) => sel.type === 'skill' && sel.id === ev.id)
+                        ? 'ring-2 ring-red-500'
+                        : ''
                     }`}
                     style={{
                       left: ev.start * timeScale,
@@ -1604,10 +1903,7 @@ export default function TLMakerPage() {
                       const st = students.find((s) => s.id === rowStudents[ev.row])
                       const baseId = st?.styleOf || st?.altOf || st?.id || ''
                       const stats = userStats[baseId]
-                      const level =
-                        ev.type === 'normal'
-                          ? stats?.normal_skill || 1
-                          : stats?.ex_skill || 1
+                      const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
                       const skill =
                         ev.type === 'normal'
                           ? st?.skills?.normal
@@ -1618,7 +1914,7 @@ export default function TLMakerPage() {
                         ? students.find((s) => s.id === rowStudents[targetId])?.name ||
                           `行${targetId + 1}`
                         : undefined
-                      if (selected?.type === 'skill' && selected.id === ev.id) {
+                      if (selected.some((sel) => sel.type === 'skill' && sel.id === ev.id)) {
                         const newShow = !ev.show
                         setSkills((prev) =>
                           prev.map((sk) =>
@@ -1636,8 +1932,14 @@ export default function TLMakerPage() {
                         } else if (skillPopup && skillPopup.id === ev.id) {
                           setSkillPopup(null)
                         }
+                      } else if (e.shiftKey) {
+                        setSelected((prev) => {
+                          const exists = prev.find((sel) => sel.type === 'skill' && sel.id === ev.id)
+                          if (exists) return prev.filter((sel) => !(sel.type === 'skill' && sel.id === ev.id))
+                          return [...prev, { type: 'skill', id: ev.id }]
+                        })
                       } else {
-                        setSelected({ type: 'skill', id: ev.id })
+                        setSelected([{ type: 'skill', id: ev.id }])
                         if (ev.label) {
                           setSkills((prev) =>
                             prev.map((sk) => ({ ...sk, show: sk.id === ev.id }))
@@ -1724,7 +2026,7 @@ export default function TLMakerPage() {
               removeRow(menuInfo.index)
               setMenuInfo(null)
             }}
-            className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+            className="block w-full text-left px-2 py-1 hover:bg-blue-600"
           >
             行削除
           </button>
@@ -1746,7 +2048,7 @@ export default function TLMakerPage() {
                     setBuffMenu({ id: eventMenu.id, x: eventMenu.x, y: eventMenu.y })
                     setEventMenu(null)
                   }}
-                  className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                  className="block w-full text-left px-2 py-1 hover:bg-blue-600"
                 >
                   バフ先設定
                 </button>
@@ -1760,19 +2062,19 @@ export default function TLMakerPage() {
               if (eventMenu.type === 'skill') {
                 const ev = skills.find((s) => s.id === eventMenu.id)
                 if (ev) {
-                  setCopied({ type: 'skill', data: { ...ev } })
+                  setCopied({ skills: [{ ...ev }], markers: [] })
                   removeSkill(ev.id)
                 }
               } else {
                 const mk = markers.find((m) => m.id === eventMenu.id)
                 if (mk) {
-                  setCopied({ type: 'marker', data: { ...mk } })
+                  setCopied({ skills: [], markers: [{ ...mk }] })
                   removeMarker(mk.id)
                 }
               }
               setEventMenu(null)
             }}
-            className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+            className="block w-full text-left px-2 py-1 hover:bg-blue-600"
           >
             カット
           </button>
@@ -1781,14 +2083,14 @@ export default function TLMakerPage() {
             onClick={() => {
               if (eventMenu.type === 'skill') {
                 const ev = skills.find((s) => s.id === eventMenu.id)
-                if (ev) setCopied({ type: 'skill', data: { ...ev } })
+                if (ev) setCopied({ skills: [{ ...ev }], markers: [] })
               } else {
                 const mk = markers.find((m) => m.id === eventMenu.id)
-                if (mk) setCopied({ type: 'marker', data: { ...mk } })
+                if (mk) setCopied({ skills: [], markers: [{ ...mk }] })
               }
               setEventMenu(null)
             }}
-            className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+            className="block w-full text-left px-2 py-1 hover:bg-blue-600"
           >
             コピー
           </button>
@@ -1799,7 +2101,7 @@ export default function TLMakerPage() {
                 setMoveModeSkill(eventMenu.id)
                 setEventMenu(null)
               }}
-              className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+              className="block w-full text-left px-2 py-1 hover:bg-blue-600"
             >
               移動モード
             </button>
@@ -1808,9 +2110,9 @@ export default function TLMakerPage() {
             <button
               type="button"
               onClick={() => {
-                const id = Date.now()
-                if (copied.type === 'skill') {
-                  const ev = copied.data as SkillEvent
+                const base = snapTime(playhead)
+                copied.skills.forEach((ev, idx) => {
+                  const id = Date.now() + idx
                   const duration = ev.end - ev.start
                   const travel = ev.travel || 0
                   const motion = ev.motion
@@ -1819,23 +2121,24 @@ export default function TLMakerPage() {
                     {
                       ...ev,
                       id,
-                      start: snapTime(playhead),
-                      end: snapTime(playhead + duration),
+                      start: base,
+                      end: snapTime(base + duration),
                       travel,
                       motion,
                       type: ev.type,
                     },
                   ])
-                } else {
-                  const mk = copied.data as MarkerEvent
+                })
+                copied.markers.forEach((mk, idx) => {
+                  const id = Date.now() + copied.skills.length + idx
                   setMarkers((prev) => [
                     ...prev,
-                    { ...mk, id, time: snapTime(playhead) },
+                    { ...mk, id, time: base },
                   ])
-                }
+                })
                 setEventMenu(null)
               }}
-              className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+              className="block w-full text-left px-2 py-1 hover:bg-blue-600"
             >
               ペースト
             </button>
@@ -1850,7 +2153,7 @@ export default function TLMakerPage() {
               }
               setEventMenu(null)
             }}
-            className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+            className="block w-full text-left px-2 py-1 hover:bg-blue-600"
           >
             削除
           </button>
@@ -1866,9 +2169,9 @@ export default function TLMakerPage() {
             <button
               type="button"
               onClick={() => {
-                const id = Date.now()
-                if (copied.type === 'skill') {
-                  const ev = copied.data as SkillEvent
+                const base = snapTime(playhead)
+                copied.skills.forEach((ev, idx) => {
+                  const id = Date.now() + idx
                   const duration = ev.end - ev.start
                   const travel = ev.travel || 0
                   setSkills((prev) => [
@@ -1876,22 +2179,23 @@ export default function TLMakerPage() {
                     {
                       ...ev,
                       id,
-                      start: snapTime(playhead),
-                      end: snapTime(playhead + duration),
+                      start: base,
+                      end: snapTime(base + duration),
                       travel,
                       type: ev.type,
                     },
                   ])
-                } else {
-                  const mk = copied.data as MarkerEvent
+                })
+                copied.markers.forEach((mk, idx) => {
+                  const id = Date.now() + copied.skills.length + idx
                   setMarkers((prev) => [
                     ...prev,
-                    { ...mk, id, time: snapTime(playhead) },
+                    { ...mk, id, time: base },
                   ])
-                }
+                })
                 setPlayheadMenu(null)
               }}
-              className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+              className="block w-full text-left px-2 py-1 hover:bg-blue-600"
             >
               ここにペースト
             </button>
@@ -1899,7 +2203,7 @@ export default function TLMakerPage() {
           <button
             type="button"
             onClick={() => setPlayheadMenu(null)}
-            className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+            className="block w-full text-left px-2 py-1 hover:bg-blue-600"
           >
           閉じる
         </button>
@@ -1925,7 +2229,7 @@ export default function TLMakerPage() {
                   )
                   setBuffMenu(null)
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
               >
                 {st ? st.name : `行${idx + 1}`}
               </button>
