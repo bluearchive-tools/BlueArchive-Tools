@@ -1273,6 +1273,9 @@ export default function TLMakerPage() {
         >
           <FontAwesomeIcon icon={faFileImport} />
         </button>
+        <span className="ml-4 font-mono text-black">
+          {formatRemain(totalSeconds - playhead)}
+        </span>
         <div className="flex items-center gap-2 ml-auto">
           <span className="text-sm">拡大</span>
           <input
@@ -1707,14 +1710,7 @@ export default function TLMakerPage() {
               >
                 {totalSeconds}
               </div>
-              <div
-                className="absolute -top-4 left-0 pointer-events-none"
-                style={{ left: playhead * timeScale }}
-              >
-                <span className="absolute -translate-x-1/2 text-black whitespace-nowrap">
-                  {formatRemain(totalSeconds - playhead)}
-                </span>
-              </div>
+              {/* remaining time moved to toolbar */}
             </div>
             <div
               className="relative border bg-gray-900"
