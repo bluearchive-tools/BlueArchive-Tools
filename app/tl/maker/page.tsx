@@ -184,6 +184,18 @@ export default function TLMakerPage() {
   }, [showCreateModal, selectedGroup, groups])
 
   useEffect(() => {
+    const raw = localStorage.getItem('tlLength')
+    if (raw) {
+      const n = parseInt(raw)
+      if (!isNaN(n)) setTotalSeconds(n)
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('tlLength', String(totalSeconds))
+  }, [totalSeconds])
+
+  useEffect(() => {
     const raw = localStorage.getItem('tlDefaultSkillLevels')
     if (raw) {
       try {
@@ -288,7 +300,7 @@ export default function TLMakerPage() {
       const dur = st.normalDuration || 0
       const travel = st.normalHitDelay || 0
       const motion = st.normalMotionDuration || 0
-      for (let t = interval; t <= totalSeconds; t += interval) {
+      for (let t = interval; t < totalSeconds; t += interval) {
         let start = snapTime(t)
         let end = snapTime(t + dur)
         skills.forEach((ev) => {
@@ -303,6 +315,7 @@ export default function TLMakerPage() {
             }
           }
         })
+        if (start >= totalSeconds) continue
         events.push({
           id: now + events.length,
           row: idx,
@@ -640,7 +653,7 @@ export default function TLMakerPage() {
 
   const rowHeight = 42 // px
   const rows = rowStudents.length
-  const totalSeconds = 240
+  const [totalSeconds, setTotalSeconds] = useState(240)
 
   const tickStep = timeScale >= 180 ? 0.1 : timeScale >= 40 ? 0.5 : 1
   const labelStep =
@@ -659,6 +672,14 @@ export default function TLMakerPage() {
     const g = parseInt(hex.slice(3, 5), 16)
     const b = parseInt(hex.slice(5, 7), 16)
     return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+
+  const formatRemain = (t: number) => {
+    const clamped = Math.max(0, t)
+    const m = Math.floor(clamped / 60)
+    const s = clamped - m * 60
+    const str = s.toFixed(3).padStart(6, '0')
+    return `${m}:${str}`
   }
 
   const formatSkillText = (
@@ -1520,6 +1541,16 @@ export default function TLMakerPage() {
                 className="border rounded p-1 w-16"
               />
             </label>
+            <div className="text-sm font-bold mt-2">TL長さ</div>
+            <select
+              value={totalSeconds}
+              onChange={(e) => setTotalSeconds(parseInt(e.target.value))}
+              className="border rounded p-1"
+            >
+              <option value={180}>3:00</option>
+              <option value={240}>4:00</option>
+              <option value={270}>4:30</option>
+            </select>
             <div className="text-sm font-bold mt-2">オブジェクト色</div>
             <table className="text-sm border-collapse">
               <thead>
@@ -1746,9 +1777,14 @@ export default function TLMakerPage() {
               }}
             >
               <div
-                className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-30"
+                className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-0"
                 style={{ left: playhead * timeScale }}
               >
+                <div
+                  className="absolute -top-4 left-1/2 -translate-x-1/2 text-white text-xs whitespace-nowrap pointer-events-none"
+                >
+                  {formatRemain(totalSeconds - playhead)}
+                </div>
                 <div
                   className="absolute -left-2 top-0 bottom-0 w-4 cursor-ew-resize"
                   onMouseDown={(e) => {
