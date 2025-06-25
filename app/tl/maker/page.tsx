@@ -656,13 +656,14 @@ export default function TLMakerPage() {
   const rowHeight = 42 // px
   const rows = rowStudents.length
 
-  const INITIAL_COST = 5
+  const INITIAL_COST = 0
   const MAX_COST = 10
 
   const calcCost = useCallback(
     (t: number) => {
       const members = rowStudents.filter((id) => id).length
-      let recovery = 0.07 * members * t
+      const recoveryTime = Math.max(0, t - 2)
+      let recovery = 0.07 * members * recoveryTime
 
       rowStudents.forEach((id) => {
         const st = students.find((s) => s.id === id)
