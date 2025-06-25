@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -8,6 +8,8 @@ import {
   faFileImport,
   faTimes,
   faCrosshairs,
+  faUndo,
+  faRedo,
 } from '@fortawesome/free-solid-svg-icons'
 
 interface Student {
@@ -86,6 +88,15 @@ interface SquadGroup {
   squads: Squad[]
 }
 
+interface ProjectSnapshot {
+  projectName: string
+  rowStudents: string[]
+  skills: SkillEvent[]
+  markers: MarkerEvent[]
+  groupId: string
+  squadIndex: number
+}
+
 export default function TLMakerPage() {
   const [students, setStudents] = useState<Student[]>([])
   const [rowStudents, setRowStudents] = useState<string[]>(['', '', '', '', '', ''])
@@ -147,7 +158,11 @@ export default function TLMakerPage() {
   const [showFileMenu, setShowFileMenu] = useState(false)
   const [showGroupMenu, setShowGroupMenu] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-  const [defaultLevels, setDefaultLevels] = useState({ ex: 1, normal: 1, passive: 1, sub: 1 })
+  const [defaultLevels, setDefaultLevels] = useState({ ex: 5, normal: 10, passive: 10, sub: 10 })
+  const prevSnapshot = useRef<ProjectSnapshot | null>(null)
+  const undoStack = useRef<ProjectSnapshot[]>([])
+  const redoStack = useRef<ProjectSnapshot[]>([])
+  const isRestoring = useRef(false)
 
   useEffect(() => {
     if (showCreateModal && !selectedGroup && groups.length > 0) {
@@ -169,6 +184,29 @@ export default function TLMakerPage() {
   useEffect(() => {
     localStorage.setItem('tlDefaultSkillLevels', JSON.stringify(defaultLevels))
   }, [defaultLevels])
+
+  const getSnapshot = useCallback((): ProjectSnapshot => ({
+    projectName,
+    rowStudents: [...rowStudents],
+    skills: skills.map((s) => ({ ...s })),
+    markers: markers.map((m) => ({ ...m })),
+    groupId: selectedGroup?.id ?? '',
+    squadIndex,
+  }), [projectName, rowStudents, skills, markers, selectedGroup, squadIndex])
+
+  useEffect(() => {
+    if (!initialized || isRestoring.current) return
+    const snap = getSnapshot()
+    if (
+      prevSnapshot.current &&
+      JSON.stringify(prevSnapshot.current) !== JSON.stringify(snap)
+    ) {
+      undoStack.current.push(prevSnapshot.current)
+      if (undoStack.current.length > 50) undoStack.current.shift()
+      redoStack.current = []
+    }
+    prevSnapshot.current = snap
+  }, [projectName, rowStudents, skills, markers, selectedGroup, squadIndex, initialized, getSnapshot])
 
   const hidePopups = () => {
     if (menuInfo) setMenuInfo(null)
@@ -342,6 +380,32 @@ export default function TLMakerPage() {
     a.download = `${projectName || 'timeline'}.json`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  const undo = () => {
+    const snap = undoStack.current.pop()
+    if (!snap) return
+    redoStack.current.push(getSnapshot())
+    restoreSnapshot(snap)
+  }
+
+  const redo = () => {
+    const snap = redoStack.current.pop()
+    if (!snap) return
+    undoStack.current.push(getSnapshot())
+    restoreSnapshot(snap)
+  }
+
+  const restoreSnapshot = (snap: ProjectSnapshot) => {
+    isRestoring.current = true
+    setProjectName(snap.projectName)
+    setRowStudents([...snap.rowStudents])
+    setSkills(snap.skills.map((s) => ({ ...s })))
+    setMarkers(snap.markers.map((m) => ({ ...m })))
+    const g = groups.find((gr) => gr.id === snap.groupId) || null
+    setSelectedGroup(g)
+    setSquadIndex(snap.squadIndex)
+    isRestoring.current = false
   }
 
   const switchSquad = (index: number) => {
@@ -1117,6 +1181,22 @@ export default function TLMakerPage() {
           )}
         </div>
         <button type="button" className="px-1">再生</button>
+        <button
+          type="button"
+          onClick={undo}
+          className="border rounded p-1 ml-2"
+          aria-label="元に戻す"
+        >
+          <FontAwesomeIcon icon={faUndo} />
+        </button>
+        <button
+          type="button"
+          onClick={redo}
+          className="border rounded p-1 ml-1"
+          aria-label="やり直す"
+        >
+          <FontAwesomeIcon icon={faRedo} />
+        </button>
         <button
           type="button"
           onClick={() => setShowImport(true)}
