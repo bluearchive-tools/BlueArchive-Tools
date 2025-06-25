@@ -164,12 +164,12 @@ export default function TLMakerPage() {
   const [skillColors, setSkillColors] = useState({
     ex: {
       travel: { color: '#3b82f6', alpha: 0.5 },
-      motion: { color: '#3b82f6', alpha: 1 },
+      motion: { color: '#3b82f6', alpha: 0.9 },
       rest: { color: '#3b82f6', alpha: 0.5 },
     },
     normal: {
       travel: { color: '#10b981', alpha: 0.5 },
-      motion: { color: '#10b981', alpha: 1 },
+      motion: { color: '#10b981', alpha: 0.9 },
       rest: { color: '#10b981', alpha: 0.5 },
     },
   })
