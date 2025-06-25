@@ -31,6 +31,7 @@ interface Student {
   exMotionDuration?: number
   exHitDelay?: number
   normalDuration?: number
+  normalMotionDuration?: number
   normalInterval?: number
   normalHitDelay?: number
   skills?: {
@@ -195,6 +196,12 @@ export default function TLMakerPage() {
   }), [projectName, rowStudents, skills, markers, selectedGroup, squadIndex])
 
   useEffect(() => {
+    if (initialized) {
+      prevSnapshot.current = getSnapshot()
+    }
+  }, [initialized, getSnapshot])
+
+  useEffect(() => {
     if (!initialized || isRestoring.current) return
     const snap = getSnapshot()
     if (
@@ -202,7 +209,7 @@ export default function TLMakerPage() {
       JSON.stringify(prevSnapshot.current) !== JSON.stringify(snap)
     ) {
       undoStack.current.push(prevSnapshot.current)
-      if (undoStack.current.length > 50) undoStack.current.shift()
+      if (undoStack.current.length > 200) undoStack.current.shift()
       redoStack.current = []
     }
     prevSnapshot.current = snap
@@ -253,6 +260,7 @@ export default function TLMakerPage() {
       const interval = st.normalInterval
       const dur = st.normalDuration || 0
       const travel = st.normalHitDelay || 0
+      const motion = st.normalMotionDuration || 0
       for (let t = interval; t <= totalSeconds; t += interval) {
         let start = snapTime(t)
         let end = snapTime(t + dur)
@@ -275,6 +283,7 @@ export default function TLMakerPage() {
           end,
           label: st.skills?.normal?.title || 'NS',
           travel,
+          motion,
           type: 'normal',
         })
       }
@@ -405,7 +414,11 @@ export default function TLMakerPage() {
     const g = groups.find((gr) => gr.id === snap.groupId) || null
     setSelectedGroup(g)
     setSquadIndex(snap.squadIndex)
-    isRestoring.current = false
+    prevSnapshot.current = snap
+    setTimeout(() => {
+      prevSnapshot.current = getSnapshot()
+      isRestoring.current = false
+    })
   }
 
   const switchSquad = (index: number) => {
@@ -545,7 +558,7 @@ export default function TLMakerPage() {
       const motion =
         skillKind === 'ex'
           ? Math.max(0, (st?.exMotionDuration || 0) - travel)
-          : undefined
+          : Math.max(0, (st?.normalMotionDuration || 0) - travel)
       if (skillKind === 'normal') {
         skills.forEach((ev) => {
           if (ev.row === row && ev.type === 'ex') {
