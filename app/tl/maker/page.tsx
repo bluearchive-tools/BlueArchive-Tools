@@ -138,6 +138,7 @@ export default function TLMakerPage() {
   const containerRef = useRef<HTMLDivElement>(null)
   const playheadTimer = useRef<NodeJS.Timeout | null>(null)
   const [playhead, setPlayhead] = useState(2)
+  const [totalSeconds, setTotalSeconds] = useState(240)
   const [selected, setSelected] = useState<{ type: 'skill' | 'marker'; id: number }[]>([])
   const [copied, setCopied] = useState<{ skills: SkillEvent[]; markers: MarkerEvent[] } | null>(null)
   const [showEditMenu, setShowEditMenu] = useState(false)
@@ -653,7 +654,6 @@ export default function TLMakerPage() {
 
   const rowHeight = 42 // px
   const rows = rowStudents.length
-  const [totalSeconds, setTotalSeconds] = useState(240)
 
   const tickStep = timeScale >= 180 ? 0.1 : timeScale >= 40 ? 0.5 : 1
   const labelStep =
