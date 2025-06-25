@@ -10,6 +10,7 @@ import {
   faCrosshairs,
   faUndo,
   faRedo,
+  faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons'
 
 interface Student {
@@ -137,6 +138,7 @@ export default function TLMakerPage() {
   const [skillKind, setSkillKind] = useState<'ex' | 'normal'>('ex')
   const [timeScale, setTimeScale] = useState(20) // px per second
   const [applyTravel, setApplyTravel] = useState(false)
+  const [waitCost, setWaitCost] = useState(false)
   const [zoomByPlayhead, setZoomByPlayhead] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const playheadTimer = useRef<NodeJS.Timeout | null>(null)
@@ -601,6 +603,18 @@ export default function TLMakerPage() {
         skillKind === 'ex'
           ? Math.max(0, (st?.exMotionDuration || 0) - travel)
           : Math.max(0, (st?.normalMotionDuration || 0) - travel)
+      if (skillKind === 'ex' && waitCost && st?.cost) {
+        let t = s
+        while (t <= totalSeconds) {
+          if (calcCost(t) >= st.cost) break
+          t = snapTime(t + 0.1)
+        }
+        if (t !== s) {
+          const delta = t - s
+          s = t
+          e = snapTime(e + delta)
+        }
+      }
       if (skillKind === 'normal') {
         skills.forEach((ev) => {
           if (ev.row === row && ev.type === 'ex') {
@@ -688,12 +702,22 @@ export default function TLMakerPage() {
         })
 
       const current = INITIAL_COST + recovery - spent
-      return Math.max(0, Math.min(MAX_COST, current))
+      return Math.min(MAX_COST, current)
     },
     [rowStudents, students, skills, userStats, defaultLevels]
   )
 
   const currentCost = useMemo(() => calcCost(playhead), [calcCost, playhead])
+
+  const dangerSkills = useMemo(() => {
+    const set = new Set<number>()
+    skills
+      .filter((ev) => ev.type === 'ex')
+      .forEach((ev) => {
+        if (calcCost(ev.start) < 0) set.add(ev.id)
+      })
+    return set
+  }, [skills, calcCost])
 
   const tickStep = timeScale >= 180 ? 0.1 : timeScale >= 40 ? 0.5 : 1
   const labelStep =
@@ -1437,6 +1461,16 @@ export default function TLMakerPage() {
                 />
                 <span>着弾時間を考慮</span>
               </label>
+              {skillKind === 'ex' && (
+                <label className="flex items-center gap-1">
+                  <input
+                    type="checkbox"
+                    checked={waitCost}
+                    onChange={(e) => setWaitCost(e.target.checked)}
+                  />
+                  <span>コストが貯まったら</span>
+                </label>
+              )}
             </>
           )}
           {selectedType === 'event' && (
@@ -2190,6 +2224,11 @@ export default function TLMakerPage() {
                       )
                     })()}
                     <span className="relative z-10 pointer-events-none">{ev.label}</span>
+                    {dangerSkills.has(ev.id) && (
+                      <span className="absolute -top-1 -right-1 text-red-600">
+                        <FontAwesomeIcon icon={faExclamationTriangle} />
+                      </span>
+                    )}
                     {ev.show && ev.label && (
                       <div
                         className={`absolute -top-6 left-1/2 -translate-x-1/2 ${
