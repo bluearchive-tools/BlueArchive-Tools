@@ -186,6 +186,12 @@ export default function TLMakerPage() {
     localStorage.setItem('tlDefaultSkillLevels', JSON.stringify(defaultLevels))
   }, [defaultLevels])
 
+  useEffect(() => {
+    if (initialized) {
+      prevSnapshot.current = getSnapshot()
+    }
+  }, [initialized, getSnapshot])
+
   const getSnapshot = useCallback((): ProjectSnapshot => ({
     projectName,
     rowStudents: [...rowStudents],
@@ -408,6 +414,7 @@ export default function TLMakerPage() {
     const g = groups.find((gr) => gr.id === snap.groupId) || null
     setSelectedGroup(g)
     setSquadIndex(snap.squadIndex)
+    prevSnapshot.current = snap
     isRestoring.current = false
   }
 
@@ -838,7 +845,7 @@ export default function TLMakerPage() {
           </button>
           {showFileMenu && (
             <div
-              className="absolute left-0 mt-1 border border-gray-600 bg-gray-800 text-gray-100 rounded-sm shadow-lg z-10 text-sm w-32"
+              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-32"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -847,7 +854,7 @@ export default function TLMakerPage() {
                   setShowCreateModal(true)
                   closeMenus()
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
               >
                 TLを作成
               </button>
@@ -857,11 +864,11 @@ export default function TLMakerPage() {
                   downloadProject()
                   closeMenus()
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
               >
                 TLを保存
               </button>
-              <label className="block w-full text-left px-2 py-1 hover:bg-blue-600 cursor-pointer">
+              <label className="block w-full text-left px-2 py-1 hover:bg-gray-200 cursor-pointer">
                 TLを読み込み
                 <input
                   type="file"
@@ -897,7 +904,7 @@ export default function TLMakerPage() {
                   closeMenus()
                   setShowSettings(true)
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
               >
                 設定
               </button>
@@ -918,7 +925,7 @@ export default function TLMakerPage() {
           </button>
           {showMenu && (
             <div
-              className="absolute left-0 mt-1 border border-gray-600 bg-gray-800 text-gray-100 rounded-sm shadow-lg z-10 text-sm w-32"
+              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-32"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -935,7 +942,7 @@ export default function TLMakerPage() {
                   setShowForm(true)
                   setShowMenu(false)
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
               >
                 スキル追加
               </button>
@@ -947,7 +954,7 @@ export default function TLMakerPage() {
                   setShowForm(true)
                   setShowMenu(false)
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
               >
                 イベント追加
               </button>
@@ -957,7 +964,7 @@ export default function TLMakerPage() {
                   addRow()
                   setShowMenu(false)
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
               >
                 行追加
               </button>
@@ -978,7 +985,7 @@ export default function TLMakerPage() {
           </button>
           {showEditMenu && (
             <div
-              className="absolute left-0 mt-1 border border-gray-600 bg-gray-800 text-gray-100 rounded-sm shadow-lg z-10 text-sm w-32"
+              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-32"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -1003,7 +1010,7 @@ export default function TLMakerPage() {
                   }
                   setShowEditMenu(false)
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
               >
                 カット
               </button>
@@ -1026,7 +1033,7 @@ export default function TLMakerPage() {
                   }
                   setShowEditMenu(false)
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
               >
                 コピー
               </button>
@@ -1063,7 +1070,7 @@ export default function TLMakerPage() {
                   }
                   setShowEditMenu(false)
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
               >
                 ペースト
               </button>
@@ -1081,7 +1088,7 @@ export default function TLMakerPage() {
                   }
                   setShowEditMenu(false)
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
               >
                 削除
               </button>
@@ -1102,33 +1109,33 @@ export default function TLMakerPage() {
           </button>
           {showTools && (
             <div
-              className="absolute left-0 mt-1 border border-gray-600 bg-gray-800 text-gray-100 rounded-sm shadow-lg z-10 text-sm"
+              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 type="button"
                 onClick={() => setShowSquadMenu(!showSquadMenu)}
-                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
               >
                 部隊の変更
               </button>
               <button
                 type="button"
                 onClick={() => setShowGroupMenu(!showGroupMenu)}
-                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
               >
                 グループの変更
               </button>
               <Link
                 href="/squads"
-                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
                 onClick={() => closeMenus()}
               >
                 部隊の編集
               </Link>
               <Link
                 href="/tl/damage"
-                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
                 onClick={() => closeMenus()}
               >
                 ダメージ計算
@@ -1137,7 +1144,7 @@ export default function TLMakerPage() {
           )}
           {showSquadMenu && selectedGroup && selectedGroup.squads.length > 1 && (
             <div
-              className="absolute left-0 mt-1 border border-gray-600 bg-gray-800 text-gray-100 rounded-sm shadow-lg z-20 text-sm px-2 py-1"
+              className="absolute left-0 mt-1 border bg-white rounded shadow z-20 text-sm px-2 py-1"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex gap-1">
@@ -1150,7 +1157,7 @@ export default function TLMakerPage() {
                       setShowSquadMenu(false)
                       setShowTools(false)
                     }}
-                    className="px-2 py-1 hover:bg-blue-600 whitespace-nowrap"
+                    className="px-2 py-1 hover:bg-gray-200 whitespace-nowrap"
                   >
                     {selectedGroup.name} #{idx + 1}
                   </button>
@@ -1160,7 +1167,7 @@ export default function TLMakerPage() {
           )}
           {showGroupMenu && groups.length > 0 && (
             <div
-              className="absolute left-0 mt-1 border border-gray-600 bg-gray-800 text-gray-100 rounded-sm shadow-lg z-20 text-sm px-2 py-1"
+              className="absolute left-0 mt-1 border bg-white rounded shadow z-20 text-sm px-2 py-1"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex gap-1">
@@ -1174,7 +1181,7 @@ export default function TLMakerPage() {
                       setShowGroupMenu(false)
                       setShowTools(false)
                     }}
-                    className="px-2 py-1 hover:bg-blue-600 whitespace-nowrap"
+                    className="px-2 py-1 hover:bg-gray-200 whitespace-nowrap"
                   >
                     {g.name}
                   </button>
@@ -2026,7 +2033,7 @@ export default function TLMakerPage() {
               removeRow(menuInfo.index)
               setMenuInfo(null)
             }}
-            className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+            className="block w-full text-left px-2 py-1 hover:bg-gray-200"
           >
             行削除
           </button>
@@ -2048,7 +2055,7 @@ export default function TLMakerPage() {
                     setBuffMenu({ id: eventMenu.id, x: eventMenu.x, y: eventMenu.y })
                     setEventMenu(null)
                   }}
-                  className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+                  className="block w-full text-left px-2 py-1 hover:bg-gray-200"
                 >
                   バフ先設定
                 </button>
@@ -2074,7 +2081,7 @@ export default function TLMakerPage() {
               }
               setEventMenu(null)
             }}
-            className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+            className="block w-full text-left px-2 py-1 hover:bg-gray-200"
           >
             カット
           </button>
@@ -2090,7 +2097,7 @@ export default function TLMakerPage() {
               }
               setEventMenu(null)
             }}
-            className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+            className="block w-full text-left px-2 py-1 hover:bg-gray-200"
           >
             コピー
           </button>
@@ -2101,7 +2108,7 @@ export default function TLMakerPage() {
                 setMoveModeSkill(eventMenu.id)
                 setEventMenu(null)
               }}
-              className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+              className="block w-full text-left px-2 py-1 hover:bg-gray-200"
             >
               移動モード
             </button>
@@ -2138,7 +2145,7 @@ export default function TLMakerPage() {
                 })
                 setEventMenu(null)
               }}
-              className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+              className="block w-full text-left px-2 py-1 hover:bg-gray-200"
             >
               ペースト
             </button>
@@ -2153,7 +2160,7 @@ export default function TLMakerPage() {
               }
               setEventMenu(null)
             }}
-            className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+            className="block w-full text-left px-2 py-1 hover:bg-gray-200"
           >
             削除
           </button>
@@ -2195,7 +2202,7 @@ export default function TLMakerPage() {
                 })
                 setPlayheadMenu(null)
               }}
-              className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+              className="block w-full text-left px-2 py-1 hover:bg-gray-200"
             >
               ここにペースト
             </button>
@@ -2203,7 +2210,7 @@ export default function TLMakerPage() {
           <button
             type="button"
             onClick={() => setPlayheadMenu(null)}
-            className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+            className="block w-full text-left px-2 py-1 hover:bg-gray-200"
           >
           閉じる
         </button>
@@ -2229,7 +2236,7 @@ export default function TLMakerPage() {
                   )
                   setBuffMenu(null)
                 }}
-                className="block w-full text-left px-2 py-1 hover:bg-blue-600"
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
               >
                 {st ? st.name : `行${idx + 1}`}
               </button>
