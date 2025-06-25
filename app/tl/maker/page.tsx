@@ -194,8 +194,20 @@ export default function TLMakerPage() {
       const dur = st.normalDuration || 0
       const travel = st.normalHitDelay || 0
       for (let t = interval; t <= totalSeconds; t += interval) {
-        const start = snapTime(t)
-        const end = snapTime(t + dur)
+        let start = snapTime(t)
+        let end = snapTime(t + dur)
+        skills.forEach((ev) => {
+          if (ev.row === idx && ev.type === 'ex') {
+            const motionEnd = snapTime(
+              ev.start + (ev.travel || 0) + (ev.motion || 0)
+            )
+            if (start >= ev.start && start < motionEnd) {
+              const delta = motionEnd - start
+              start = motionEnd
+              end = snapTime(end + delta)
+            }
+          }
+        })
         events.push({
           id: now + events.length,
           row: idx,
@@ -433,8 +445,9 @@ export default function TLMakerPage() {
       if (skillKind === 'normal') {
         skills.forEach((ev) => {
           if (ev.row === row && ev.type === 'ex') {
-            const motionEnd =
+            const motionEnd = snapTime(
               ev.start + (ev.travel || 0) + (ev.motion || 0)
+            )
             if (s >= ev.start && s < motionEnd) {
               const delta = motionEnd - s
               s = motionEnd
