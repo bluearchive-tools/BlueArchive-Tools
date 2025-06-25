@@ -593,9 +593,7 @@ export default function TLMakerPage() {
           : st?.normalHitDelay || 0
       const duration = end - start
       let s = snapTime(applyTravel ? start - travel : start)
-      let e = snapTime(
-        applyTravel ? start + duration : start + travel + duration
-      )
+      let e = snapTime(start + duration)
       const motion =
         skillKind === 'ex'
           ? Math.max(0, (st?.exMotionDuration || 0) - travel)
