@@ -138,6 +138,7 @@ export default function TLMakerPage() {
   const containerRef = useRef<HTMLDivElement>(null)
   const playheadTimer = useRef<NodeJS.Timeout | null>(null)
   const [playhead, setPlayhead] = useState(2)
+  const [totalSeconds, setTotalSeconds] = useState(240)
   const [selected, setSelected] = useState<{ type: 'skill' | 'marker'; id: number }[]>([])
   const [copied, setCopied] = useState<{ skills: SkillEvent[]; markers: MarkerEvent[] } | null>(null)
   const [showEditMenu, setShowEditMenu] = useState(false)
@@ -160,6 +161,18 @@ export default function TLMakerPage() {
   const [showGroupMenu, setShowGroupMenu] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [defaultLevels, setDefaultLevels] = useState({ ex: 5, normal: 10, passive: 10, sub: 10 })
+  const [skillColors, setSkillColors] = useState({
+    ex: {
+      travel: { color: '#3b82f6', alpha: 0.5 },
+      motion: { color: '#3b82f6', alpha: 0.9 },
+      rest: { color: '#3b82f6', alpha: 0.5 },
+    },
+    normal: {
+      travel: { color: '#10b981', alpha: 0.5 },
+      motion: { color: '#10b981', alpha: 0.9 },
+      rest: { color: '#10b981', alpha: 0.5 },
+    },
+  })
   const prevSnapshot = useRef<ProjectSnapshot | null>(null)
   const undoStack = useRef<ProjectSnapshot[]>([])
   const redoStack = useRef<ProjectSnapshot[]>([])
@@ -170,6 +183,18 @@ export default function TLMakerPage() {
       setSelectedGroup(groups[0])
     }
   }, [showCreateModal, selectedGroup, groups])
+
+  useEffect(() => {
+    const raw = localStorage.getItem('tlLength')
+    if (raw) {
+      const n = parseInt(raw)
+      if (!isNaN(n)) setTotalSeconds(n)
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('tlLength', String(totalSeconds))
+  }, [totalSeconds])
 
   useEffect(() => {
     const raw = localStorage.getItem('tlDefaultSkillLevels')
@@ -185,6 +210,21 @@ export default function TLMakerPage() {
   useEffect(() => {
     localStorage.setItem('tlDefaultSkillLevels', JSON.stringify(defaultLevels))
   }, [defaultLevels])
+
+  useEffect(() => {
+    const raw = localStorage.getItem('tlSkillColors')
+    if (raw) {
+      try {
+        setSkillColors(JSON.parse(raw))
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('tlSkillColors', JSON.stringify(skillColors))
+  }, [skillColors])
 
   const getSnapshot = useCallback((): ProjectSnapshot => ({
     projectName,
@@ -261,7 +301,7 @@ export default function TLMakerPage() {
       const dur = st.normalDuration || 0
       const travel = st.normalHitDelay || 0
       const motion = st.normalMotionDuration || 0
-      for (let t = interval; t <= totalSeconds; t += interval) {
+      for (let t = interval; t < totalSeconds; t += interval) {
         let start = snapTime(t)
         let end = snapTime(t + dur)
         skills.forEach((ev) => {
@@ -276,6 +316,7 @@ export default function TLMakerPage() {
             }
           }
         })
+        if (start >= totalSeconds) continue
         events.push({
           id: now + events.length,
           row: idx,
@@ -613,7 +654,6 @@ export default function TLMakerPage() {
 
   const rowHeight = 42 // px
   const rows = rowStudents.length
-  const totalSeconds = 240
 
   const tickStep = timeScale >= 180 ? 0.1 : timeScale >= 40 ? 0.5 : 1
   const labelStep =
@@ -625,6 +665,21 @@ export default function TLMakerPage() {
     const offsetIndex = n % 3
     const offset = offsetIndex === 1 ? 0.033 : offsetIndex === 2 ? 0.066 : 0
     return parseFloat((group * 0.1 + offset).toFixed(3))
+  }
+
+  const toRgba = (hex: string, alpha: number) => {
+    const r = parseInt(hex.slice(1, 3), 16)
+    const g = parseInt(hex.slice(3, 5), 16)
+    const b = parseInt(hex.slice(5, 7), 16)
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+
+  const formatRemain = (t: number) => {
+    const clamped = Math.max(0, t)
+    const m = Math.floor(clamped / 60)
+    const s = clamped - m * 60
+    const str = s.toFixed(3).padStart(6, '0')
+    return `${m}:${str}`
   }
 
   const formatSkillText = (
@@ -1218,6 +1273,9 @@ export default function TLMakerPage() {
         >
           <FontAwesomeIcon icon={faFileImport} />
         </button>
+        <span className="ml-4 font-mono text-black">
+          {formatRemain(totalSeconds - playhead)}
+        </span>
         <div className="flex items-center gap-2 ml-auto">
           <span className="text-sm">拡大</span>
           <input
@@ -1486,6 +1544,74 @@ export default function TLMakerPage() {
                 className="border rounded p-1 w-16"
               />
             </label>
+            <div className="text-sm font-bold mt-2">TL長さ</div>
+            <select
+              value={totalSeconds}
+              onChange={(e) => setTotalSeconds(parseInt(e.target.value))}
+              className="border rounded p-1"
+            >
+              <option value={180}>3:00</option>
+              <option value={240}>4:00</option>
+              <option value={270}>4:30</option>
+            </select>
+            <div className="text-sm font-bold mt-2">オブジェクト色</div>
+            <table className="text-sm border-collapse">
+              <thead>
+                <tr>
+                  <th className="text-left"></th>
+                  <th className="px-1">着弾まで</th>
+                  <th className="px-1">モーション終了まで</th>
+                  <th className="px-1">スキル終了まで</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(['ex', 'normal'] as const).map((t) => (
+                  <tr key={t}>
+                    <th className="text-left px-1">{t === 'ex' ? 'EX' : 'NS'}</th>
+                    {(['travel', 'motion', 'rest'] as const).map((p) => (
+                      <td key={p} className="px-1 space-x-1">
+                        <input
+                          type="color"
+                          value={skillColors[t][p].color}
+                          onChange={(e) =>
+                            setSkillColors({
+                              ...skillColors,
+                              [t]: {
+                                ...skillColors[t],
+                                [p]: {
+                                  ...skillColors[t][p],
+                                  color: e.target.value,
+                                },
+                              },
+                            })
+                          }
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="1"
+                          step="0.05"
+                          value={skillColors[t][p].alpha}
+                          onChange={(e) =>
+                            setSkillColors({
+                              ...skillColors,
+                              [t]: {
+                                ...skillColors[t],
+                                [p]: {
+                                  ...skillColors[t][p],
+                                  alpha: parseFloat(e.target.value) || 0,
+                                },
+                              },
+                            })
+                          }
+                          className="w-16 border rounded p-1"
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
             <button
               type="button"
               onClick={() => setShowSettings(false)}
@@ -1559,7 +1685,7 @@ export default function TLMakerPage() {
           }}
         >
           <div className="relative" style={{ width: totalSeconds * timeScale }}>
-            <div className="flex text-xs h-5">
+            <div className="flex text-xs h-5 relative">
               {Array.from({ length: totalSeconds / tickStep }, (_, idx) => {
                 const t = +(idx * tickStep).toFixed(1)
                 const ratio = t / labelStep
@@ -1584,6 +1710,7 @@ export default function TLMakerPage() {
               >
                 {totalSeconds}
               </div>
+              {/* remaining time moved to toolbar */}
             </div>
             <div
               className="relative border bg-gray-900"
@@ -1654,8 +1781,8 @@ export default function TLMakerPage() {
               }}
             >
               <div
-                className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-30"
-                style={{ left: playhead * timeScale }}
+                className="absolute top-0 bottom-0 w-0.5 bg-red-500"
+                style={{ left: playhead * timeScale, zIndex: 15 }}
               >
                 <div
                   className="absolute -left-2 top-0 bottom-0 w-4 cursor-ew-resize"
@@ -1974,7 +2101,8 @@ export default function TLMakerPage() {
                     }}
                   >
                     {(() => {
-                      const color = ev.type === 'ex' ? 'bg-blue-500' : 'bg-green-500'
+                      const colors =
+                        ev.type === 'ex' ? skillColors.ex : skillColors.normal
                       const travelW = Math.min(ev.travel || 0, ev.end - ev.start)
                       const motionW = Math.min(
                         ev.motion || ev.end - ev.start - travelW,
@@ -1985,22 +2113,36 @@ export default function TLMakerPage() {
                       return (
                         <>
                           <div
-                            className={`absolute inset-y-0 left-0 ${color} opacity-50 z-0`}
-                            style={{ width: travelW * timeScale }}
+                            className="absolute inset-y-0 left-0 z-0"
+                            style={{
+                              width: travelW * timeScale,
+                              backgroundColor: toRgba(
+                                colors.travel.color,
+                                colors.travel.alpha,
+                              ),
+                            }}
                           />
                           <div
-                            className={`absolute inset-y-0 ${color} z-0`}
+                            className="absolute inset-y-0 z-0"
                             style={{
                               left: travelW * timeScale,
                               width: motionW * timeScale,
+                              backgroundColor: toRgba(
+                                colors.motion.color,
+                                colors.motion.alpha,
+                              ),
                             }}
                           />
                           {restW > 0 && (
                             <div
-                              className={`absolute inset-y-0 ${color} opacity-50 z-0`}
+                              className="absolute inset-y-0 z-0"
                               style={{
                                 left: (travelW + motionW) * timeScale,
                                 width: restW * timeScale,
+                                backgroundColor: toRgba(
+                                  colors.rest.color,
+                                  colors.rest.alpha,
+                                ),
                               }}
                             />
                           )}
