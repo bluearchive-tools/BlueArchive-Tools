@@ -176,6 +176,7 @@ export default function TLMakerPage() {
   const [textTL, setTextTL] = useState('')
   const [showDamageCalc, setShowDamageCalc] = useState(false)
   const [enemies, setEnemies] = useState<Enemy[]>([])
+  const [defaultTargets, setDefaultTargets] = useState({ attack: 0, debuff: 0 })
   const [defaultLevels, setDefaultLevels] = useState({ ex: 5, normal: 10, passive: 10, sub: 10 })
   const [skillColors, setSkillColors] = useState({
     ex: {
@@ -241,6 +242,35 @@ export default function TLMakerPage() {
   useEffect(() => {
     localStorage.setItem('tlSkillColors', JSON.stringify(skillColors))
   }, [skillColors])
+
+  useEffect(() => {
+    const raw = localStorage.getItem('tlDefaultTargets')
+    if (raw) {
+      try {
+        setDefaultTargets(JSON.parse(raw))
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('tlDefaultTargets', JSON.stringify(defaultTargets))
+  }, [defaultTargets])
+
+  useEffect(() => {
+    const firstEnemy = rowStudents.findIndex((id) => id.startsWith('enemy:'))
+    if (firstEnemy !== -1) {
+      setDefaultTargets((prev) => {
+        const attack =
+          rowStudents[prev.attack]?.startsWith('enemy:') ? prev.attack : firstEnemy
+        const debuff =
+          rowStudents[prev.debuff]?.startsWith('enemy:') ? prev.debuff : firstEnemy
+        if (attack === prev.attack && debuff === prev.debuff) return prev
+        return { attack, debuff }
+      })
+    }
+  }, [rowStudents])
 
   const getSnapshot = useCallback((): ProjectSnapshot => ({
     projectName,
@@ -726,6 +756,11 @@ export default function TLMakerPage() {
           ? st?.skills?.ex?.title
           : st?.skills?.normal?.title) ||
         ''
+      let target: number | undefined
+      const skillType =
+        skillKind === 'ex' ? st?.skills?.ex?.type : st?.skills?.normal?.type
+      if (skillType === 'attack') target = defaultTargets.attack
+      if (skillType === 'debuff') target = defaultTargets.debuff
       setSkills([
         ...skills,
         {
@@ -737,6 +772,7 @@ export default function TLMakerPage() {
           travel,
           motion,
           type: skillKind,
+          ...(target !== undefined ? { target } : {}),
         },
       ])
     } else if (selectedType === 'event') {
@@ -882,11 +918,19 @@ export default function TLMakerPage() {
     return t === 'buff' || t === 'attack' || t === 'debuff'
   }
 
+  const getEffectiveTarget = (ev: SkillEvent) => {
+    if (ev.target !== undefined) return ev.target
+    const t = getSkillType(ev)
+    if (t === 'attack') return defaultTargets.attack
+    if (t === 'debuff') return defaultTargets.debuff
+    return ev.row
+  }
+
   const getActiveBuffs = (rowIdx: number, t: number) => {
     return skills
       .filter((ev) => isBuffSkill(ev))
       .filter((ev) => {
-        const target = ev.target ?? ev.row
+        const target = getEffectiveTarget(ev)
         if (target !== rowIdx) return false
         const start = ev.start + (ev.travel || 0)
         return start <= t && t <= ev.end
@@ -1793,6 +1837,51 @@ export default function TLMakerPage() {
                 ))}
               </tbody>
             </table>
+            {rowStudents.some((id) => id.startsWith('enemy:')) && (
+              <>
+                <div className="text-sm font-bold mt-2">デフォルトターゲット</div>
+                <label className="flex items-center gap-2">
+                  <span>攻撃:</span>
+                  <select
+                    value={defaultTargets.attack}
+                    onChange={(e) =>
+                      setDefaultTargets({ ...defaultTargets, attack: parseInt(e.target.value) })
+                    }
+                    className="border rounded p-1 w-24"
+                  >
+                    {rowStudents.map((id, idx) => {
+                      if (!id.startsWith('enemy:')) return null
+                      const en = enemies.find((e) => `enemy:${e.id}` === id)
+                      return (
+                        <option key={idx} value={idx}>
+                          {en ? en.name : `敵${idx + 1}`}
+                        </option>
+                      )
+                    })}
+                  </select>
+                </label>
+                <label className="flex items-center gap-2">
+                  <span>デバフ:</span>
+                  <select
+                    value={defaultTargets.debuff}
+                    onChange={(e) =>
+                      setDefaultTargets({ ...defaultTargets, debuff: parseInt(e.target.value) })
+                    }
+                    className="border rounded p-1 w-24"
+                  >
+                    {rowStudents.map((id, idx) => {
+                      if (!id.startsWith('enemy:')) return null
+                      const en = enemies.find((e) => `enemy:${e.id}` === id)
+                      return (
+                        <option key={idx} value={idx}>
+                          {en ? en.name : `敵${idx + 1}`}
+                        </option>
+                      )
+                    })}
+                  </select>
+                </label>
+              </>
+            )}
             <button
               type="button"
               onClick={() => setShowSettings(false)}
@@ -2158,7 +2247,7 @@ export default function TLMakerPage() {
                         ? st?.skills?.normal
                         : st?.skills?.ex
                     const text = formatSkillText(skill, level)
-                    const targetId = ev.target ?? ev.row
+                    const targetId = getEffectiveTarget(ev)
                     const targetName = isTargetableSkill(ev)
                       ? (() => {
                           const id = rowStudents[targetId]
@@ -2243,7 +2332,7 @@ export default function TLMakerPage() {
                           ? st?.skills?.normal
                           : st?.skills?.ex
                       const text = formatSkillText(skill, level)
-                      const targetId = ev.target ?? ev.row
+                      const targetId = getEffectiveTarget(ev)
                       const targetName = isTargetableSkill(ev)
                         ? (() => {
                             const id = rowStudents[targetId]
@@ -2573,27 +2662,33 @@ export default function TLMakerPage() {
           style={{ left: buffMenu.x, top: buffMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >
-          {rowStudents.map((id, idx) => {
-            const st = students.find((s) => s.id === id)
-            const enemy = enemies.find((e) => `enemy:${e.id}` === id)
-            return (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => {
-                  setSkills((prev) =>
-                    prev.map((sk) =>
-                      sk.id === buffMenu.id ? { ...sk, target: idx } : sk
+          {(() => {
+            const sk = skills.find((s) => s.id === buffMenu.id)
+            const t = sk ? getSkillType(sk) : undefined
+            const enemiesOnly = t === 'attack' || t === 'debuff'
+            return rowStudents.map((id, idx) => {
+              if (enemiesOnly && !id.startsWith('enemy:')) return null
+              const st = students.find((s) => s.id === id)
+              const enemy = enemies.find((e) => `enemy:${e.id}` === id)
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setSkills((prev) =>
+                      prev.map((sk2) =>
+                        sk2.id === buffMenu.id ? { ...sk2, target: idx } : sk2
+                      )
                     )
-                  )
-                  setBuffMenu(null)
-                }}
-                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
-              >
-                {st ? st.name : enemy ? enemy.name : `行${idx + 1}`}
-              </button>
-            )
-          })}
+                    setBuffMenu(null)
+                  }}
+                  className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                >
+                  {st ? st.name : enemy ? enemy.name : `行${idx + 1}`}
+                </button>
+              )
+            })
+          })()}
         </div>
       )}
       {buffPopup && (
@@ -2624,10 +2719,11 @@ export default function TLMakerPage() {
           {skillPopup.target && <div>対象: {skillPopup.target}</div>}
         </div>
       )}
+      </div>
       {showDamageCalc && selected.length === 1 && selected[0].type === 'skill' && (() => {
         const ev = skills.find((s) => s.id === selected[0].id)
         if (!ev || getSkillType(ev) !== 'attack') return null
-        const targetIdx = ev.target ?? ev.row
+        const targetIdx = getEffectiveTarget(ev)
         const targetId = rowStudents[targetIdx]
         const st = students.find((s) => s.id === targetId)
         const en = enemies.find((e) => `enemy:${e.id}` === targetId)
@@ -2643,7 +2739,6 @@ export default function TLMakerPage() {
           </div>
         )
       })()}
-      </div>
         </Fragment>
       )}
     </main>
