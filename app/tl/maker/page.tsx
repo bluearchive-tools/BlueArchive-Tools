@@ -589,6 +589,43 @@ export default function TLMakerPage() {
     saveProject()
   }, [initialized, projectName, selectedGroup, squadIndex, rowStudents, skills, markers])
 
+  const INITIAL_COST = 0
+  const MAX_COST = 10
+
+  const calcCost = useCallback(
+    (t: number) => {
+      const members = rowStudents.filter((id) => id).length
+      const recoveryTime = Math.max(0, t - 2)
+      let recovery = 0.07 * members * recoveryTime
+
+      rowStudents.forEach((id) => {
+        const st = students.find((s) => s.id === id)
+        if (st?.role === 'SPECIAL') {
+          const val = st.skills?.sub?.values?.cost
+          if (val) {
+            const baseId = st.styleOf || st.altOf || st.id
+            const stats = userStats[baseId]
+            const level = stats?.sub_skill ?? defaultLevels.sub
+            const buff = val[level - 1]
+            if (buff !== undefined) recovery *= 1 + buff / 100
+          }
+        }
+      })
+
+      let spent = 0
+      skills
+        .filter((ev) => ev.type === 'ex' && ev.start <= t)
+        .forEach((ev) => {
+          const st = students.find((s) => s.id === rowStudents[ev.row])
+          spent += st?.cost || 0
+        })
+
+      const current = INITIAL_COST + recovery - spent
+      return Math.min(MAX_COST, current)
+    },
+    [rowStudents, students, skills, userStats, defaultLevels]
+  )
+
   const addEvent = () => {
     const id = Date.now()
     if (selectedType === 'skill') {
@@ -683,43 +720,6 @@ export default function TLMakerPage() {
 
   const rowHeight = 42 // px
   const rows = rowStudents.length
-
-  const INITIAL_COST = 0
-  const MAX_COST = 10
-
-  const calcCost = useCallback(
-    (t: number) => {
-      const members = rowStudents.filter((id) => id).length
-      const recoveryTime = Math.max(0, t - 2)
-      let recovery = 0.07 * members * recoveryTime
-
-      rowStudents.forEach((id) => {
-        const st = students.find((s) => s.id === id)
-        if (st?.role === 'SPECIAL') {
-          const val = st.skills?.sub?.values?.cost
-          if (val) {
-            const baseId = st.styleOf || st.altOf || st.id
-            const stats = userStats[baseId]
-            const level = stats?.sub_skill ?? defaultLevels.sub
-            const buff = val[level - 1]
-            if (buff !== undefined) recovery *= 1 + buff / 100
-          }
-        }
-      })
-
-      let spent = 0
-      skills
-        .filter((ev) => ev.type === 'ex' && ev.start <= t)
-        .forEach((ev) => {
-          const st = students.find((s) => s.id === rowStudents[ev.row])
-          spent += st?.cost || 0
-        })
-
-      const current = INITIAL_COST + recovery - spent
-      return Math.min(MAX_COST, current)
-    },
-    [rowStudents, students, skills, userStats, defaultLevels]
-  )
 
   const currentCost = useMemo(() => calcCost(playhead), [calcCost, playhead])
 
