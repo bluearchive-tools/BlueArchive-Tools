@@ -47,11 +47,14 @@ interface Student {
 interface Enemy {
   id: string
   name: string
-  stats?: { hp?: number; attack?: number; defense?: number }
+  level?: number
+  armor?: string
+  stats?: { hp?: number; attack?: number; defense?: number; critResist?: number }
   attackOrder?: { time: number; skill: string; duration?: number }[]
 }
 
 interface UserStudent {
+  level: number
   ex_skill: number
   normal_skill: number
   passive_skill: number
@@ -107,6 +110,13 @@ interface ProjectSnapshot {
   markers: MarkerEvent[]
   groupId: string
   squadIndex: number
+}
+
+const armorBonus: Record<string, Record<string, number>> = {
+  '爆発': { '重装甲': 2, '軽装備': 1.5, '特殊装甲': 1, '弾力装甲': 0.5 },
+  '貫通': { '弾力装甲': 2, '重装甲': 1.5, '軽装備': 1, '特殊装甲': 0.5 },
+  '神秘': { '特殊装甲': 2, '弾力装甲': 1.5, '重装甲': 1, '軽装備': 0.5 },
+  '振動': { '軽装備': 2, '特殊装甲': 1.5, '弾力装甲': 1, '重装甲': 0.5 },
 }
 
 export default function TLMakerPage() {
@@ -947,6 +957,30 @@ export default function TLMakerPage() {
         const text = formatSkillText(skill, level)
         return text ? `${ev.label}: ${text}` : ev.label
       })
+  }
+
+  const getExBuffMultiplier = (rowIdx: number, t: number) => {
+    let bonus = 0
+    skills
+      .filter((ev) => isBuffSkill(ev))
+      .forEach((ev) => {
+        const target = getEffectiveTarget(ev)
+        if (target !== rowIdx) return
+        const start = ev.start + (ev.travel || 0)
+        if (start <= t && t <= ev.end) {
+          const st = students.find((s) => s.id === rowStudents[ev.row])
+          const baseId = st?.styleOf || st?.altOf || st?.id || ''
+          const stats = userStats[baseId]
+          const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
+          const skill =
+            ev.type === 'normal'
+              ? st?.skills?.normal
+              : st?.skills?.ex
+          const val = skill?.values?.ex?.[level - 1]
+          if (val) bonus += Number(val)
+        }
+      })
+    return (10000 + bonus * 100) / 10000
   }
 
   return (
@@ -2763,9 +2797,23 @@ export default function TLMakerPage() {
         const targetRowId = rowStudents[targetIdx]
         const enemy = enemies.find((e) => `enemy:${e.id}` === targetRowId)
         const defense = Number(enemy?.stats?.defense ?? 0)
-
-        const dmg =
-          battleAtk * (mult / 100) * (10000 / (defense * 6 + 10000))
+        const attackerLevel = Number(atkStats.level ?? 1)
+        const enemyLevel = enemy?.level ?? attackerLevel
+        const levelMul = (10000 - 200 * (attackerLevel - enemyLevel)) / 10000
+        const typeMul =
+          armorBonus[attacker.attackType]?.[enemy?.armor || ''] ?? 1
+        const exBuffMul = getExBuffMultiplier(ev.row, ev.start)
+        const baseDmg =
+          battleAtk *
+          (mult / 100) *
+          (10000 / (defense * 6 + 10000)) *
+          levelMul *
+          typeMul *
+          exBuffMul
+        const critResist = Number(enemy?.stats?.critResist ?? 0)
+        const critMul = Math.max(10000, 20000 - critResist) / 10000
+        const dmg = baseDmg
+        const crit = baseDmg * critMul
 
         const targetName = enemy
           ? enemy.name
@@ -2775,6 +2823,7 @@ export default function TLMakerPage() {
           <div className="mt-2 text-sm">
             <div>対象: {targetName}</div>
             <div>ダメージ: {dmg.toFixed(0)}</div>
+            <div>会心ダメージ: {crit.toFixed(0)}</div>
           </div>
         )
       })()}
