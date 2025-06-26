@@ -14,6 +14,7 @@ export default function Settings() {
   const [delOpts, setDelOpts] = useState(false)
   const [delSync, setDelSync] = useState(false)
   const [delSquad, setDelSquad] = useState(false)
+  const [delTL, setDelTL] = useState(false)
 
   const clearLocal = () => {
     if (!confirm('選択したデータを削除しますか？')) return
@@ -41,6 +42,24 @@ export default function Settings() {
       keys.forEach((k) => localStorage.removeItem(k))
     }
     if (delSquad) localStorage.removeItem('squadGroups')
+    if (delTL) {
+      const keys: string[] = []
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (
+          key &&
+          (key.startsWith('tlMakerProject_') ||
+            key === 'tlLength' ||
+            key === 'tlDefaultSkillLevels' ||
+            key === 'tlSkillColors' ||
+            key === 'tlMakerCache' ||
+            key === 'tlMakerLastKey')
+        ) {
+          keys.push(key)
+        }
+      }
+      keys.forEach((k) => localStorage.removeItem(k))
+    }
     alert('削除しました')
   }
 
@@ -109,6 +128,15 @@ export default function Settings() {
             onChange={(e) => setDelSquad(e.target.checked)}
           />
           部隊データ
+        </label>
+        <label className="block text-sm">
+          <input
+            type="checkbox"
+            className="mr-1"
+            checked={delTL}
+            onChange={(e) => setDelTL(e.target.checked)}
+          />
+          TLデータ
         </label>
         <button onClick={clearLocal} className="mt-2 px-4 py-2 border rounded w-full">
           選択したデータを削除
