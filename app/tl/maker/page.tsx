@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo, Fragment } from 'react'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -10,6 +10,7 @@ import {
   faCrosshairs,
   faUndo,
   faRedo,
+  faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons'
 
 interface Student {
@@ -27,6 +28,7 @@ interface Student {
   role: string
   characterType: string
   position: string
+  cost?: number
   exDuration?: number
   exMotionDuration?: number
   exHitDelay?: number
@@ -37,7 +39,16 @@ interface Student {
   skills?: {
     ex?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
     normal?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
+    passive?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
+    sub?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
   }
+}
+
+interface Enemy {
+  id: string
+  name: string
+  stats?: { hp?: number; attack?: number; defense?: number }
+  attackOrder?: { time: number; skill: string; duration?: number }[]
 }
 
 interface UserStudent {
@@ -134,6 +145,7 @@ export default function TLMakerPage() {
   const [skillKind, setSkillKind] = useState<'ex' | 'normal'>('ex')
   const [timeScale, setTimeScale] = useState(20) // px per second
   const [applyTravel, setApplyTravel] = useState(false)
+  const [waitCost, setWaitCost] = useState(false)
   const [zoomByPlayhead, setZoomByPlayhead] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const playheadTimer = useRef<NodeJS.Timeout | null>(null)
@@ -160,6 +172,10 @@ export default function TLMakerPage() {
   const [showFileMenu, setShowFileMenu] = useState(false)
   const [showGroupMenu, setShowGroupMenu] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showTextTL, setShowTextTL] = useState(false)
+  const [textTL, setTextTL] = useState('')
+  const [showDamageCalc, setShowDamageCalc] = useState(false)
+  const [enemies, setEnemies] = useState<Enemy[]>([])
   const [defaultLevels, setDefaultLevels] = useState({ ex: 5, normal: 10, passive: 10, sub: 10 })
   const [skillColors, setSkillColors] = useState({
     ex: {
@@ -290,6 +306,23 @@ export default function TLMakerPage() {
   }
 
   const addRow = () => setRowStudents((prev) => [...prev, ''])
+
+  const addEnemyRow = (enemyId: string) => {
+    const idx = rowStudents.length
+    setRowStudents((prev) => [...prev, `enemy:${enemyId}`])
+    const enemy = enemies.find((e) => e.id === enemyId)
+    if (!enemy || !enemy.attackOrder) return
+    const now = Date.now()
+    const events = enemy.attackOrder.map((a, i) => ({
+      id: now + i,
+      row: idx,
+      start: snapTime(a.time),
+      end: snapTime(a.time + (a.duration ?? 1)),
+      label: a.skill,
+      type: 'attack',
+    }))
+    if (events.length) setSkills((prev) => [...prev, ...events])
+  }
 
   const addNormalSkills = (members: string[]) => {
     const now = Date.now()
@@ -494,8 +527,17 @@ export default function TLMakerPage() {
         /* ignore */
       }
     }
+    const loadEnemies = async () => {
+      try {
+        const res = await fetch('/api/enemies')
+        if (res.ok) setEnemies(await res.json())
+      } catch {
+        /* ignore */
+      }
+    }
     loadStudents()
     loadEvents()
+    loadEnemies()
     const map: Record<string, UserStudent> = {}
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)
@@ -583,6 +625,46 @@ export default function TLMakerPage() {
     saveProject()
   }, [initialized, projectName, selectedGroup, squadIndex, rowStudents, skills, markers])
 
+  const INITIAL_COST = 0
+  const MAX_COST = 10
+
+  const calcCost = useCallback(
+    (t: number) => {
+      const members = rowStudents.filter((id) => id && !id.startsWith('enemy:')).length
+      const recoveryTime = Math.max(0, t - 2)
+      let recovery = 0.07 * members * recoveryTime
+
+      rowStudents.forEach((id) => {
+        if (id.startsWith('enemy:')) return
+        const st = students.find((s) => s.id === id)
+        if (st?.role === 'SPECIAL') {
+          const val = st.skills?.sub?.values?.cost
+          if (val) {
+            const baseId = st.styleOf || st.altOf || st.id
+            const stats = userStats[baseId]
+            const level = stats?.sub_skill ?? defaultLevels.sub
+            const buff = val[level - 1]
+            if (buff !== undefined) recovery *= 1 + buff / 100
+          }
+        }
+      })
+
+      let spent = 0
+      skills
+        .filter((ev) => ev.type === 'ex' && ev.start <= t)
+        .forEach((ev) => {
+          const rowId = rowStudents[ev.row]
+          if (rowId.startsWith('enemy:')) return
+          const st = students.find((s) => s.id === rowId)
+          spent += st?.cost || 0
+        })
+
+      const current = INITIAL_COST + recovery - spent
+      return Math.min(MAX_COST, current)
+    },
+    [rowStudents, students, skills, userStats, defaultLevels]
+  )
+
   const addEvent = () => {
     const id = Date.now()
     if (selectedType === 'skill') {
@@ -593,13 +675,36 @@ export default function TLMakerPage() {
           : st?.normalHitDelay || 0
       const duration = end - start
       let s = snapTime(applyTravel ? start - travel : start)
-      let e = snapTime(
-        applyTravel ? start + duration : start + travel + duration
-      )
+      let e = snapTime(start + duration)
       const motion =
         skillKind === 'ex'
           ? Math.max(0, (st?.exMotionDuration || 0) - travel)
           : Math.max(0, (st?.normalMotionDuration || 0) - travel)
+      if (skillKind === 'ex' && waitCost && st?.cost) {
+        let t = s
+        if (calcCost(t) < st.cost) {
+          while (t <= totalSeconds) {
+            if (calcCost(t) >= st.cost) break
+            t = snapTime(t + 0.1)
+          }
+          if (t !== s) {
+            const delta = t - s
+            s = t
+            e = snapTime(e + delta)
+          }
+        } else {
+          while (t >= 0) {
+            const prev = snapTime(t - 0.1)
+            if (prev < 0 || calcCost(prev) < st.cost) break
+            t = prev
+          }
+          if (t !== s) {
+            const delta = s - t
+            s = t
+            e = snapTime(e - delta)
+          }
+        }
+      }
       if (skillKind === 'normal') {
         skills.forEach((ev) => {
           if (ev.row === row && ev.type === 'ex') {
@@ -655,6 +760,43 @@ export default function TLMakerPage() {
   const rowHeight = 42 // px
   const rows = rowStudents.length
 
+  const currentCost = useMemo(() => calcCost(playhead), [calcCost, playhead])
+
+  const dangerSkills = useMemo(() => {
+    const set = new Set<number>()
+    skills
+      .filter((ev) => ev.type === 'ex')
+      .forEach((ev) => {
+        if (calcCost(ev.start) < 0) set.add(ev.id)
+      })
+    return set
+  }, [skills, calcCost])
+
+  const formatRemain = (t: number) => {
+    const clamped = Math.max(0, t)
+    const m = Math.floor(clamped / 60)
+    const s = clamped - m * 60
+    const str = s.toFixed(3).padStart(6, '0')
+    return `${m}:${str}`
+  }
+
+  const exTimelineText = useMemo(() => {
+    return skills
+      .filter((ev) => ev.type === 'ex')
+      .sort((a, b) => a.start - b.start)
+      .map((ev) => {
+        const st = students.find((s) => s.id === rowStudents[ev.row])
+        const baseCost = st?.cost ?? 0
+        const before = Math.min(MAX_COST, calcCost(ev.start) + baseCost)
+        const name = st?.name ?? ''
+        return `${formatRemain(ev.start)}(${before.toFixed(2)}cost) ${name}`
+      })
+  }, [skills, students, rowStudents, calcCost])
+
+  useEffect(() => {
+    if (showTextTL) setTextTL(exTimelineText.join('\n'))
+  }, [exTimelineText, showTextTL])
+
   const tickStep = timeScale >= 180 ? 0.1 : timeScale >= 40 ? 0.5 : 1
   const labelStep =
     tickStep < 1 ? tickStep : timeScale < 20 ? 5 : 1
@@ -674,14 +816,6 @@ export default function TLMakerPage() {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`
   }
 
-  const formatRemain = (t: number) => {
-    const clamped = Math.max(0, t)
-    const m = Math.floor(clamped / 60)
-    const s = clamped - m * 60
-    const str = s.toFixed(3).padStart(6, '0')
-    return `${m}:${str}`
-  }
-
   const formatSkillText = (
     skill: { text?: string; values?: Record<string, number[]> } | undefined,
     level: number
@@ -691,8 +825,8 @@ export default function TLMakerPage() {
       const arr = skill.values?.[key]
       if (!arr) return ''
       const val = arr[level - 1]
-    return val !== undefined ? String(val) : ''
-  })
+      return val !== undefined ? String(val) : ''
+    })
   }
 
   const getSkillLevel = (
@@ -729,6 +863,23 @@ export default function TLMakerPage() {
       return st.skills.normal?.type === 'buff'
     }
     return false
+  }
+
+  const getSkillType = (ev: SkillEvent): string | undefined => {
+    const rowId = rowStudents[ev.row]
+    if (rowId.startsWith('enemy:')) {
+      return ev.type
+    }
+    const st = students.find((s) => s.id === rowId)
+    if (!st || !st.skills) return undefined
+    if (ev.type === 'ex') return st.skills.ex?.type
+    if (ev.type === 'normal') return st.skills.normal?.type
+    return ev.type
+  }
+
+  const isTargetableSkill = (ev: SkillEvent) => {
+    const t = getSkillType(ev)
+    return t === 'buff' || t === 'attack' || t === 'debuff'
   }
 
   const getActiveBuffs = (rowIdx: number, t: number) => {
@@ -887,7 +1038,7 @@ export default function TLMakerPage() {
       )}
 
       {initialized && (
-        <>
+        <Fragment>
       <div className="sticky top-0 z-20 flex items-center gap-4 bg-gray-200 dark:bg-gray-700 p-2 text-sm">
         <div className="relative">
           <button
@@ -1026,6 +1177,17 @@ export default function TLMakerPage() {
               >
                 行追加
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const id = prompt('敵IDを入力')
+                  if (id) addEnemyRow(id)
+                  setShowMenu(false)
+                }}
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+              >
+                敵行追加
+              </button>
             </div>
           )}
         </div>
@@ -1161,7 +1323,7 @@ export default function TLMakerPage() {
               closeMenus()
               setShowTools(!showTools)
             }}
-            className="px-1"
+            className="px-3 w-20"
           >
             ツール
           </button>
@@ -1191,13 +1353,22 @@ export default function TLMakerPage() {
               >
                 部隊の編集
               </Link>
-              <Link
-                href="/tl/damage"
-                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
-                onClick={() => closeMenus()}
-              >
-                ダメージ計算
-              </Link>
+              <label className="flex items-center gap-1 px-2 py-1 hover:bg-gray-200">
+                <input
+                  type="checkbox"
+                  checked={showDamageCalc}
+                  onChange={(e) => setShowDamageCalc(e.target.checked)}
+                />
+                <span>ダメージ計算</span>
+              </label>
+              <label className="flex items-center gap-1 px-2 py-1 hover:bg-gray-200">
+                <input
+                  type="checkbox"
+                  checked={showTextTL}
+                  onChange={(e) => setShowTextTL(e.target.checked)}
+                />
+                <span>TLをテキスト表示</span>
+              </label>
             </div>
           )}
           {showSquadMenu && selectedGroup && selectedGroup.squads.length > 1 && (
@@ -1274,7 +1445,7 @@ export default function TLMakerPage() {
           <FontAwesomeIcon icon={faFileImport} />
         </button>
         <span className="ml-4 font-mono text-black">
-          {formatRemain(totalSeconds - playhead)}
+          {formatRemain(totalSeconds - playhead)} ({currentCost.toFixed(2)})
         </span>
         <div className="flex items-center gap-2 ml-auto">
           <span className="text-sm">拡大</span>
@@ -1397,6 +1568,16 @@ export default function TLMakerPage() {
                 />
                 <span>着弾時間を考慮</span>
               </label>
+              {skillKind === 'ex' && (
+                <label className="flex items-center gap-1">
+                  <input
+                    type="checkbox"
+                    checked={waitCost}
+                    onChange={(e) => setWaitCost(e.target.checked)}
+                  />
+                  <span>コストが貯まったら</span>
+                </label>
+              )}
             </>
           )}
           {selectedType === 'event' && (
@@ -1624,11 +1805,21 @@ export default function TLMakerPage() {
       )}
 
 
-      <div className="flex gap-0 max-h-96 overflow-y-hidden touch-pan-x overscroll-none select-none">
-        <div className="flex flex-col">
-          <div className="h-5" />
+      <div className="flex">
+        {showTextTL && (
+          <textarea
+            className="mr-2 text-xs font-mono flex-shrink-0 border rounded p-1"
+            rows={rows}
+            value={textTL}
+            onChange={(e) => setTextTL(e.target.value)}
+          />
+        )}
+        <div className="flex gap-0 max-h-96 overflow-y-hidden touch-pan-x overscroll-none select-none">
+          <div className="flex flex-col">
+            <div className="h-5" />
           {rowStudents.map((id, i) => {
             const st = students.find((s) => s.id === id)
+            const enemy = enemies.find((e) => `enemy:${e.id}` === id)
             const handleContext = (e: React.MouseEvent) => {
               e.preventDefault()
               setMenuInfo({ index: i, x: e.clientX, y: e.clientY })
@@ -1652,11 +1843,9 @@ export default function TLMakerPage() {
                   const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
                   const buffs = getActiveBuffs(i, playhead)
                   const info = st
-                    ? [
-                        st.name,
-                        `\u2605${st.initialStars}`,
-                        st.role,
-                      ]
+                    ? [st.name, `\u2605${st.initialStars}`, st.role]
+                    : enemy
+                    ? [enemy.name]
                     : [`行${i + 1}`]
                   setBuffPopup({ row: i, x: rect.right, y: rect.top, buffs, info })
                 }}
@@ -1666,8 +1855,12 @@ export default function TLMakerPage() {
                 className="border border-gray-500 overflow-hidden"
                 style={{ width: rowHeight, height: rowHeight }}
               >
-                {st && (
+                {st ? (
                   <img src={st.image} alt={st.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-xs">
+                    {enemy ? enemy.name : ''}
+                  </div>
                 )}
               </div>
             )
@@ -1966,9 +2159,13 @@ export default function TLMakerPage() {
                         : st?.skills?.ex
                     const text = formatSkillText(skill, level)
                     const targetId = ev.target ?? ev.row
-                    const targetName = isBuffSkill(ev)
-                      ? students.find((s) => s.id === rowStudents[targetId])?.name ||
-                        `行${targetId + 1}`
+                    const targetName = isTargetableSkill(ev)
+                      ? (() => {
+                          const id = rowStudents[targetId]
+                          const st2 = students.find((s) => s.id === id)
+                          const en = enemies.find((e) => `enemy:${e.id}` === id)
+                          return st2 ? st2.name : en ? en.name : `行${targetId + 1}`
+                        })()
                       : undefined
                     setSelected([{ type: 'skill', id: ev.id }])
                     if (ev.label) {
@@ -2047,9 +2244,13 @@ export default function TLMakerPage() {
                           : st?.skills?.ex
                       const text = formatSkillText(skill, level)
                       const targetId = ev.target ?? ev.row
-                      const targetName = isBuffSkill(ev)
-                        ? students.find((s) => s.id === rowStudents[targetId])?.name ||
-                          `行${targetId + 1}`
+                      const targetName = isTargetableSkill(ev)
+                        ? (() => {
+                            const id = rowStudents[targetId]
+                            const st2 = students.find((s) => s.id === id)
+                            const en = enemies.find((e) => `enemy:${e.id}` === id)
+                            return st2 ? st2.name : en ? en.name : `行${targetId + 1}`
+                          })()
                         : undefined
                       if (selected.some((sel) => sel.type === 'skill' && sel.id === ev.id)) {
                         const newShow = !ev.show
@@ -2150,6 +2351,11 @@ export default function TLMakerPage() {
                       )
                     })()}
                     <span className="relative z-10 pointer-events-none">{ev.label}</span>
+                    {dangerSkills.has(ev.id) && (
+                      <span className="absolute -top-1 -right-1 text-red-600">
+                        <FontAwesomeIcon icon={faExclamationTriangle} />
+                      </span>
+                    )}
                     {ev.show && ev.label && (
                       <div
                         className={`absolute -top-6 left-1/2 -translate-x-1/2 ${
@@ -2192,7 +2398,7 @@ export default function TLMakerPage() {
         >
           {eventMenu.type === 'skill' && (() => {
             const ev = skills.find((s) => s.id === eventMenu.id)
-            if (ev && isBuffSkill(ev)) {
+            if (ev && isTargetableSkill(ev)) {
               return (
                 <button
                   type="button"
@@ -2202,7 +2408,7 @@ export default function TLMakerPage() {
                   }}
                   className="block w-full text-left px-2 py-1 hover:bg-gray-200"
                 >
-                  バフ先設定
+                  ターゲット設定
                 </button>
               )
             }
@@ -2369,6 +2575,7 @@ export default function TLMakerPage() {
         >
           {rowStudents.map((id, idx) => {
             const st = students.find((s) => s.id === id)
+            const enemy = enemies.find((e) => `enemy:${e.id}` === id)
             return (
               <button
                 key={idx}
@@ -2383,7 +2590,7 @@ export default function TLMakerPage() {
                 }}
                 className="block w-full text-left px-2 py-1 hover:bg-gray-200"
               >
-                {st ? st.name : `行${idx + 1}`}
+                {st ? st.name : enemy ? enemy.name : `行${idx + 1}`}
               </button>
             )
           })}
@@ -2417,7 +2624,27 @@ export default function TLMakerPage() {
           {skillPopup.target && <div>対象: {skillPopup.target}</div>}
         </div>
       )}
-      </>
+      {showDamageCalc && selected.length === 1 && selected[0].type === 'skill' && (() => {
+        const ev = skills.find((s) => s.id === selected[0].id)
+        if (!ev || getSkillType(ev) !== 'attack') return null
+        const targetIdx = ev.target ?? ev.row
+        const targetId = rowStudents[targetIdx]
+        const st = students.find((s) => s.id === targetId)
+        const en = enemies.find((e) => `enemy:${e.id}` === targetId)
+        const def = en?.stats?.defense ?? 0
+        const atk = 1000
+        const mult = 1
+        const dmg = atk * mult * (1000 / (1000 + def))
+        const name = st ? st.name : en ? en.name : `行${targetIdx + 1}`
+        return (
+          <div className="mt-2 text-sm">
+            <div>対象: {name}</div>
+            <div>ダメージ: {dmg.toFixed(0)}</div>
+          </div>
+        )
+      })()}
+      </div>
+        </Fragment>
       )}
     </main>
   )
