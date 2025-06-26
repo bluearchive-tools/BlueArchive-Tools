@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo, Fragment } from 'react'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -977,7 +977,7 @@ export default function TLMakerPage() {
       )}
 
       {initialized && (
-        <>
+        <Fragment>
       <div className="sticky top-0 z-20 flex items-center gap-4 bg-gray-200 dark:bg-gray-700 p-2 text-sm">
         <div className="relative">
           <button
@@ -2538,7 +2538,8 @@ export default function TLMakerPage() {
           {skillPopup.target && <div>対象: {skillPopup.target}</div>}
         </div>
       )}
-      </>
+      </div>
+        </Fragment>
       )}
     </main>
   )
