@@ -165,6 +165,7 @@ export default function TLMakerPage() {
   const [showFileMenu, setShowFileMenu] = useState(false)
   const [showGroupMenu, setShowGroupMenu] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showTextTL, setShowTextTL] = useState(false)
   const [defaultLevels, setDefaultLevels] = useState({ ex: 5, normal: 10, passive: 10, sub: 10 })
   const [skillColors, setSkillColors] = useState({
     ex: {
@@ -732,6 +733,18 @@ export default function TLMakerPage() {
     return set
   }, [skills, calcCost])
 
+  const exTimelineText = useMemo(() => {
+    return skills
+      .filter((ev) => ev.type === 'ex')
+      .sort((a, b) => a.start - b.start)
+      .map((ev) => {
+        const st = students.find((s) => s.id === rowStudents[ev.row])
+        const cost = st?.cost ?? 0
+        const name = st?.name ?? ''
+        return `${formatRemain(ev.start)}(${cost}cost) ${name}`
+      })
+  }, [skills, students, rowStudents])
+
   const tickStep = timeScale >= 180 ? 0.1 : timeScale >= 40 ? 0.5 : 1
   const labelStep =
     tickStep < 1 ? tickStep : timeScale < 20 ? 5 : 1
@@ -1275,6 +1288,14 @@ export default function TLMakerPage() {
               >
                 ダメージ計算
               </Link>
+              <label className="flex items-center gap-1 px-2 py-1 hover:bg-gray-200">
+                <input
+                  type="checkbox"
+                  checked={showTextTL}
+                  onChange={(e) => setShowTextTL(e.target.checked)}
+                />
+                <span>TLをテキスト表示</span>
+              </label>
             </div>
           )}
           {showSquadMenu && selectedGroup && selectedGroup.squads.length > 1 && (
@@ -1711,9 +1732,17 @@ export default function TLMakerPage() {
       )}
 
 
-      <div className="flex gap-0 max-h-96 overflow-y-hidden touch-pan-x overscroll-none select-none">
-        <div className="flex flex-col">
-          <div className="h-5" />
+      <div className="flex">
+        {showTextTL && (
+          <div className="mr-2 text-xs whitespace-pre font-mono flex-shrink-0">
+            {exTimelineText.map((t, i) => (
+              <div key={i}>{t}</div>
+            ))}
+          </div>
+        )}
+        <div className="flex gap-0 max-h-96 overflow-y-hidden touch-pan-x overscroll-none select-none">
+          <div className="flex flex-col">
+            <div className="h-5" />
           {rowStudents.map((id, i) => {
             const st = students.find((s) => s.id === id)
             const handleContext = (e: React.MouseEvent) => {
