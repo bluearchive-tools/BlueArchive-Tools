@@ -747,11 +747,12 @@ export default function TLMakerPage() {
       .sort((a, b) => a.start - b.start)
       .map((ev) => {
         const st = students.find((s) => s.id === rowStudents[ev.row])
-        const cost = st?.cost ?? 0
+        const baseCost = st?.cost ?? 0
+        const before = Math.min(MAX_COST, calcCost(ev.start) + baseCost)
         const name = st?.name ?? ''
-        return `${formatRemain(ev.start)}(${cost}cost) ${name}`
+        return `${formatRemain(ev.start)}(${before.toFixed(2)}cost) ${name}`
       })
-  }, [skills, students, rowStudents])
+  }, [skills, students, rowStudents, calcCost])
 
   const tickStep = timeScale >= 180 ? 0.1 : timeScale >= 40 ? 0.5 : 1
   const labelStep =
@@ -1251,7 +1252,7 @@ export default function TLMakerPage() {
               closeMenus()
               setShowTools(!showTools)
             }}
-            className="px-1"
+            className="px-3 w-20"
           >
             ツール
           </button>
