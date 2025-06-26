@@ -605,14 +605,27 @@ export default function TLMakerPage() {
           : Math.max(0, (st?.normalMotionDuration || 0) - travel)
       if (skillKind === 'ex' && waitCost && st?.cost) {
         let t = s
-        while (t <= totalSeconds) {
-          if (calcCost(t) >= st.cost) break
-          t = snapTime(t + 0.1)
-        }
-        if (t !== s) {
-          const delta = t - s
-          s = t
-          e = snapTime(e + delta)
+        if (calcCost(t) < st.cost) {
+          while (t <= totalSeconds) {
+            if (calcCost(t) >= st.cost) break
+            t = snapTime(t + 0.1)
+          }
+          if (t !== s) {
+            const delta = t - s
+            s = t
+            e = snapTime(e + delta)
+          }
+        } else {
+          while (t >= 0) {
+            const prev = snapTime(t - 0.1)
+            if (prev < 0 || calcCost(prev) < st.cost) break
+            t = prev
+          }
+          if (t !== s) {
+            const delta = s - t
+            s = t
+            e = snapTime(e - delta)
+          }
         }
       }
       if (skillKind === 'normal') {
