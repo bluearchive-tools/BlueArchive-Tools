@@ -733,6 +733,14 @@ export default function TLMakerPage() {
     return set
   }, [skills, calcCost])
 
+  const formatRemain = (t: number) => {
+    const clamped = Math.max(0, t)
+    const m = Math.floor(clamped / 60)
+    const s = clamped - m * 60
+    const str = s.toFixed(3).padStart(6, '0')
+    return `${m}:${str}`
+  }
+
   const exTimelineText = useMemo(() => {
     return skills
       .filter((ev) => ev.type === 'ex')
@@ -762,14 +770,6 @@ export default function TLMakerPage() {
     const g = parseInt(hex.slice(3, 5), 16)
     const b = parseInt(hex.slice(5, 7), 16)
     return `rgba(${r}, ${g}, ${b}, ${alpha})`
-  }
-
-  const formatRemain = (t: number) => {
-    const clamped = Math.max(0, t)
-    const m = Math.floor(clamped / 60)
-    const s = clamped - m * 60
-    const str = s.toFixed(3).padStart(6, '0')
-    return `${m}:${str}`
   }
 
   const formatSkillText = (
