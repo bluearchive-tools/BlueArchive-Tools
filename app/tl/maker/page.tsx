@@ -2723,18 +2723,57 @@ export default function TLMakerPage() {
       {showDamageCalc && selected.length === 1 && selected[0].type === 'skill' && (() => {
         const ev = skills.find((s) => s.id === selected[0].id)
         if (!ev || getSkillType(ev) !== 'attack') return null
+        const attackerId = rowStudents[ev.row]
+        if (attackerId.startsWith('enemy:')) return null
+        const attacker = students.find((s) => s.id === attackerId)
+        if (!attacker) return null
+        const baseId = attacker.styleOf || attacker.altOf || attacker.id
+        const atkStats = userStats[baseId]
+        const specialRows = rowStudents.filter((id) => {
+          if (!id || id.startsWith('enemy:')) return false
+          const st = students.find((s) => s.id === id)
+          return st?.role === 'SPECIAL'
+        })
+        const specials: number[] = []
+        let missing = !atkStats
+        specialRows.forEach((id) => {
+          const st = students.find((s) => s.id === id)
+          const base = st?.styleOf || st?.altOf || st?.id
+          const stat = base ? userStats[base] : undefined
+          if (!stat || stat.attack === undefined) missing = true
+          else specials.push(Number(stat.attack))
+        })
+        if (missing) {
+          return <div className="mt-2 text-sm">ステータスが設定されていません！</div>
+        }
+
+        const rawAtk = Number(atkStats.attack ?? 0)
+        const specialSum = specials.reduce((a, b) => a + b, 0)
+        const battleAtk = ((rawAtk) / 1.5 + specialSum / 10) * 1.5
+
+        const skill = ev.type === 'ex' ? attacker.skills?.ex : attacker.skills?.normal
+        const level = getSkillLevel(ev.type as 'ex' | 'normal', atkStats)
+        const mult = Number(
+          skill?.values?.damage?.[level - 1] ??
+            skill?.values?.ex?.[level - 1] ??
+            0
+        )
+
         const targetIdx = getEffectiveTarget(ev)
-        const targetId = rowStudents[targetIdx]
-        const st = students.find((s) => s.id === targetId)
-        const en = enemies.find((e) => `enemy:${e.id}` === targetId)
-        const def = en?.stats?.defense ?? 0
-        const atk = 1000
-        const mult = 1
-        const dmg = atk * mult * (1000 / (1000 + def))
-        const name = st ? st.name : en ? en.name : `行${targetIdx + 1}`
+        const targetRowId = rowStudents[targetIdx]
+        const enemy = enemies.find((e) => `enemy:${e.id}` === targetRowId)
+        const defense = Number(enemy?.stats?.defense ?? 0)
+
+        const dmg =
+          battleAtk * (mult / 100) * (10000 / (defense * 6 + 10000))
+
+        const targetName = enemy
+          ? enemy.name
+          : students.find((s) => s.id === targetRowId)?.name ?? `行${targetIdx + 1}`
+
         return (
           <div className="mt-2 text-sm">
-            <div>対象: {name}</div>
+            <div>対象: {targetName}</div>
             <div>ダメージ: {dmg.toFixed(0)}</div>
           </div>
         )
