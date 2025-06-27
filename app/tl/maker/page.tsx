@@ -40,6 +40,7 @@ interface Student {
     ex?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
     normal?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
     passive?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
+    passivePlus?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
     sub?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
   }
 }
@@ -2782,8 +2783,28 @@ export default function TLMakerPage() {
         }
 
         const rawAtk = Number(atkStats.attack ?? 0)
-        const specialSum = specials.reduce((a, b) => a + b, 0)
-        const battleAtk = ((rawAtk) / 1.5 + specialSum / 10) * 1.5
+        let specialSum = specials.reduce((a, b) => a + b, 0)
+        let plusAdd = 0
+        let passiveBuff = 0
+        const passiveLevel = atkStats.passive_skill ?? defaultLevels.passive
+        const atkBuffArr = attacker.skills?.passive?.values?.attack
+        if (atkBuffArr) {
+          const val = atkBuffArr[passiveLevel - 1]
+          if (val !== undefined) passiveBuff = Number(val)
+        }
+        if (Number(atkStats.unique_star ?? 0) >= 2) {
+          const plusArr = attacker.skills?.passivePlus?.values?.attacknum
+          if (plusArr) {
+            const val = plusArr[passiveLevel - 1]
+            if (val !== undefined) {
+              plusAdd = Number(val)
+              specialSum += plusAdd
+            }
+          }
+        }
+        const baseAtkBefore = rawAtk / 1.5 + specialSum / 10
+        const atkMul = 1.5 + passiveBuff / 100
+        const battleAtk = baseAtkBefore * atkMul
 
         const skill = ev.type === 'ex' ? attacker.skills?.ex : attacker.skills?.normal
         const level = getSkillLevel(ev.type as 'ex' | 'normal', atkStats)
@@ -2814,6 +2835,8 @@ export default function TLMakerPage() {
         const critMul = Math.max(10000, 20000 - critResist) / 10000
         const dmg = baseDmg
         const crit = baseDmg * critMul
+        const formula =
+          `(((${rawAtk}/1.5 + (${specialSum}${plusAdd ? `+${plusAdd}` : ''})/10) * ${atkMul.toFixed(2)}) * (${mult}/100) * (10000/(${defense}*6+10000)) * ${levelMul.toFixed(2)} * ${typeMul.toFixed(2)} * ${exBuffMul.toFixed(2)})`
 
         const targetName = enemy
           ? enemy.name
@@ -2824,6 +2847,7 @@ export default function TLMakerPage() {
             <div>対象: {targetName}</div>
             <div>ダメージ: {dmg.toFixed(0)}</div>
             <div>会心ダメージ: {crit.toFixed(0)}</div>
+            <div className="text-xs text-gray-600 break-all">計算式: {formula}</div>
           </div>
         )
       })()}
