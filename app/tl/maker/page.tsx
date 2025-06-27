@@ -186,6 +186,8 @@ export default function TLMakerPage() {
   const [showTextTL, setShowTextTL] = useState(false)
   const [textTL, setTextTL] = useState('')
   const [showDamageCalc, setShowDamageCalc] = useState(false)
+  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [includeStats, setIncludeStats] = useState(false)
   const [enemies, setEnemies] = useState<Enemy[]>([])
   const [defaultTargets, setDefaultTargets] = useState({ attack: 0, debuff: 0 })
   const [defaultLevels, setDefaultLevels] = useState({ ex: 5, normal: 10, passive: 10, sub: 10 })
@@ -488,14 +490,25 @@ export default function TLMakerPage() {
     localStorage.setItem('tlMakerLastKey', key)
   }
 
-  const downloadProject = () => {
-    const data = {
+  const downloadProject = (withStats = false) => {
+    const data: Record<string, unknown> = {
       projectName,
       rowStudents,
       skills,
       markers,
       groupId: selectedGroup?.id ?? '',
       squadIndex,
+    }
+    if (withStats) {
+      const stats: Record<string, UserStudent> = {}
+      rowStudents.forEach((id) => {
+        if (!id || id.startsWith('enemy:')) return
+        const st = students.find((s) => s.id === id)
+        const base = st?.styleOf || st?.altOf || st?.id || id
+        const stat = userStats[base]
+        if (stat) stats[id] = stat
+      })
+      data.userStats = stats
     }
     const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -1050,6 +1063,46 @@ export default function TLMakerPage() {
         </div>
       )}
 
+      {showSaveModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+          onClick={() => setShowSaveModal(false)}
+        >
+          <div
+            className="border rounded p-4 bg-white space-y-2 w-72"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowSaveModal(false)}
+              className="absolute top-1 right-1"
+              aria-label="閉じる"
+            >
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+            <div className="text-sm font-bold">保存オプション</div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={includeStats}
+                onChange={(e) => setIncludeStats(e.target.checked)}
+              />
+              <span>育成データを含める</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                downloadProject(includeStats)
+                setShowSaveModal(false)
+              }}
+              className="border px-2 py-1 bg-blue-500 text-white rounded"
+            >
+              保存
+            </button>
+          </div>
+        </div>
+      )}
+
       {showCreateModal && (
         <div
           className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
@@ -1149,7 +1202,7 @@ export default function TLMakerPage() {
               <button
                 type="button"
                 onClick={() => {
-                  downloadProject()
+                  setShowSaveModal(true)
                   closeMenus()
                 }}
                 className="block w-full text-left px-2 py-1 hover:bg-gray-200"
@@ -2823,7 +2876,7 @@ export default function TLMakerPage() {
         const levelMul = (10000 - 200 * (attackerLevel - enemyLevel)) / 10000
         const typeMul =
           armorBonus[attacker.attackType]?.[enemy?.armor || ''] ?? 1
-        const exBuffMul = getExBuffMultiplier(ev.row, ev.start)
+        const exBuffMul = getExBuffMultiplier(ev.row, ev.start + (ev.travel || 0))
         const baseDmg =
           battleAtk *
           (mult / 100) *
