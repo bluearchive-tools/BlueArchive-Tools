@@ -12,6 +12,7 @@ import {
   faRedo,
   faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons'
+import AddEnemyModal from '../../../components/AddEnemyModal'
 
 interface Student {
   id: string
@@ -51,7 +52,8 @@ interface Enemy {
   level?: number
   armor?: string
   stats?: { hp?: number; attack?: number; defense?: number; critResist?: number }
-  attackOrder?: { time: number; skill: string; duration?: number }[]
+  skills?: Record<string, { name: string; duration?: number }>
+  attackOrder?: { time: number; skill: string }[]
 }
 
 interface UserStudent {
@@ -187,6 +189,7 @@ export default function TLMakerPage() {
   const [textTL, setTextTL] = useState('')
   const [showDamageCalc, setShowDamageCalc] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
+  const [showEnemyModal, setShowEnemyModal] = useState(false)
   const [includeStats, setIncludeStats] = useState(false)
   const [enemies, setEnemies] = useState<Enemy[]>([])
   const [defaultTargets, setDefaultTargets] = useState({ attack: 0, debuff: 0 })
@@ -356,14 +359,19 @@ export default function TLMakerPage() {
     const enemy = enemies.find((e) => e.id === enemyId)
     if (!enemy || !enemy.attackOrder) return
     const now = Date.now()
-    const events = enemy.attackOrder.map((a, i) => ({
-      id: now + i,
-      row: idx,
-      start: snapTime(a.time),
-      end: snapTime(a.time + (a.duration ?? 1)),
-      label: a.skill,
-      type: 'attack',
-    }))
+    const events = enemy.attackOrder.map((a, i) => {
+      const info = enemy.skills?.[a.skill]
+      const dur = info?.duration ?? 1
+      const label = info?.name || a.skill
+      return {
+        id: now + i,
+        row: idx,
+        start: snapTime(a.time),
+        end: snapTime(a.time + dur),
+        label,
+        type: 'attack',
+      }
+    })
     if (events.length) setSkills((prev) => [...prev, ...events])
   }
 
@@ -1103,6 +1111,14 @@ export default function TLMakerPage() {
         </div>
       )}
 
+      {showEnemyModal && (
+        <AddEnemyModal
+          enemies={enemies}
+          addRow={addEnemyRow}
+          close={() => setShowEnemyModal(false)}
+        />
+      )}
+
       {showCreateModal && (
         <div
           className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
@@ -1312,8 +1328,7 @@ export default function TLMakerPage() {
               <button
                 type="button"
                 onClick={() => {
-                  const id = prompt('敵IDを入力')
-                  if (id) addEnemyRow(id)
+                  setShowEnemyModal(true)
                   setShowMenu(false)
                 }}
                 className="block w-full text-left px-2 py-1 hover:bg-gray-200"

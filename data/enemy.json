@@ -5,9 +5,13 @@
     "level": 50,
     "armor": "重装甲",
     "stats": { "hp": 100000, "attack": 1000, "defense": 500, "critResist": 0 },
+    "skills": {
+      "basic": { "name": "通常攻撃", "duration": 1 },
+      "special": { "name": "スペシャルアタック", "duration": 2 }
+    },
     "attackOrder": [
-      { "time": 10, "skill": "通常攻撃", "duration": 1 },
-      { "time": 30, "skill": "スペシャルアタック", "duration": 2 }
+      { "time": 10, "skill": "basic" },
+      { "time": 30, "skill": "special" }
     ]
   }
 ]
