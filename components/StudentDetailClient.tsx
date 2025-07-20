@@ -19,6 +19,30 @@ interface Student {
   altOf?: string
 }
 
+interface UserStudent {
+  level: number
+  star: number
+  unique_star: number
+  unique_level: number
+  bond: number
+  hp: number
+  hp_wb: number
+  attack: number
+  attack_wb: number
+  defense: number
+  heal: number
+  heal_wb: number
+  ex_skill: number
+  normal_skill: number
+  passive_skill: number
+  sub_skill: number
+  equip1: number
+  equip2: number
+  equip3: number
+  item_tier: number
+  alt_bonds?: Record<string, number>
+}
+
 export default function StudentDetailClient({ studentId }: { studentId: string }) {
   const session = useSession()
   const supabase = useSupabaseClient()
@@ -85,6 +109,50 @@ export default function StudentDetailClient({ studentId }: { studentId: string }
     await checkRegistered()
   }, [checkRegistered])
 
+  const exportData = useCallback(async () => {
+    const student = students.find((s) => s.id === current)
+    const baseId = student?.styleOf || student?.altOf || current
+    let obj: UserStudent | null = null
+    if (session) {
+      let { data } = await supabase
+        .from('user_students')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .eq('student_id', current)
+        .maybeSingle()
+      if (!data && baseId !== current) {
+        const { data: alt } = await supabase
+          .from('user_students')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('student_id', baseId)
+          .maybeSingle()
+        data = alt || null
+      }
+      obj = (data as UserStudent) || null
+    } else {
+      let raw = localStorage.getItem(`userStudent:${current}`)
+      if (!raw && baseId !== current) {
+        raw = localStorage.getItem(`userStudent:${baseId}`)
+      }
+      if (raw) {
+        try {
+          obj = JSON.parse(raw) as UserStudent
+        } catch {
+          obj = null
+        }
+      }
+    }
+    const out = obj ? { studentId: current, data: obj } : { studentId: current }
+    const blob = new Blob([JSON.stringify(out)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${student?.name || current}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [students, current, session, supabase])
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -120,6 +188,13 @@ export default function StudentDetailClient({ studentId }: { studentId: string }
               追加
             </button>
           )}
+          <button
+            type="button"
+            onClick={exportData}
+            className="border rounded px-2 py-1 text-sm"
+          >
+            エクスポート
+          </button>
         </div>
       </div>
       {styles.length > 1 && (
