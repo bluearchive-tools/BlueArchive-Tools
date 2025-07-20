@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface EventItem {
   start: string
@@ -14,11 +14,16 @@ export default function EventSchedulePage() {
     color: string
     first: boolean
     last: boolean
+    startHour: number
+    endHour: number
   }
 
   const [events, setEvents] = useState<EventItem[]>([])
   const [selected, setSelected] = useState<DayEvent | null>(null)
   const [visible, setVisible] = useState(false)
+  const [cellHeight, setCellHeight] = useState(0)
+  const topRef = useRef<HTMLDivElement>(null)
+  const tableRef = useRef<HTMLTableElement>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -57,7 +62,18 @@ export default function EventSchedulePage() {
   }
 
   const rows = dayCells.length / 7
-  const cellHeight = `calc((100vh - 8rem) / ${rows})`
+
+  useEffect(() => {
+    const calc = () => {
+      const header = tableRef.current?.querySelector('thead') as HTMLElement | null
+      const top = (topRef.current?.offsetHeight ?? 0) + (header?.offsetHeight ?? 0)
+      const available = window.innerHeight - top
+      setCellHeight(available / rows)
+    }
+    calc()
+    window.addEventListener('resize', calc)
+    return () => window.removeEventListener('resize', calc)
+  }, [rows])
 
   const colors = [
     'bg-blue-200',
@@ -74,17 +90,31 @@ export default function EventSchedulePage() {
     const end = new Date(ev.end)
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const key = `${d.getFullYear()}-${`${d.getMonth() + 1}`.padStart(2, '0')}-${`${d.getDate()}`.padStart(2, '0')}`
-      const first = d.getTime() === start.getTime()
-      const last = d.getTime() === end.getTime()
+
+      const dayStart = new Date(d)
+      dayStart.setHours(0, 0, 0, 0)
+      const dayEnd = new Date(d)
+      dayEnd.setHours(24, 0, 0, 0)
+
+      const first = dayStart.getTime() === new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime()
+      const last = dayStart.getTime() === new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime()
+
+      const startMs = Math.max(start.getTime(), dayStart.getTime()) - dayStart.getTime()
+      const endMs = Math.min(end.getTime(), dayEnd.getTime()) - dayStart.getTime()
+      const startHour = startMs / 3600000
+      const endHour = endMs / 3600000
+
       if (!eventMap[key]) eventMap[key] = []
-      eventMap[key].push({ ...ev, color, first, last })
+      eventMap[key].push({ ...ev, color, first, last, startHour, endHour })
     }
   })
 
   return (
     <main className="p-4 space-y-4">
-      <h1 className="text-lg font-bold mb-2">{`${year}年${month + 1}月のイベント`}</h1>
-      <table className="w-full border-collapse table-fixed">
+      <div ref={topRef}>
+        <h1 className="text-lg font-bold mb-2">{`${year}年${month + 1}月のイベント`}</h1>
+      </div>
+      <table ref={tableRef} className="w-full border-collapse table-fixed">
         <thead>
           <tr>
             {['日', '月', '火', '水', '木', '金', '土'].map((d) => (
@@ -108,23 +138,25 @@ export default function EventSchedulePage() {
                 return (
                   <td
                     key={j}
-                    className="border align-top text-sm p-1 cursor-pointer"
+                    className="border align-top text-sm p-1 cursor-pointer relative overflow-hidden"
                     style={{ height: cellHeight }}
                     onClick={() => evs && setSelected(evs[0])}
                   >
                     {date && (
-                      <div>
-                        <div>{date.getDate()}</div>
+                      <div className="h-full">
+                        <div className="text-right text-xs">{date.getDate()}</div>
                         {evs?.map((e, idx) => (
                           <div
                             key={idx}
-                            className={`text-xs truncate ${e.color} px-1 ${e.first ? 'rounded-l' : ''} ${e.last ? 'rounded-r' : ''}`}
+                            className={`absolute left-0 right-0 text-xs truncate ${e.color} px-1 ${e.first ? 'rounded-l' : ''} ${e.last ? 'rounded-r' : ''}`}
                             style={{
+                              top: `${(e.startHour / 24) * 100}%`,
+                              height: `${((e.endHour - e.startHour) / 24) * 100}%`,
                               marginLeft: e.first ? undefined : '-1px',
                               marginRight: e.last ? undefined : '-1px',
                             }}
                           >
-                            {e.first ? e.title : '\u00A0'}
+                            {e.first ? e.title : ''}
                           </div>
                         ))}
                       </div>
