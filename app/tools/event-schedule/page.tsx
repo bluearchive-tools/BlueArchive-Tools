@@ -13,6 +13,7 @@ export default function EventSchedulePage() {
   interface DayEvent extends EventItem {
     color: string
     first: boolean
+    last: boolean
   }
 
   const [events, setEvents] = useState<EventItem[]>([])
@@ -64,8 +65,9 @@ export default function EventSchedulePage() {
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const key = `${d.getFullYear()}-${`${d.getMonth() + 1}`.padStart(2, '0')}-${`${d.getDate()}`.padStart(2, '0')}`
       const first = d.getTime() === start.getTime()
+      const last = d.getTime() === end.getTime()
       if (!eventMap[key]) eventMap[key] = []
-      eventMap[key].push({ ...ev, color, first })
+      eventMap[key].push({ ...ev, color, first, last })
     }
   })
 
@@ -96,7 +98,7 @@ export default function EventSchedulePage() {
                 return (
                   <td
                     key={j}
-                    className="border h-16 align-top text-sm p-1 cursor-pointer"
+                    className="border h-20 align-top text-sm p-1 cursor-pointer"
                     onClick={() => evs && setSelected(evs[0])}
                   >
                     {date && (
@@ -105,7 +107,8 @@ export default function EventSchedulePage() {
                         {evs?.map((e, idx) => (
                           <div
                             key={idx}
-                            className={`text-xs truncate ${e.color} rounded px-1`}
+                            className={`text-xs truncate ${e.color} px-1 ${e.first ? 'rounded-l' : ''} ${e.last ? 'rounded-r' : ''}`}
+                            style={{ marginLeft: e.first ? undefined : '-1px' }}
                           >
                             {e.first ? e.title : '\u00A0'}
                           </div>
@@ -120,15 +123,23 @@ export default function EventSchedulePage() {
         </tbody>
       </table>
       {selected && (
-        <div className="p-4 border rounded-lg bg-gray-100 space-y-1">
-          <h2 className="font-bold">{selected.title}</h2>
-          <p className="text-sm">{selected.description}</p>
-          <button
-            className="text-blue-500 underline text-sm"
-            onClick={() => setSelected(null)}
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center"
+          onClick={() => setSelected(null)}
+        >
+          <div
+            className="bg-white p-4 rounded shadow space-y-1 max-w-sm w-full"
+            onClick={(e) => e.stopPropagation()}
           >
-            閉じる
-          </button>
+            <h2 className="font-bold">{selected.title}</h2>
+            <p className="text-sm">{selected.description}</p>
+            <button
+              className="text-blue-500 underline text-sm"
+              onClick={() => setSelected(null)}
+            >
+              閉じる
+            </button>
+          </div>
         </div>
       )}
     </main>
