@@ -3,14 +3,20 @@
 import { useEffect, useState } from 'react'
 
 interface EventItem {
-  date: string
+  start: string
+  end: string
   title: string
   description: string
 }
 
 export default function EventSchedulePage() {
+  interface DayEvent extends EventItem {
+    color: string
+    first: boolean
+  }
+
   const [events, setEvents] = useState<EventItem[]>([])
-  const [selected, setSelected] = useState<EventItem | null>(null)
+  const [selected, setSelected] = useState<DayEvent | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -42,15 +48,31 @@ export default function EventSchedulePage() {
     dayCells.push(null)
   }
 
-  const eventMap: Record<string, EventItem> = {}
-  for (const ev of events) {
-    eventMap[ev.date] = ev
-  }
+  const colors = [
+    'bg-blue-200',
+    'bg-green-200',
+    'bg-pink-200',
+    'bg-purple-200',
+    'bg-yellow-200',
+  ]
+
+  const eventMap: Record<string, DayEvent[]> = {}
+  events.forEach((ev, idx) => {
+    const color = colors[idx % colors.length]
+    const start = new Date(ev.start)
+    const end = new Date(ev.end)
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const key = `${d.getFullYear()}-${`${d.getMonth() + 1}`.padStart(2, '0')}-${`${d.getDate()}`.padStart(2, '0')}`
+      const first = d.getTime() === start.getTime()
+      if (!eventMap[key]) eventMap[key] = []
+      eventMap[key].push({ ...ev, color, first })
+    }
+  })
 
   return (
     <main className="p-4 space-y-4">
       <h1 className="text-lg font-bold mb-2">{`${year}年${month + 1}月のイベント`}</h1>
-      <table className="w-full border-collapse">
+      <table className="w-full border-collapse table-fixed">
         <thead>
           <tr>
             {['日', '月', '火', '水', '木', '金', '土'].map((d) => (
@@ -70,21 +92,24 @@ export default function EventSchedulePage() {
                       '0'
                     ))}-${(`${date.getDate()}`.padStart(2, '0'))}`
                   : ''
-                const ev = date ? eventMap[key] : null
+                const evs = date ? eventMap[key] : null
                 return (
                   <td
                     key={j}
                     className="border h-16 align-top text-sm p-1 cursor-pointer"
-                    onClick={() => ev && setSelected(ev)}
+                    onClick={() => evs && setSelected(evs[0])}
                   >
                     {date && (
                       <div>
                         <div>{date.getDate()}</div>
-                        {ev && (
-                          <div className="text-xs text-blue-600 truncate">
-                            {ev.title}
+                        {evs?.map((e, idx) => (
+                          <div
+                            key={idx}
+                            className={`text-xs truncate ${e.color} rounded px-1`}
+                          >
+                            {e.first ? e.title : '\u00A0'}
                           </div>
-                        )}
+                        ))}
                       </div>
                     )}
                   </td>
