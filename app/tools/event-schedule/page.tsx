@@ -18,6 +18,7 @@ export default function EventSchedulePage() {
 
   const [events, setEvents] = useState<EventItem[]>([])
   const [selected, setSelected] = useState<DayEvent | null>(null)
+  const [visible, setVisible] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -30,6 +31,12 @@ export default function EventSchedulePage() {
     }
     load()
   }, [])
+
+  useEffect(() => {
+    if (selected) {
+      setVisible(true)
+    }
+  }, [selected])
 
   const today = new Date()
   const year = today.getFullYear()
@@ -48,6 +55,9 @@ export default function EventSchedulePage() {
   while (dayCells.length % 7 !== 0) {
     dayCells.push(null)
   }
+
+  const rows = dayCells.length / 7
+  const cellHeight = `calc((100vh - 8rem) / ${rows})`
 
   const colors = [
     'bg-blue-200',
@@ -98,7 +108,8 @@ export default function EventSchedulePage() {
                 return (
                   <td
                     key={j}
-                    className="border h-20 align-top text-sm p-1 cursor-pointer"
+                    className="border align-top text-sm p-1 cursor-pointer"
+                    style={{ height: cellHeight }}
                     onClick={() => evs && setSelected(evs[0])}
                   >
                     {date && (
@@ -108,7 +119,10 @@ export default function EventSchedulePage() {
                           <div
                             key={idx}
                             className={`text-xs truncate ${e.color} px-1 ${e.first ? 'rounded-l' : ''} ${e.last ? 'rounded-r' : ''}`}
-                            style={{ marginLeft: e.first ? undefined : '-1px' }}
+                            style={{
+                              marginLeft: e.first ? undefined : '-1px',
+                              marginRight: e.last ? undefined : '-1px',
+                            }}
                           >
                             {e.first ? e.title : '\u00A0'}
                           </div>
@@ -124,8 +138,11 @@ export default function EventSchedulePage() {
       </table>
       {selected && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center"
-          onClick={() => setSelected(null)}
+          className={`fixed inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0'}`}
+          onClick={() => {
+            setVisible(false)
+            setTimeout(() => setSelected(null), 200)
+          }}
         >
           <div
             className="bg-white p-4 rounded shadow space-y-1 max-w-sm w-full"
@@ -133,12 +150,6 @@ export default function EventSchedulePage() {
           >
             <h2 className="font-bold">{selected.title}</h2>
             <p className="text-sm">{selected.description}</p>
-            <button
-              className="text-blue-500 underline text-sm"
-              onClick={() => setSelected(null)}
-            >
-              閉じる
-            </button>
           </div>
         </div>
       )}
