@@ -193,6 +193,7 @@ export default function TLMakerPage() {
   const [includeStats, setIncludeStats] = useState(false)
   const [enemies, setEnemies] = useState<Enemy[]>([])
   const [defaultTargets, setDefaultTargets] = useState({ attack: 0, debuff: 0 })
+  const [tlStats, setTlStats] = useState<Record<string, UserStudent>>({})
   const [defaultLevels, setDefaultLevels] = useState({ ex: 5, normal: 10, passive: 10, sub: 10 })
   const [skillColors, setSkillColors] = useState({
     ex: {
@@ -457,6 +458,7 @@ export default function TLMakerPage() {
     if (!saved) {
       if (fallbackMembers) {
         applyMembers(fallbackMembers)
+        setTlStats({})
       }
       return false
     }
@@ -471,6 +473,7 @@ export default function TLMakerPage() {
       setSkills(data.skills || [])
       setMarkers(data.markers || [])
       applyMembers(data.rowStudents || fallbackMembers || [])
+      setTlStats({})
       return true
     } catch {
       if (fallbackMembers) applyMembers(fallbackMembers)
@@ -513,8 +516,8 @@ export default function TLMakerPage() {
         if (!id || id.startsWith('enemy:')) return
         const st = students.find((s) => s.id === id)
         const base = st?.styleOf || st?.altOf || st?.id || id
-        const stat = userStats[base]
-        if (stat) stats[id] = stat
+        const stat = getStats(id)
+        if (stat) stats[base] = stat
       })
       data.userStats = stats
     }
@@ -702,8 +705,7 @@ export default function TLMakerPage() {
         if (st?.role === 'SPECIAL') {
           const val = st.skills?.sub?.values?.cost
           if (val) {
-            const baseId = st.styleOf || st.altOf || st.id
-            const stats = userStats[baseId]
+            const stats = getStats(id)
             const level = stats?.sub_skill ?? defaultLevels.sub
             const buff = val[level - 1]
             if (buff !== undefined) recovery *= 1 + buff / 100
@@ -724,7 +726,7 @@ export default function TLMakerPage() {
       const current = INITIAL_COST + recovery - spent
       return Math.min(MAX_COST, current)
     },
-    [rowStudents, students, skills, userStats, defaultLevels]
+    [rowStudents, students, skills, userStats, tlStats, defaultLevels]
   )
 
   const addEvent = () => {
@@ -905,6 +907,12 @@ export default function TLMakerPage() {
     return stats?.ex_skill ?? defaultLevels.ex
   }
 
+  const getStats = (id: string): UserStudent | undefined => {
+    const st = students.find((s) => s.id === id)
+    const base = st?.styleOf || st?.altOf || st?.id || id
+    return tlStats[base] ?? userStats[base]
+  }
+
   const getTimeFromClientX = (x: number) => {
     if (!containerRef.current) return 0
     const rect = containerRef.current.getBoundingClientRect()
@@ -969,8 +977,7 @@ export default function TLMakerPage() {
       })
       .map((ev) => {
         const st = students.find((s) => s.id === rowStudents[ev.row])
-        const baseId = st?.styleOf || st?.altOf || st?.id || ''
-        const stats = userStats[baseId]
+        const stats = getStats(rowStudents[ev.row])
         const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
         const skill =
           ev.type === 'normal'
@@ -991,8 +998,7 @@ export default function TLMakerPage() {
         const start = ev.start + (ev.travel || 0)
         if (start <= t && t <= ev.end) {
           const st = students.find((s) => s.id === rowStudents[ev.row])
-          const baseId = st?.styleOf || st?.altOf || st?.id || ''
-          const stats = userStats[baseId]
+          const stats = getStats(rowStudents[ev.row])
           const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
           const skill =
             ev.type === 'normal'
@@ -1035,6 +1041,19 @@ export default function TLMakerPage() {
                     const g = groups.find((gr) => gr.id === data.groupId) || null
                     setSelectedGroup(g)
                     setSquadIndex(data.squadIndex || 0)
+                    if (data.userStats) {
+                      const map: Record<string, UserStudent> = {}
+                      Object.entries(data.userStats as Record<string, UserStudent>).forEach(
+                        ([id, val]) => {
+                          const st = students.find((s) => s.id === id)
+                          const base = st?.styleOf || st?.altOf || st?.id || id
+                          map[base] = val
+                        }
+                      )
+                      setTlStats(map)
+                    } else {
+                      setTlStats({})
+                    }
                     setInitialized(true)
                   } catch {
                     /* ignore */
@@ -1059,6 +1078,7 @@ export default function TLMakerPage() {
                   const g = groups.find((gr) => gr.id === data.groupId) || null
                   setSelectedGroup(g)
                   setSquadIndex(data.squadIndex || 0)
+                  setTlStats({})
                   setInitialized(true)
                 } catch {
                   /* ignore */
@@ -2342,8 +2362,7 @@ export default function TLMakerPage() {
                   if (!moved) {
                     const rect = { right: startX, top: startY }
                     const st = students.find((s) => s.id === rowStudents[ev.row])
-                    const baseId = st?.styleOf || st?.altOf || st?.id || ''
-                    const stats = userStats[baseId]
+                    const stats = getStats(rowStudents[ev.row])
                     const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
                     const skill =
                       ev.type === 'normal'
@@ -2427,8 +2446,7 @@ export default function TLMakerPage() {
                         e.currentTarget as HTMLDivElement
                       ).getBoundingClientRect()
                       const st = students.find((s) => s.id === rowStudents[ev.row])
-                      const baseId = st?.styleOf || st?.altOf || st?.id || ''
-                      const stats = userStats[baseId]
+                      const stats = getStats(rowStudents[ev.row])
                       const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
                       const skill =
                         ev.type === 'normal'
@@ -2830,19 +2848,21 @@ export default function TLMakerPage() {
         if (attackerId.startsWith('enemy:')) return null
         const attacker = students.find((s) => s.id === attackerId)
         if (!attacker) return null
-        const baseId = attacker.styleOf || attacker.altOf || attacker.id
-        const atkStats = userStats[baseId]
+        const atkStats = getStats(attacker.id)
+        if (!atkStats) {
+          return <div className="mt-2 text-sm">ステータスが設定されていません！</div>
+        }
         const specialRows = rowStudents.filter((id) => {
           if (!id || id.startsWith('enemy:')) return false
           const st = students.find((s) => s.id === id)
           return st?.role === 'SPECIAL'
         })
         const specials: number[] = []
-        let missing = !atkStats
+        let missing = false
         specialRows.forEach((id) => {
           const st = students.find((s) => s.id === id)
           const base = st?.styleOf || st?.altOf || st?.id
-          const stat = base ? userStats[base] : undefined
+          const stat = base ? getStats(st.id) : undefined
           if (!stat || stat.attack === undefined) missing = true
           else specials.push(Number(stat.attack))
         })
