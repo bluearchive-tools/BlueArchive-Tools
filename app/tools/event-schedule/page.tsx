@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 interface EventItem {
   start: string
@@ -8,6 +8,14 @@ interface EventItem {
   title: string
   description: string
 }
+
+const COLORS = [
+  'bg-blue-200',
+  'bg-green-200',
+  'bg-pink-200',
+  'bg-purple-200',
+  'bg-yellow-200',
+]
 
 export default function EventSchedulePage() {
   interface DayEvent extends EventItem {
@@ -63,7 +71,7 @@ export default function EventSchedulePage() {
 
   const rows = dayCells.length / 7
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const calc = () => {
       const header = tableRef.current?.querySelector('thead') as HTMLElement | null
       const top = (topRef.current?.offsetHeight ?? 0) + (header?.offsetHeight ?? 0)
@@ -75,39 +83,34 @@ export default function EventSchedulePage() {
     return () => window.removeEventListener('resize', calc)
   }, [rows])
 
-  const colors = [
-    'bg-blue-200',
-    'bg-green-200',
-    'bg-pink-200',
-    'bg-purple-200',
-    'bg-yellow-200',
-  ]
+  const eventMap = useMemo(() => {
+    const map: Record<string, DayEvent[]> = {}
+    events.forEach((ev, idx) => {
+      const color = COLORS[idx % COLORS.length]
+      const start = new Date(ev.start)
+      const end = new Date(ev.end)
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const key = `${d.getFullYear()}-${`${d.getMonth() + 1}`.padStart(2, '0')}-${`${d.getDate()}`.padStart(2, '0')}`
 
-  const eventMap: Record<string, DayEvent[]> = {}
-  events.forEach((ev, idx) => {
-    const color = colors[idx % colors.length]
-    const start = new Date(ev.start)
-    const end = new Date(ev.end)
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const key = `${d.getFullYear()}-${`${d.getMonth() + 1}`.padStart(2, '0')}-${`${d.getDate()}`.padStart(2, '0')}`
+        const dayStart = new Date(d)
+        dayStart.setHours(0, 0, 0, 0)
+        const dayEnd = new Date(d)
+        dayEnd.setHours(24, 0, 0, 0)
 
-      const dayStart = new Date(d)
-      dayStart.setHours(0, 0, 0, 0)
-      const dayEnd = new Date(d)
-      dayEnd.setHours(24, 0, 0, 0)
+        const first = dayStart.getTime() === new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime()
+        const last = dayStart.getTime() === new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime()
 
-      const first = dayStart.getTime() === new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime()
-      const last = dayStart.getTime() === new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime()
+        const startMs = Math.max(start.getTime(), dayStart.getTime()) - dayStart.getTime()
+        const endMs = Math.min(end.getTime(), dayEnd.getTime()) - dayStart.getTime()
+        const startHour = startMs / 3600000
+        const endHour = endMs / 3600000
 
-      const startMs = Math.max(start.getTime(), dayStart.getTime()) - dayStart.getTime()
-      const endMs = Math.min(end.getTime(), dayEnd.getTime()) - dayStart.getTime()
-      const startHour = startMs / 3600000
-      const endHour = endMs / 3600000
-
-      if (!eventMap[key]) eventMap[key] = []
-      eventMap[key].push({ ...ev, color, first, last, startHour, endHour })
-    }
-  })
+        if (!map[key]) map[key] = []
+        map[key].push({ ...ev, color, first, last, startHour, endHour })
+      }
+    })
+    return map
+  }, [events])
 
   return (
     <main className="p-4 space-y-4">
