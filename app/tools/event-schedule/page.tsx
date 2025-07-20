@@ -22,14 +22,13 @@ export default function EventSchedulePage() {
     color: string
     first: boolean
     last: boolean
-    startHour: number
-    endHour: number
   }
 
   const [events, setEvents] = useState<EventItem[]>([])
   const [selected, setSelected] = useState<DayEvent | null>(null)
   const [visible, setVisible] = useState(false)
   const [cellHeight, setCellHeight] = useState(0)
+  const eventHeight = Math.max(16, Math.min(24, cellHeight / 3))
   const topRef = useRef<HTMLDivElement>(null)
   const tableRef = useRef<HTMLTableElement>(null)
 
@@ -92,21 +91,14 @@ export default function EventSchedulePage() {
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         const key = `${d.getFullYear()}-${`${d.getMonth() + 1}`.padStart(2, '0')}-${`${d.getDate()}`.padStart(2, '0')}`
 
-        const dayStart = new Date(d)
-        dayStart.setHours(0, 0, 0, 0)
-        const dayEnd = new Date(d)
-        dayEnd.setHours(24, 0, 0, 0)
+        const day = new Date(d)
+        day.setHours(0, 0, 0, 0)
 
-        const first = dayStart.getTime() === new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime()
-        const last = dayStart.getTime() === new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime()
-
-        const startMs = Math.max(start.getTime(), dayStart.getTime()) - dayStart.getTime()
-        const endMs = Math.min(end.getTime(), dayEnd.getTime()) - dayStart.getTime()
-        const startHour = startMs / 3600000
-        const endHour = endMs / 3600000
+        const first = day.getTime() === new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime()
+        const last = day.getTime() === new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime()
 
         if (!map[key]) map[key] = []
-        map[key].push({ ...ev, color, first, last, startHour, endHour })
+        map[key].push({ ...ev, color, first, last })
       }
     })
     return map
@@ -153,8 +145,8 @@ export default function EventSchedulePage() {
                             key={idx}
                             className={`absolute left-0 right-0 text-xs truncate ${e.color} px-1 ${e.first ? 'rounded-l' : ''} ${e.last ? 'rounded-r' : ''}`}
                             style={{
-                              top: `${(e.startHour / 24) * 100}%`,
-                              height: `${((e.endHour - e.startHour) / 24) * 100}%`,
+                              top: idx * (eventHeight + 2),
+                              height: eventHeight,
                               marginLeft: e.first ? undefined : '-1px',
                               marginRight: e.last ? undefined : '-1px',
                             }}
