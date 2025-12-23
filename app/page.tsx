@@ -23,17 +23,31 @@ export default function Home() {
           </Link>
         </div>
       </CollapsibleBox>
-        <CollapsibleBox title="TLツール(β)" description="TL作成に役立つツールです">
-          <div className="space-y-2">
-            <Link href="/tl/search">
-              <FeatureItem title="TL検索" description="既存のTLを検索できます" />
-            </Link>
-            <Link href="/tl/maker">
-              <FeatureItem title="TLメーカー" description="TLを作成できます" />
-            </Link>
-            <FeatureItem title="動画toTL" description="動画からTLを自動生成できます" />
-          </div>
-        </CollapsibleBox>
+      <CollapsibleBox title="TLツール(β)" description="TL作成に役立つツールです">
+        <div className="space-y-2">
+          <Link href="/tl/search">
+            <FeatureItem title="TL検索" description="既存のTLを検索できます" />
+          </Link>
+          <Link href="/tl/maker">
+            <FeatureItem title="TLメーカー" description="TLを作成できます" />
+          </Link>
+          <FeatureItem title="動画toTL" description="動画からTLを自動生成できます" />
+        </div>
+      </CollapsibleBox>
+
+      <CollapsibleBox title="便利ツール" description="役立つツールをまとめています">
+        <div className="space-y-2">
+          <Link href="/tools/event-schedule">
+            <FeatureItem title="イベントスケジュール表" description="イベントの開催予定を確認できます" />
+          </Link>
+          <Link href="/tools/divine-calc">
+            <FeatureItem title="神名文字計算機" description="必要な神名文字数を計算します" />
+          </Link>
+          <Link href="/tools/bond-calc">
+            <FeatureItem title="絆上げ計算機" description="絆レベル上げに必要なアイテム数を計算します" />
+          </Link>
+        </div>
+      </CollapsibleBox>
     </main>
     <Footer />
     </>
