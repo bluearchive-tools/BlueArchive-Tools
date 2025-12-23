@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/tl-cron",
+      "schedule": "*/30 * * * *"
+    }
+  ]
+}
