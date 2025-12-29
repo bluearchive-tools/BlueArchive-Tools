@@ -430,7 +430,7 @@ export default function DivineCalcPage() {
         <div>
           <h1 className="text-lg font-bold">神名文字計算機</h1>
           <p className="text-sm opacity-70">
-            生徒を選ぶと（未ログインならlocalStorage、ログインならSupabase）から育成状況を自動取得します
+            生徒を選ぶと育成状況を自動取得します
           </p>
         </div>
         <button
