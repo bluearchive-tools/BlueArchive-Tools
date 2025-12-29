@@ -11,6 +11,8 @@ import { createTranslator } from 'next-intl'
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, parseLocale, type Locale } from '../lib/i18n/config'
 import { getMessagesWithFallback } from '../lib/i18n/locales.server'
 
+export const runtime = 'nodejs'
+
 config.autoAddCss = false
 
 const mplus = M_PLUS_Rounded_1c({
