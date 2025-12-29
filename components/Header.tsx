@@ -18,7 +18,7 @@ import { useTheme } from './ThemeProvider'
 import { useLocale, useTranslations } from 'next-intl'
 import { SUPPORTED_LOCALES, parseLocale, type Locale } from '../lib/i18n/config'
 import { useSearchParams } from 'next/navigation'
-import { stripLocaleFromPath } from '../lib/i18n/utils'
+import { stripLeadingLocale } from '../lib/i18n/utils'
 
 export default function Header() {
   const t = useTranslations('header')
@@ -141,10 +141,11 @@ export default function Header() {
 
   const pathWithSearch = useMemo(() => {
     const normalizedPath = pathname?.startsWith('/') ? pathname : `/${pathname ?? ''}`
-    const maybeLocale = parseLocale(normalizedPath.split('/')[1])
-    const basePath = maybeLocale ? stripLocaleFromPath(normalizedPath, maybeLocale) : normalizedPath
-    const search = searchParams?.toString()
-    return search ? `${basePath}?${search}` : basePath
+    const basePath = stripLeadingLocale(normalizedPath)
+    const search = searchParams ? new URLSearchParams(searchParams) : null
+    search?.delete('lang')
+    const searchString = search?.toString()
+    return searchString ? `${basePath}?${searchString}` : basePath
   }, [pathname, searchParams])
 
   const changeLocale = (nextLocale: Locale) => {
@@ -157,7 +158,9 @@ export default function Header() {
         /* ignore */
       }
     }
-    router.push(`/${nextLocale}${pathWithSearch}`)
+    const target = new URLSearchParams()
+    target.set('lang', nextLocale)
+    router.push(`${pathWithSearch}?${target.toString()}`)
   }
 
   useEffect(() => {
@@ -166,7 +169,9 @@ export default function Header() {
       const stored = parseLocale(localStorage.getItem('locale'))
       if (stored && stored !== locale) {
         document.cookie = `locale=${stored}; path=/`
-        router.replace(`/${stored}${pathWithSearch}`)
+        const params = new URLSearchParams()
+        params.set('lang', stored)
+        router.replace(`${pathWithSearch}?${params.toString()}`)
       }
     } catch {
       /* ignore */
