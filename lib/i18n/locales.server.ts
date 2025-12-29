@@ -1,31 +1,48 @@
+import fs from 'fs'
 import path from 'path'
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale, type Messages } from './config'
+import { DEFAULT_LOCALE, type Locale, type Messages } from './config'
 
-type GlobModule = { default: Messages }
-
-const localeModules = import.meta.glob<GlobModule>('../../locales/*/*.json', { eager: true })
-
-function buildMessages(): Record<Locale, Messages> {
-  const result: Partial<Record<Locale, Messages>> = {}
-
-  for (const [filePath, mod] of Object.entries(localeModules)) {
-    const parsed = path.parse(filePath)
-    const parts = parsed.dir.split(path.sep)
-    const locale = parts.at(-1) as Locale | undefined
-    if (!locale || !SUPPORTED_LOCALES.includes(locale)) continue
-
-    const namespace = parsed.name
-    if (!result[locale]) result[locale] = {}
-    result[locale]![namespace] = mod.default
+function collectJsonFiles(dir: string): string[] {
+  const entries = fs.readdirSync(dir, { withFileTypes: true })
+  const files: string[] = []
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      files.push(...collectJsonFiles(fullPath))
+    } else if (entry.isFile() && entry.name.endsWith('.json')) {
+      files.push(fullPath)
+    }
   }
-
-  return result as Record<Locale, Messages>
+  return files
 }
 
-const MESSAGES = buildMessages()
+function loadMessagesFromDisk(locale: Locale): Messages {
+  const localeDir = path.join(process.cwd(), 'locales', locale)
+  if (!fs.existsSync(localeDir)) return {}
+
+  const messages: Record<string, unknown> = {}
+  const files = collectJsonFiles(localeDir)
+
+  for (const file of files) {
+    const namespace = path.relative(localeDir, file).replace(/\\/g, '/').replace(/\.json$/, '')
+    try {
+      const data = JSON.parse(fs.readFileSync(file, 'utf8'))
+      messages[namespace] = data
+    } catch {
+      // ignore broken json
+    }
+  }
+
+  return messages
+}
+
+const CACHE: Partial<Record<Locale, Messages>> = {}
 
 export function getMessages(locale: Locale): Messages {
-  return MESSAGES[locale] ?? {}
+  if (!CACHE[locale]) {
+    CACHE[locale] = loadMessagesFromDisk(locale)
+  }
+  return CACHE[locale] ?? {}
 }
 
 export function getMessagesWithFallback(locale: Locale): Messages {
