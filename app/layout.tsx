@@ -8,7 +8,8 @@ import { config } from '@fortawesome/fontawesome-svg-core'
 import type { Metadata } from 'next'
 import { cookies, headers } from 'next/headers'
 import { createTranslator } from 'next-intl'
-import { DEFAULT_LOCALE, LOCALE_MESSAGES, SUPPORTED_LOCALES, parseLocale, type Locale } from '../lib/i18n/config'
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, parseLocale, type Locale } from '../lib/i18n/config'
+import { getMessagesWithFallback } from '../lib/i18n/locales.server'
 
 config.autoAddCss = false
 
@@ -37,7 +38,7 @@ async function resolveRequestLocale(): Promise<Locale> {
 }
 
 function loadMessages(locale: Locale) {
-  return LOCALE_MESSAGES[locale] ?? LOCALE_MESSAGES[DEFAULT_LOCALE]
+  return getMessagesWithFallback(locale)
 }
 
 export async function generateMetadata(): Promise<Metadata> {

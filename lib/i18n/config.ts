@@ -1,35 +1,9 @@
-import type { AbstractIntlMessages } from 'next-intl'
-
-import commonEn from '../../locales/en/common.json'
-import footerEn from '../../locales/en/footer.json'
-import headerEn from '../../locales/en/header.json'
-import homeEn from '../../locales/en/home.json'
-import commonJa from '../../locales/ja/common.json'
-import footerJa from '../../locales/ja/footer.json'
-import headerJa from '../../locales/ja/header.json'
-import homeJa from '../../locales/ja/home.json'
-
 export const SUPPORTED_LOCALES = ['ja', 'en'] as const
 export type Locale = (typeof SUPPORTED_LOCALES)[number]
 
 export const DEFAULT_LOCALE: Locale = 'ja'
 
-export const LOCALE_MESSAGES = {
-  en: {
-    common: commonEn,
-    header: headerEn,
-    footer: footerEn,
-    home: homeEn,
-  },
-  ja: {
-    common: commonJa,
-    header: headerJa,
-    footer: footerJa,
-    home: homeJa,
-  },
-} as const satisfies Record<Locale, AbstractIntlMessages>
-
-export type Messages = (typeof LOCALE_MESSAGES)[Locale]
+export type Messages = Record<string, unknown>
 
 export function parseLocale(locale?: string | null): Locale | undefined {
   if (!locale) return undefined
