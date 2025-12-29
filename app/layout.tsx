@@ -24,7 +24,8 @@ async function resolveRequestLocale(): Promise<Locale> {
   const cookieLocale = parseLocale(cookieStore.get('locale')?.value)
   if (cookieLocale) return cookieLocale
 
-  const acceptLanguage = headers().get('accept-language')
+  const headerStore = await headers()
+  const acceptLanguage = headerStore.get('accept-language')
   if (acceptLanguage) {
     for (const language of acceptLanguage.split(',')) {
       const parsed = parseLocale(language.trim().split(';')[0])
