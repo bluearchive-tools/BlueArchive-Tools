@@ -43,14 +43,14 @@ function loadMessages(locale: Locale) {
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await resolveRequestLocale()
-  const translator = createTranslator({
+  const messages = loadMessages(locale)
+  const translator = createTranslator<{ appTitle: string }>({
     locale,
-    messages: loadMessages(locale),
-    namespace: 'common',
+    messages: (messages.common ?? {}) as { appTitle: string },
   })
 
   return {
-    title: translator<string>('appTitle'),
+    title: translator('appTitle'),
     alternates: {
       languages: {
         ...Object.fromEntries(SUPPORTED_LOCALES.map((localeCode) => [localeCode, `/${localeCode}`])),
