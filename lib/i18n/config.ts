@@ -3,7 +3,7 @@ export type Locale = (typeof SUPPORTED_LOCALES)[number]
 
 export const DEFAULT_LOCALE: Locale = 'ja'
 
-export type Messages = Record<string, unknown>
+export type Messages = import('next-intl').AbstractIntlMessages
 
 export function parseLocale(locale?: string | null): Locale | undefined {
   if (!locale) return undefined

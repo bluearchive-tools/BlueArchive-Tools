@@ -44,9 +44,10 @@ function loadMessages(locale: Locale) {
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await resolveRequestLocale()
   const messages = loadMessages(locale)
-  const translator = createTranslator<{ appTitle: string }>({
+  const translator = createTranslator({
     locale,
-    messages: (messages.common ?? {}) as { appTitle: string },
+    messages,
+    namespace: 'common',
   })
 
   return {
