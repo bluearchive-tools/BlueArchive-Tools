@@ -13,6 +13,8 @@ import { getMessagesWithFallback } from '../lib/i18n/locales.server'
 
 export const runtime = 'nodejs'
 
+export const runtime = 'nodejs'
+
 config.autoAddCss = false
 
 const mplus = M_PLUS_Rounded_1c({
