@@ -1,0 +1,14 @@
+{
+  "appTitle": "BlueArchive Tools",
+  "auth": {
+    "login": "Log in",
+    "loginWithGoogle": "Sign in with Google",
+    "logout": "Sign out"
+  },
+  "actions": {
+    "close": "Close"
+  },
+  "messages": {
+    "loginPrompt": "Sign in to get the most out of BlueArchive Tools!"
+  }
+}

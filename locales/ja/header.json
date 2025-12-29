@@ -1,0 +1,20 @@
+{
+  "brand": "BlueArchive Tools",
+  "actions": {
+    "notices": "お知らせ",
+    "settings": "設定",
+    "toggleTheme": "テーマ切替"
+  },
+  "account": {
+    "label": "アカウント",
+    "mypage": "マイページ",
+    "signOut": "サインアウト",
+    "signInWithGoogle": "Googleでログイン"
+  },
+  "locale": {
+    "label": "言語",
+    "ariaLabel": "表示言語を選択",
+    "ja": "日本語",
+    "en": "English"
+  }
+}

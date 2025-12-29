@@ -5,6 +5,11 @@ import Header from '../components/Header'
 import { M_PLUS_Rounded_1c } from 'next/font/google'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
+import type { Metadata } from 'next'
+import { cookies, headers } from 'next/headers'
+import { createTranslator } from 'next-intl'
+import { DEFAULT_LOCALE, LOCALE_MESSAGES, SUPPORTED_LOCALES, parseLocale, type Locale } from '../lib/i18n/config'
+
 config.autoAddCss = false
 
 const mplus = M_PLUS_Rounded_1c({
@@ -14,16 +19,56 @@ const mplus = M_PLUS_Rounded_1c({
   variable: '--font-sans',
 })
 
-export const metadata = {
-  title: 'BlueArchive Tools',
+function resolveRequestLocale(): Locale {
+  const cookieLocale = parseLocale(cookies().get('locale')?.value)
+  if (cookieLocale) return cookieLocale
+
+  const acceptLanguage = headers().get('accept-language')
+  if (acceptLanguage) {
+    for (const language of acceptLanguage.split(',')) {
+      const parsed = parseLocale(language.trim().split(';')[0])
+      if (parsed) return parsed
+    }
+  }
+
+  return DEFAULT_LOCALE
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+function loadMessages(locale: Locale) {
+  return LOCALE_MESSAGES[locale] ?? LOCALE_MESSAGES[DEFAULT_LOCALE]
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = resolveRequestLocale()
+  const translator = createTranslator({
+    locale,
+    messages: loadMessages(locale),
+    namespace: 'common',
+  })
+
+  return {
+    title: translator('appTitle'),
+    alternates: {
+      languages: {
+        ...Object.fromEntries(SUPPORTED_LOCALES.map((localeCode) => [localeCode, `/${localeCode}`])),
+      },
+    },
+    metadataBase: new URL('https://bluearchive-tools.vercel.app'),
+    other: {
+      locale,
+    },
+  }
+}
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = resolveRequestLocale()
+  const messages = loadMessages(locale)
+
   return (
-    <html lang="ja">
+    <html lang={locale}>
       <body className={`${mplus.variable} font-sans`}>
         {/* ここではあくまでサーバー→クライアントの橋渡しだけ */}
-        <Providers>
+        <Providers locale={locale} messages={messages}>
           <Header />
           <main className="pt-2 pb-8">{children}</main>
         </Providers>
