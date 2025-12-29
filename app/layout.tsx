@@ -19,8 +19,9 @@ const mplus = M_PLUS_Rounded_1c({
   variable: '--font-sans',
 })
 
-function resolveRequestLocale(): Locale {
-  const cookieLocale = parseLocale(cookies().get('locale')?.value)
+async function resolveRequestLocale(): Promise<Locale> {
+  const cookieStore = await cookies()
+  const cookieLocale = parseLocale(cookieStore.get('locale')?.value)
   if (cookieLocale) return cookieLocale
 
   const acceptLanguage = headers().get('accept-language')
@@ -39,7 +40,7 @@ function loadMessages(locale: Locale) {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const locale = resolveRequestLocale()
+  const locale = await resolveRequestLocale()
   const translator = createTranslator({
     locale,
     messages: loadMessages(locale),
@@ -61,7 +62,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const locale = resolveRequestLocale()
+  const locale = await resolveRequestLocale()
   const messages = loadMessages(locale)
 
   return (
