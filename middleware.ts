@@ -34,35 +34,27 @@ export function middleware(request: NextRequest) {
 
   if (pathLocale) {
     const effectiveLocale = queryLocale ?? pathLocale
-    if (queryLocale && queryLocale !== pathLocale) {
-      const redirectUrl = request.nextUrl.clone()
-      redirectUrl.pathname = `/${effectiveLocale}${stripLocaleFromPath(pathname, pathLocale)}`
-      redirectUrl.search = filteredSearch.toString()
-      const response = NextResponse.redirect(redirectUrl)
-      response.cookies.set('locale', effectiveLocale, { path: '/' })
-      return response
-    }
+    const rewriteUrl = request.nextUrl.clone()
+    rewriteUrl.pathname = stripLocaleFromPath(pathname, pathLocale)
+    rewriteUrl.search = filteredSearch.toString()
 
-    // Remove ?lang from the URL while keeping the locale prefix as-is.
-    if (originalSearch.has('lang')) {
-      const cleanedUrl = request.nextUrl.clone()
-      cleanedUrl.search = filteredSearch.toString()
-      const response = NextResponse.redirect(cleanedUrl)
-      response.cookies.set('locale', effectiveLocale, { path: '/' })
-      return response
-    }
-
-    const response = NextResponse.next()
+    const response = NextResponse.rewrite(rewriteUrl)
     response.cookies.set('locale', effectiveLocale, { path: '/' })
     return response
   }
 
   const locale = detectLocale(request)
-  const redirectUrl = request.nextUrl.clone()
-  redirectUrl.pathname = `/${locale}${pathname}`
-  redirectUrl.search = filteredSearch.toString()
 
-  const response = NextResponse.redirect(redirectUrl)
+  if (queryLocale) {
+    const redirectUrl = request.nextUrl.clone()
+    redirectUrl.search = filteredSearch.toString()
+
+    const response = NextResponse.redirect(redirectUrl)
+    response.cookies.set('locale', locale, { path: '/' })
+    return response
+  }
+
+  const response = NextResponse.next()
   response.cookies.set('locale', locale, { path: '/' })
   return response
 }
