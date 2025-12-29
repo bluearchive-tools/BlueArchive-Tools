@@ -18,6 +18,7 @@ import { useTheme } from './ThemeProvider'
 import { useLocale, useTranslations } from 'next-intl'
 import { SUPPORTED_LOCALES, parseLocale, type Locale } from '../lib/i18n/config'
 import { useSearchParams } from 'next/navigation'
+import { stripLocaleFromPath } from '../lib/i18n/utils'
 
 export default function Header() {
   const t = useTranslations('header')
@@ -140,8 +141,10 @@ export default function Header() {
 
   const pathWithSearch = useMemo(() => {
     const normalizedPath = pathname?.startsWith('/') ? pathname : `/${pathname ?? ''}`
+    const maybeLocale = parseLocale(normalizedPath.split('/')[1])
+    const basePath = maybeLocale ? stripLocaleFromPath(normalizedPath, maybeLocale) : normalizedPath
     const search = searchParams?.toString()
-    return search ? `${normalizedPath}?${search}` : normalizedPath
+    return search ? `${basePath}?${search}` : basePath
   }, [pathname, searchParams])
 
   const changeLocale = (nextLocale: Locale) => {

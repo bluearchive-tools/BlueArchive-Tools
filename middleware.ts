@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, parseLocale, type Locale } from './lib/i18n/config'
+import { stripLocaleFromPath } from './lib/i18n/utils'
 
 function sanitizeLocaleParam(value: string | null): Locale | undefined {
   return parseLocale(value ?? undefined)
@@ -23,12 +24,6 @@ function detectLocale(request: NextRequest): Locale {
   return DEFAULT_LOCALE
 }
 
-function stripLocaleFromPath(pathname: string, locale: Locale) {
-  if (pathname === `/${locale}`) return '/'
-  const withoutLocale = pathname.replace(new RegExp(`^/${locale}(?=/|$)`), '')
-  return withoutLocale || '/'
-}
-
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const pathLocale = parseLocale(pathname.split('/')[1])
@@ -48,11 +43,16 @@ export function middleware(request: NextRequest) {
       return response
     }
 
-    const rewriteUrl = request.nextUrl.clone()
-    rewriteUrl.pathname = stripLocaleFromPath(pathname, pathLocale)
-    rewriteUrl.search = filteredSearch.toString()
+    // Remove ?lang from the URL while keeping the locale prefix as-is.
+    if (originalSearch.has('lang')) {
+      const cleanedUrl = request.nextUrl.clone()
+      cleanedUrl.search = filteredSearch.toString()
+      const response = NextResponse.redirect(cleanedUrl)
+      response.cookies.set('locale', effectiveLocale, { path: '/' })
+      return response
+    }
 
-    const response = NextResponse.rewrite(rewriteUrl)
+    const response = NextResponse.next()
     response.cookies.set('locale', effectiveLocale, { path: '/' })
     return response
   }
