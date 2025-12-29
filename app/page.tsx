@@ -6,16 +6,25 @@ import FeatureItem from '../components/FeatureItem'
 import Link from 'next/link'
 import LoginPopup from '../components/LoginPopup'
 import Footer from '../components/Footer'
+import { useTranslations } from 'next-intl'
 
 export default function Home() {
+  const t = useTranslations('home.sections')
+
   return (
     <>
     <main className="p-4 space-y-4 pb-16">
       <LoginPopup />
-      <CollapsibleBox title="生徒管理" description="生徒のデータを確認、編集できます">
+      <CollapsibleBox
+        title={t('students.title')}
+        description={t('students.description')}
+      >
         <div className="space-y-2">
           <Link href="/students">
-            <FeatureItem title="生徒データ確認" description="現在保存されている生徒のデータを表示します" />
+            <FeatureItem
+              title={t('students.actions.view.title')}
+              description={t('students.actions.view.description')}
+            />
           </Link>
           <div
   aria-disabled="true"
@@ -23,27 +32,42 @@ export default function Home() {
 >
   <div className="pointer-events-none">
     <FeatureItem
-      title="生徒データインポート"
-      description="画像から生徒のデータをインポートできます"
+      title={t('students.actions.import.title')}
+      description={t('students.actions.import.description')}
     />
   </div>
 </div>
 
           <Link href="/squads">
-            <FeatureItem title="部隊管理" description="部隊を構成できます" />
+            <FeatureItem
+              title={t('students.actions.squads.title')}
+              description={t('students.actions.squads.description')}
+            />
           </Link>
         </div>
       </CollapsibleBox>
-      <CollapsibleBox title="TLツール(β)" description="TL作成に役立つツールです">
+      <CollapsibleBox
+        title={t('tlTools.title')}
+        description={t('tlTools.description')}
+      >
         <div className="space-y-2">
           <Link href="/tl/search">
-            <FeatureItem title="TL検索" description="既存のTLを検索できます" />
+            <FeatureItem
+              title={t('tlTools.actions.search.title')}
+              description={t('tlTools.actions.search.description')}
+            />
           </Link>
           <Link href="/tl/maker">
-            <FeatureItem title="TLメーカー" description="TLを作成できます" />
+            <FeatureItem
+              title={t('tlTools.actions.maker.title')}
+              description={t('tlTools.actions.maker.description')}
+            />
           </Link>
           <Link href="/tl/maker-dev">
-            <FeatureItem title="TLメーカーdev" description="実験的機能を利用できます" />
+            <FeatureItem
+              title={t('tlTools.actions.makerDev.title')}
+              description={t('tlTools.actions.makerDev.description')}
+            />
           </Link>
         </div>
         <div
@@ -52,20 +76,29 @@ export default function Home() {
 >
   <div className="pointer-events-none">
     <FeatureItem
-      title="動画toTL"
-      description="動画からTLを自動生成できます"
+      title={t('tlTools.actions.videoToTl.title')}
+      description={t('tlTools.actions.videoToTl.description')}
     />
   </div>
 </div>
       </CollapsibleBox>
 
-      <CollapsibleBox title="便利ツール" description="役立つツールをまとめています">
+      <CollapsibleBox
+        title={t('tools.title')}
+        description={t('tools.description')}
+      >
         <div className="space-y-2">
           <Link href="/tools/event-schedule">
-            <FeatureItem title="イベントスケジュール表" description="イベントの開催予定を確認できます" />
+            <FeatureItem
+              title={t('tools.actions.eventSchedule.title')}
+              description={t('tools.actions.eventSchedule.description')}
+            />
           </Link>
           <Link href="/tools/divine-calc">
-            <FeatureItem title="神名文字計算機" description="必要な神名文字数を計算します" />
+            <FeatureItem
+              title={t('tools.actions.divineCalc.title')}
+              description={t('tools.actions.divineCalc.description')}
+            />
           </Link>
         </div>
         <div
@@ -74,8 +107,8 @@ export default function Home() {
 >
   <div className="pointer-events-none">
     <FeatureItem
-      title="絆上げ計算機"
-      description="絆レベル上げに必要なアイテム数を計算します"
+      title={t('tools.actions.bondCalc.title')}
+      description={t('tools.actions.bondCalc.description')}
     />
   </div>
 </div>

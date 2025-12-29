@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircleExclamation, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { useTranslations } from 'next-intl'
 
 export default function LoginPopup() {
+  const t = useTranslations('common')
   const session = useSession()
   const supabase = useSupabaseClient()
   const [visible, setVisible] = useState(false)
@@ -39,11 +41,11 @@ export default function LoginPopup() {
     >
       <div className="relative bg-yellow-200/80 text-black rounded shadow p-4 pointer-events-auto max-w-md w-full mx-4 flex items-start gap-2">
         <FontAwesomeIcon icon={faCircleExclamation} className="text-yellow-600 mt-1" />
-        <p className="flex-1 text-sm">ログインするともっと便利に利用できます！</p>
+        <p className="flex-1 text-sm">{t('messages.loginPrompt')}</p>
         <button onClick={signIn} className="mr-2 px-2 py-1 text-sm bg-blue-600 text-white rounded" type="button">
-          ログイン
+          {t('auth.login')}
         </button>
-        <button onClick={close} className="absolute top-1 right-1" aria-label="close">
+        <button onClick={close} className="absolute top-1 right-1" aria-label={t('actions.close')}>
           <FontAwesomeIcon icon={faXmark} />
         </button>
       </div>

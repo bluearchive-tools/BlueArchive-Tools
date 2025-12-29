@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import NoticeModal from './NoticeModal'
 import DataSyncModal from './DataSyncModal'
 import SquadSyncModal from './SquadSyncModal'
@@ -15,12 +15,18 @@ import {
 } from '@supabase/auth-helpers-react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useTheme } from './ThemeProvider'
+import { useLocale, useTranslations } from 'next-intl'
+import { SUPPORTED_LOCALES, parseLocale, type Locale } from '../lib/i18n/config'
+import { useSearchParams } from 'next/navigation'
 
 export default function Header() {
+  const t = useTranslations('header')
+  const locale = useLocale() as Locale
   const session = useSession()
   const supabase = useSupabaseClient()
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [username, setUsername] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
@@ -132,22 +138,72 @@ export default function Header() {
     }
   }
 
+  const pathWithSearch = useMemo(() => {
+    const normalizedPath = pathname?.startsWith('/') ? pathname : `/${pathname ?? ''}`
+    const search = searchParams?.toString()
+    return search ? `${normalizedPath}?${search}` : normalizedPath
+  }, [pathname, searchParams])
+
+  const changeLocale = (nextLocale: Locale) => {
+    if (!nextLocale || nextLocale === locale) return
+    if (typeof document !== 'undefined') {
+      document.cookie = `locale=${nextLocale}; path=/`
+      try {
+        localStorage.setItem('locale', nextLocale)
+      } catch {
+        /* ignore */
+      }
+    }
+    router.push(`/${nextLocale}${pathWithSearch}`)
+  }
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const stored = parseLocale(localStorage.getItem('locale'))
+      if (stored && stored !== locale) {
+        document.cookie = `locale=${stored}; path=/`
+        router.replace(`/${stored}${pathWithSearch}`)
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [locale, pathWithSearch, router])
+
   const isMakerPage = (pathname ?? '').startsWith('/tl/maker')
   if (isMakerPage && hideHeader) return null
 
   return (
     <header className="sticky top-0 inset-x-0 z-10 w-full flex justify-between items-center border-b dark:bg-black dark:text-white dark:border-gray-700 transition-colors p-4 h-16 relative">
       <h1 className="text-lg font-bold">
-        <Link href="/">BlueArchive Tools</Link>
+        <Link href="/">{t('brand')}</Link>
       </h1>
       <div className="flex items-center gap-4">
-        <button onClick={openNotice} aria-label="Notices">
+        <div className="flex items-center gap-2">
+          <label htmlFor="locale-select" className="sr-only">
+            {t('locale.label')}
+          </label>
+          <select
+            id="locale-select"
+            aria-label={t('locale.ariaLabel')}
+            value={locale}
+            onChange={(e) => changeLocale(e.target.value as Locale)}
+            className="border rounded px-2 py-1 text-sm bg-white dark:bg-gray-800 dark:text-white dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {SUPPORTED_LOCALES.map((code) => (
+              <option key={code} value={code}>
+                {t(`locale.${code}`)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <button onClick={openNotice} aria-label={t('actions.notices')}>
           <FontAwesomeIcon icon={faBell} />
         </button>
-        <Link href="/settings" aria-label="Settings">
+        <Link href="/settings" aria-label={t('actions.settings')}>
           <FontAwesomeIcon icon={faCog} />
         </Link>
-        <button onClick={toggleTheme} aria-label="Toggle theme">
+        <button onClick={toggleTheme} aria-label={t('actions.toggleTheme')}>
           <FontAwesomeIcon icon={dark ? faSun : faMoon} />
         </button>
         <div className="relative" ref={dropdownRef}>
@@ -155,7 +211,7 @@ export default function Header() {
             onClick={() => setAccountOpen(!accountOpen)}
             className="cursor-pointer min-w-[8rem] whitespace-nowrap text-center flex items-center justify-center gap-1"
           >
-            {session && username ? username : 'アカウント'}
+            {session && username ? username : t('account.label')}
             <FontAwesomeIcon icon={faChevronDown} />
           </button>
           {accountOpen && (
@@ -163,16 +219,16 @@ export default function Header() {
               {session ? (
                 <>
                   <Link href="/mypage" className="block px-2 py-1">
-                    マイページ
+                    {t('account.mypage')}
                   </Link>
                   <button onClick={signOut} className="block w-full text-left px-2 py-1">
-                    サインアウト
+                    {t('account.signOut')}
                   </button>
                 </>
               ) : (
                 <button onClick={signIn} className="block w-full text-left px-2 py-1 flex items-center gap-2">
                   <FontAwesomeIcon icon={faGoogle} className="text-black dark:text-white" />
-                  <span>Googleでログイン</span>
+                  <span>{t('account.signInWithGoogle')}</span>
                 </button>
               )}
             </div>
