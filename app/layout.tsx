@@ -50,7 +50,7 @@ export async function generateMetadata(): Promise<Metadata> {
   })
 
   return {
-    title: translator('appTitle'),
+    title: translator<string>('appTitle'),
     alternates: {
       languages: {
         ...Object.fromEntries(SUPPORTED_LOCALES.map((localeCode) => [localeCode, `/${localeCode}`])),
