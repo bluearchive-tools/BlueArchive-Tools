@@ -20,14 +20,14 @@ function loadMessagesFromDisk(locale: Locale): Messages {
   const localeDir = path.join(process.cwd(), 'locales', locale)
   if (!fs.existsSync(localeDir)) return {}
 
-  const messages: Record<string, unknown> = {}
+  const messages: Messages = {}
   const files = collectJsonFiles(localeDir)
 
   for (const file of files) {
     const namespace = path.relative(localeDir, file).replace(/\\/g, '/').replace(/\.json$/, '')
     try {
-      const data = JSON.parse(fs.readFileSync(file, 'utf8'))
-      messages[namespace] = data
+        const data = JSON.parse(fs.readFileSync(file, 'utf8'))
+        messages[namespace] = data as Messages
     } catch {
       // ignore broken json
     }
