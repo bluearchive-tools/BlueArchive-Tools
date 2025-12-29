@@ -1,47 +1,34 @@
-import fs from 'fs'
-import path from 'path'
 import { DEFAULT_LOCALE, type Locale, type Messages } from './config'
 
-function collectJsonFiles(dir: string): string[] {
-  const entries = fs.readdirSync(dir, { withFileTypes: true })
-  const files: string[] = []
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name)
-    if (entry.isDirectory()) {
-      files.push(...collectJsonFiles(fullPath))
-    } else if (entry.isFile() && entry.name.endsWith('.json')) {
-      files.push(fullPath)
+// Turbopack/webpack共通でバンドルに含めるため、require.contextを使用してロケールJSONを一括インポートする
+const localeModules = require.context('../../locales', true, /\.json$/)
+
+function buildMessages(): Record<Locale, Messages> {
+  const messages: Partial<Record<Locale, Messages>> = {}
+
+  localeModules.keys().forEach((key: string) => {
+    // key 例: "./ja/header.json"
+    const normalized = key.replace(/^\.\//, '')
+    const [locale, ...rest] = normalized.split('/')
+    const namespace = rest.join('/').replace(/\.json$/, '')
+    if (!locale || !namespace) return
+
+    const localeKey = locale as Locale
+    const mod = localeModules(key) as { default?: Messages } | Messages
+    const data = (mod as { default?: Messages }).default ?? (mod as Messages)
+
+    messages[localeKey] = {
+      ...(messages[localeKey] ?? {}),
+      [namespace]: data,
     }
-  }
-  return files
+  })
+
+  return messages as Record<Locale, Messages>
 }
 
-function loadMessagesFromDisk(locale: Locale): Messages {
-  const localeDir = path.join(process.cwd(), 'locales', locale)
-  if (!fs.existsSync(localeDir)) return {}
-
-  const messages: Messages = {}
-  const files = collectJsonFiles(localeDir)
-
-  for (const file of files) {
-    const namespace = path.relative(localeDir, file).replace(/\\/g, '/').replace(/\.json$/, '')
-    try {
-        const data = JSON.parse(fs.readFileSync(file, 'utf8'))
-        messages[namespace] = data as Messages
-    } catch {
-      // ignore broken json
-    }
-  }
-
-  return messages
-}
-
-const CACHE: Partial<Record<Locale, Messages>> = {}
+const CACHE = buildMessages()
 
 export function getMessages(locale: Locale): Messages {
-  if (!CACHE[locale]) {
-    CACHE[locale] = loadMessagesFromDisk(locale)
-  }
   return CACHE[locale] ?? {}
 }
 
