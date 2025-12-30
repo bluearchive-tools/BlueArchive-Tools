@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUser, faUserSlash } from '@fortawesome/free-solid-svg-icons'
@@ -34,7 +34,11 @@ interface RaidData {
 }
 
 export default function TLSearchPage() {
-  const tSearch = useTranslations('tl.search')
+  const t = useTranslations('tl')
+  const tSearch = useCallback(
+    (key: string, values?: Record<string, string | number | Date>) => t(`search.${key}`, values),
+    [t]
+  )
   const session = useSession()
   const supabase = useSupabaseClient()
   const [timelines, setTimelines] = useState<Timeline[]>([])

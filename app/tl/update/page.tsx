@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 interface Season {
@@ -10,7 +10,11 @@ interface Season {
 }
 
 export default function TLFetchPage() {
-  const tUpdate = useTranslations('tl.update')
+  const t = useTranslations('tl')
+  const tUpdate = useCallback(
+    (key: string, values?: Record<string, string | number | Date>) => t(`update.${key}`, values),
+    [t]
+  )
   const [seasons, setSeasons] = useState<Season[]>([])
   const [season, setSeason] = useState('')
   const [message, setMessage] = useState('')
