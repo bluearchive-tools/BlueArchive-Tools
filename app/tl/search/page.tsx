@@ -34,9 +34,9 @@ interface RaidData {
 }
 
 export default function TLSearchPage() {
-  const t = useTranslations('tl')
+  const t = useTranslations()
   const tSearch = useCallback(
-    (key: string, values?: Record<string, string | number | Date>) => t(`search.${key}`, values),
+    (key: string, values?: Record<string, string | number | Date>) => t(`tl.search.${key}`, values),
     [t]
   )
   const session = useSession()

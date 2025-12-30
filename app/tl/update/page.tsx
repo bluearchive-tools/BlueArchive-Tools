@@ -10,9 +10,9 @@ interface Season {
 }
 
 export default function TLFetchPage() {
-  const t = useTranslations('tl')
+  const t = useTranslations()
   const tUpdate = useCallback(
-    (key: string, values?: Record<string, string | number | Date>) => t(`update.${key}`, values),
+    (key: string, values?: Record<string, string | number | Date>) => t(`tl.update.${key}`, values),
     [t]
   )
   const [seasons, setSeasons] = useState<Season[]>([])
