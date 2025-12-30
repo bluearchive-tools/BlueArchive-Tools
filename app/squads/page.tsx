@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import StudentSelect from '../../components/StudentSelect'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import {
@@ -93,6 +93,7 @@ export default function SquadPage() {
   const [sharedGroup, setSharedGroup] = useState<SquadGroup | null>(null)
   const [userStats, setUserStats] = useState<Record<string, UserStudent>>({})
   const [includeStatus, setIncludeStatus] = useState(false)
+  const importRef = useRef<HTMLInputElement>(null)
   const session = useSession()
   const supabase = useSupabaseClient()
 
@@ -125,18 +126,30 @@ export default function SquadPage() {
   }, [])
 
   const loadGroups = async () => {
-    if (session) {
-      const { data } = await supabase
-        .from('user_squad_groups')
-        .select('groups')
-        .eq('user_id', session.user.id)
-        .maybeSingle()
-      if (data) setGroups((data as { groups: SquadGroup[] }).groups || [])
-    } else {
+    const loadLocal = () => {
       const raw = localStorage.getItem('squadGroups')
       if (raw) {
         try { setGroups(JSON.parse(raw) as SquadGroup[]) } catch { /* ignore */ }
       }
+    }
+
+    if (session) {
+      const { data, error } = await supabase
+        .from('user_squad_groups')
+        .select('groups')
+        .eq('user_id', session.user.id)
+        .maybeSingle()
+      if (error) {
+        loadLocal()
+        return
+      }
+      if (data && (data as { groups: SquadGroup[] }).groups) {
+        setGroups((data as { groups: SquadGroup[] }).groups || [])
+        return
+      }
+      loadLocal()
+    } else {
+      loadLocal()
     }
   }
 
@@ -183,9 +196,8 @@ export default function SquadPage() {
   const saveGroups = async (gs: SquadGroup[]) => {
     if (session) {
       await supabase.from('user_squad_groups').upsert({ user_id: session.user.id, groups: gs })
-    } else {
-      localStorage.setItem('squadGroups', JSON.stringify(gs))
     }
+    localStorage.setItem('squadGroups', JSON.stringify(gs))
   }
 
   const addGroup = async () => {
@@ -386,6 +398,55 @@ export default function SquadPage() {
     URL.revokeObjectURL(url)
   }
 
+  const readStudentId = (entry: unknown) => {
+    if (typeof entry === 'string') return entry
+    if (entry && typeof entry === 'object' && 'id' in (entry as Record<string, unknown>)) {
+      const id = (entry as { id?: unknown }).id
+      if (typeof id === 'string') return id
+    }
+    return ''
+  }
+
+  const importSquadsFromJson = async (file: File | null) => {
+    if (!file) return
+    try {
+      const text = await file.text()
+      const data = JSON.parse(text)
+      if (!Array.isArray(data)) throw new Error('形式が正しくありません')
+
+      const mapped: SquadGroup[] = data.map((g, gi) => {
+        const squads = Array.isArray(g?.squads)
+          ? g.squads.map((sq: unknown) => {
+              const memo = typeof (sq as { memo?: unknown }).memo === 'string' ? (sq as { memo?: string }).memo : undefined
+              const normalize = (arr: unknown[], size: number) => {
+                const ids = (Array.isArray(arr) ? arr : []).map(readStudentId).filter(Boolean).slice(0, size)
+                while (ids.length < size) ids.push('')
+                return ids
+              }
+              const strikers = normalize((sq as { strikers?: unknown[] }).strikers || [], 4)
+              const specials = normalize((sq as { specials?: unknown[] }).specials || [], 2)
+              return { memo, strikers, specials }
+            })
+          : []
+        return {
+          id: `${Date.now()}-${gi}`,
+          name: typeof g?.name === 'string' ? g.name : `インポート${gi + 1}`,
+          squads,
+        }
+      })
+
+      const newGroups = [...groups, ...mapped]
+      setGroups(newGroups)
+      await saveGroups(newGroups)
+      alert('JSONを読み込みました')
+    } catch (err) {
+      console.error(err)
+      alert('JSONの読み込みに失敗しました')
+    } finally {
+      if (importRef.current) importRef.current.value = ''
+    }
+  }
+
   const importSharedGroup = async () => {
     if (!sharedGroup) return
     const newG: SquadGroup = {
@@ -421,6 +482,23 @@ export default function SquadPage() {
           <FontAwesomeIcon icon={faFloppyDisk} className="mr-1" />
           部隊を書き出し
         </button>
+        <div className="flex items-center gap-2">
+          <input
+            ref={importRef}
+            type="file"
+            accept="application/json"
+            className="hidden"
+            onChange={(e) => importSquadsFromJson(e.target.files?.[0] ?? null)}
+          />
+          <button
+            type="button"
+            onClick={() => importRef.current?.click()}
+            className="border rounded px-2 py-1"
+          >
+            <FontAwesomeIcon icon={faCopy} className="mr-1" />
+            JSONから読み込み
+          </button>
+        </div>
       </div>
       <div className="flex gap-2">
         <input
