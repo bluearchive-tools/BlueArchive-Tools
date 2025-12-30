@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 interface Season {
@@ -10,7 +10,11 @@ interface Season {
 }
 
 export default function TLFetchPage() {
-  const t = useTranslations('tl.update')
+  const t = useTranslations('tl')
+  const tUpdate = useCallback(
+    (key: string, values?: Record<string, unknown>) => t(`update.${key}`, values),
+    [t]
+  )
   const [seasons, setSeasons] = useState<Season[]>([])
   const [season, setSeason] = useState('')
   const [message, setMessage] = useState('')
@@ -31,7 +35,7 @@ export default function TLFetchPage() {
   }, [])
 
   const handleFetch = async () => {
-    setMessage(t('messages.loading'))
+    setMessage(tUpdate('messages.loading'))
     try {
       const res = await fetch('/api/timelines', {
         method: 'POST',
@@ -39,27 +43,27 @@ export default function TLFetchPage() {
         body: JSON.stringify({ season }),
       })
       if (res.ok) {
-        setMessage(t('messages.saved'))
+        setMessage(tUpdate('messages.saved'))
       } else {
-        setMessage(t('messages.error'))
+        setMessage(tUpdate('messages.error'))
       }
     } catch {
-      setMessage(t('messages.error'))
+      setMessage(tUpdate('messages.error'))
     }
   }
 
   return (
     <main className="p-4 space-y-2">
-      <h2 className="text-lg font-bold">{t('title')}</h2>
+      <h2 className="text-lg font-bold">{tUpdate('title')}</h2>
       <select
         value={season}
         onChange={e => setSeason(e.target.value)}
         className="border rounded px-2 py-1"
       >
-        <option value="">{t('seasonPlaceholder')}</option>
+        <option value="">{tUpdate('seasonPlaceholder')}</option>
         {seasons.map(s => (
           <option key={s.number} value={s.number}>
-            {t('seasonOption', { number: s.number, start: s.startDate, end: s.endDate })}
+            {tUpdate('seasonOption', { number: s.number, start: s.startDate, end: s.endDate })}
           </option>
         ))}
       </select>
@@ -67,7 +71,7 @@ export default function TLFetchPage() {
         onClick={handleFetch}
         className="bg-blue-500 text-white px-4 py-1 rounded"
       >
-        {t('fetch')}
+        {tUpdate('fetch')}
       </button>
       {message && <p>{message}</p>}
     </main>

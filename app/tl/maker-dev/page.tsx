@@ -455,8 +455,15 @@ const armorBonus: Record<string, Record<string, number>> = {
 
 
 export default function TLMakerPage() {
-  const tMaker = useTranslations('tl.maker')
-  const tPlugin = useTranslations('tl.plugin')
+  const t = useTranslations('tl')
+  const tMaker = useCallback(
+    (key: string, values?: Record<string, unknown>) => t(`maker.${key}`, values),
+    [t]
+  )
+  const tPlugin = useCallback(
+    (key: string, values?: Record<string, unknown>) => t(`plugin.${key}`, values),
+    [t]
+  )
   const [students, setStudents] = useState<Student[]>([])
   const [rowStudents, setRowStudents] = useState<string[]>(['', '', '', '', '', ''])
   const [skills, setSkills] = useState<SkillEvent[]>([])

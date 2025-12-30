@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUser, faUserSlash } from '@fortawesome/free-solid-svg-icons'
@@ -34,7 +34,11 @@ interface RaidData {
 }
 
 export default function TLSearchPage() {
-  const t = useTranslations('tl.search')
+  const t = useTranslations('tl')
+  const tSearch = useCallback(
+    (key: string, values?: Record<string, unknown>) => t(`search.${key}`, values),
+    [t]
+  )
   const session = useSession()
   const supabase = useSupabaseClient()
   const [timelines, setTimelines] = useState<Timeline[]>([])
@@ -73,9 +77,9 @@ export default function TLSearchPage() {
     const pubUtc = new Date(timeline.publishedAt)
     const pub = new Date(pubUtc.getTime() + 9 * 60 * 60 * 1000)
     const cutoff = new Date(start.getTime() + 6 * 86400000 + 4 * 60 * 60 * 1000)
-    if (pub >= cutoff) return t('publishAfter')
+    if (pub >= cutoff) return tSearch('publishAfter')
     const diff = Math.floor((pub.getTime() - start.getTime()) / 86400000) + 1
-    return t('publishDay', { day: diff })
+    return tSearch('publishDay', { day: diff })
   }
 
   // 簡易的な難易度順
@@ -105,7 +109,7 @@ export default function TLSearchPage() {
             if (latest.type === '総力戦' && latest.defenseArmors.length === 1) {
               setArmor(latest.defenseArmors[0])
             }
-            setLoadingMessage(t('messages.latestLoading', { season: latest.number }))
+            setLoadingMessage(tSearch('messages.latestLoading', { season: latest.number }))
             const res = await fetch(`/api/timelines?season=${latest.number}`)
             if (res.ok) {
               const data: Timeline[] = await res.json()
@@ -124,7 +128,7 @@ export default function TLSearchPage() {
       }
     }
     load()
-  }, [t])
+  }, [tSearch])
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -193,7 +197,7 @@ export default function TLSearchPage() {
         targets = raidData.seasons.map((s) => s.number)
       }
       const query = params.toString()
-      setLoadingMessage(t('messages.loading', { targets: targets.join(', ') }))
+      setLoadingMessage(tSearch('messages.loading', { targets: targets.join(', ') }))
       const tlRes = await fetch(`/api/timelines${query ? `?${query}` : ''}`)
       if (tlRes.ok) {
         const data: Timeline[] = await tlRes.json()
@@ -272,13 +276,13 @@ export default function TLSearchPage() {
             setEditFormation(timeline.formation)
           }}
           >
-            {t('edit.title')}
+            {tSearch('edit.title')}
           </button>
         )}
         <div className="relative">
           <img
             src={`https://i.ytimg.com/vi/${timeline.videoid}/mqdefault.jpg`}
-            alt={t('thumbnailAlt')}
+            alt={tSearch('thumbnailAlt')}
             className="w-full h-auto mb-1"
           />
           <span className="absolute top-1 right-1 bg-black/50 text-white text-xs px-1">
@@ -286,7 +290,7 @@ export default function TLSearchPage() {
           </span>
           {timeline.guide && (
             <span className="absolute bottom-1 right-1 bg-black/50 text-white text-xs px-1">
-              {t('guideBadge')}
+              {tSearch('guideBadge')}
             </span>
           )}
         </div>
@@ -402,7 +406,7 @@ export default function TLSearchPage() {
 
   return (
     <main className="p-4 space-y-4">
-      <h2 className="text-xl">{t('title')}</h2>
+      <h2 className="text-xl">{tSearch('title')}</h2>
       <div className="space-y-2">
         <div className="flex flex-wrap gap-2 items-center">
           <select
@@ -410,7 +414,7 @@ export default function TLSearchPage() {
             onChange={(e) => setBoss(e.target.value)}
             className="border rounded px-2 py-1 flex-1 min-w-[8rem]"
           >
-          <option value="">{t('filters.boss')}</option>
+          <option value="">{tSearch('filters.boss')}</option>
           {bosses.map((b) => (
             <option key={b} value={b}>
               {b}
@@ -422,7 +426,7 @@ export default function TLSearchPage() {
             onChange={(e) => setTerrain(e.target.value)}
             className="border rounded px-2 py-1 flex-1 min-w-[8rem]"
           >
-          <option value="">{t('filters.terrain')}</option>
+          <option value="">{tSearch('filters.terrain')}</option>
           {terrains.map((t) => (
             <option key={t} value={t}>
               {t}
@@ -449,7 +453,7 @@ export default function TLSearchPage() {
           }}
           className="border rounded px-2 py-1 flex-1 min-w-[8rem]"
         >
-          <option value="">{t('filters.armor')}</option>
+          <option value="">{tSearch('filters.armor')}</option>
           {armorOptions.map((a) => (
             <option key={a} value={a}>
               {a}
@@ -461,7 +465,7 @@ export default function TLSearchPage() {
             onChange={(e) => setDifficulty(e.target.value)}
             className="border rounded px-2 py-1 flex-1 min-w-[8rem]"
         >
-          <option value="">{t('filters.difficulty')}</option>
+          <option value="">{tSearch('filters.difficulty')}</option>
           {difficulties.map((d) => (
             <option key={d} value={d}>
               {d}
@@ -474,7 +478,7 @@ export default function TLSearchPage() {
               className="border rounded px-2 py-1 w-full text-left"
               onClick={() => setSeasonOpen((o) => !o)}
             >
-              {season ? t('filters.seasonLabel', { season }) : t('filters.season')}
+              {season ? tSearch('filters.seasonLabel', { season }) : tSearch('filters.season')}
             </button>
             {seasonOpen && (
               <ul className="absolute z-10 bg-white border rounded mt-1 max-h-60 overflow-y-auto w-full text-sm">
@@ -482,7 +486,7 @@ export default function TLSearchPage() {
                   className="px-2 py-1 hover:bg-gray-100 cursor-pointer"
                   onClick={() => handleSeasonSelect('')}
                 >
-                  {t('filters.seasonAny')}
+                  {tSearch('filters.seasonAny')}
                 </li>
                 {availableSeasons.map((s) => (
                   <li
@@ -490,7 +494,7 @@ export default function TLSearchPage() {
                     className="px-2 py-1 hover:bg-gray-100 cursor-pointer whitespace-nowrap"
                     onClick={() => handleSeasonSelect(s.number)}
                   >
-                    {t('filters.seasonLabel', { season: s.number })}
+                    {tSearch('filters.seasonLabel', { season: s.number })}
                   </li>
                 ))}
               </ul>
@@ -500,7 +504,7 @@ export default function TLSearchPage() {
             onClick={handleSearch}
             className="border px-3 py-1 rounded bg-blue-500 text-white"
           >
-            {t('search')}
+            {tSearch('search')}
           </button>
         </div>
         <div>
@@ -508,7 +512,7 @@ export default function TLSearchPage() {
             className="border rounded px-2 py-1"
             onClick={() => setShowAdvanced(!showAdvanced)}
           >
-            {t('filters.advanced')}
+            {tSearch('filters.advanced')}
           </button>
           {showAdvanced && (
             <div className="mt-2 space-y-1">
@@ -518,7 +522,7 @@ export default function TLSearchPage() {
                   checked={filterGuide}
                   onChange={(e) => setFilterGuide(e.target.checked)}
                 />
-                <span>{t('filters.guideOnly')}</span>
+                <span>{tSearch('filters.guideOnly')}</span>
               </label>
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -526,7 +530,7 @@ export default function TLSearchPage() {
                   checked={filterFormationAdded}
                   onChange={(e) => setFilterFormationAdded(e.target.checked)}
                 />
-                <span>{t('filters.formationAddedOnly')}</span>
+                <span>{tSearch('filters.formationAddedOnly')}</span>
               </label>
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -534,7 +538,7 @@ export default function TLSearchPage() {
                   checked={filterFormationConfirmed}
                   onChange={(e) => setFilterFormationConfirmed(e.target.checked)}
                 />
-                <span>{t('filters.formationConfirmedOnly')}</span>
+                <span>{tSearch('filters.formationConfirmedOnly')}</span>
               </label>
             </div>
           )}
@@ -543,7 +547,7 @@ export default function TLSearchPage() {
       {loadingMessage && <p>{loadingMessage}</p>}
       {Object.keys(highestEntries).length === 0 && highest && (
         <div>
-          <h3 className="font-bold">{t('highestTitle', { score: highestScoreText })}</h3>
+          <h3 className="font-bold">{tSearch('highestTitle', { score: highestScoreText })}</h3>
           <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mb-2">
             <TimelineCard timeline={highest} />
           </ul>
@@ -552,7 +556,7 @@ export default function TLSearchPage() {
 
       {Object.keys(highestEntries).length > 0 && (
         <div>
-          <h3 className="font-bold">{t('highestTitle', { score: highestScoreText })}</h3>
+          <h3 className="font-bold">{tSearch('highestTitle', { score: highestScoreText })}</h3>
           <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mb-2">
             {Object.entries(highestEntries).map(([ar, t]) => (
               <TimelineCard key={ar} timeline={t} />
@@ -572,7 +576,7 @@ export default function TLSearchPage() {
                 })
               }
             >
-              {t('jumpToArmor', { armor: ar })}
+              {tSearch('jumpToArmor', { armor: ar })}
             </button>
           ))}
         </div>
@@ -646,7 +650,7 @@ export default function TLSearchPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <label className="flex items-center gap-2">
-              <span>{t('edit.score')}</span>
+              <span>{tSearch('edit.score')}</span>
               <input
                 type="number"
                 value={editScore}
@@ -660,10 +664,10 @@ export default function TLSearchPage() {
                 checked={editGuide}
                 onChange={(e) => setEditGuide(e.target.checked)}
               />
-              <span>{t('edit.guide')}</span>
+              <span>{tSearch('edit.guide')}</span>
             </label>
             <label className="flex items-center gap-2">
-              <span>{t('edit.formationStatus')}</span>
+              <span>{tSearch('edit.formationStatus')}</span>
               <select
                 value={editFormationStatus}
                 onChange={(e) => setEditFormationStatus(e.target.value)}
@@ -675,23 +679,23 @@ export default function TLSearchPage() {
               </select>
             </label>
             <label className="flex items-center gap-2">
-              <span>{t('edit.armor')}</span>
+              <span>{tSearch('edit.armor')}</span>
               <select
                 value={editArmor}
                 onChange={(e) => setEditArmor(e.target.value)}
                 className="border rounded p-1 flex-1"
               >
-                <option value="">{t('edit.armorUnset')}</option>
+                <option value="">{tSearch('edit.armorUnset')}</option>
                 {armors.map((a) => (
                   <option key={a} value={a}>
                     {a}
                   </option>
                 ))}
-                <option value="不明">{t('edit.armorUnknown')}</option>
+                <option value="不明">{tSearch('edit.armorUnknown')}</option>
               </select>
             </label>
             <label className="flex flex-col gap-1">
-              <span>{t('edit.formation')}</span>
+              <span>{tSearch('edit.formation')}</span>
               <textarea
                 value={editFormation}
                 onChange={(e) => setEditFormation(e.target.value)}
@@ -709,13 +713,13 @@ export default function TLSearchPage() {
                 }}
                 className="border px-2 py-1"
               >
-                {t('edit.cancel')}
+                {tSearch('edit.cancel')}
               </button>
               <button
                 onClick={handleSaveEdit}
                 className="border px-2 py-1 bg-blue-500 text-white"
               >
-                {t('edit.save')}
+                {tSearch('edit.save')}
               </button>
             </div>
           </div>
