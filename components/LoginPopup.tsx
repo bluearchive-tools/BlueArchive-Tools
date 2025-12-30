@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
+import GoogleSignInButton from './GoogleSignInButton'
+import { useSession } from '@supabase/auth-helpers-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircleExclamation, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { useTranslations } from 'next-intl'
@@ -9,17 +10,8 @@ import { useTranslations } from 'next-intl'
 export default function LoginPopup() {
   const t = useTranslations('common')
   const session = useSession()
-  const supabase = useSupabaseClient()
   const [visible, setVisible] = useState(false)
   const [open, setOpen] = useState(false)
-
-  const signIn = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback` }
-    })
-    if (error) console.error(error.message)
-  }
 
   useEffect(() => {
     if (!session) {
@@ -42,9 +34,7 @@ export default function LoginPopup() {
       <div className="relative bg-yellow-200/80 text-black rounded shadow p-4 pointer-events-auto max-w-md w-full mx-4 flex items-start gap-2">
         <FontAwesomeIcon icon={faCircleExclamation} className="text-yellow-600 mt-1" />
         <p className="flex-1 text-sm">{t('messages.loginPrompt')}</p>
-        <button onClick={signIn} className="mr-2 px-2 py-1 text-sm bg-blue-600 text-white rounded" type="button">
-          {t('auth.login')}
-        </button>
+        <GoogleSignInButton width={240} theme="outline" size="medium" text="continue_with" className="mr-2" />
         <button onClick={close} className="absolute top-1 right-1" aria-label={t('actions.close')}>
           <FontAwesomeIcon icon={faXmark} />
         </button>

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import GoogleSignInButton from './GoogleSignInButton'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import NoticeModal from './NoticeModal'
 import DataSyncModal from './DataSyncModal'
@@ -8,7 +9,6 @@ import SquadSyncModal from './SquadSyncModal'
 import type { NextRouter } from 'next/router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBell, faCog, faChevronDown, faMoon, faSun } from '@fortawesome/free-solid-svg-icons'
-import { faGoogle } from '@fortawesome/free-brands-svg-icons'
 import {
   useSession,
   useSupabaseClient,
@@ -106,14 +106,6 @@ export default function Header() {
       }
     }
   }, [])
-
-  const signIn = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback` }
-    })
-    if (error) console.error(error.message)
-  }
   const signOut = async () => {
     if (session) {
       const { data } = await supabase
@@ -234,10 +226,9 @@ export default function Header() {
                   </button>
                 </>
               ) : (
-                <button onClick={signIn} className="block w-full text-left px-2 py-1 flex items-center gap-2">
-                  <FontAwesomeIcon icon={faGoogle} className="text-black dark:text-white" />
-                  <span>{t('account.signInWithGoogle')}</span>
-                </button>
+                <div className="px-2 py-1">
+                  <GoogleSignInButton width={220} theme="outline" size="medium" text="continue_with" />
+                </div>
               )}
             </div>
           )}
