@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import StudentSelect from '../../components/StudentSelect'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import {
@@ -53,6 +53,29 @@ interface SquadGroup {
   squads: Squad[]
 }
 
+interface UserStudent {
+  level: number
+  star: number
+  unique_star: number
+  unique_level: number
+  bond: number
+  hp: number
+  hp_wb: number
+  attack: number
+  attack_wb: number
+  defense: number
+  heal: number
+  heal_wb: number
+  ex_skill: number
+  normal_skill: number
+  passive_skill: number
+  sub_skill: number
+  equip1: number
+  equip2: number
+  equip3: number
+  item_tier: number
+}
+
 export default function SquadPage() {
   const [students, setStudents] = useState<Student[]>([])
   const [groups, setGroups] = useState<SquadGroup[]>([])
@@ -68,6 +91,9 @@ export default function SquadPage() {
   >(null)
   const [touchSquad, setTouchSquad] = useState<{ gid: string; index: number } | null>(null)
   const [sharedGroup, setSharedGroup] = useState<SquadGroup | null>(null)
+  const [userStats, setUserStats] = useState<Record<string, UserStudent>>({})
+  const [includeStatus, setIncludeStatus] = useState(false)
+  const importRef = useRef<HTMLInputElement>(null)
   const session = useSession()
   const supabase = useSupabaseClient()
 
@@ -100,30 +126,78 @@ export default function SquadPage() {
   }, [])
 
   const loadGroups = async () => {
-    if (session) {
-      const { data } = await supabase
-        .from('user_squad_groups')
-        .select('groups')
-        .eq('user_id', session.user.id)
-        .maybeSingle()
-      if (data) setGroups((data as { groups: SquadGroup[] }).groups || [])
-    } else {
+    const loadLocal = () => {
       const raw = localStorage.getItem('squadGroups')
       if (raw) {
         try { setGroups(JSON.parse(raw) as SquadGroup[]) } catch { /* ignore */ }
       }
+    }
+
+    if (session) {
+      const { data, error } = await supabase
+        .from('user_squad_groups')
+        .select('groups')
+        .eq('user_id', session.user.id)
+        .maybeSingle()
+      if (error) {
+        loadLocal()
+        return
+      }
+      if (data && (data as { groups: SquadGroup[] }).groups) {
+        setGroups((data as { groups: SquadGroup[] }).groups || [])
+        return
+      }
+      loadLocal()
+    } else {
+      loadLocal()
     }
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadGroups() }, [session])
 
+  const refreshUserStats = useCallback(async () => {
+    if (session) {
+      const { data } = await supabase
+        .from('user_students')
+        .select('*')
+        .eq('user_id', session.user.id)
+      if (data) {
+        const map: Record<string, UserStudent> = {}
+        for (const row of data) {
+          map[row.student_id as string] = row as unknown as UserStudent
+        }
+        setUserStats(map)
+      }
+    } else {
+      const map: Record<string, UserStudent> = {}
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && key.startsWith('userStudent:')) {
+          const id = key.substring('userStudent:'.length)
+          const val = localStorage.getItem(key)
+          if (val) {
+            try {
+              map[id] = JSON.parse(val) as UserStudent
+            } catch {
+              /* ignore */
+            }
+          }
+        }
+      }
+      setUserStats(map)
+    }
+  }, [session, supabase])
+
+  useEffect(() => {
+    refreshUserStats()
+  }, [refreshUserStats])
+
   const saveGroups = async (gs: SquadGroup[]) => {
     if (session) {
       await supabase.from('user_squad_groups').upsert({ user_id: session.user.id, groups: gs })
-    } else {
-      localStorage.setItem('squadGroups', JSON.stringify(gs))
     }
+    localStorage.setItem('squadGroups', JSON.stringify(gs))
   }
 
   const addGroup = async () => {
@@ -281,6 +355,98 @@ export default function SquadPage() {
       .catch(() => alert('コピーに失敗しました'))
   }
 
+  const buildStudentExport = (id: string) => {
+    if (!id) return null
+    const st = findStudent(id)
+    if (!st) return null
+    const base = {
+      id: st.id,
+      name: st.name,
+      attackType: st.attackType,
+      defenseType: st.defenseType,
+      role: st.role,
+      characterType: st.characterType,
+      position: st.position,
+    }
+    const status = userStats[st.id]
+    if (includeStatus && status) {
+      return { ...base, status }
+    }
+    return base
+  }
+
+  const exportSquads = () => {
+    if (!groups.length) {
+      alert('書き出す部隊がありません')
+      return
+    }
+    const payload = groups.map((g) => ({
+      name: g.name,
+      squads: g.squads.map((sq) => ({
+        memo: sq.memo,
+        strikers: sq.strikers.map((id) => buildStudentExport(id)),
+        specials: sq.specials.map((id) => buildStudentExport(id)),
+      })),
+    }))
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = includeStatus ? 'squads_with_status.json' : 'squads.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const readStudentId = (entry: unknown) => {
+    if (typeof entry === 'string') return entry
+    if (entry && typeof entry === 'object' && 'id' in (entry as Record<string, unknown>)) {
+      const id = (entry as { id?: unknown }).id
+      if (typeof id === 'string') return id
+    }
+    return ''
+  }
+
+  const importSquadsFromJson = async (file: File | null) => {
+    if (!file) return
+    try {
+      const text = await file.text()
+      const data = JSON.parse(text)
+      if (!Array.isArray(data)) throw new Error('形式が正しくありません')
+
+      const mapped: SquadGroup[] = data.map((g, gi) => {
+        const squads = Array.isArray(g?.squads)
+          ? g.squads.map((sq: unknown) => {
+              const memo = typeof (sq as { memo?: unknown }).memo === 'string' ? (sq as { memo?: string }).memo : undefined
+              const normalize = (arr: unknown[], size: number) => {
+                const ids = (Array.isArray(arr) ? arr : []).map(readStudentId).filter(Boolean).slice(0, size)
+                while (ids.length < size) ids.push('')
+                return ids
+              }
+              const strikers = normalize((sq as { strikers?: unknown[] }).strikers || [], 4)
+              const specials = normalize((sq as { specials?: unknown[] }).specials || [], 2)
+              return { memo, strikers, specials }
+            })
+          : []
+        return {
+          id: `${Date.now()}-${gi}`,
+          name: typeof g?.name === 'string' ? g.name : `インポート${gi + 1}`,
+          squads,
+        }
+      })
+
+      const newGroups = [...groups, ...mapped]
+      setGroups(newGroups)
+      await saveGroups(newGroups)
+      alert('JSONを読み込みました')
+    } catch (err) {
+      console.error(err)
+      alert('JSONの読み込みに失敗しました')
+    } finally {
+      if (importRef.current) importRef.current.value = ''
+    }
+  }
+
   const importSharedGroup = async () => {
     if (!sharedGroup) return
     const newG: SquadGroup = {
@@ -299,6 +465,41 @@ export default function SquadPage() {
   return (
     <main className="p-4 space-y-4">
       <h2 className="text-xl">部隊管理</h2>
+      <div className="flex flex-wrap items-center gap-4">
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={includeStatus}
+            onChange={(e) => setIncludeStatus(e.target.checked)}
+          />
+          生徒のステータスを含める
+        </label>
+        <button
+          type="button"
+          onClick={exportSquads}
+          className="border rounded px-2 py-1"
+        >
+          <FontAwesomeIcon icon={faFloppyDisk} className="mr-1" />
+          部隊を書き出し
+        </button>
+        <div className="flex items-center gap-2">
+          <input
+            ref={importRef}
+            type="file"
+            accept="application/json"
+            className="hidden"
+            onChange={(e) => importSquadsFromJson(e.target.files?.[0] ?? null)}
+          />
+          <button
+            type="button"
+            onClick={() => importRef.current?.click()}
+            className="border rounded px-2 py-1"
+          >
+            <FontAwesomeIcon icon={faCopy} className="mr-1" />
+            JSONから読み込み
+          </button>
+        </div>
+      </div>
       <div className="flex gap-2">
         <input
           type="text"
@@ -706,4 +907,3 @@ export default function SquadPage() {
     </main>
   )
 }
-
