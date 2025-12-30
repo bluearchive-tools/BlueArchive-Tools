@@ -5,6 +5,7 @@ import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUser, faUserSlash } from '@fortawesome/free-solid-svg-icons'
 import { Timeline } from '../../../types/timeline'
+import { useTranslations } from 'next-intl'
 
 interface Student {
   id: string
@@ -33,6 +34,7 @@ interface RaidData {
 }
 
 export default function TLSearchPage() {
+  const t = useTranslations('tl.search')
   const session = useSession()
   const supabase = useSupabaseClient()
   const [timelines, setTimelines] = useState<Timeline[]>([])
@@ -71,9 +73,9 @@ export default function TLSearchPage() {
     const pubUtc = new Date(t.publishedAt)
     const pub = new Date(pubUtc.getTime() + 9 * 60 * 60 * 1000)
     const cutoff = new Date(start.getTime() + 6 * 86400000 + 4 * 60 * 60 * 1000)
-    if (pub >= cutoff) return '終了後'
+    if (pub >= cutoff) return t('publishAfter')
     const diff = Math.floor((pub.getTime() - start.getTime()) / 86400000) + 1
-    return `${diff}日目`
+    return t('publishDay', { day: diff })
   }
 
   // 簡易的な難易度順
@@ -103,7 +105,7 @@ export default function TLSearchPage() {
             if (latest.type === '総力戦' && latest.defenseArmors.length === 1) {
               setArmor(latest.defenseArmors[0])
             }
-            setLoadingMessage(`(${latest.number})のデータを取得中...`)
+            setLoadingMessage(t('messages.latestLoading', { season: latest.number }))
             const res = await fetch(`/api/timelines?season=${latest.number}`)
             if (res.ok) {
               const data: Timeline[] = await res.json()
@@ -122,7 +124,7 @@ export default function TLSearchPage() {
       }
     }
     load()
-  }, [])
+  }, [t])
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -191,7 +193,7 @@ export default function TLSearchPage() {
         targets = raidData.seasons.map((s) => s.number)
       }
       const query = params.toString()
-      setLoadingMessage(`(${targets.join(', ')})のデータを取得中...`)
+      setLoadingMessage(t('messages.loading', { targets: targets.join(', ') }))
       const tlRes = await fetch(`/api/timelines${query ? `?${query}` : ''}`)
       if (tlRes.ok) {
         const data: Timeline[] = await tlRes.json()
@@ -251,53 +253,53 @@ export default function TLSearchPage() {
   }
 }
 
-  const TimelineCard = ({ t }: { t: Timeline }) => (
+  const TimelineCard = ({ timeline }: { timeline: Timeline }) => (
     <li
-      key={t.id}
+      key={timeline.id}
       className="border rounded p-2 space-y-1 text-sm cursor-pointer relative"
-      onClick={() => setOpenTl(t)}
+      onClick={() => setOpenTl(timeline)}
     >
       {isAdmin && (
         <button
           className="absolute -top-2 right-1 bg-white/80 border text-xs px-1 rounded"
           onClick={(e) => {
             e.stopPropagation()
-            setEditTl(t)
-            setEditScore(t.score)
-            setEditGuide(Boolean(t.guide))
-            setEditFormationStatus(t.formationStatus || 'none')
-            setEditArmor(t.armor)
-            setEditFormation(t.formation)
+            setEditTl(timeline)
+            setEditScore(timeline.score)
+            setEditGuide(Boolean(timeline.guide))
+            setEditFormationStatus(timeline.formationStatus || 'none')
+            setEditArmor(timeline.armor)
+            setEditFormation(timeline.formation)
           }}
           >
-            編集
+            {t('edit.title')}
           </button>
         )}
         <div className="relative">
           <img
-            src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
-            alt="thumbnail"
+            src={`https://i.ytimg.com/vi/${timeline.videoid}/mqdefault.jpg`}
+            alt={t('thumbnailAlt')}
             className="w-full h-auto mb-1"
           />
           <span className="absolute top-1 right-1 bg-black/50 text-white text-xs px-1">
-            {getDayText(t)}
+            {getDayText(timeline)}
           </span>
-          {t.guide && (
+          {timeline.guide && (
             <span className="absolute bottom-1 right-1 bg-black/50 text-white text-xs px-1">
-              解説付き
+              {t('guideBadge')}
             </span>
           )}
         </div>
-        <p className="text-xs">{t.title}</p>
+        <p className="text-xs">{timeline.title}</p>
         <p className="text-lg font-bold flex items-center">
-          {formatScore(t.score)}
-          {(!t.formation || t.formation === '[]') && (
+          {formatScore(timeline.score)}
+          {(!timeline.formation || timeline.formation === '[]') && (
             <FontAwesomeIcon icon={faUserSlash} className="text-red-500 ml-1" />
           )}
-          {t.formation && t.formation !== '[]' && t.formationStatus !== 'manual' && (
+          {timeline.formation && timeline.formation !== '[]' && timeline.formationStatus !== 'manual' && (
             <FontAwesomeIcon icon={faUser} className="text-gray-500 ml-1" />
           )}
-          {t.formationStatus === 'manual' && (
+          {timeline.formationStatus === 'manual' && (
             <FontAwesomeIcon icon={faUser} className="text-green-500 ml-1" />
           )}
         </p>
@@ -400,7 +402,7 @@ export default function TLSearchPage() {
 
   return (
     <main className="p-4 space-y-4">
-      <h2 className="text-xl">TL検索</h2>
+      <h2 className="text-xl">{t('title')}</h2>
       <div className="space-y-2">
         <div className="flex flex-wrap gap-2 items-center">
           <select
@@ -408,7 +410,7 @@ export default function TLSearchPage() {
             onChange={(e) => setBoss(e.target.value)}
             className="border rounded px-2 py-1 flex-1 min-w-[8rem]"
           >
-          <option value="">ボスを選択</option>
+          <option value="">{t('filters.boss')}</option>
           {bosses.map((b) => (
             <option key={b} value={b}>
               {b}
@@ -420,7 +422,7 @@ export default function TLSearchPage() {
             onChange={(e) => setTerrain(e.target.value)}
             className="border rounded px-2 py-1 flex-1 min-w-[8rem]"
           >
-          <option value="">地形を選択</option>
+          <option value="">{t('filters.terrain')}</option>
           {terrains.map((t) => (
             <option key={t} value={t}>
               {t}
@@ -447,7 +449,7 @@ export default function TLSearchPage() {
           }}
           className="border rounded px-2 py-1 flex-1 min-w-[8rem]"
         >
-          <option value="">全て</option>
+          <option value="">{t('filters.armor')}</option>
           {armorOptions.map((a) => (
             <option key={a} value={a}>
               {a}
@@ -459,7 +461,7 @@ export default function TLSearchPage() {
             onChange={(e) => setDifficulty(e.target.value)}
             className="border rounded px-2 py-1 flex-1 min-w-[8rem]"
         >
-          <option value="">全て</option>
+          <option value="">{t('filters.difficulty')}</option>
           {difficulties.map((d) => (
             <option key={d} value={d}>
               {d}
@@ -472,7 +474,7 @@ export default function TLSearchPage() {
               className="border rounded px-2 py-1 w-full text-left"
               onClick={() => setSeasonOpen((o) => !o)}
             >
-              {season ? `シーズン${season}` : 'シーズンを選択'}
+              {season ? t('filters.seasonLabel', { season }) : t('filters.season')}
             </button>
             {seasonOpen && (
               <ul className="absolute z-10 bg-white border rounded mt-1 max-h-60 overflow-y-auto w-full text-sm">
@@ -480,7 +482,7 @@ export default function TLSearchPage() {
                   className="px-2 py-1 hover:bg-gray-100 cursor-pointer"
                   onClick={() => handleSeasonSelect('')}
                 >
-                  全て
+                  {t('filters.seasonAny')}
                 </li>
                 {availableSeasons.map((s) => (
                   <li
@@ -488,7 +490,7 @@ export default function TLSearchPage() {
                     className="px-2 py-1 hover:bg-gray-100 cursor-pointer whitespace-nowrap"
                     onClick={() => handleSeasonSelect(s.number)}
                   >
-                    {`シーズン${s.number}`}
+                    {t('filters.seasonLabel', { season: s.number })}
                   </li>
                 ))}
               </ul>
@@ -498,7 +500,7 @@ export default function TLSearchPage() {
             onClick={handleSearch}
             className="border px-3 py-1 rounded bg-blue-500 text-white"
           >
-            検索
+            {t('search')}
           </button>
         </div>
         <div>
@@ -506,7 +508,7 @@ export default function TLSearchPage() {
             className="border rounded px-2 py-1"
             onClick={() => setShowAdvanced(!showAdvanced)}
           >
-            詳細検索
+            {t('filters.advanced')}
           </button>
           {showAdvanced && (
             <div className="mt-2 space-y-1">
@@ -516,7 +518,7 @@ export default function TLSearchPage() {
                   checked={filterGuide}
                   onChange={(e) => setFilterGuide(e.target.checked)}
                 />
-                <span>解説ありのみ</span>
+                <span>{t('filters.guideOnly')}</span>
               </label>
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -524,7 +526,7 @@ export default function TLSearchPage() {
                   checked={filterFormationAdded}
                   onChange={(e) => setFilterFormationAdded(e.target.checked)}
                 />
-                <span>編成追加のみ</span>
+                <span>{t('filters.formationAddedOnly')}</span>
               </label>
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -532,7 +534,7 @@ export default function TLSearchPage() {
                   checked={filterFormationConfirmed}
                   onChange={(e) => setFilterFormationConfirmed(e.target.checked)}
                 />
-                <span>編成確認済みのみ</span>
+                <span>{t('filters.formationConfirmedOnly')}</span>
               </label>
             </div>
           )}
@@ -541,19 +543,19 @@ export default function TLSearchPage() {
       {loadingMessage && <p>{loadingMessage}</p>}
       {Object.keys(highestEntries).length === 0 && highest && (
         <div>
-          <h3 className="font-bold">現在の最高スコア: {highestScoreText}</h3>
+          <h3 className="font-bold">{t('highestTitle', { score: highestScoreText })}</h3>
           <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mb-2">
-            <TimelineCard t={highest} />
+            <TimelineCard timeline={highest} />
           </ul>
         </div>
       )}
 
       {Object.keys(highestEntries).length > 0 && (
         <div>
-          <h3 className="font-bold">現在の最高スコア: {highestScoreText}</h3>
+          <h3 className="font-bold">{t('highestTitle', { score: highestScoreText })}</h3>
           <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mb-2">
             {Object.entries(highestEntries).map(([ar, t]) => (
-              <TimelineCard key={ar} t={t} />
+              <TimelineCard key={ar} timeline={t} />
             ))}
           </ul>
         </div>
@@ -570,7 +572,7 @@ export default function TLSearchPage() {
                 })
               }
             >
-              {ar}へ
+              {t('jumpToArmor', { armor: ar })}
             </button>
           ))}
         </div>
@@ -581,7 +583,7 @@ export default function TLSearchPage() {
             <h3 className="font-bold mb-1">{ar}</h3>
             <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
               {arr.map((t) => (
-                <TimelineCard key={t.id} t={t} />
+                <TimelineCard key={t.id} timeline={t} />
               ))}
             </ul>
           </div>
@@ -589,7 +591,7 @@ export default function TLSearchPage() {
       ) : (
         <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
           {filteredSorted.map((t) => (
-            <TimelineCard key={t.id} t={t} />
+            <TimelineCard key={t.id} timeline={t} />
           ))}
         </ul>
       )}
@@ -644,7 +646,7 @@ export default function TLSearchPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <label className="flex items-center gap-2">
-              <span>スコア:</span>
+              <span>{t('edit.score')}</span>
               <input
                 type="number"
                 value={editScore}
@@ -658,10 +660,10 @@ export default function TLSearchPage() {
                 checked={editGuide}
                 onChange={(e) => setEditGuide(e.target.checked)}
               />
-              <span>解説付き</span>
+              <span>{t('edit.guide')}</span>
             </label>
             <label className="flex items-center gap-2">
-              <span>編成状態:</span>
+              <span>{t('edit.formationStatus')}</span>
               <select
                 value={editFormationStatus}
                 onChange={(e) => setEditFormationStatus(e.target.value)}
@@ -673,23 +675,23 @@ export default function TLSearchPage() {
               </select>
             </label>
             <label className="flex items-center gap-2">
-              <span>装甲:</span>
+              <span>{t('edit.armor')}</span>
               <select
                 value={editArmor}
                 onChange={(e) => setEditArmor(e.target.value)}
                 className="border rounded p-1 flex-1"
               >
-                <option value="">未設定</option>
+                <option value="">{t('edit.armorUnset')}</option>
                 {armors.map((a) => (
                   <option key={a} value={a}>
                     {a}
                   </option>
                 ))}
-                <option value="不明">不明</option>
+                <option value="不明">{t('edit.armorUnknown')}</option>
               </select>
             </label>
             <label className="flex flex-col gap-1">
-              <span>編成(JSON):</span>
+              <span>{t('edit.formation')}</span>
               <textarea
                 value={editFormation}
                 onChange={(e) => setEditFormation(e.target.value)}
@@ -707,13 +709,13 @@ export default function TLSearchPage() {
                 }}
                 className="border px-2 py-1"
               >
-                キャンセル
+                {t('edit.cancel')}
               </button>
               <button
                 onClick={handleSaveEdit}
                 className="border px-2 py-1 bg-blue-500 text-white"
               >
-                保存
+                {t('edit.save')}
               </button>
             </div>
           </div>

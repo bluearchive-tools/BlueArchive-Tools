@@ -1,0 +1,94 @@
+{
+  "search": {
+    "title": "Timeline Search",
+    "filters": {
+      "boss": "Select boss",
+      "terrain": "Select terrain",
+      "armor": "All",
+      "difficulty": "All",
+      "season": "Select season",
+      "seasonAny": "All",
+      "seasonLabel": "Season {{season}}",
+      "advanced": "Advanced filters",
+      "guideOnly": "With guide only",
+      "formationAddedOnly": "With formation only",
+      "formationConfirmedOnly": "Formation verified only"
+    },
+    "search": "Search",
+    "highestTitle": "Current highest score: {{score}}",
+    "jumpToArmor": "Jump to {{armor}}",
+    "publishAfter": "After event",
+    "publishDay": "Day {{day}}",
+    "thumbnailAlt": "thumbnail",
+    "guideBadge": "With guide",
+    "formationText": "Show TL as text",
+    "edit": {
+      "title": "Edit",
+      "score": "Score:",
+      "guide": "With guide",
+      "formationStatus": "Formation status:",
+      "formation": "Formation (JSON):",
+      "armor": "Armor:",
+      "armorUnset": "Unset",
+      "armorUnknown": "Unknown",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "messages": {
+      "loading": "Fetching data for ({{targets}})...",
+      "latestLoading": "Fetching data for ({{season}})..."
+    },
+    "labels": {
+      "season": "Season {{number}}",
+      "boss": "Select boss",
+      "terrain": "Select terrain"
+    }
+  },
+  "plugin": {
+    "manager": "Plugin Manager",
+    "close": "Close",
+    "description": "Safe JSON plugins (templates/macros). No JS execution.",
+    "installed": "Installed",
+    "none": "No plugins",
+    "templates": "Templates",
+    "macros": "Macros",
+    "download": "Download plugins.json",
+    "copy": "Copy JSON",
+    "import": "Import",
+    "placeholder": "Paste plugin JSON (single or array)",
+    "add": "Add / Update",
+    "sample": "Insert sample",
+    "clear": "Clear",
+    "macroRun": "Run macro",
+    "noMacro": "No enabled macros",
+    "execute": "Run",
+    "macroNote": "Macros/buttons can only perform safe actions like add/align/delete/duplicate/move/edit labels.",
+    "errors": {
+      "invalid": "Could not load as plugin (id/name required)",
+      "parse": "Failed to parse JSON"
+    },
+    "window": {
+      "dockClose": "Close",
+      "resizeHint": "Drag to resize"
+    },
+    "pluginsLabel": "Plugins",
+    "menu": "Plugin Manager"
+  },
+  "maker": {
+    "proMode": "Pro mode: {{state}}",
+    "align": "Align",
+    "history": "History",
+    "exTemplate": "Generate EX template"
+  },
+  "update": {
+    "title": "Fetch TL",
+    "seasonPlaceholder": "Select season",
+    "seasonOption": "Season {{number}} ({{start}}~{{end}})",
+    "fetch": "Fetch",
+    "messages": {
+      "loading": "Fetching...",
+      "saved": "Saved",
+      "error": "An error occurred"
+    }
+  }
+}

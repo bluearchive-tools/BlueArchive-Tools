@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 interface Season {
   number: string
@@ -9,6 +10,7 @@ interface Season {
 }
 
 export default function TLFetchPage() {
+  const t = useTranslations('tl.update')
   const [seasons, setSeasons] = useState<Season[]>([])
   const [season, setSeason] = useState('')
   const [message, setMessage] = useState('')
@@ -29,7 +31,7 @@ export default function TLFetchPage() {
   }, [])
 
   const handleFetch = async () => {
-    setMessage('取得中...')
+    setMessage(t('messages.loading'))
     try {
       const res = await fetch('/api/timelines', {
         method: 'POST',
@@ -37,27 +39,27 @@ export default function TLFetchPage() {
         body: JSON.stringify({ season }),
       })
       if (res.ok) {
-        setMessage('保存しました')
+        setMessage(t('messages.saved'))
       } else {
-        setMessage('エラーが発生しました')
+        setMessage(t('messages.error'))
       }
     } catch {
-      setMessage('エラーが発生しました')
+      setMessage(t('messages.error'))
     }
   }
 
   return (
     <main className="p-4 space-y-2">
-      <h2 className="text-lg font-bold">TL取得</h2>
+      <h2 className="text-lg font-bold">{t('title')}</h2>
       <select
         value={season}
         onChange={e => setSeason(e.target.value)}
         className="border rounded px-2 py-1"
       >
-        <option value="">シーズンを選択</option>
+        <option value="">{t('seasonPlaceholder')}</option>
         {seasons.map(s => (
           <option key={s.number} value={s.number}>
-            {`シーズン${s.number} (${s.startDate}~${s.endDate})`}
+            {t('seasonOption', { number: s.number, start: s.startDate, end: s.endDate })}
           </option>
         ))}
       </select>
@@ -65,7 +67,7 @@ export default function TLFetchPage() {
         onClick={handleFetch}
         className="bg-blue-500 text-white px-4 py-1 rounded"
       >
-        取得
+        {t('fetch')}
       </button>
       {message && <p>{message}</p>}
     </main>

@@ -1,0 +1,94 @@
+{
+  "search": {
+    "title": "TL検索",
+    "filters": {
+      "boss": "ボスを選択",
+      "terrain": "地形を選択",
+      "armor": "全て",
+      "difficulty": "全て",
+      "season": "シーズンを選択",
+      "seasonAny": "全て",
+      "seasonLabel": "シーズン{{season}}",
+      "advanced": "詳細検索",
+      "guideOnly": "解説ありのみ",
+      "formationAddedOnly": "編成追加のみ",
+      "formationConfirmedOnly": "編成確認済みのみ"
+    },
+    "search": "検索",
+    "highestTitle": "現在の最高スコア: {{score}}",
+    "jumpToArmor": "{{armor}}へ",
+    "publishAfter": "終了後",
+    "publishDay": "{{day}}日目",
+    "thumbnailAlt": "thumbnail",
+    "guideBadge": "解説付き",
+    "formationText": "TLをテキスト表示",
+    "edit": {
+      "title": "編集",
+      "score": "スコア:",
+      "guide": "解説付き",
+      "formationStatus": "編成状態:",
+      "formation": "編成(JSON):",
+      "armor": "装甲:",
+      "armorUnset": "未設定",
+      "armorUnknown": "不明",
+      "cancel": "キャンセル",
+      "save": "保存"
+    },
+    "messages": {
+      "loading": "({{targets}})のデータを取得中...",
+      "latestLoading": "({{season}})のデータを取得中..."
+    },
+    "labels": {
+      "season": "シーズン{{number}}",
+      "boss": "ボスを選択",
+      "terrain": "地形を選択"
+    }
+  },
+  "plugin": {
+    "manager": "プラグイン管理",
+    "close": "閉じる",
+    "description": "JSON形式の安全なプラグイン（テンプレ/マクロ）です。JS実行はしません。",
+    "installed": "インストール済み",
+    "none": "プラグインなし",
+    "templates": "テンプレ一覧",
+    "macros": "マクロ一覧",
+    "download": "plugins.jsonをダウンロード",
+    "copy": "JSONコピー",
+    "import": "インポート",
+    "placeholder": "プラグインJSON（単体 or 配列）を貼り付け",
+    "add": "追加/更新",
+    "sample": "サンプルを入れる",
+    "clear": "クリア",
+    "macroRun": "マクロ実行",
+    "noMacro": "有効なマクロがありません",
+    "execute": "実行",
+    "macroNote": "※ マクロ/ボタンは「追加・整列・選択の削除/複製/移動/ラベル変更」などの安全な操作のみです。",
+    "errors": {
+      "invalid": "プラグインとして読み込めません（id/name必須）",
+      "parse": "JSONの解析に失敗しました"
+    },
+    "window": {
+      "dockClose": "閉じる",
+      "resizeHint": "ドラッグでサイズ変更"
+    },
+    "pluginsLabel": "Plugins",
+    "menu": "プラグイン管理"
+  },
+  "maker": {
+    "proMode": "プロモード: {{state}}",
+    "align": "整列",
+    "history": "履歴",
+    "exTemplate": "EXテンプレ生成"
+  },
+  "update": {
+    "title": "TL取得",
+    "seasonPlaceholder": "シーズンを選択",
+    "seasonOption": "シーズン{{number}} ({{start}}~{{end}})",
+    "fetch": "取得",
+    "messages": {
+      "loading": "取得中...",
+      "saved": "保存しました",
+      "error": "エラーが発生しました"
+    }
+  }
+}

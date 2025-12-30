@@ -4,10 +4,12 @@ import commonEn from '../../locales/en/common.json'
 import footerEn from '../../locales/en/footer.json'
 import headerEn from '../../locales/en/header.json'
 import homeEn from '../../locales/en/home.json'
+import tlEn from '../../locales/en/tl.json'
 import commonJa from '../../locales/ja/common.json'
 import footerJa from '../../locales/ja/footer.json'
 import headerJa from '../../locales/ja/header.json'
 import homeJa from '../../locales/ja/home.json'
+import tlJa from '../../locales/ja/tl.json'
 
 export const SUPPORTED_LOCALES = ['ja', 'en'] as const
 export type Locale = (typeof SUPPORTED_LOCALES)[number]
@@ -20,12 +22,14 @@ export const LOCALE_MESSAGES = {
     header: headerEn,
     footer: footerEn,
     home: homeEn,
+    tl: tlEn,
   },
   ja: {
     common: commonJa,
     header: headerJa,
     footer: footerJa,
     home: homeJa,
+    tl: tlJa,
   },
 } as const satisfies Record<Locale, AbstractIntlMessages>
 

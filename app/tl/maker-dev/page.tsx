@@ -12,6 +12,7 @@ import {
   faRedo,
   faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons'
+import { useTranslations } from 'next-intl'
 import AddEnemyModal from '../../../components/AddEnemyModal'
 import equipmentJson from '@/data/equipment.json'
 
@@ -454,6 +455,8 @@ const armorBonus: Record<string, Record<string, number>> = {
 
 
 export default function TLMakerPage() {
+  const tMaker = useTranslations('tl.maker')
+  const tPlugin = useTranslations('tl.plugin')
   const [students, setStudents] = useState<Student[]>([])
   const [rowStudents, setRowStudents] = useState<string[]>(['', '', '', '', '', ''])
   const [skills, setSkills] = useState<SkillEvent[]>([])
@@ -3360,7 +3363,7 @@ setShowCreateModal(false)
                 onClick={() => setProMode((v) => !v)}
                 className="block w-full text-left px-2 py-1 hover:bg-gray-200 whitespace-nowrap"
               >
-                プロモード: {proMode ? 'ON' : 'OFF'}
+                {tMaker('proMode', { state: proMode ? 'ON' : 'OFF' })}
               </button>
 
               {proMode && (
@@ -3373,7 +3376,7 @@ setShowCreateModal(false)
                     }}
                     className="block w-full text-left px-2 py-1 hover:bg-gray-200 whitespace-nowrap"
                   >
-                    整列
+                    {tMaker('align')}
                   </button>
                   <button
                     type="button"
@@ -3383,7 +3386,7 @@ setShowCreateModal(false)
                     }}
                     className="block w-full text-left px-2 py-1 hover:bg-gray-200 whitespace-nowrap"
                   >
-                    履歴
+                    {tMaker('history')}
                   </button>
                   <button
                     type="button"
@@ -3393,7 +3396,7 @@ setShowCreateModal(false)
                     }}
                     className="block w-full text-left px-2 py-1 hover:bg-gray-200 whitespace-nowrap"
                   >
-                    EXテンプレ生成
+                    {tMaker('exTemplate')}
                   </button>
                   <button
                     type="button"
@@ -3403,7 +3406,7 @@ setShowCreateModal(false)
                     }}
                     className="block w-full text-left px-2 py-1 hover:bg-gray-200 whitespace-nowrap"
                   >
-                    プラグイン管理
+                    {tPlugin('menu')}
                   </button>
                   <div className="border-t my-1" />
                 </>
@@ -3411,7 +3414,7 @@ setShowCreateModal(false)
               {toolMenuPluginButtons.length > 0 && (
                 <>
                   <div className="border-t my-1" />
-                  <div className="px-2 py-1 text-xs text-gray-500">Plugins</div>
+                  <div className="px-2 py-1 text-xs text-gray-500">{tPlugin('pluginsLabel')}</div>
                   {toolMenuPluginButtons.map((b) => (
                     <button
                       key={`${b.pluginId}:${b.id}`}
@@ -4326,7 +4329,7 @@ setShowCreateModal(false)
                     className="border px-2 py-1 rounded text-[10px]"
                     onClick={() => setDockPluginWindow(null)}
                   >
-                    閉じる
+                    {tPlugin('window.dockClose')}
                   </button>
                 </div>
 
@@ -4370,7 +4373,7 @@ return (
                     <span className="text-gray-500">{` — ${p.name}`}</span>
                   </div>
                   <button className="border px-2 py-1 rounded text-xs" onClick={() => setOpenPluginWindow(null)}>
-                    閉じる
+                    {tPlugin('window.dockClose')}
                   </button>
                 </div>
 
@@ -4381,13 +4384,13 @@ return (
                   className="w-full border rounded flex-1 min-h-0"
                 />
 
-<div
-                  className="absolute right-2 bottom-2 z-20 h-5 w-5 cursor-se-resize select-none rounded border bg-white/80 flex items-center justify-center text-[10px] text-gray-600 opacity-80 hover:opacity-100"
-                  onPointerDown={(e) => startResizePluginWindow(e, key, size.w, size.h)}
-                  title="ドラッグでサイズ変更"
-                >
-                  ◢
-                </div>
+              <div
+                className="absolute right-2 bottom-2 z-20 h-5 w-5 cursor-se-resize select-none rounded border bg-white/80 flex items-center justify-center text-[10px] text-gray-600 opacity-80 hover:opacity-100"
+                onPointerDown={(e) => startResizePluginWindow(e, key, size.w, size.h)}
+                title={tPlugin('window.resizeHint')}
+              >
+                ◢
+              </div>
               </div>
             </div>
           )
@@ -4406,7 +4409,7 @@ return (
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <div className="font-bold text-lg">プラグイン管理</div>
+              <div className="font-bold text-lg">{tPlugin('manager')}</div>
               <button
                 className="border px-2 py-1 rounded"
                 onClick={() => {
@@ -4414,22 +4417,20 @@ return (
                   setShowPluginModal(false)
                 }}
               >
-                閉じる
+                {tPlugin('close')}
               </button>
             </div>
 
-            <div className="text-xs text-gray-600">
-              JSON形式の安全なプラグイン（テンプレ/マクロ）です。JS実行はしません。
-            </div>
+            <div className="text-xs text-gray-600">{tPlugin('description')}</div>
 
             {pluginError && <div className="text-sm text-red-600">{pluginError}</div>}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-2">
-                <div className="font-semibold">インストール済み</div>
+                <div className="font-semibold">{tPlugin('installed')}</div>
                 <div className="border rounded p-2 h-56 overflow-auto space-y-2 text-sm">
                   {plugins.length === 0 ? (
-                    <div className="text-gray-500">プラグインなし</div>
+                    <div className="text-gray-500">{tPlugin('none')}</div>
                   ) : (
                     plugins.map((p) => (
                       <div key={p.id} className="border rounded p-2">
@@ -4466,7 +4467,7 @@ return (
 
                         {(p.templates?.length ?? 0) > 0 && (
                           <details className="mt-1">
-                            <summary className="cursor-pointer text-xs text-gray-700">テンプレ一覧</summary>
+                            <summary className="cursor-pointer text-xs text-gray-700">{tPlugin('templates')}</summary>
                             <div className="text-xs mt-1 space-y-1">
                               {p.templates!.map((t) => (
                                 <div key={t.id} className="flex justify-between gap-2">
@@ -4480,7 +4481,7 @@ return (
 
                         {(p.macros?.length ?? 0) > 0 && (
                           <details className="mt-1">
-                            <summary className="cursor-pointer text-xs text-gray-700">マクロ一覧</summary>
+                            <summary className="cursor-pointer text-xs text-gray-700">{tPlugin('macros')}</summary>
                             <div className="text-xs mt-1 space-y-1">
                               {p.macros!.map((m) => (
                                 <div key={m.id} className="flex items-center justify-between gap-2">
@@ -4510,7 +4511,7 @@ return (
                       URL.revokeObjectURL(url)
                     }}
                   >
-                    plugins.jsonをダウンロード
+                    {tPlugin('download')}
                   </button>
 
                   <button
@@ -4523,16 +4524,16 @@ return (
                       }
                     }}
                   >
-                    JSONコピー
+                    {tPlugin('copy')}
                   </button>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <div className="font-semibold">インポート</div>
+                <div className="font-semibold">{tPlugin('import')}</div>
                 <textarea
                   className="border rounded p-2 w-full h-40 font-mono text-xs"
-                  placeholder="プラグインJSON（単体 or 配列）を貼り付け"
+                  placeholder={tPlugin('placeholder')}
                   value={pluginText}
                   onChange={(e) => setPluginText(e.target.value)}
                 />
@@ -4545,17 +4546,17 @@ return (
                         const raw = JSON.parse(pluginText || 'null')
                         const incoming = normalizePlugins(raw)
                         if (incoming.length === 0) {
-                          setPluginError('プラグインとして読み込めません（id/name必須）')
+                          setPluginError(tPlugin('errors.invalid'))
                           return
                         }
                         setPlugins((prev) => mergePlugins(prev, incoming))
                         setPluginText('')
                       } catch {
-                        setPluginError('JSONの解析に失敗しました')
+                        setPluginError(tPlugin('errors.parse'))
                       }
                     }}
                   >
-                    追加/更新
+                    {tPlugin('add')}
                   </button>
 
                   <button
@@ -4607,19 +4608,19 @@ return (
                       setPluginText(JSON.stringify(sample, null, 2))
                     }}
                   >
-                    サンプルを入れる
+                    {tPlugin('sample')}
                   </button>
 
                   <button className="border px-2 py-1 rounded" onClick={() => setPluginText('')}>
-                    クリア
+                    {tPlugin('clear')}
                   </button>
                 </div>
 
                 <div className="border-t pt-2 space-y-2">
-                  <div className="font-semibold">マクロ実行</div>
+                  <div className="font-semibold">{tPlugin('macroRun')}</div>
                   <div className="border rounded p-2 h-40 overflow-auto space-y-2 text-sm">
                     {pluginMacros.length === 0 ? (
-                      <div className="text-gray-500">有効なマクロがありません</div>
+                      <div className="text-gray-500">{tPlugin('noMacro')}</div>
                     ) : (
                       pluginMacros.map((m) => (
                         <div key={`${m.pluginId}:${m.id}`} className="flex items-center justify-between gap-2">
@@ -4631,15 +4632,13 @@ return (
                             className="border px-2 py-1 rounded"
                             onClick={() => runPluginMacro(m)}
                           >
-                            実行
+                            {tPlugin('execute')}
                           </button>
                         </div>
                       ))
                     )}
                   </div>
-                  <div className="text-xs text-gray-600">
-                    ※ マクロ/ボタンは「追加・整列・選択の削除/複製/移動/ラベル変更」などの安全な操作のみです。
-                  </div>
+                  <div className="text-xs text-gray-600">{tPlugin('macroNote')}</div>
                 </div>
               </div>
             </div>
