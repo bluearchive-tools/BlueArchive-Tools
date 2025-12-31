@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" fill="none">
+  <rect width="1200" height="675" rx="24" fill="#f7fafc" stroke="#cbd5e0"/>
+  <text x="60" y="110" font-size="36" font-family="'Noto Sans JP', sans-serif" fill="#1a202c" font-weight="700">1. 生徒データ確認ページ</text>
+  <text x="60" y="160" font-size="28" font-family="'Noto Sans JP', sans-serif" fill="#2d3748">右上の「+」ボタンを押して追加メニューを開きます。</text>
+  <rect x="860" y="70" width="120" height="120" rx="16" fill="#ebf8ff" stroke="#3182ce" stroke-width="3"/>
+  <text x="920" y="135" font-size="72" font-family="'Noto Sans JP', sans-serif" fill="#2b6cb0" text-anchor="middle">＋</text>
+  <text x="920" y="190" font-size="24" font-family="'Noto Sans JP', sans-serif" fill="#2d3748" text-anchor="middle">追加ボタン</text>
+  <text x="60" y="240" font-size="24" font-family="'Noto Sans JP', sans-serif" fill="#4a5568">一覧をスクロールして保存済みの生徒を確認できます。</text>
+  <rect x="60" y="280" width="320" height="320" rx="20" fill="#edf2f7" stroke="#a0aec0"/>
+  <rect x="410" y="280" width="320" height="320" rx="20" fill="#edf2f7" stroke="#a0aec0"/>
+  <rect x="760" y="280" width="320" height="320" rx="20" fill="#edf2f7" stroke="#a0aec0"/>
+  <text x="220" y="460" font-size="32" font-family="'Noto Sans JP', sans-serif" fill="#718096" text-anchor="middle">生徒カード</text>
+  <text x="570" y="460" font-size="32" font-family="'Noto Sans JP', sans-serif" fill="#718096" text-anchor="middle">生徒カード</text>
+  <text x="920" y="460" font-size="32" font-family="'Noto Sans JP', sans-serif" fill="#718096" text-anchor="middle">生徒カード</text>
+</svg>

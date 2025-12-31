@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" fill="none">
+  <rect width="1200" height="675" rx="24" fill="#f7fafc" stroke="#cbd5e0"/>
+  <text x="60" y="110" font-size="36" font-family="'Noto Sans JP', sans-serif" fill="#1a202c" font-weight="700">3. 手動追加を選択</text>
+  <text x="60" y="160" font-size="28" font-family="'Noto Sans JP', sans-serif" fill="#2d3748">生徒を選び、ステータスを入力して保存します。</text>
+  <rect x="200" y="200" width="800" height="420" rx="24" fill="#fff" stroke="#a0aec0" stroke-width="2"/>
+  <rect x="240" y="240" width="720" height="70" rx="14" fill="#edf2f7" stroke="#cbd5e0"/>
+  <text x="270" y="286" font-size="24" font-family="'Noto Sans JP', sans-serif" fill="#2d3748">生徒選択</text>
+  <rect x="240" y="330" width="200" height="60" rx="10" fill="#ebf8ff" stroke="#63b3ed"/>
+  <text x="250" y="368" font-size="22" font-family="'Noto Sans JP', sans-serif" fill="#2d3748">レベル</text>
+  <rect x="460" y="330" width="200" height="60" rx="10" fill="#fff5f5" stroke="#fc8181"/>
+  <text x="470" y="368" font-size="22" font-family="'Noto Sans JP', sans-serif" fill="#2d3748">星</text>
+  <rect x="680" y="330" width="280" height="60" rx="10" fill="#f0fff4" stroke="#68d391"/>
+  <text x="690" y="368" font-size="22" font-family="'Noto Sans JP', sans-serif" fill="#2d3748">固有武器</text>
+  <rect x="240" y="410" width="720" height="60" rx="10" fill="#f7fafc" stroke="#cbd5e0" stroke-dasharray="6 4"/>
+  <text x="260" y="448" font-size="22" font-family="'Noto Sans JP', sans-serif" fill="#4a5568">攻撃力 / 防御力 / HP などを記入</text>
+  <rect x="240" y="490" width="200" height="60" rx="10" fill="#e6fffa" stroke="#38b2ac"/>
+  <text x="260" y="528" font-size="22" font-family="'Noto Sans JP', sans-serif" fill="#2c7a7b">絆</text>
+  <rect x="460" y="490" width="200" height="60" rx="10" fill="#faf5ff" stroke="#b794f4"/>
+  <text x="480" y="528" font-size="22" font-family="'Noto Sans JP', sans-serif" fill="#553c9a">スキルLv</text>
+  <rect x="680" y="490" width="280" height="60" rx="10" fill="#fffaf0" stroke="#f6ad55"/>
+  <text x="700" y="528" font-size="22" font-family="'Noto Sans JP', sans-serif" fill="#c05621">装備 / 愛用品</text>
+</svg>

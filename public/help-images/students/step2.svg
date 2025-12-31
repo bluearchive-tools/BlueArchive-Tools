@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" fill="none">
+  <rect width="1200" height="675" rx="24" fill="#f7fafc" stroke="#cbd5e0"/>
+  <text x="60" y="110" font-size="36" font-family="'Noto Sans JP', sans-serif" fill="#1a202c" font-weight="700">2. 追加メニューを開く</text>
+  <text x="60" y="160" font-size="28" font-family="'Noto Sans JP', sans-serif" fill="#2d3748">「画像から追加」または「手動追加」を選択します。</text>
+  <rect x="300" y="220" width="600" height="360" rx="24" fill="#fff" stroke="#a0aec0" stroke-width="2"/>
+  <text x="600" y="270" font-size="26" font-family="'Noto Sans JP', sans-serif" fill="#2d3748" text-anchor="middle">追加メニュー</text>
+  <rect x="360" y="300" width="480" height="70" rx="14" fill="#ebf8ff" stroke="#3182ce" stroke-width="2"/>
+  <text x="600" y="345" font-size="26" font-family="'Noto Sans JP', sans-serif" fill="#2b6cb0" text-anchor="middle">画像から追加</text>
+  <rect x="360" y="390" width="480" height="70" rx="14" fill="#fffaf0" stroke="#dd6b20" stroke-width="2"/>
+  <text x="600" y="435" font-size="26" font-family="'Noto Sans JP', sans-serif" fill="#c05621" text-anchor="middle">手動追加</text>
+  <rect x="360" y="480" width="480" height="70" rx="14" fill="#f0fff4" stroke="#38a169" stroke-width="2"/>
+  <text x="600" y="525" font-size="26" font-family="'Noto Sans JP', sans-serif" fill="#2f855a" text-anchor="middle">インポート</text>
+</svg>

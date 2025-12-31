@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" fill="none">
+  <rect width="1200" height="675" rx="24" fill="#f7fafc" stroke="#cbd5e0"/>
+  <text x="60" y="110" font-size="36" font-family="'Noto Sans JP', sans-serif" fill="#1a202c" font-weight="700">4. 入力を確認して保存</text>
+  <text x="60" y="160" font-size="28" font-family="'Noto Sans JP', sans-serif" fill="#2d3748">内容を見直したら「追加」を押して保存します。</text>
+  <rect x="220" y="210" width="760" height="380" rx="24" fill="#fff" stroke="#a0aec0" stroke-width="2"/>
+  <rect x="260" y="250" width="680" height="200" rx="16" fill="#f7fafc" stroke="#cbd5e0" stroke-dasharray="6 4"/>
+  <text x="280" y="290" font-size="24" font-family="'Noto Sans JP', sans-serif" fill="#2d3748">入力サマリー</text>
+  <text x="280" y="330" font-size="22" font-family="'Noto Sans JP', sans-serif" fill="#4a5568">・選択した生徒: ●●</text>
+  <text x="280" y="360" font-size="22" font-family="'Noto Sans JP', sans-serif" fill="#4a5568">・ステータス: HP / 攻撃 / 防御 / 絆 など</text>
+  <text x="280" y="390" font-size="22" font-family="'Noto Sans JP', sans-serif" fill="#4a5568">・スキルLv, 装備, 愛用品 をチェック</text>
+  <rect x="470" y="480" width="260" height="80" rx="20" fill="#3182ce"/>
+  <text x="600" y="530" font-size="32" font-family="'Noto Sans JP', sans-serif" fill="#fff" text-anchor="middle">追加</text>
+</svg>
