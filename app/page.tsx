@@ -10,12 +10,10 @@ import { useTranslations } from 'next-intl'
 
 export default function Home() {
   const t = useTranslations('home.sections')
-  const tHome = useTranslations('home')
 
   return (
     <>
     <main className="p-4 space-y-4 pb-16">
-      <h1 className="text-xl font-bold">{tHome('pageTitle')}</h1>
       <LoginPopup />
       <CollapsibleBox
         title={t('students.title')}
