@@ -15,6 +15,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import FilterModal from '../../components/FilterModal'
 import AddStudentModal from '../../components/AddStudentModal'
+import PageHelpButton from '../../components/PageHelpButton'
 
 interface Student {
   id: string
@@ -248,7 +249,10 @@ export default function StudentsPage() {
   return (
     <main className="p-4 space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl">生徒データ確認</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl">生徒データ確認</h2>
+          <PageHelpButton pageKey="students" />
+        </div>
         <div>
           <button
             onClick={() => setAddOpen(true)}

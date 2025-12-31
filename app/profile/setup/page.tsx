@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
+import PageHelpButton from '../../../components/PageHelpButton'
 
 export default function ProfileSetup() {
   const session = useSession()
@@ -53,7 +54,10 @@ export default function ProfileSetup() {
 
   return (
     <main className="p-4">
-      <h2 className="text-lg font-bold mb-4">ユーザー名設定</h2>
+      <div className="flex items-center gap-2 mb-4">
+        <h2 className="text-lg font-bold">ユーザー名設定</h2>
+        <PageHelpButton pageKey="profile-setup" />
+      </div>
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input
           type="text"

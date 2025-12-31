@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { redirect } from 'next/navigation'
+import PageHelpButton from '../../components/PageHelpButton'
 
 export default async function MyPage() {
   // クッキー情報をもとにサーバー側でセッション取得
@@ -29,7 +30,10 @@ export default async function MyPage() {
 
   return (
     <main>
-      <h2>マイページ</h2>
+      <div className="flex items-center gap-2 mb-2">
+        <h2>マイページ</h2>
+        <PageHelpButton pageKey="mypage" />
+      </div>
       {profile?.username && (
         <p>
           ユーザー名: {profile.username}{' '}

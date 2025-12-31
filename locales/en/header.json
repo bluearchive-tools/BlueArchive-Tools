@@ -3,7 +3,8 @@
   "actions": {
     "notices": "Notices",
     "settings": "Settings",
-    "toggleTheme": "Toggle theme"
+    "toggleTheme": "Toggle theme",
+    "about": "About this page"
   },
   "account": {
     "label": "Account",

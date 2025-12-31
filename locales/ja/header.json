@@ -3,7 +3,8 @@
   "actions": {
     "notices": "お知らせ",
     "settings": "設定",
-    "toggleTheme": "テーマ切替"
+    "toggleTheme": "テーマ切替",
+    "about": "このページについて"
   },
   "account": {
     "label": "アカウント",

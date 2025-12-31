@@ -8,6 +8,7 @@ import {
   decompressFromEncodedURIComponent,
 } from 'lz-string'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import PageHelpButton from '../../components/PageHelpButton'
 import {
   faPlus,
   faFloppyDisk,
@@ -464,7 +465,10 @@ export default function SquadPage() {
 
   return (
     <main className="p-4 space-y-4">
-      <h2 className="text-xl">部隊管理</h2>
+      <div className="flex items-center gap-2">
+        <h2 className="text-xl">部隊管理</h2>
+        <PageHelpButton pageKey="squads" />
+      </div>
       <div className="flex flex-wrap items-center gap-4">
         <label className="flex items-center gap-2 text-sm">
           <input

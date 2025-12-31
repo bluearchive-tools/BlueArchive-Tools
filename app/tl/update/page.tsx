@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import PageHelpButton from '../../../components/PageHelpButton'
 
 interface Season {
   number: string
@@ -48,7 +49,10 @@ export default function TLFetchPage() {
 
   return (
     <main className="p-4 space-y-2">
-      <h2 className="text-lg font-bold">TL取得</h2>
+      <div className="flex items-center gap-2">
+        <h2 className="text-lg font-bold">TL取得</h2>
+        <PageHelpButton pageKey="tl-update" />
+      </div>
       <select
         value={season}
         onChange={e => setSeason(e.target.value)}
