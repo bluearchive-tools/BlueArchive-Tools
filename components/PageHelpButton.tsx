@@ -19,7 +19,7 @@ type PageHelpLocale = Record<string, PageHelpEntry> & {
   }
 }
 
-const helpMap = helpContent as Record<string, PageHelpLocale>
+const helpMap = helpContent as unknown as Record<string, PageHelpLocale>
 
 interface Props {
   pageKey: string
