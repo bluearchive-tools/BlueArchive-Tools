@@ -74,10 +74,10 @@ export default function HelpEditorPage() {
 
   const updateCommonLabel = (value: string) => {
     setHelpMap((prev) => {
-      const nextLocale: PageHelpLocale = {
+      const nextLocale = {
         ...(prev[locale] ?? {}),
         _common: { buttonLabel: value || undefined },
-      }
+      } as PageHelpLocale
       return {
         ...prev,
         [locale]: nextLocale,
