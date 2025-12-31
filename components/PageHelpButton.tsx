@@ -6,6 +6,8 @@ import { faCircleQuestion } from '@fortawesome/free-solid-svg-icons'
 import { useLocale } from 'next-intl'
 import { useTheme } from './ThemeProvider'
 import helpContent from '../data/pageHelp.json'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 type PageHelpEntry = {
   title: string
@@ -86,9 +88,22 @@ export default function PageHelpButton({ pageKey, className }: Props) {
             </div>
             <div className="space-y-2 overflow-y-auto pr-1">
               {entry.body.map((text, idx) => (
-                <p key={idx} className="text-sm leading-relaxed">
+                <ReactMarkdown
+                  key={idx}
+                  remarkPlugins={[remarkGfm]}
+                  className="prose prose-sm dark:prose-invert max-w-none"
+                  components={{
+                    img: ({ alt, ...props }) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img {...props} alt={alt ?? ''} className={`max-w-full h-auto ${props.className ?? ''}`} />
+                    ),
+                    a: (props) => (
+                      <a {...props} target={props.target ?? '_blank'} rel={props.rel ?? 'noreferrer'} />
+                    ),
+                  }}
+                >
                   {text}
-                </p>
+                </ReactMarkdown>
               ))}
             </div>
           </div>
