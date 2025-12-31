@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import StudentSelect from '../../../components/StudentSelect'
+import PageHelpButton from '../../../components/PageHelpButton'
 
 type Student = {
   id: string
@@ -428,7 +429,10 @@ export default function DivineCalcPage() {
     <main className="p-4 max-w-5xl mx-auto space-y-4">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="text-lg font-bold">神名文字計算機</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-bold">神名文字計算機</h1>
+            <PageHelpButton pageKey="tools-divine-calc" />
+          </div>
           <p className="text-sm opacity-70">
             生徒を選ぶと育成状況を自動取得します
           </p>

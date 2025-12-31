@@ -1,0 +1,222 @@
+{
+  "en": {
+    "_common": {
+      "buttonLabel": "About this page"
+    },
+    "home": {
+      "title": "Welcome",
+      "body": [
+        "Browse the main tools for students, squads, timelines, and calculators.",
+        "Use each card to jump directly to the feature you need."
+      ]
+    },
+    "students": {
+      "title": "Student data list",
+      "body": [
+        "Review and sort your saved student stats. Use filters or grid switches to focus on specific roles or attributes.",
+        "Register new students or update local data before syncing."
+      ]
+    },
+    "student-detail": {
+      "title": "Student details",
+      "body": [
+        "Check detailed stats, skills, and equipment for a single student.",
+        "Use this page as the source of truth when comparing builds."
+      ]
+    },
+    "squads": {
+      "title": "Squad management",
+      "body": [
+        "Create and edit squads with strikers and specials.",
+        "Share squads with others or copy existing shared squads into your list."
+      ]
+    },
+    "tl-maker": {
+      "title": "TL maker",
+      "body": [
+        "Build or import timelines, then adjust skills, markers, and squads.",
+        "Use the controls to manage timeline length, skill colors, and templates."
+      ]
+    },
+    "tl-maker-dev": {
+      "title": "TL maker (dev)",
+      "body": [
+        "Try experimental TL features such as free layout and plugins.",
+        "Features may change frequently—use with caution for production timelines."
+      ]
+    },
+    "tl-search": {
+      "title": "TL search",
+      "body": [
+        "Search published timelines by boss, armor, terrain, or season.",
+        "Open a TL to view details or copy it to your own workspace."
+      ]
+    },
+    "tl-update": {
+      "title": "TL import",
+      "body": [
+        "Fetch timeline data for a selected season and save it locally.",
+        "Use this to update your workspace with the newest shared TLs."
+      ]
+    },
+    "tl-damage": {
+      "title": "Damage calculator",
+      "body": [
+        "Estimate expected damage for squads and skills under different conditions.",
+        "Adjust stats to compare builds and share results."
+      ]
+    },
+    "settings": {
+      "title": "Settings",
+      "body": [
+        "Switch between light and dark mode.",
+        "Clear cached data such as student records, TL caches, and notice states."
+      ]
+    },
+    "mypage": {
+      "title": "My page",
+      "body": [
+        "View your profile and account email.",
+        "Update your username from the profile setup link."
+      ]
+    },
+    "tools-divine-calc": {
+      "title": "Kivotos insights calculator",
+      "body": [
+        "Estimate Kivotos Insights (神名文字) needs and expected returns.",
+        "Use rate-adjusted results to plan pulls and farming."
+      ]
+    },
+    "tools-bond-calc": {
+      "title": "Bond calculator",
+      "body": [
+        "Calculate required items to reach your target bond level.",
+        "Simulate different item mixes to minimize overuse."
+      ]
+    },
+    "tools-event-schedule": {
+      "title": "Event schedule",
+      "body": [
+        "Browse current and upcoming event timelines.",
+        "Use the calendar to check dates and plan stamina or ticket usage."
+      ]
+    },
+    "profile-setup": {
+      "title": "Profile setup",
+      "body": [
+        "Choose a username to personalize your profile.",
+        "Usernames are required before accessing certain features."
+      ]
+    }
+  },
+  "ja": {
+    "_common": {
+      "buttonLabel": "このページについて"
+    },
+    "home": {
+      "title": "ようこそ",
+      "body": [
+        "生徒・部隊・TL・各種ツールへのショートカットをまとめています。",
+        "必要な機能のカードをクリックして目的のページへ移動してください。"
+      ]
+    },
+    "students": {
+      "title": "生徒データ一覧",
+      "body": [
+        "保存済みの生徒ステータスを並べ替えたり絞り込んだりできます。",
+        "新規登録やローカル更新を行い、必要に応じて同期してください。"
+      ]
+    },
+    "student-detail": {
+      "title": "生徒詳細",
+      "body": [
+        "個別の生徒について、ステータス・スキル・装備などの詳細を確認できます。",
+        "育成方針や装備比較の参考にしてください。"
+      ]
+    },
+    "squads": {
+      "title": "部隊管理",
+      "body": [
+        "ストライカーとスペシャルを組み合わせて部隊を作成・編集します。",
+        "共有コードをコピーして仲間に共有したり、公開部隊を取り込めます。"
+      ]
+    },
+    "tl-maker": {
+      "title": "TLメーカー",
+      "body": [
+        "TLを作成・インポートし、スキルやマーカー、部隊を調整できます。",
+        "タイムライン長やスキル色、テンプレート設定を活用してください。"
+      ]
+    },
+    "tl-maker-dev": {
+      "title": "TLメーカー（dev）",
+      "body": [
+        "自由配置やプラグインなど実験的なTL機能を試せます。",
+        "仕様が変わる可能性があるため、本運用では慎重に使用してください。"
+      ]
+    },
+    "tl-search": {
+      "title": "TL検索",
+      "body": [
+        "ボス・防御属性・地形・シーズンで公開TLを検索できます。",
+        "気になるTLを開いて詳細を確認し、自分のワークスペースにコピーできます。"
+      ]
+    },
+    "tl-update": {
+      "title": "TL取得",
+      "body": [
+        "選択したシーズンのTLデータを取得してローカルに保存します。",
+        "最新の共有TLをワークスペースへ取り込む際に利用してください。"
+      ]
+    },
+    "tl-damage": {
+      "title": "ダメージ計算",
+      "body": [
+        "部隊やスキルの想定ダメージを条件別に試算します。",
+        "ステータスを調整してビルド差を比較し、結果を共有できます。"
+      ]
+    },
+    "settings": {
+      "title": "設定",
+      "body": [
+        "ライト／ダークテーマを切り替えられます。",
+        "生徒データやTLキャッシュ、お知らせ既読状態などのローカルデータを削除できます。"
+      ]
+    },
+    "mypage": {
+      "title": "マイページ",
+      "body": [
+        "プロフィール情報やメールアドレスを確認できます。",
+        "「変更」リンクからユーザー名を更新してください。"
+      ]
+    },
+    "tools-divine-calc": {
+      "title": "神名文字計算機",
+      "body": [
+        "必要な神名文字（Kivotos Insights）の量や期待値を見積もります。",
+        "レート変動を考慮した結果でガチャ計画や周回計画に役立ててください。"
+      ]
+    },
+    "tools-bond-calc": {
+      "title": "絆上げ計算機",
+      "body": [
+        "目標の絆レベルまでに必要なアイテム数を計算します。",
+        "アイテムの組み合わせを試算してムダを減らせます。"
+      ]
+    },
+    "tools-event-schedule": {
+      "title": "イベントスケジュール",
+      "body": [
+        "開催中・開催予定のイベントを確認できます。",
+        "カレンダーで日程を把握し、スタミナやチケットの計画に役立ててください。"
+      ]
+    },
+    "profile-setup": {
+      "title": "ユーザー名設定",
+      "body": [
+        "プロフィール用のユーザー名を設定します。",
+        "一部の機能利用前にユーザー名登録が必要です。"
+      ]
+    }
+  }
+}

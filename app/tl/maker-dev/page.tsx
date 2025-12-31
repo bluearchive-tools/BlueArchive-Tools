@@ -13,6 +13,7 @@ import {
   faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons'
 import AddEnemyModal from '../../../components/AddEnemyModal'
+import PageHelpButton from '../../../components/PageHelpButton'
 import equipmentJson from '@/data/equipment.json'
 
 
@@ -2852,6 +2853,10 @@ function resolveBuffText(
       style={pluginVars}
       onClick={hidePopups}
     >
+      <div className="flex items-center gap-2 mb-2">
+        <h1 className="text-xl font-bold">TLメーカー（dev）</h1>
+        <PageHelpButton pageKey="tl-maker-dev" />
+      </div>
       {pluginCss && <style jsx global>{pluginCss}</style>}
       {pageLayoutMode === 'free' && (
         <div aria-hidden className="pointer-events-none flex-none" style={freeCanvasStyle} />

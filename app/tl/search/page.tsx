@@ -5,6 +5,7 @@ import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUser, faUserSlash } from '@fortawesome/free-solid-svg-icons'
 import { Timeline } from '../../../types/timeline'
+import PageHelpButton from '../../../components/PageHelpButton'
 
 interface Student {
   id: string
@@ -400,7 +401,10 @@ export default function TLSearchPage() {
 
   return (
     <main className="p-4 space-y-4">
-      <h2 className="text-xl">TL検索</h2>
+      <div className="flex items-center gap-2">
+        <h2 className="text-xl">TL検索</h2>
+        <PageHelpButton pageKey="tl-search" />
+      </div>
       <div className="space-y-2">
         <div className="flex flex-wrap gap-2 items-center">
           <select

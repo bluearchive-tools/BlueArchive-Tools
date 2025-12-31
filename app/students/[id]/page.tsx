@@ -1,6 +1,7 @@
 import fs from 'fs/promises'
 import path from 'path'
 import StudentDetailClient from '../../../components/StudentDetailClient'
+import PageHelpButton from '../../../components/PageHelpButton'
 
 interface RouteProps<T> {
   params: Promise<T>
@@ -38,7 +39,11 @@ export default async function StudentDetail({ params }: RouteProps<{ id: string 
   }
 
   return (
-    <main className="p-2 space-x-2">
+    <main className="p-2 space-y-2">
+      <div className="flex items-center gap-2">
+        <h2 className="text-lg font-bold">生徒詳細</h2>
+        <PageHelpButton pageKey="student-detail" />
+      </div>
       <StudentDetailClient studentId={student.id} />
     </main>
   )

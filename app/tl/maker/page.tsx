@@ -13,6 +13,7 @@ import {
   faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons'
 import AddEnemyModal from '../../../components/AddEnemyModal'
+import PageHelpButton from '../../../components/PageHelpButton'
 import equipmentJson from '@/data/equipment.json'
 
 
@@ -1315,6 +1316,10 @@ function resolveBuffText(
 
   return (
     <main className="p-4 space-y-4 select-none overflow-y-hidden" onClick={hidePopups}>
+      <div className="flex items-center gap-2">
+        <h1 className="text-xl font-bold">TLメーカー</h1>
+        <PageHelpButton pageKey="tl-maker" />
+      </div>
       {!initialized && (
         <div className="flex flex-col items-center justify-center py-20 space-y-2">
           <button
