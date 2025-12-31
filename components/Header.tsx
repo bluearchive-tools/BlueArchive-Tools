@@ -6,9 +6,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import NoticeModal from './NoticeModal'
 import DataSyncModal from './DataSyncModal'
 import SquadSyncModal from './SquadSyncModal'
+import AboutModal from './AboutModal'
 import type { NextRouter } from 'next/router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBell, faCog, faChevronDown, faMoon, faSun } from '@fortawesome/free-solid-svg-icons'
+import { faBell, faCog, faChevronDown, faCircleQuestion, faMoon, faSun } from '@fortawesome/free-solid-svg-icons'
 import {
   useSession,
   useSupabaseClient,
@@ -32,6 +33,7 @@ export default function Header() {
   const [loading, setLoading] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
   const [hideHeader, setHideHeader] = useState(false)
+  const [aboutOpen, setAboutOpen] = useState(false)
   const { dark, toggle } = useTheme()
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -140,6 +142,12 @@ export default function Header() {
     return searchString ? `${basePath}?${searchString}` : basePath
   }, [pathname, searchParams])
 
+  const currentPath = useMemo(() => {
+    const normalizedPath = pathname?.startsWith('/') ? pathname : `/${pathname ?? ''}`
+    const basePath = stripLeadingLocale(normalizedPath)
+    return basePath || '/'
+  }, [pathname])
+
   const changeLocale = (nextLocale: Locale) => {
     if (!nextLocale || nextLocale === locale) return
     if (typeof document !== 'undefined') {
@@ -175,9 +183,14 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 inset-x-0 z-10 w-full flex justify-between items-center border-b dark:bg-black dark:text-white dark:border-gray-700 transition-colors p-4 h-16 relative">
-      <h1 className="text-lg font-bold">
-        <Link href="/">{t('brand')}</Link>
-      </h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-lg font-bold">
+          <Link href="/">{t('brand')}</Link>
+        </h1>
+        <button onClick={() => setAboutOpen(true)} aria-label={t('actions.about')} className="text-base">
+          <FontAwesomeIcon icon={faCircleQuestion} />
+        </button>
+      </div>
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <label htmlFor="locale-select" className="sr-only">
@@ -235,6 +248,7 @@ export default function Header() {
         </div>
       </div>
       <div className={`absolute bottom-0 left-0 h-1 bg-blue-500 transition-all duration-300 ${loading ? 'w-full' : 'w-0'}`}></div>
+      <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} currentPath={currentPath} />
       <NoticeModal />
       <DataSyncModal />
       <SquadSyncModal />
