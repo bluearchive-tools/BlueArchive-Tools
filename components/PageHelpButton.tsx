@@ -11,7 +11,6 @@ import remarkGfm from 'remark-gfm'
 
 type PageHelpEntry = {
   title: string
-  body: string[]
   buttonLabel?: string
 }
 
@@ -31,25 +30,16 @@ interface Props {
 export default function PageHelpButton({ pageKey, className }: Props) {
   const locale = useLocale()
   const { dark } = useTheme()
-  const [overrides, setOverrides] = useState<Record<string, PageHelpLocale> | null>(null)
   const [visible, setVisible] = useState(false)
   const [active, setActive] = useState(false)
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('customPageHelp')
-      if (saved) {
-        setOverrides(JSON.parse(saved) as Record<string, PageHelpLocale>)
-      }
-    } catch {
-      setOverrides(null)
-    }
-  }, [])
+  const [markdown, setMarkdown] = useState<string | null>(null)
+  const [heading, setHeading] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   const content = useMemo(() => {
-    const merged = overrides ?? {}
-    const localeContent = merged[locale] ?? helpMap[locale] ?? helpMap.en ?? {}
-    const fallbackContent = merged.en ?? helpMap.en ?? {}
+    const localeContent = helpMap[locale] ?? helpMap.en ?? {}
+    const fallbackContent = helpMap.en ?? {}
     const entry = (localeContent as Record<string, PageHelpEntry | undefined>)[pageKey] ?? (fallbackContent as Record<string, PageHelpEntry | undefined>)[pageKey]
     const buttonLabel =
       entry?.buttonLabel ??
@@ -57,7 +47,47 @@ export default function PageHelpButton({ pageKey, className }: Props) {
       (fallbackContent as { _common?: { buttonLabel?: string } })._common?.buttonLabel ??
       'About this page'
     return entry ? { entry, buttonLabel } : null
-  }, [locale, pageKey, overrides])
+  }, [locale, pageKey])
+
+  useEffect(() => {
+    if (!visible) return
+    let cancelled = false
+    const load = async () => {
+      setLoading(true)
+      setError(null)
+      setMarkdown(null)
+      setHeading(null)
+      const locales = [locale, 'en']
+      for (const loc of locales) {
+        try {
+          const res = await fetch(`/helps/${loc}/${pageKey}.md`)
+          if (!res.ok) continue
+          const text = await res.text()
+          if (cancelled) return
+          const lines = text.split(/\r?\n/)
+          const firstHeadingIndex = lines.findIndex((l) => l.trim().startsWith('# '))
+          if (firstHeadingIndex >= 0) {
+            const h = lines[firstHeadingIndex].replace(/^#\s+/, '').trim()
+            setHeading(h || null)
+            lines.splice(firstHeadingIndex, 1)
+          }
+          setMarkdown(lines.join('\n').trim() || text)
+          setLoading(false)
+          return
+        } catch {
+          // try next locale
+        }
+      }
+      if (!cancelled) {
+        setError('コンテンツを読み込めませんでした。')
+        setLoading(false)
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [visible, locale, pageKey])
 
   useEffect(() => {
     if (!visible) return
@@ -94,15 +124,16 @@ export default function PageHelpButton({ pageKey, className }: Props) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xl font-semibold">{entry.title}</h2>
+              <h2 className="text-xl font-semibold">{heading || entry.title}</h2>
               <button onClick={close} aria-label={buttonLabel} className="text-lg leading-none">
                 ×
               </button>
             </div>
             <div className="space-y-2 overflow-y-auto pr-1">
-              {entry.body.map((text, idx) => (
+              {loading && <p className="text-sm text-gray-500 dark:text-gray-300">読み込み中...</p>}
+              {error && <p className="text-sm text-red-500">{error}</p>}
+              {!loading && !error && markdown && (
                 <ReactMarkdown
-                  key={idx}
                   remarkPlugins={[remarkGfm]}
                   className="prose prose-sm dark:prose-invert max-w-none"
                   components={{
@@ -115,9 +146,9 @@ export default function PageHelpButton({ pageKey, className }: Props) {
                     ),
                   }}
                 >
-                  {text}
+                  {markdown}
                 </ReactMarkdown>
-              ))}
+              )}
             </div>
           </div>
         </div>
