@@ -2973,7 +2973,7 @@ function resolveBuffText(
               <button
                 type="button"
                 className="px-3 py-2 rounded border text-sm"
-                onClick={() => setShowPluginSettings(true)}
+                onClick={() => setShowSettings(true)}
               >
                 プラグイン設定を開く
               </button>
