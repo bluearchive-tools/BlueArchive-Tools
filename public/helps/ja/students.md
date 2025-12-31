@@ -5,22 +5,22 @@
 
 右上の+ボタンをクリックします。
 
-<img width="1440" height="730" alt="スクリーンショット 2025-12-31 21 10 27" src="https://github.com/user-attachments/assets/90a6f046-2e99-44ff-9454-b0690e331fb2" />
+![スクリーンショット 2025-12-31 21 10 27](https://github.com/user-attachments/assets/90a6f046-2e99-44ff-9454-b0690e331fb2)
 
 新しくデータを追加する場合は、画像から追加、手動追加のいずれかを選んでください。
 
 ### 画像から追加
 準備中です。手動追加の使用をお願いします。
 ### 手動追加
-<img width="1440" height="729" alt="スクリーンショット 2025-12-31 21 12 28" src="https://github.com/user-attachments/assets/38b0001a-7dae-4a6c-ad32-a43e80c50627" />
+![スクリーンショット 2025-12-31 21 12 28](https://github.com/user-attachments/assets/38b0001a-7dae-4a6c-ad32-a43e80c50627)
 生徒選択をクリックし、データを追加する生徒を選択します。  
   
   
-<img width="1440" height="731" alt="スクリーンショット 2025-12-31 21 16 07" src="https://github.com/user-attachments/assets/ba44703c-fd2b-43db-b74c-43c908e05d86" />
+![スクリーンショット 2025-12-31 21 16 07](https://github.com/user-attachments/assets/ba44703c-fd2b-43db-b74c-43c908e05d86)
 目的の生徒を選択したら、記入欄に生徒のステータスを写していきます。  
 
   
-<img width="1440" height="729" alt="スクリーンショット 2025-12-31 21 19 10" src="https://github.com/user-attachments/assets/52df3a7d-d6b0-442c-957d-2028add4a23b" />
+![スクリーンショット 2025-12-31 21 19 10](https://github.com/user-attachments/assets/52df3a7d-d6b0-442c-957d-2028add4a23b)
 入力が終わったら、「追加」をクリックします。  
   
 ## 2.生徒データを確認しよう
