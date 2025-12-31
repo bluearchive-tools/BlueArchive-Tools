@@ -15,6 +15,7 @@ import {
 import AddEnemyModal from '../../../components/AddEnemyModal'
 import PageHelpButton from '../../../components/PageHelpButton'
 import equipmentJson from '@/data/equipment.json'
+import AboutModal from '../../../components/AboutModal'
 
 
 
@@ -518,6 +519,7 @@ export default function TLMakerPage() {
   const [showPluginModal, setShowPluginModal] = useState(false)
   const [openPluginWindow, setOpenPluginWindow] = useState<{ pluginId: string; windowId: string } | null>(null)
   const [dockPluginWindow, setDockPluginWindow] = useState<{ pluginId: string; windowId: string } | null>(null)
+  const [aboutOpen, setAboutOpen] = useState(false)
 
   // Page blocks（プラグインがページ内にiframeブロックを登録できる）
   const PAGE_BLOCK_ORDER_KEY = 'tlMaker:pageBlockOrder'
@@ -3053,6 +3055,7 @@ function resolveBuffText(
           close={() => setShowEnemyModal(false)}
         />
       )}
+      <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} currentPath="/tl/maker-dev" />
 
       {showCreateModal && (
         <div
