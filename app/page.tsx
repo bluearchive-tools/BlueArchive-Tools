@@ -6,7 +6,6 @@ import FeatureItem from '../components/FeatureItem'
 import Link from 'next/link'
 import LoginPopup from '../components/LoginPopup'
 import Footer from '../components/Footer'
-import PageHelpButton from '../components/PageHelpButton'
 import { useTranslations } from 'next-intl'
 
 export default function Home() {
@@ -16,10 +15,7 @@ export default function Home() {
   return (
     <>
     <main className="p-4 space-y-4 pb-16">
-      <div className="flex items-center gap-2">
-        <h1 className="text-xl font-bold">{tHome('pageTitle')}</h1>
-        <PageHelpButton pageKey="home" />
-      </div>
+      <h1 className="text-xl font-bold">{tHome('pageTitle')}</h1>
       <LoginPopup />
       <CollapsibleBox
         title={t('students.title')}

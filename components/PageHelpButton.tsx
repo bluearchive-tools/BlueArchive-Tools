@@ -13,11 +13,10 @@ type PageHelpEntry = {
   buttonLabel?: string
 }
 
-type PageHelpLocale = {
+type PageHelpLocale = Record<string, PageHelpEntry> & {
   _common?: {
     buttonLabel?: string
   }
-  [key: string]: PageHelpEntry | PageHelpLocale['_common']
 }
 
 const helpMap = helpContent as Record<string, PageHelpLocale>
@@ -36,11 +35,11 @@ export default function PageHelpButton({ pageKey, className }: Props) {
   const content = useMemo(() => {
     const localeContent = helpMap[locale] ?? helpMap.en ?? {}
     const fallbackContent = helpMap.en ?? {}
-    const entry = (localeContent[pageKey] as PageHelpEntry | undefined) ?? (fallbackContent[pageKey] as PageHelpEntry | undefined)
+    const entry = (localeContent as Record<string, PageHelpEntry | undefined>)[pageKey] ?? (fallbackContent as Record<string, PageHelpEntry | undefined>)[pageKey]
     const buttonLabel =
       entry?.buttonLabel ??
-      (localeContent._common as PageHelpLocale['_common'] | undefined)?.buttonLabel ??
-      (fallbackContent._common as PageHelpLocale['_common'] | undefined)?.buttonLabel ??
+      (localeContent as { _common?: { buttonLabel?: string } })._common?.buttonLabel ??
+      (fallbackContent as { _common?: { buttonLabel?: string } })._common?.buttonLabel ??
       'About this page'
     return entry ? { entry, buttonLabel } : null
   }, [locale, pageKey])
