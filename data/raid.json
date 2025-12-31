@@ -879,6 +879,16 @@
       "endDate": "2025-12-03"
     },
     {
+      "number": "S85",
+      "boss": "ホバークラフト",
+      "terrain": "屋外",
+      "type": "総力戦",
+      "defenseArmors": ["重装甲"],
+      "maxDifficulty": "Lunatic",
+      "startDate": "2025-12-31",
+      "endDate": "2026-01-07"
+    },
+    {
       "number": "BD1",
       "boss": "ビナー",
       "terrain": "市街地",
