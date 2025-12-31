@@ -8,6 +8,7 @@ import { useTheme } from './ThemeProvider'
 import helpContent from '../data/pageHelp.json'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 
 type PageHelpEntry = {
   title: string
@@ -135,6 +136,7 @@ export default function PageHelpButton({ pageKey, className }: Props) {
               {!loading && !error && markdown && (
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw]}
                   className="prose prose-sm dark:prose-invert max-w-none"
                   components={{
                     img: ({ alt, ...props }) => (
