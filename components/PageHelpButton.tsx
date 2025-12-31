@@ -31,12 +31,25 @@ interface Props {
 export default function PageHelpButton({ pageKey, className }: Props) {
   const locale = useLocale()
   const { dark } = useTheme()
+  const [overrides, setOverrides] = useState<Record<string, PageHelpLocale> | null>(null)
   const [visible, setVisible] = useState(false)
   const [active, setActive] = useState(false)
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('customPageHelp')
+      if (saved) {
+        setOverrides(JSON.parse(saved) as Record<string, PageHelpLocale>)
+      }
+    } catch {
+      setOverrides(null)
+    }
+  }, [])
+
   const content = useMemo(() => {
-    const localeContent = helpMap[locale] ?? helpMap.en ?? {}
-    const fallbackContent = helpMap.en ?? {}
+    const merged = overrides ?? {}
+    const localeContent = merged[locale] ?? helpMap[locale] ?? helpMap.en ?? {}
+    const fallbackContent = merged.en ?? helpMap.en ?? {}
     const entry = (localeContent as Record<string, PageHelpEntry | undefined>)[pageKey] ?? (fallbackContent as Record<string, PageHelpEntry | undefined>)[pageKey]
     const buttonLabel =
       entry?.buttonLabel ??
@@ -44,7 +57,7 @@ export default function PageHelpButton({ pageKey, className }: Props) {
       (fallbackContent as { _common?: { buttonLabel?: string } })._common?.buttonLabel ??
       'About this page'
     return entry ? { entry, buttonLabel } : null
-  }, [locale, pageKey])
+  }, [locale, pageKey, overrides])
 
   useEffect(() => {
     if (!visible) return

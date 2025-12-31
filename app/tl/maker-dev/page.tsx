@@ -2862,80 +2862,147 @@ function resolveBuffText(
         <div aria-hidden className="pointer-events-none flex-none" style={freeCanvasStyle} />
       )}
       {!initialized && (
-        <div className="flex flex-col items-center justify-center py-20 space-y-2">
-          <button
-            type="button"
-            className="border px-4 py-1 rounded w-40"
-            onClick={() => setShowCreateModal(true)}
-          >
-            TLを作成
-          </button>
-          <label className="border px-4 py-1 rounded w-40 text-center cursor-pointer">
-            TLをインポート
-            <input
-              type="file"
-              accept="application/json"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (!file) return
-                file.text().then((txt) => {
-                  try {
-                    const data = JSON.parse(txt)
-                    setProjectName(data.projectName || '')
-                    setSkills(data.skills || [])
-                    setMarkers(data.markers || [])
-                    applyMembers(data.rowStudents || [])
-                    const g = groups.find((gr) => gr.id === data.groupId) || null
-                    setSelectedGroup(g)
-                    setSquadIndex(data.squadIndex || 0)
-                    if (data.userStats) {
-                      const map: Record<string, UserStudent> = {}
-                      Object.entries(data.userStats as Record<string, UserStudent>).forEach(
-                        ([id, val]) => {
-                          const st = students.find((s) => s.id === id)
-                          const base = st?.styleOf || st?.altOf || st?.id || id
-                          map[base] = val
+        <div className="w-full max-w-6xl mx-auto py-10 grid gap-4 lg:grid-cols-3">
+          <div className="lg:col-span-2 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-lg border p-4 bg-white dark:bg-gray-900 shadow space-y-2">
+              <h2 className="text-lg font-semibold">新しいTLを作成</h2>
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                空のプロジェクトからタイムラインを組み立てます。部隊やスキル設定は後から追加できます。
+              </p>
+              <button
+                type="button"
+                className="px-4 py-2 rounded border bg-blue-600 text-white"
+                onClick={() => setShowCreateModal(true)}
+              >
+                新規プロジェクト
+              </button>
+            </div>
+            <div className="rounded-lg border p-4 bg-white dark:bg-gray-900 shadow space-y-2">
+              <h2 className="text-lg font-semibold">TLをインポート</h2>
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                既存のJSONファイルからタイムラインを復元します。編集中のプロジェクトを再開するときに使います。
+              </p>
+              <label className="inline-flex items-center gap-2 px-4 py-2 rounded border cursor-pointer">
+                ファイルを選択
+                <input
+                  type="file"
+                  accept="application/json"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    file.text().then((txt) => {
+                      try {
+                        const data = JSON.parse(txt)
+                        setProjectName(data.projectName || '')
+                        setSkills(data.skills || [])
+                        setMarkers(data.markers || [])
+                        applyMembers(data.rowStudents || [])
+                        const g = groups.find((gr) => gr.id === data.groupId) || null
+                        setSelectedGroup(g)
+                        setSquadIndex(data.squadIndex || 0)
+                        if (data.userStats) {
+                          const map: Record<string, UserStudent> = {}
+                          Object.entries(data.userStats as Record<string, UserStudent>).forEach(
+                            ([id, val]) => {
+                              const st = students.find((s) => s.id === id)
+                              const base = st?.styleOf || st?.altOf || st?.id || id
+                              map[base] = val
+                            }
+                          )
+                          setTlStats(map)
+                        } else {
+                          setTlStats({})
                         }
-                      )
-                      setTlStats(map)
-                    } else {
+                        setInitialized(true)
+                      } catch {
+                        /* ignore */
+                      }
+                    })
+                  }}
+                />
+              </label>
+            </div>
+            <div className="rounded-lg border p-4 bg-white dark:bg-gray-900 shadow space-y-2">
+              <h2 className="text-lg font-semibold">チュートリアル</h2>
+              <ul className="list-disc list-inside text-sm space-y-1 text-gray-700 dark:text-gray-300">
+                <li>部隊を先に登録するとスキル挿入がスムーズです。</li>
+                <li>「free layout」でキャンバスに自由配置できます。</li>
+                <li>スキルカラー設定を保存すると共有時も維持されます。</li>
+              </ul>
+              <button
+                type="button"
+                className="text-sm text-blue-500 underline"
+                onClick={() => setAboutOpen(true)}
+              >
+                ヘルプモーダルを開く
+              </button>
+            </div>
+            <div className="rounded-lg border p-4 bg-white dark:bg-gray-900 shadow space-y-2">
+              <h2 className="text-lg font-semibold">リンク</h2>
+              <div className="flex flex-col text-sm gap-1">
+                <Link href="/tl/search" className="text-blue-500 underline">
+                  公開TLを探す
+                </Link>
+                <Link href="/tl/update" className="text-blue-500 underline">
+                  シーズンTLを取得
+                </Link>
+                <Link href="/help/editor" className="text-blue-500 underline">
+                  ヘルプを編集（ローカル）
+                </Link>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-lg border p-4 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 shadow space-y-3">
+            <h2 className="text-lg font-semibold">おすすめ設定</h2>
+            <div className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
+              <p>・タイムライン長をボスに合わせて調整</p>
+              <p>・「プラグイン」タブで拡張機能を有効化</p>
+              <p>・頻出スキルをテンプレートとして保存</p>
+            </div>
+            <div className="space-y-2">
+              <button
+                type="button"
+                className="px-3 py-2 rounded border text-sm"
+                onClick={() => setPageLayoutMode('free')}
+              >
+                レイアウトをFreeに切替
+              </button>
+              <button
+                type="button"
+                className="px-3 py-2 rounded border text-sm"
+                onClick={() => setShowPluginSettings(true)}
+              >
+                プラグイン設定を開く
+              </button>
+              {hasCache && (
+                <button
+                  type="button"
+                  className="px-3 py-2 rounded border text-sm"
+                  onClick={() => {
+                    const raw = localStorage.getItem('tlMakerCache')
+                    if (!raw) return
+                    try {
+                      const data = JSON.parse(raw)
+                      setProjectName(data.projectName || '')
+                      setSkills(data.skills || [])
+                      setMarkers(data.markers || [])
+                      applyMembers(data.rowStudents || [])
+                      const g = groups.find((gr) => gr.id === data.groupId) || null
+                      setSelectedGroup(g)
+                      setSquadIndex(data.squadIndex || 0)
                       setTlStats({})
+                      setInitialized(true)
+                    } catch {
+                      /* ignore */
                     }
-                    setInitialized(true)
-                  } catch {
-                    /* ignore */
-                  }
-                })
-              }}
-            />
-          </label>
-          {hasCache && (
-            <button
-              type="button"
-              className="border px-4 py-1 rounded w-40"
-              onClick={() => {
-                const raw = localStorage.getItem('tlMakerCache')
-                if (!raw) return
-                try {
-                  const data = JSON.parse(raw)
-                  setProjectName(data.projectName || '')
-                  setSkills(data.skills || [])
-                  setMarkers(data.markers || [])
-                  applyMembers(data.rowStudents || [])
-                  const g = groups.find((gr) => gr.id === data.groupId) || null
-                  setSelectedGroup(g)
-                  setSquadIndex(data.squadIndex || 0)
-                  setTlStats({})
-                  setInitialized(true)
-                } catch {
-                  /* ignore */
-                }
-              }}
-            >
-              キャッシュから復元
-            </button>
-          )}
+                  }}
+                >
+                  キャッシュから復元
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

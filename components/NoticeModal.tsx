@@ -58,17 +58,6 @@ export default function NoticeModal() {
   useEffect(() => {
     const load = async () => {
       try {
-        const saved = localStorage.getItem('customNotices')
-        if (saved) {
-          const parsed = JSON.parse(saved) as Notice[]
-          setNotices(parsed)
-          if (parsed.length) {
-            const latest = parsed[parsed.length - 1]
-            setLatestId(latest.id)
-            openModal()
-            return
-          }
-        }
         const res = await fetch('/api/notices')
         if (!res.ok) return
         const data: Notice[] = await res.json()
