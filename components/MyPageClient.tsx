@@ -60,7 +60,8 @@ export default function MyPageClient({ initialUsername, initialEmail }: Props) {
   const handleUnlink = async (identity: Identity) => {
     setBusy(true)
     const { error } = await supabase.auth.unlinkIdentity({
-      identity: { provider: identity.provider, identity_id: identity.identity_id }
+      provider: identity.provider,
+      identity_id: identity.identity_id,
     })
     setBusy(false)
     if (error) {
