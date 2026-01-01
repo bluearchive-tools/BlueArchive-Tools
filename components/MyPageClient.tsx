@@ -35,6 +35,8 @@ export default function MyPageClient({
   const [savingProfile, setSavingProfile] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [showUserId, setShowUserId] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewVisible, setPreviewVisible] = useState(false)
   const profileRef = useRef<HTMLElement | null>(null)
   const accountRef = useRef<HTMLElement | null>(null)
   const linksRef = useRef<HTMLElement | null>(null)
@@ -135,6 +137,14 @@ export default function MyPageClient({
       ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }
+
+  useEffect(() => {
+    if (previewOpen) {
+      const id = setTimeout(() => setPreviewVisible(true), 10)
+      return () => clearTimeout(id)
+    }
+    setPreviewVisible(false)
+  }, [previewOpen])
 
   return (
     <div className="grid gap-6 lg:grid-cols-[240px,1fr]">
@@ -237,13 +247,22 @@ export default function MyPageClient({
               </div>
             </label>
 
-            <button
-              onClick={saveProfile}
-              disabled={savingProfile}
-              className="inline-flex items-center justify-center rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-            >
-              {savingProfile ? '保存中...' : '保存'}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={saveProfile}
+                disabled={savingProfile}
+                className="inline-flex items-center justify-center rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {savingProfile ? '保存中...' : '保存'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewOpen(true)}
+                className="inline-flex items-center justify-center rounded border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
+              >
+                プレビュー
+              </button>
+            </div>
           </div>
         </section>
 
@@ -352,6 +371,55 @@ export default function MyPageClient({
           </div>
         </section>
       </div>
+
+      {previewOpen && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-200 ${
+            previewVisible ? 'opacity-100' : 'opacity-0'
+          }`}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className={`relative w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl transform transition-all duration-200 ${
+              previewVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+            } dark:bg-gray-900`}
+          >
+            <button
+              className="absolute right-3 top-3 text-sm text-gray-500 hover:text-gray-800"
+              onClick={() => {
+                setPreviewVisible(false)
+                setTimeout(() => setPreviewOpen(false), 200)
+              }}
+              aria-label="閉じる"
+            >
+              ×
+            </button>
+            <div className="flex items-center gap-4">
+              {selectedStudent ? (
+                <img
+                  src={selectedStudent.image}
+                  alt={selectedStudent.name}
+                  className="h-16 w-16 rounded-full object-cover border border-gray-200"
+                />
+              ) : (
+                <div className="h-16 w-16 rounded-full bg-gray-200 border border-gray-200" />
+              )}
+              <div>
+                <h4 className="text-xl font-bold">{username || 'ユーザー名未設定'}</h4>
+                <p className="text-sm text-gray-500">Lv {level || '—'}</p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-2">
+              <p className="text-sm text-gray-600">自己紹介</p>
+              <p className="rounded border border-gray-200 bg-gray-50 p-3 text-sm whitespace-pre-wrap">
+                {bio || '自己紹介はまだ入力されていません。'}
+              </p>
+              <p className="text-xs text-gray-400">メール: {email || '—'}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
