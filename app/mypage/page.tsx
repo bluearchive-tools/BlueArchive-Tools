@@ -4,7 +4,6 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { redirect } from 'next/navigation'
 import PageHelpButton from '../../components/PageHelpButton'
 import MyPageClient from '../../components/MyPageClient'
-import Link from 'next/link'
 
 export default async function MyPage() {
   const supabase = createServerComponentClient(
@@ -35,9 +34,6 @@ export default async function MyPage() {
           <h2 className="text-2xl font-bold">マイページ</h2>
           <PageHelpButton pageKey="mypage" />
         </div>
-        <Link href="/profile/setup" className="text-sm text-blue-500 underline">
-          プロフィールを編集
-        </Link>
       </div>
       <MyPageClient initialUsername={profile?.username ?? null} initialEmail={session.user.email ?? null} />
     </main>

@@ -32,16 +32,18 @@ export default function LoginPopup() {
     <div
       className={`fixed top-20 inset-x-0 flex justify-center pointer-events-none z-5 transition-all duration-200 ${open ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}
     >
-      <div className="relative bg-yellow-200/80 text-black rounded shadow p-4 pointer-events-auto max-w-md w-full mx-4 flex items-start gap-2">
-        <FontAwesomeIcon icon={faCircleExclamation} className="text-yellow-600 mt-1" />
-        <p className="flex-1 text-sm">{t('messages.loginPrompt')}</p>
-        <div className="flex gap-2">
-          <GoogleSignInButton width={200} theme="outline" size="medium" text="continue_with" />
-          <DiscordSignInButton label={t('auth.loginWithDiscord')} />
+      <div className="relative bg-yellow-200/80 text-black rounded shadow p-4 pointer-events-auto max-w-md w-full mx-4 flex flex-col gap-3">
+        <div className="flex items-start gap-2">
+          <FontAwesomeIcon icon={faCircleExclamation} className="text-yellow-600 mt-1" />
+          <p className="flex-1 text-sm">{t('messages.loginPrompt')}</p>
+          <button onClick={close} className="text-gray-700" aria-label={t('actions.close')}>
+            <FontAwesomeIcon icon={faXmark} />
+          </button>
         </div>
-        <button onClick={close} className="absolute top-1 right-1" aria-label={t('actions.close')}>
-          <FontAwesomeIcon icon={faXmark} />
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <GoogleSignInButton width={220} theme="outline" size="medium" text="continue_with" className="sm:flex-1" />
+          <DiscordSignInButton label={t('auth.loginWithDiscord')} className="sm:flex-1" />
+        </div>
       </div>
     </div>
   )
