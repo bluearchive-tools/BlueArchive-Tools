@@ -4,12 +4,14 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import students from '../../../data/students.json'
 
 type Params = {
-  params: {
+  params: Promise<{
     username: string
-  }
+  }>
 }
 
 export default async function UserPage({ params }: Params) {
+  const { username } = await params
+
   const supabase = createServerComponentClient(
     { cookies },
     {
@@ -21,7 +23,7 @@ export default async function UserPage({ params }: Params) {
   const { data: profile } = await supabase
     .from('profiles')
     .select('username, nickname, level, bio, icon_student_id, friend_code, friend_code_public, social_links')
-    .eq('username', params.username)
+    .eq('username', username)
     .maybeSingle()
 
   const parsedSocial = (() => {
