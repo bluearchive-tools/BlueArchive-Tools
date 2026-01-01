@@ -2,6 +2,7 @@
 import { cookies } from 'next/headers'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import students from '../../../data/students.json'
+import FriendCodeCopy from '../../../components/FriendCodeCopy'
 
 type Params = {
   params: Promise<{
@@ -47,7 +48,6 @@ export default async function UserPage({ params }: Params) {
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-      <h1 className="text-2xl font-bold">ユーザーページ</h1>
       {!profile ? (
         <p className="text-gray-600">ユーザーが見つかりませんでした。</p>
       ) : (
@@ -65,8 +65,9 @@ export default async function UserPage({ params }: Params) {
             <div>
               <p className="text-sm text-gray-500">Tools ID: {profile.username}</p>
               <h2 className="text-xl font-semibold">{profile.nickname || profile.username}</h2>
-              <p className="text-sm text-gray-500">
-                Lv {profile.level ?? '—'} / フレンドコード: {profile.friend_code_public ? profile.friend_code || '—' : '—'}
+              <p className="text-sm text-gray-500 flex items-center gap-1">
+                <span>Lv {profile.level ?? '—'} / フレンドコード:</span>
+                <FriendCodeCopy code={profile.friend_code} disabled={!profile.friend_code_public} />
               </p>
             </div>
           </div>

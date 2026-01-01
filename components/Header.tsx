@@ -232,14 +232,14 @@ export default function Header() {
                 <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 dark:text-white text-black shadow p-2 z-10">
                   {session ? (
                     <>
-                  <Link href="/mypage" className="block px-2 py-1">
-                    {t('account.mypage')}
-                  </Link>
                   {username && (
                     <Link href={`/users/${username}`} className="block px-2 py-1">
                       {t('account.userProfile')}
                     </Link>
                   )}
+                  <Link href="/mypage" className="block px-2 py-1">
+                    {t('account.mypage')}
+                  </Link>
                   <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
                       <button onClick={signOut} className="block w-full text-left px-2 py-1">
                         {t('account.signOut')}

@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faDiscord, faGoogle } from '@fortawesome/free-brands-svg-icons'
 import { faEye, faEyeSlash, faLink, faUnlink, faUserCircle } from '@fortawesome/free-solid-svg-icons'
 import students from '../data/students.json'
+import FriendCodeCopy from './FriendCodeCopy'
 
 interface Props {
   initialUsername: string | null
@@ -526,10 +527,11 @@ export default function MyPageClient({
                 <div className="h-16 w-16 rounded-xl bg-gray-200 border border-gray-200" />
               )}
               <div>
-                <h4 className="text-xl font-bold">{nickname || username || 'ユーザー名未設定'}</h4>
                 <p className="text-sm text-gray-500">Tools ID: {username || '—'}</p>
-                <p className="text-sm text-gray-500">
-                  Lv {level || '—'} / フレンドコード: {friendCodePublic ? friendCode || '—' : '—'}
+                <h4 className="text-xl font-bold">{nickname || username || 'ユーザー名未設定'}</h4>
+                <p className="text-sm text-gray-500 flex items-center gap-1">
+                  <span>Lv {level || '—'} / フレンドコード:</span>{' '}
+                  <FriendCodeCopy code={friendCode} disabled={!friendCodePublic} />
                 </p>
               </div>
             </div>
@@ -538,9 +540,6 @@ export default function MyPageClient({
               <p className="rounded border border-gray-200 bg-gray-50 p-3 text-sm whitespace-pre-wrap">
                 {bio || '自己紹介はまだ入力されていません。'}
               </p>
-              {friendCode && friendCodePublic && (
-                <p className="text-sm text-gray-600">フレンドコード: {friendCode}</p>
-              )}
               {socialLinks && socialLinks.length > 0 && (
                 <div className="space-y-1">
                   <p className="text-sm text-gray-600">ソーシャル</p>
