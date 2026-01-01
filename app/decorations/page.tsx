@@ -345,7 +345,7 @@ export default function DecorationsPage() {
                   <button
                     type="button"
                     disabled={loading || !session?.user}
-                    onClick={() => handlePurchase(item.id, item.price, item.bonus_credit ?? undefined, item.genre)}
+                    onClick={() => handlePurchase(item.id, item.price, item.bonus_credit ?? undefined, item.genre ?? undefined)}
                     className="inline-flex items-center justify-center gap-2 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
                   >
                     {loading ? <FontAwesomeIcon icon={faSpinner} className="animate-spin" /> : null}
