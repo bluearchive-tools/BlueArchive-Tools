@@ -214,6 +214,9 @@ export default function Header() {
         <button onClick={openNotice} aria-label={t('actions.notices')}>
           <FontAwesomeIcon icon={faBell} />
         </button>
+        <Link href="/decorations" aria-label="デコレーションショップ" className="text-lg">
+          🛍️
+        </Link>
         <Link href="/settings" aria-label={t('actions.settings')}>
           <FontAwesomeIcon icon={faCog} />
         </Link>

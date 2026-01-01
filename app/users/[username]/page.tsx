@@ -2,6 +2,7 @@
 import { cookies } from 'next/headers'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import students from '../../../data/students.json'
+import decorations from '../../../data/decorations.json'
 import FriendCodeCopy from '../../../components/FriendCodeCopy'
 
 type Params = {
@@ -23,7 +24,7 @@ export default async function UserPage({ params }: Params) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('username, nickname, level, bio, icon_student_id, friend_code, friend_code_public, social_links')
+    .select('username, nickname, level, bio, icon_student_id, friend_code, friend_code_public, social_links, decoration_id')
     .eq('username', username)
     .maybeSingle()
 
@@ -45,6 +46,7 @@ export default async function UserPage({ params }: Params) {
   })()
 
   const student = students.find((s) => s.id === profile?.icon_student_id)
+  const decoration = decorations.find((d) => d.id === profile?.decoration_id)
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
@@ -69,6 +71,12 @@ export default async function UserPage({ params }: Params) {
                 <span>Lv {profile.level ?? '—'} / フレンドコード:</span>
                 <FriendCodeCopy code={profile.friend_code} disabled={!profile.friend_code_public} />
               </p>
+              {decoration && (
+                <p className="mt-1 inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">
+                  <span>{decoration.emoji}</span>
+                  <span>{decoration.name}</span>
+                </p>
+              )}
             </div>
           </div>
           <div className="space-y-2">

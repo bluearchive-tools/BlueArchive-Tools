@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faDiscord, faGoogle } from '@fortawesome/free-brands-svg-icons'
 import { faEye, faEyeSlash, faLink, faUnlink, faUserCircle } from '@fortawesome/free-solid-svg-icons'
 import students from '../data/students.json'
+import decorations from '../data/decorations.json'
 import FriendCodeCopy from './FriendCodeCopy'
 
 interface Props {
@@ -19,6 +20,7 @@ interface Props {
   initialFriendCode: string | null
   initialFriendCodePublic: boolean | null
   initialSocialLinks: string | null
+  initialDecorationId: string | null
 }
 
 export default function MyPageClient({
@@ -30,7 +32,8 @@ export default function MyPageClient({
   initialIconStudentId,
   initialFriendCode,
   initialFriendCodePublic,
-  initialSocialLinks
+  initialSocialLinks,
+  initialDecorationId
 }: Props) {
   const supabase = useSupabaseClient()
   const session = useSession()
@@ -42,6 +45,7 @@ export default function MyPageClient({
   const [iconStudentId, setIconStudentId] = useState(initialIconStudentId ?? '')
   const [friendCode, setFriendCode] = useState(initialFriendCode ?? '')
   const [friendCodePublic, setFriendCodePublic] = useState<boolean>(initialFriendCodePublic ?? false)
+  const [decorationId, setDecorationId] = useState(initialDecorationId ?? '')
   const [socialLinks, setSocialLinks] = useState<{ label: string; value: string }[]>(
     (() => {
       try {
@@ -130,6 +134,7 @@ export default function MyPageClient({
   const linkedProviders = new Set(identities.map((id) => id.provider))
 
   const selectedStudent = useMemo(() => students.find((s) => s.id === iconStudentId), [iconStudentId])
+  const selectedDecoration = useMemo(() => decorations.find((d) => d.id === decorationId), [decorationId])
 
   const copyUserId = async () => {
     if (!session?.user.id) return
@@ -156,6 +161,7 @@ export default function MyPageClient({
         icon_student_id: iconStudentId || null,
         friend_code: friendCode || null,
         friend_code_public: friendCodePublic,
+        decoration_id: decorationId || null,
         social_links: JSON.stringify(
           socialLinks.filter((item) => item.label.trim() || item.value.trim())
         ),
@@ -361,6 +367,39 @@ export default function MyPageClient({
                 公開する
               </label>
             </label>
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-gray-700">デコレーション</p>
+                <a
+                  href="/decorations"
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  デコレーションショップへ
+                </a>
+              </div>
+              <p className="text-sm text-gray-600">プロフィールに飾りを付けられます。</p>
+              <select
+                value={decorationId}
+                onChange={(e) => setDecorationId(e.target.value)}
+                className="w-full rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">なし</option>
+                {decorations.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.emoji} {item.name}
+                  </option>
+                ))}
+              </select>
+              {selectedDecoration && (
+                <div className="flex items-start gap-2 rounded border border-gray-200 bg-gray-50 p-3 text-sm">
+                  <span className="text-lg">{selectedDecoration.emoji}</span>
+                  <div>
+                    <p className="font-semibold">{selectedDecoration.name}</p>
+                    <p className="text-gray-600">{selectedDecoration.description}</p>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="flex flex-wrap gap-2">
               <button
@@ -533,6 +572,12 @@ export default function MyPageClient({
                   <span>Lv {level || '—'} / フレンドコード:</span>{' '}
                   <FriendCodeCopy code={friendCode} disabled={!friendCodePublic} />
                 </p>
+                {selectedDecoration && (
+                  <p className="mt-1 inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">
+                    <span>{selectedDecoration.emoji}</span>
+                    <span>{selectedDecoration.name}</span>
+                  </p>
+                )}
               </div>
             </div>
             <div className="mt-4 space-y-2">
