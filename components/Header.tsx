@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import GoogleSignInButton from './GoogleSignInButton'
-import DiscordSignInButton from './DiscordSignInButton'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import NoticeModal from './NoticeModal'
 import DataSyncModal from './DataSyncModal'
