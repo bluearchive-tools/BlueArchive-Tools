@@ -46,10 +46,13 @@ export default function MyPageClient({
       try {
         const parsed = initialSocialLinks ? JSON.parse(initialSocialLinks) : []
         if (Array.isArray(parsed)) {
-          return parsed.map((item) => ({
-            label: typeof item?.label === 'string' ? item.label : '',
-            value: typeof item?.value === 'string' ? item.value : '',
-          }))
+          const normalized = parsed
+            .map((item) => ({
+              label: typeof item?.label === 'string' ? item.label : '',
+              value: typeof item?.value === 'string' ? item.value : '',
+            }))
+            .filter((item) => item.label.trim() || item.value.trim())
+          if (normalized.length > 0) return normalized
         }
       } catch {
         /* ignore */
@@ -152,7 +155,9 @@ export default function MyPageClient({
         icon_student_id: iconStudentId || null,
         friend_code: friendCode || null,
         friend_code_public: friendCodePublic,
-        social_links: JSON.stringify(socialLinks),
+        social_links: JSON.stringify(
+          socialLinks.filter((item) => item.label.trim() || item.value.trim())
+        ),
       })
       .eq('id', session.user.id)
     setSavingProfile(false)
@@ -304,16 +309,29 @@ export default function MyPageClient({
                     className="rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="サービス名 (例: Discord)"
                   />
-                  <input
-                    value={link.value}
-                    onChange={(e) => {
-                      const next = [...socialLinks]
-                      next[idx] = { ...next[idx], value: e.target.value }
-                      setSocialLinks(next)
-                    }}
-                    className="rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="リンクやID"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      value={link.value}
+                      onChange={(e) => {
+                        const next = [...socialLinks]
+                        next[idx] = { ...next[idx], value: e.target.value }
+                        setSocialLinks(next)
+                      }}
+                      className="flex-1 rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="リンクやID"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSocialLinks((prev) =>
+                          prev.length === 1 ? [{ label: '', value: '' }] : prev.filter((_, i) => i !== idx)
+                        )
+                      }
+                      className="rounded border border-red-300 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                    >
+                      削除
+                    </button>
+                  </div>
                 </div>
               ))}
               <button
@@ -376,7 +394,6 @@ export default function MyPageClient({
             <div>
               <p className="text-sm text-gray-600 mb-1">メールアドレス</p>
               <p className="rounded border border-gray-200 bg-gray-50 px-3 py-2 text-base">{email || '—'}</p>
-              <p className="text-xs text-gray-500 mt-1">メールアドレスの変更は現在サポートしていません。</p>
             </div>
             <div>
               <p className="text-sm text-gray-600 mb-1">Supabase User ID</p>
@@ -511,7 +528,9 @@ export default function MyPageClient({
               <div>
                 <h4 className="text-xl font-bold">{nickname || username || 'ユーザー名未設定'}</h4>
                 <p className="text-sm text-gray-500">Tools ID: {username || '—'}</p>
-                <p className="text-sm text-gray-500">Lv {level || '—'}</p>
+                <p className="text-sm text-gray-500">
+                  Lv {level || '—'} / フレンドコード: {friendCodePublic ? friendCode || '—' : '—'}
+                </p>
               </div>
             </div>
             <div className="mt-4 space-y-2">
@@ -533,7 +552,6 @@ export default function MyPageClient({
                   ))}
                 </div>
               )}
-              <p className="text-xs text-gray-400">メール: {email || '—'}</p>
             </div>
           </div>
         </div>
