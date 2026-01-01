@@ -4,6 +4,7 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import students from '../../../data/students.json'
 import decorations from '../../../data/decorations.json'
 import FriendCodeCopy from '../../../components/FriendCodeCopy'
+import DecorationInfoButton from '../../../components/DecorationInfoButton'
 
 type Params = {
   params: Promise<{
@@ -24,7 +25,9 @@ export default async function UserPage({ params }: Params) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('username, nickname, level, bio, icon_student_id, friend_code, friend_code_public, social_links, decoration_id')
+    .select(
+      'username, nickname, level, bio, icon_student_id, friend_code, friend_code_public, social_links, decoration_id, decoration_ids'
+    )
     .eq('username', username)
     .maybeSingle()
 
@@ -46,65 +49,57 @@ export default async function UserPage({ params }: Params) {
   })()
 
   const student = students.find((s) => s.id === profile?.icon_student_id)
-  const decoration = decorations.find((d) => d.id === profile?.decoration_id)
-
-  const isRedFrame = decoration?.style === 'red-gradient'
+  const appliedDecorationIds =
+    (profile?.decoration_ids as string[] | null) ??
+    (profile?.decoration_id ? [profile.decoration_id as string] : []) ??
+    []
+  const appliedDecorations = decorations.filter((d) => appliedDecorationIds.includes(d.id))
+  const isRedFrame = appliedDecorations.some((d) => d.style === 'red-gradient')
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
       {!profile ? (
         <p className="text-gray-600">ユーザーが見つかりませんでした。</p>
       ) : (
-        <div
-          className={
-            isRedFrame
-              ? 'rounded-xl bg-gradient-to-r from-rose-500 via-red-500 to-orange-400 p-[2px]'
-              : ''
-          }
-        >
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm space-y-4 dark:border-gray-700 dark:bg-gray-900">
-          <div className="flex items-center gap-4">
-            {student ? (
-              <img
-                src={student.image}
-                alt={student.name}
-                className="h-16 w-16 rounded-xl object-cover border border-gray-200"
-              />
-            ) : (
-              <div className="h-16 w-16 rounded-xl bg-gray-200 border border-gray-200" />
-            )}
-            <div>
-              <p className="text-sm text-gray-500">Tools ID: {profile.username}</p>
-              <h2 className="text-xl font-semibold">{profile.nickname || profile.username}</h2>
-              <p className="text-sm text-gray-500 flex items-center gap-1">
-                <span>Lv {profile.level ?? '—'} / フレンドコード:</span>
-                <FriendCodeCopy code={profile.friend_code} disabled={!profile.friend_code_public} />
-              </p>
-              {decoration && (
-                <p className="mt-1 inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">
-                  <span>{decoration.emoji}</span>
-                  <span>{decoration.name}</span>
-                </p>
+        <div className={isRedFrame ? 'rounded-xl bg-gradient-to-r from-rose-500 via-red-500 to-orange-400 p-[2px]' : ''}>
+          <div className="relative rounded-lg border border-gray-200 bg-white p-6 shadow-sm space-y-4 dark:border-gray-700 dark:bg-gray-900">
+            <div className="flex items-center gap-4">
+              {student ? (
+                <img
+                  src={student.image}
+                  alt={student.name}
+                  className="h-16 w-16 rounded-xl object-cover border border-gray-200"
+                />
+              ) : (
+                <div className="h-16 w-16 rounded-xl bg-gray-200 border border-gray-200" />
               )}
-            </div>
-          </div>
-          <div className="space-y-2">
-            <p className="text-sm text-gray-600">自己紹介</p>
-            <p className="rounded border border-gray-200 bg-gray-50 p-3 text-sm whitespace-pre-wrap">
-              {profile.bio || '自己紹介はまだ入力されていません。'}
-            </p>
-          </div>
-          {parsedSocial.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-sm text-gray-600">ソーシャル</p>
-              {parsedSocial.map((link, idx) => (
-                <p key={idx} className="rounded border border-gray-200 bg-gray-50 p-2 text-sm">
-                  {link.label && <span className="font-semibold mr-1">{link.label}:</span>}
-                  <span>{link.value || '未入力'}</span>
+              <div>
+                <p className="text-sm text-gray-500">Tools ID: {profile.username}</p>
+                <h2 className="text-xl font-semibold">{profile.nickname || profile.username}</h2>
+                <p className="text-sm text-gray-500 flex items-center gap-1">
+                  <span>Lv {profile.level ?? '—'} / フレンドコード:</span>
+                  <FriendCodeCopy code={profile.friend_code} disabled={!profile.friend_code_public} />
                 </p>
-              ))}
+              </div>
             </div>
-          )}
+            <DecorationInfoButton decorations={appliedDecorations} />
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600">自己紹介</p>
+              <p className="rounded border border-gray-200 bg-gray-50 p-3 text-sm whitespace-pre-wrap">
+                {profile.bio || '自己紹介はまだ入力されていません。'}
+              </p>
+            </div>
+            {parsedSocial.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600">ソーシャル</p>
+                {parsedSocial.map((link, idx) => (
+                  <p key={idx} className="rounded border border-gray-200 bg-gray-50 p-2 text-sm">
+                    {link.label && <span className="font-semibold mr-1">{link.label}:</span>}
+                    <span>{link.value || '未入力'}</span>
+                  </p>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

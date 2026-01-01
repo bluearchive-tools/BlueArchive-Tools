@@ -9,6 +9,7 @@ import { faEye, faEyeSlash, faLink, faUnlink, faUserCircle } from '@fortawesome/
 import students from '../data/students.json'
 import decorations from '../data/decorations.json'
 import FriendCodeCopy from './FriendCodeCopy'
+import DecorationInfoButton from './DecorationInfoButton'
 
 interface Props {
   initialUsername: string | null
@@ -20,7 +21,8 @@ interface Props {
   initialFriendCode: string | null
   initialFriendCodePublic: boolean | null
   initialSocialLinks: string | null
-  initialDecorationId: string | null
+  initialDecorationIds: string[]
+  initialDecorationInventory: string[]
 }
 
 export default function MyPageClient({
@@ -33,7 +35,8 @@ export default function MyPageClient({
   initialFriendCode,
   initialFriendCodePublic,
   initialSocialLinks,
-  initialDecorationId
+  initialDecorationIds,
+  initialDecorationInventory
 }: Props) {
   const supabase = useSupabaseClient()
   const session = useSession()
@@ -45,7 +48,8 @@ export default function MyPageClient({
   const [iconStudentId, setIconStudentId] = useState(initialIconStudentId ?? '')
   const [friendCode, setFriendCode] = useState(initialFriendCode ?? '')
   const [friendCodePublic, setFriendCodePublic] = useState<boolean>(initialFriendCodePublic ?? false)
-  const [decorationId, setDecorationId] = useState(initialDecorationId ?? '')
+  const [decorationIds, setDecorationIds] = useState<string[]>(initialDecorationIds ?? [])
+  const [decorationInventory] = useState<string[]>(initialDecorationInventory ?? [])
   const [socialLinks, setSocialLinks] = useState<{ label: string; value: string }[]>(
     (() => {
       try {
@@ -134,7 +138,14 @@ export default function MyPageClient({
   const linkedProviders = new Set(identities.map((id) => id.provider))
 
   const selectedStudent = useMemo(() => students.find((s) => s.id === iconStudentId), [iconStudentId])
-  const selectedDecoration = useMemo(() => decorations.find((d) => d.id === decorationId), [decorationId])
+  const selectedDecorations = useMemo(
+    () => decorations.filter((d) => decorationIds.includes(d.id)),
+    [decorationIds]
+  )
+  const hasRedFrame = useMemo(
+    () => selectedDecorations.some((d) => d.style === 'red-gradient'),
+    [selectedDecorations]
+  )
 
   const copyUserId = async () => {
     if (!session?.user.id) return
@@ -161,7 +172,8 @@ export default function MyPageClient({
         icon_student_id: iconStudentId || null,
         friend_code: friendCode || null,
         friend_code_public: friendCodePublic,
-        decoration_id: decorationId || null,
+        decoration_ids: decorationIds,
+        decoration_inventory: decorationInventory,
         social_links: JSON.stringify(
           socialLinks.filter((item) => item.label.trim() || item.value.trim())
         ),
@@ -367,38 +379,51 @@ export default function MyPageClient({
                 公開する
               </label>
             </label>
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-gray-700">デコレーション</p>
-                <a
-                  href="/decorations"
-                  className="text-sm text-blue-600 hover:underline"
-                >
+                <a href="/decorations" className="text-sm text-blue-600 hover:underline">
                   デコレーションショップへ
                 </a>
               </div>
-              <p className="text-sm text-gray-600">プロフィールに飾りを付けられます。</p>
-              <select
-                value={decorationId}
-                onChange={(e) => setDecorationId(e.target.value)}
-                className="w-full rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">なし</option>
-                {decorations.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.emoji} {item.name}
-                  </option>
-                ))}
-              </select>
-              {selectedDecoration && (
-                <div className="flex items-start gap-2 rounded border border-gray-200 bg-gray-50 p-3 text-sm">
-                  <span className="text-lg">{selectedDecoration.emoji}</span>
-                  <div>
-                    <p className="font-semibold">{selectedDecoration.name}</p>
-                    <p className="text-gray-600">{selectedDecoration.description}</p>
-                  </div>
-                </div>
-              )}
+              <p className="text-sm text-gray-600">プロフィールに複数のデコレーションを重ねて表示できます。</p>
+              <div className="space-y-2">
+                {decorations.map((item) => {
+                  const owned = decorationInventory.includes(item.id)
+                  const checked = decorationIds.includes(item.id)
+                  return (
+                    <label
+                      key={item.id}
+                      className="flex items-start gap-3 rounded border border-gray-200 bg-gray-50 p-3 text-sm dark:border-gray-700 dark:bg-gray-800"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        disabled={!owned}
+                        onChange={(e) => {
+                          setDecorationIds((prev) =>
+                            e.target.checked ? Array.from(new Set([...prev, item.id])) : prev.filter((id) => id !== item.id)
+                          )
+                        }}
+                        className="mt-1"
+                      />
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg" aria-hidden>
+                            {item.emoji}
+                          </span>
+                          <p className="font-semibold">{item.name}</p>
+                          {!owned && <span className="rounded bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800">未購入</span>}
+                        </div>
+                        <p className="text-gray-600">{item.description}</p>
+                        {item.style === 'red-gradient' && (
+                          <p className="text-xs text-rose-600">効果: 赤グラデーション枠</p>
+                        )}
+                      </div>
+                    </label>
+                  )
+                })}
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -555,29 +580,28 @@ export default function MyPageClient({
             >
               ×
             </button>
-            <div className="flex items-center gap-4">
-              {selectedStudent ? (
-                <img
-                  src={selectedStudent.image}
-                  alt={selectedStudent.name}
-                  className="h-16 w-16 rounded-xl object-cover border border-gray-200"
-                />
-              ) : (
-                <div className="h-16 w-16 rounded-xl bg-gray-200 border border-gray-200" />
-              )}
-              <div>
-                <p className="text-sm text-gray-500">Tools ID: {username || '—'}</p>
-                <h4 className="text-xl font-bold">{nickname || username || 'ユーザー名未設定'}</h4>
-                <p className="text-sm text-gray-500 flex items-center gap-1">
-                  <span>Lv {level || '—'} / フレンドコード:</span>{' '}
-                  <FriendCodeCopy code={friendCode} disabled={!friendCodePublic} />
-                </p>
-                {selectedDecoration && (
-                  <p className="mt-1 inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">
-                    <span>{selectedDecoration.emoji}</span>
-                    <span>{selectedDecoration.name}</span>
-                  </p>
+            <div
+              className={`relative ${hasRedFrame ? 'rounded-xl bg-gradient-to-r from-rose-500 via-red-500 to-orange-400 p-[2px]' : ''}`}
+            >
+              <div className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+                {selectedStudent ? (
+                  <img
+                    src={selectedStudent.image}
+                    alt={selectedStudent.name}
+                    className="h-16 w-16 rounded-xl object-cover border border-gray-200"
+                  />
+                ) : (
+                  <div className="h-16 w-16 rounded-xl bg-gray-200 border border-gray-200" />
                 )}
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500">Tools ID: {username || '—'}</p>
+                  <h4 className="text-xl font-bold">{nickname || username || 'ユーザー名未設定'}</h4>
+                  <p className="text-sm text-gray-500 flex items-center gap-1">
+                    <span>Lv {level || '—'} / フレンドコード:</span>{' '}
+                    <FriendCodeCopy code={friendCode} disabled={!friendCodePublic} />
+                  </p>
+                </div>
+                <DecorationInfoButton decorations={selectedDecorations} />
               </div>
             </div>
             <div className="mt-4 space-y-2">

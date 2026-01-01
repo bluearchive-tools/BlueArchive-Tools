@@ -23,7 +23,9 @@ export default async function MyPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('username, nickname, level, bio, icon_student_id, friend_code, friend_code_public, social_links, decoration_id')
+    .select(
+      'username, nickname, level, bio, icon_student_id, friend_code, friend_code_public, social_links, decoration_id, decoration_ids, decoration_inventory'
+    )
     .eq('id', session.user.id)
     .maybeSingle()
 
@@ -45,7 +47,12 @@ export default async function MyPage() {
         initialFriendCode={profile?.friend_code ?? null}
         initialFriendCodePublic={profile?.friend_code_public ?? null}
         initialSocialLinks={profile?.social_links ?? null}
-        initialDecorationId={profile?.decoration_id ?? null}
+        initialDecorationIds={
+          (profile?.decoration_ids as string[] | null) ??
+          (profile?.decoration_id ? [profile.decoration_id as string] : []) ??
+          []
+        }
+        initialDecorationInventory={(profile?.decoration_inventory as string[] | null) ?? []}
       />
     </main>
   )
