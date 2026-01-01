@@ -9,16 +9,18 @@ import PageHelpButton from '../../components/PageHelpButton'
 export default function Settings() {
   const { dark, toggle } = useTheme()
 
-  const [delUser, setDelUser] = useState(true)
+  const [delUser, setDelUser] = useState(false)
   const [delTheme, setDelTheme] = useState(false)
   const [delNotice, setDelNotice] = useState(false)
   const [delOpts, setDelOpts] = useState(false)
   const [delSync, setDelSync] = useState(false)
   const [delSquad, setDelSquad] = useState(false)
   const [delTL, setDelTL] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmStep, setConfirmStep] = useState<'first' | 'second'>('first')
+  const [status, setStatus] = useState<string | null>(null)
 
   const clearLocal = () => {
-    if (!confirm('選択したデータを削除しますか？')) return
     if (delUser) {
       const keys: string[] = []
       for (let i = 0; i < localStorage.length; i++) {
@@ -61,7 +63,27 @@ export default function Settings() {
       }
       keys.forEach((k) => localStorage.removeItem(k))
     }
-    alert('削除しました')
+    setStatus('削除しました')
+  }
+
+  const openConfirm = () => {
+    setStatus(null)
+    setConfirmStep('first')
+    setConfirmOpen(true)
+  }
+
+  const handleConfirmYes = () => {
+    if (confirmStep === 'first') {
+      setConfirmStep('second')
+      return
+    }
+    clearLocal()
+    setConfirmOpen(false)
+  }
+
+  const handleConfirmNo = () => {
+    setConfirmOpen(false)
+    setConfirmStep('first')
   }
 
   return (
@@ -142,10 +164,44 @@ export default function Settings() {
           />
           TLデータ
         </label>
-        <button onClick={clearLocal} className="mt-2 px-4 py-2 border rounded w-full">
+        <button onClick={openConfirm} className="mt-2 px-4 py-2 border rounded w-full">
           選択したデータを削除
         </button>
+        {status && <p className="text-sm text-green-600 dark:text-green-400 mt-1">{status}</p>}
       </div>
+      {confirmOpen && (
+        <div
+          className="fixed inset-0 z-20 flex items-center justify-center bg-black/40 dark:bg-black/60"
+          onClick={handleConfirmNo}
+        >
+          <div
+            className={`${dark ? 'bg-gray-800 text-white' : 'bg-white'} rounded p-4 shadow max-w-sm w-[90%] space-y-3`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="font-semibold">
+              {confirmStep === 'first'
+                ? '選択したデータを削除してもよろしいですか？'
+                : '本当に削除してもよろしいですか？'}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={handleConfirmNo}
+                className="px-3 py-1 border rounded"
+              >
+                いいえ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmYes}
+                className="px-3 py-1 border rounded bg-red-600 text-white"
+              >
+                はい
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
