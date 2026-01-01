@@ -8,8 +8,8 @@ type Decoration = {
   id: string
   name: string
   emoji: string
-  description?: string
-  style?: string
+  description?: string | null
+  style?: string | null
 }
 
 type Props = {
