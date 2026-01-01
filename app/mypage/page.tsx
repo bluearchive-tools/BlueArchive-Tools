@@ -1,24 +1,24 @@
 // app/mypage/page.tsx
 import { cookies } from 'next/headers'
-import Link from 'next/link'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { redirect } from 'next/navigation'
 import PageHelpButton from '../../components/PageHelpButton'
+import MyPageClient from '../../components/MyPageClient'
+import Link from 'next/link'
 
 export default async function MyPage() {
-  // クッキー情報をもとにサーバー側でセッション取得
   const supabase = createServerComponentClient(
-        { cookies },
-        {
-          // サーバーサイドでは絶対URL／キーを使う
-          supabaseUrl: process.env.SUPABASE_URL!,
-          supabaseKey:  process.env.SUPABASE_ANON_KEY!,
-        }
-      )
-  const { data: { session } } = await supabase.auth.getSession()
+    { cookies },
+    {
+      supabaseUrl: process.env.SUPABASE_URL!,
+      supabaseKey: process.env.SUPABASE_ANON_KEY!,
+    }
+  )
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
   if (!session) {
-    // ログインしていなければトップへリダイレクト
     redirect('/')
   }
 
@@ -29,20 +29,17 @@ export default async function MyPage() {
     .maybeSingle()
 
   return (
-    <main>
-      <div className="flex items-center gap-2 mb-2">
-        <h2>マイページ</h2>
-        <PageHelpButton pageKey="mypage" />
+    <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-bold">マイページ</h2>
+          <PageHelpButton pageKey="mypage" />
+        </div>
+        <Link href="/profile/setup" className="text-sm text-blue-500 underline">
+          プロフィールを編集
+        </Link>
       </div>
-      {profile?.username && (
-        <p>
-          ユーザー名: {profile.username}{' '}
-          <Link href="/profile/setup" className="text-blue-500 underline">
-            変更
-          </Link>
-        </p>
-      )}
-      <p>メールアドレス: {session.user.email}</p>
+      <MyPageClient initialUsername={profile?.username ?? null} initialEmail={session.user.email} />
     </main>
   )
 }

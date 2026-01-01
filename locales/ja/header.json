@@ -9,8 +9,6 @@
   "account": {
     "label": "アカウント",
     "mypage": "マイページ",
-    "linkGoogle": "Google を連携",
-    "linkDiscord": "Discord を連携",
     "signOut": "サインアウト",
     "signInWithGoogle": "Googleでログイン",
     "signInWithDiscord": "Discordでログイン"

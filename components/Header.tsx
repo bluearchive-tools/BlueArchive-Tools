@@ -11,7 +11,6 @@ import DiscordSignInButton from './DiscordSignInButton'
 import type { NextRouter } from 'next/router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBell, faCog, faChevronDown, faCircleQuestion, faMoon, faSun } from '@fortawesome/free-solid-svg-icons'
-import { faDiscord, faGoogle } from '@fortawesome/free-brands-svg-icons'
 import {
   useSession,
   useSupabaseClient,
@@ -135,23 +134,6 @@ export default function Header() {
     }
   }
 
-  const linkIdentity = async (provider: 'google' | 'discord') => {
-    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined
-    const { data, error } = await supabase.auth.linkIdentity({
-      provider,
-      options: {
-        redirectTo
-      }
-    })
-    if (error) {
-      console.error(error.message)
-      return
-    }
-    if (data?.url) {
-      window.location.assign(data.url)
-    }
-  }
-
   const pathWithSearch = useMemo(() => {
     const normalizedPath = pathname?.startsWith('/') ? pathname : `/${pathname ?? ''}`
     const basePath = stripLeadingLocale(normalizedPath)
@@ -250,25 +232,10 @@ export default function Header() {
                 <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 dark:text-white text-black shadow p-2 z-10">
                   {session ? (
                     <>
-                      <Link href="/mypage" className="block px-2 py-1">
-                        {t('account.mypage')}
-                      </Link>
-                      <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
-                      <button
-                        onClick={() => linkIdentity('google')}
-                        className="flex w-full items-center gap-2 px-2 py-1 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        <FontAwesomeIcon icon={faGoogle} />
-                        <span>{t('account.linkGoogle')}</span>
-                      </button>
-                      <button
-                        onClick={() => linkIdentity('discord')}
-                        className="flex w-full items-center gap-2 px-2 py-1 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        <FontAwesomeIcon icon={faDiscord} />
-                        <span>{t('account.linkDiscord')}</span>
-                      </button>
-                      <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
+                  <Link href="/mypage" className="block px-2 py-1">
+                    {t('account.mypage')}
+                  </Link>
+                  <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
                       <button onClick={signOut} className="block w-full text-left px-2 py-1">
                         {t('account.signOut')}
                       </button>
