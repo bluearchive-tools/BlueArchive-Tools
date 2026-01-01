@@ -16,7 +16,8 @@ export default function Settings() {
   const [delSync, setDelSync] = useState(false)
   const [delSquad, setDelSquad] = useState(false)
   const [delTL, setDelTL] = useState(false)
-  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmVisible, setConfirmVisible] = useState(false)
+  const [confirmActive, setConfirmActive] = useState(false)
   const [confirmStep, setConfirmStep] = useState<'first' | 'second'>('first')
   const [status, setStatus] = useState<string | null>(null)
 
@@ -66,10 +67,22 @@ export default function Settings() {
     setStatus('削除しました')
   }
 
+  const targets = [
+    { key: 'delUser', label: '学生データ', value: delUser },
+    { key: 'delTheme', label: 'テーマ設定', value: delTheme },
+    { key: 'delNotice', label: 'お知らせ既読状態', value: delNotice },
+    { key: 'delOpts', label: '学生一覧設定', value: delOpts },
+    { key: 'delSync', label: '同期完了フラグ', value: delSync },
+    { key: 'delSquad', label: '部隊データ', value: delSquad },
+    { key: 'delTL', label: 'TLデータ', value: delTL },
+  ]
+  const selectedTargets = targets.filter((t) => t.value)
+
   const openConfirm = () => {
     setStatus(null)
     setConfirmStep('first')
-    setConfirmOpen(true)
+    setConfirmVisible(true)
+    requestAnimationFrame(() => setConfirmActive(true))
   }
 
   const handleConfirmYes = () => {
@@ -78,12 +91,16 @@ export default function Settings() {
       return
     }
     clearLocal()
-    setConfirmOpen(false)
+    setConfirmActive(false)
+    setTimeout(() => setConfirmVisible(false), 150)
   }
 
   const handleConfirmNo = () => {
-    setConfirmOpen(false)
-    setConfirmStep('first')
+    setConfirmActive(false)
+    setTimeout(() => {
+      setConfirmVisible(false)
+      setConfirmStep('first')
+    }, 150)
   }
 
   return (
@@ -169,13 +186,13 @@ export default function Settings() {
         </button>
         {status && <p className="text-sm text-green-600 dark:text-green-400 mt-1">{status}</p>}
       </div>
-      {confirmOpen && (
+      {confirmVisible && (
         <div
-          className="fixed inset-0 z-20 flex items-center justify-center bg-black/40 dark:bg-black/60"
+          className={`fixed inset-0 z-20 flex items-center justify-center bg-black/40 dark:bg-black/60 transition-opacity duration-200 ${confirmActive ? 'opacity-100' : 'opacity-0'}`}
           onClick={handleConfirmNo}
         >
           <div
-            className={`${dark ? 'bg-gray-800 text-white' : 'bg-white'} rounded p-4 shadow max-w-sm w-[90%] space-y-3`}
+            className={`${dark ? 'bg-gray-800 text-white' : 'bg-white'} rounded p-4 shadow max-w-sm w-[90%] space-y-3 transition-all duration-200 ${confirmActive ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-2 scale-95'}`}
             onClick={(e) => e.stopPropagation()}
           >
             <p className="font-semibold">
@@ -183,6 +200,18 @@ export default function Settings() {
                 ? '選択したデータを削除してもよろしいですか？'
                 : '本当に削除してもよろしいですか？'}
             </p>
+            <div className="bg-gray-50 dark:bg-gray-900 rounded p-2 text-sm space-y-1">
+              <p className="font-semibold">対象</p>
+              {selectedTargets.length ? (
+                <ul className="list-disc pl-5 space-y-1">
+                  {selectedTargets.map((t) => (
+                    <li key={t.key}>{t.label}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-600 dark:text-gray-300">選択なし</p>
+              )}
+            </div>
             <div className="flex justify-end gap-2">
               <button
                 type="button"
