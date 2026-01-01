@@ -135,7 +135,7 @@ export default function PageHelpButton({ pageKey, className }: Props) {
               {!loading && !error && markdown && (
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
-                  className="prose prose-sm dark:prose-invert max-w-none"
+                  className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-semibold prose-h1:text-xl prose-h1:leading-tight prose-h2:text-lg prose-h2:mt-4 prose-p:leading-relaxed"
                   components={{
                     img: ({ alt, ...props }) => (
                       // eslint-disable-next-line @next/next/no-img-element
