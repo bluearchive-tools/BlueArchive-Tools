@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useTheme } from './ThemeProvider'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import StudentSelect from './StudentSelect'
@@ -73,6 +73,7 @@ export default function AddStudentModal({
   const imgRef = useRef<HTMLInputElement>(null)
   const [students, setStudents] = useState<Student[]>([])
   const [existing, setExisting] = useState<UserStudent | null>(null)
+  const userEditedRef = useRef(false)
 
   useEffect(() => {
     setVisible(true)
@@ -120,28 +121,41 @@ export default function AddStudentModal({
   })
   const [bonds, setBonds] = useState<Record<string, string>>({})
 
+  const updateForm = useCallback(
+    (next: Partial<typeof form>, markEdited = false) => {
+      if (markEdited) userEditedRef.current = true
+      setForm((prev) => ({ ...prev, ...next }))
+    },
+    []
+  )
+
+  const updateBond = useCallback(
+    (id: string, value: string, markEdited = false) => {
+      if (markEdited) userEditedRef.current = true
+      setBonds((prev) => ({ ...prev, [id]: value }))
+    },
+    []
+  )
+
   useEffect(() => {
     if (mode === 'manual' && defaultStudentId && !form.studentId) {
-      setForm((prev) => ({ ...prev, studentId: defaultStudentId }))
+      updateForm({ studentId: defaultStudentId })
     }
-  }, [mode, defaultStudentId, form.studentId])
+  }, [mode, defaultStudentId, form.studentId, updateForm])
 
   useEffect(() => {
     if (Number(form.star) < 5) {
-      setForm((prev) => ({ ...prev, uniqueStar: '0', uniqueLevel: '0' }))
+      updateForm({ uniqueStar: '0', uniqueLevel: '0' })
     }
-  }, [form.star])
+  }, [form.star, updateForm])
 
   const selectedStudent = students.find((s) => s.id === form.studentId)
 
   useEffect(() => {
     if (selectedStudent) {
-      setForm((prev) => ({
-        ...prev,
-        star: selectedStudent.initialStars.toString(),
-      }))
+      updateForm({ star: selectedStudent.initialStars.toString() })
     }
-  }, [selectedStudent])
+  }, [selectedStudent, updateForm])
 
   useEffect(() => {
     if (!selectedStudent) return
@@ -157,13 +171,13 @@ export default function AddStudentModal({
     } else {
       ids = [baseId, ...(base?.altIds || [])]
     }
-    setBonds((prev) => {
-      const obj: Record<string, string> = {}
-      for (const id of ids) {
-        obj[id] = prev[id] ?? '1'
-      }
-      return obj
-    })
+      setBonds((prev) => {
+        const obj: Record<string, string> = {}
+        for (const id of ids) {
+          obj[id] = prev[id] ?? '1'
+        }
+        return obj
+      })
   }, [selectedStudent, students])
 
   const baseId = selectedStudent?.altOf || selectedStudent?.id
@@ -187,9 +201,9 @@ export default function AddStudentModal({
 
   useEffect(() => {
     if (selectedStudent && !selectedStudent.hasAccessory) {
-      setForm((prev) => ({ ...prev, love: '0' }))
+      updateForm({ love: '0' })
     }
-  }, [selectedStudent])
+  }, [selectedStudent, updateForm])
 
   useEffect(() => {
     const load = async () => {
@@ -207,28 +221,30 @@ export default function AddStudentModal({
         if (data) {
           const d = data as UserStudent
           setExisting(d)
-        setForm({
-          studentId: form.studentId,
-          level: d.level.toString(),
-          star: d.star.toString(),
-          uniqueStar: d.unique_star.toString(),
-          uniqueLevel: d.unique_level.toString(),
-          hp: d.hp.toString(),
-          hpwb: d.hp_wb.toString(),
-          attack: d.attack.toString(),
-          attackwb: d.attack_wb.toString(),
-          defense: d.defense.toString(),
-          heal: d.heal.toString(),
-          healwb: d.heal_wb.toString(),
-          ex: d.ex_skill.toString(),
-          normal: d.normal_skill.toString(),
-          passive: d.passive_skill.toString(),
-          sub: d.sub_skill.toString(),
-          gear1: d.equip1.toString(),
-          gear2: d.equip2.toString(),
-          gear3: d.equip3.toString(),
-          love: d.item_tier.toString(),
-        })
+          if (!userEditedRef.current) {
+            setForm({
+              studentId: form.studentId,
+              level: d.level.toString(),
+              star: d.star.toString(),
+              uniqueStar: d.unique_star.toString(),
+              uniqueLevel: d.unique_level.toString(),
+              hp: d.hp.toString(),
+              hpwb: d.hp_wb.toString(),
+              attack: d.attack.toString(),
+              attackwb: d.attack_wb.toString(),
+              defense: d.defense.toString(),
+              heal: d.heal.toString(),
+              healwb: d.heal_wb.toString(),
+              ex: d.ex_skill.toString(),
+              normal: d.normal_skill.toString(),
+              passive: d.passive_skill.toString(),
+              sub: d.sub_skill.toString(),
+              gear1: d.equip1.toString(),
+              gear2: d.equip2.toString(),
+              gear3: d.equip3.toString(),
+              love: d.item_tier.toString(),
+            })
+          }
         const alt = d.alt_bonds || null
         if (selectedStudent) {
           const baseId = selectedStudent.altOf || selectedStudent.id
@@ -255,7 +271,9 @@ export default function AddStudentModal({
               obj[id] = '1'
             }
           }
-          setBonds(obj)
+          if (!userEditedRef.current) {
+            setBonds(obj)
+          }
         }
         } else {
           setExisting(null)
@@ -311,28 +329,30 @@ export default function AddStudentModal({
           try {
             const d = JSON.parse(local) as UserStudent
             setExisting(d)
-            setForm({
-              studentId: form.studentId,
-              level: d.level.toString(),
-              star: d.star.toString(),
-              uniqueStar: d.unique_star.toString(),
-              uniqueLevel: d.unique_level.toString(),
-              hp: d.hp.toString(),
-              hpwb: d.hp_wb.toString(),
-              attack: d.attack.toString(),
-              attackwb: d.attack_wb.toString(),
-              defense: d.defense.toString(),
-              heal: d.heal.toString(),
-              healwb: d.heal_wb.toString(),
-              ex: d.ex_skill.toString(),
-              normal: d.normal_skill.toString(),
-              passive: d.passive_skill.toString(),
-              sub: d.sub_skill.toString(),
-              gear1: d.equip1.toString(),
-              gear2: d.equip2.toString(),
-              gear3: d.equip3.toString(),
-              love: d.item_tier.toString(),
-            })
+            if (!userEditedRef.current) {
+              setForm({
+                studentId: form.studentId,
+                level: d.level.toString(),
+                star: d.star.toString(),
+                uniqueStar: d.unique_star.toString(),
+                uniqueLevel: d.unique_level.toString(),
+                hp: d.hp.toString(),
+                hpwb: d.hp_wb.toString(),
+                attack: d.attack.toString(),
+                attackwb: d.attack_wb.toString(),
+                defense: d.defense.toString(),
+                heal: d.heal.toString(),
+                healwb: d.heal_wb.toString(),
+                ex: d.ex_skill.toString(),
+                normal: d.normal_skill.toString(),
+                passive: d.passive_skill.toString(),
+                sub: d.sub_skill.toString(),
+                gear1: d.equip1.toString(),
+                gear2: d.equip2.toString(),
+                gear3: d.equip3.toString(),
+                love: d.item_tier.toString(),
+              })
+            }
             const alt = d.alt_bonds || null
             if (selectedStudent) {
               const baseId = selectedStudent.altOf || selectedStudent.id
@@ -359,7 +379,9 @@ export default function AddStudentModal({
                   obj[id] = '1'
                 }
               }
-              setBonds(obj)
+              if (!userEditedRef.current) {
+                setBonds(obj)
+              }
             }
           } catch {
             setExisting(null)
@@ -501,6 +523,7 @@ export default function AddStudentModal({
               type="button"
               className="border rounded w-full p-2"
               onClick={() => {
+                userEditedRef.current = false
                 setMode('manual')
                 if (defaultStudentId) {
                   setForm((prev) => ({ ...prev, studentId: defaultStudentId }))
@@ -533,7 +556,10 @@ export default function AddStudentModal({
             <StudentSelect
               students={students}
               value={form.studentId}
-              onChange={(id) => setForm({ ...form, studentId: id })}
+              onChange={(id) => {
+                userEditedRef.current = false
+                updateForm({ studentId: id })
+              }}
             />
             <label className="flex items-center gap-2">
               <span className="whitespace-nowrap">レベル:</span>
@@ -542,7 +568,7 @@ export default function AddStudentModal({
                 min={1}
                 max={90}
                 value={form.level}
-                onChange={(e) => setForm({ ...form, level: e.target.value })}
+                onChange={(e) => updateForm({ level: e.target.value }, true)}
                 className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
@@ -553,7 +579,7 @@ export default function AddStudentModal({
                 min={1}
                 max={5}
                 value={form.star}
-                onChange={(e) => setForm({ ...form, star: e.target.value })}
+                onChange={(e) => updateForm({ star: e.target.value }, true)}
                 className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
@@ -565,7 +591,7 @@ export default function AddStudentModal({
                 max={3}
                 value={form.uniqueStar}
                 onChange={(e) =>
-                  setForm({ ...form, uniqueStar: e.target.value })
+                  updateForm({ uniqueStar: e.target.value }, true)
                 }
                 disabled={Number(form.star) < 5}
                 className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
@@ -579,7 +605,7 @@ export default function AddStudentModal({
                 max={50}
                 value={form.uniqueLevel}
                 onChange={(e) =>
-                  setForm({ ...form, uniqueLevel: e.target.value })
+                  updateForm({ uniqueLevel: e.target.value }, true)
                 }
                 disabled={Number(form.star) < 5}
                 className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
@@ -596,7 +622,7 @@ export default function AddStudentModal({
                   max={100}
                   value={bonds[id] ?? ''}
                   onChange={(e) =>
-                    setBonds({ ...bonds, [id]: e.target.value })
+                    updateBond(id, e.target.value, true)
                   }
                   className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
                 />
@@ -607,7 +633,7 @@ export default function AddStudentModal({
               <input
                 type="number"
                 value={form.hp}
-                onChange={(e) => setForm({ ...form, hp: e.target.value })}
+                onChange={(e) => updateForm({ hp: e.target.value }, true)}
                 className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
@@ -618,7 +644,7 @@ export default function AddStudentModal({
                 min={0}
                 max={25}
                 value={form.hpwb}
-                onChange={(e) => setForm({ ...form, hpwb: e.target.value })}
+                onChange={(e) => updateForm({ hpwb: e.target.value }, true)}
                 className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
@@ -627,7 +653,7 @@ export default function AddStudentModal({
               <input
                 type="number"
                 value={form.attack}
-                onChange={(e) => setForm({ ...form, attack: e.target.value })}
+                onChange={(e) => updateForm({ attack: e.target.value }, true)}
                 className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
@@ -638,7 +664,7 @@ export default function AddStudentModal({
                 min={0}
                 max={25}
                 value={form.attackwb}
-                onChange={(e) => setForm({ ...form, attackwb: e.target.value })}
+                onChange={(e) => updateForm({ attackwb: e.target.value }, true)}
                 className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
@@ -647,7 +673,7 @@ export default function AddStudentModal({
               <input
                 type="number"
                 value={form.defense}
-                onChange={(e) => setForm({ ...form, defense: e.target.value })}
+                onChange={(e) => updateForm({ defense: e.target.value }, true)}
                 className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
@@ -656,7 +682,7 @@ export default function AddStudentModal({
               <input
                 type="number"
                 value={form.heal}
-                onChange={(e) => setForm({ ...form, heal: e.target.value })}
+                onChange={(e) => updateForm({ heal: e.target.value }, true)}
                 className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
@@ -667,7 +693,7 @@ export default function AddStudentModal({
                 min={0}
                 max={25}
                 value={form.healwb}
-                onChange={(e) => setForm({ ...form, healwb: e.target.value })}
+                onChange={(e) => updateForm({ healwb: e.target.value }, true)}
                 className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
@@ -678,7 +704,7 @@ export default function AddStudentModal({
                 min={1}
                 max={5}
                 value={form.ex}
-                onChange={(e) => setForm({ ...form, ex: e.target.value })}
+                onChange={(e) => updateForm({ ex: e.target.value }, true)}
                 className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
@@ -689,7 +715,7 @@ export default function AddStudentModal({
                 min={1}
                 max={10}
                 value={form.normal}
-                onChange={(e) => setForm({ ...form, normal: e.target.value })}
+                onChange={(e) => updateForm({ normal: e.target.value }, true)}
                 className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
@@ -700,7 +726,7 @@ export default function AddStudentModal({
                 min={1}
                 max={10}
                 value={form.passive}
-                onChange={(e) => setForm({ ...form, passive: e.target.value })}
+                onChange={(e) => updateForm({ passive: e.target.value }, true)}
                 className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
@@ -711,7 +737,7 @@ export default function AddStudentModal({
                 min={1}
                 max={10}
                 value={form.sub}
-                onChange={(e) => setForm({ ...form, sub: e.target.value })}
+                onChange={(e) => updateForm({ sub: e.target.value }, true)}
                 className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
@@ -722,7 +748,7 @@ export default function AddStudentModal({
                 min={1}
                 max={10}
                 value={form.gear1}
-                onChange={(e) => setForm({ ...form, gear1: e.target.value })}
+                onChange={(e) => updateForm({ gear1: e.target.value }, true)}
                 className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
@@ -733,7 +759,7 @@ export default function AddStudentModal({
                 min={1}
                 max={10}
                 value={form.gear2}
-                onChange={(e) => setForm({ ...form, gear2: e.target.value })}
+                onChange={(e) => updateForm({ gear2: e.target.value }, true)}
                 className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
@@ -744,7 +770,7 @@ export default function AddStudentModal({
                 min={1}
                 max={9}
                 value={form.gear3}
-                onChange={(e) => setForm({ ...form, gear3: e.target.value })}
+                onChange={(e) => updateForm({ gear3: e.target.value }, true)}
                 className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
             </label>
@@ -755,7 +781,7 @@ export default function AddStudentModal({
                 min={0}
                 max={2}
                 value={form.love}
-                onChange={(e) => setForm({ ...form, love: e.target.value })}
+                onChange={(e) => updateForm({ love: e.target.value }, true)}
                 disabled={!selectedStudent?.hasAccessory}
                 className="border rounded p-1 dark:bg-gray-900 dark:border-gray-700 dark:text-white flex-1"
               />
@@ -782,4 +808,3 @@ export default function AddStudentModal({
     </div>
   )
 }
-
