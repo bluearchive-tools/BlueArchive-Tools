@@ -185,9 +185,9 @@ export default function StudentsPage() {
   const roleOptions = Array.from(new Set(students.map((s) => s.role)))
   const typeOptions = Array.from(new Set(students.map((s) => s.characterType)))
   const gridClasses = [
-    'grid grid-cols-1 sm:grid-cols-2 gap-4',
     'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4',
     'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4',
+    'grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-4',
   ]
   const gridIcons: IconDefinition[] = [faList, faTableCellsLarge, faTableCells]
 
