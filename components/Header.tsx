@@ -10,7 +10,7 @@ import AboutModal from './AboutModal'
 import DiscordSignInButton from './DiscordSignInButton'
 import type { NextRouter } from 'next/router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBell, faCog, faChevronDown, faCircleQuestion, faMoon, faSun } from '@fortawesome/free-solid-svg-icons'
+import { faBell, faCog, faChevronDown, faCircleQuestion, faMoon, faShop, faSun } from '@fortawesome/free-solid-svg-icons'
 import {
   useSession,
   useSupabaseClient,
@@ -215,7 +215,7 @@ export default function Header() {
           <FontAwesomeIcon icon={faBell} />
         </button>
         <Link href="/decorations" aria-label="デコレーションショップ" className="text-lg">
-          🛍️
+          <FontAwesomeIcon icon={faShop} />
         </Link>
         <Link href="/settings" aria-label={t('actions.settings')}>
           <FontAwesomeIcon icon={faCog} />

@@ -3,24 +3,36 @@
     "id": "sparkle",
     "name": "スパークルリボン",
     "emoji": "✨",
-    "description": "プロフィールをきらめかせる定番デコレーションです。"
+    "description": "プロフィールをきらめかせる定番デコレーションです。",
+    "price": 300
   },
   {
     "id": "coffee",
     "name": "カフェブレイク",
     "emoji": "☕",
-    "description": "まったり派に人気の落ち着いたワンポイント。"
+    "description": "まったり派に人気の落ち着いたワンポイント。",
+    "price": 250
   },
   {
     "id": "trophy",
     "name": "チャンピオントロフィー",
     "emoji": "🏆",
-    "description": "バトルの勝利を称えるゴールドデコレーション。"
+    "description": "バトルの勝利を称えるゴールドデコレーション。",
+    "price": 450
   },
   {
     "id": "music",
     "name": "メロディノート",
     "emoji": "🎵",
-    "description": "音楽好きにぴったりな爽やかなアクセント。"
+    "description": "音楽好きにぴったりな爽やかなアクセント。",
+    "price": 280
+  },
+  {
+    "id": "red-frame",
+    "name": "クリムゾンフレーム",
+    "emoji": "🟥",
+    "description": "赤のグラデーション枠でカードを華やかに縁取ります。",
+    "price": 600,
+    "style": "red-gradient"
   }
 ]

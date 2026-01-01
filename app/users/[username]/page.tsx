@@ -48,12 +48,21 @@ export default async function UserPage({ params }: Params) {
   const student = students.find((s) => s.id === profile?.icon_student_id)
   const decoration = decorations.find((d) => d.id === profile?.decoration_id)
 
+  const isRedFrame = decoration?.style === 'red-gradient'
+
   return (
     <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
       {!profile ? (
         <p className="text-gray-600">ユーザーが見つかりませんでした。</p>
       ) : (
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm space-y-4 dark:border-gray-700 dark:bg-gray-900">
+        <div
+          className={
+            isRedFrame
+              ? 'rounded-xl bg-gradient-to-r from-rose-500 via-red-500 to-orange-400 p-[2px]'
+              : ''
+          }
+        >
+          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm space-y-4 dark:border-gray-700 dark:bg-gray-900">
           <div className="flex items-center gap-4">
             {student ? (
               <img
@@ -96,6 +105,7 @@ export default async function UserPage({ params }: Params) {
               ))}
             </div>
           )}
+          </div>
         </div>
       )}
     </main>
