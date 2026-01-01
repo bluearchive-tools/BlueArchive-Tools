@@ -10,26 +10,35 @@ import students from '../data/students.json'
 
 interface Props {
   initialUsername: string | null
+  initialNickname: string | null
   initialEmail: string | null
   initialLevel: number | null
   initialBio: string | null
   initialIconStudentId: string | null
+  initialCost: number | null
+  initialSocialLinks: string | null
 }
 
 export default function MyPageClient({
   initialUsername,
+  initialNickname,
   initialEmail,
   initialLevel,
   initialBio,
-  initialIconStudentId
+  initialIconStudentId,
+  initialCost,
+  initialSocialLinks
 }: Props) {
   const supabase = useSupabaseClient()
   const session = useSession()
   const [username, setUsername] = useState(initialUsername ?? '')
+  const [nickname, setNickname] = useState(initialNickname ?? '')
   const email = initialEmail ?? ''
   const [level, setLevel] = useState<number | ''>(initialLevel ?? '')
   const [bio, setBio] = useState(initialBio ?? '')
   const [iconStudentId, setIconStudentId] = useState(initialIconStudentId ?? '')
+  const [cost, setCost] = useState<number | ''>(initialCost ?? '')
+  const [socialLinks, setSocialLinks] = useState(initialSocialLinks ?? '')
   const [identities, setIdentities] = useState<UserIdentity[]>([])
   const [busy, setBusy] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
@@ -119,9 +128,12 @@ export default function MyPageClient({
       .from('profiles')
       .update({
         username,
+        nickname,
         level: level === '' ? null : level,
         bio,
-        icon_student_id: iconStudentId || null
+        icon_student_id: iconStudentId || null,
+        cost: cost === '' ? null : cost,
+        social_links: socialLinks || null
       })
       .eq('id', session.user.id)
     setSavingProfile(false)
@@ -187,6 +199,17 @@ export default function MyPageClient({
           </div>
           <div className="space-y-4">
             <label className="block text-sm text-gray-600">
+              ニックネーム（表示名、12文字まで）
+              <input
+                value={nickname}
+                maxLength={12}
+                onChange={(e) => setNickname(e.target.value)}
+                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="例: 先生"
+              />
+            </label>
+
+            <label className="block text-sm text-gray-600">
               ユーザー名
               <input
                 value={username}
@@ -213,6 +236,7 @@ export default function MyPageClient({
               自己紹介
               <textarea
                 value={bio}
+                maxLength={100}
                 onChange={(e) => setBio(e.target.value)}
                 rows={3}
                 className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -227,10 +251,10 @@ export default function MyPageClient({
                   <img
                     src={selectedStudent.image}
                     alt={selectedStudent.name}
-                    className="h-12 w-12 rounded-full object-cover border border-gray-200"
+                    className="h-12 w-12 rounded-xl object-cover border border-gray-200"
                   />
                 ) : (
-                  <div className="h-12 w-12 rounded-full bg-gray-200 border border-gray-200" />
+                  <div className="h-12 w-12 rounded-xl bg-gray-200 border border-gray-200" />
                 )}
                 <select
                   value={iconStudentId}
@@ -245,6 +269,29 @@ export default function MyPageClient({
                   ))}
                 </select>
               </div>
+            </label>
+
+            <label className="block text-sm text-gray-600">
+              コスト（サイト独自通貨）
+              <input
+                value={cost}
+                onChange={(e) => setCost(e.target.value === '' ? '' : Number(e.target.value))}
+                type="number"
+                min={0}
+                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="例: 1000"
+              />
+            </label>
+
+            <label className="block text-sm text-gray-600">
+              ソーシャルアカウント（URLやIDを自由に記入）
+              <textarea
+                value={socialLinks}
+                onChange={(e) => setSocialLinks(e.target.value)}
+                rows={3}
+                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="例: Twitter: @example / Discord: username#0000"
+              />
             </label>
 
             <div className="flex flex-wrap gap-2">
@@ -379,11 +426,18 @@ export default function MyPageClient({
           }`}
           role="dialog"
           aria-modal="true"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setPreviewVisible(false)
+              setTimeout(() => setPreviewOpen(false), 200)
+            }
+          }}
         >
           <div
             className={`relative w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl transform transition-all duration-200 ${
               previewVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
             } dark:bg-gray-900`}
+            onClick={(e) => e.stopPropagation()}
           >
             <button
               className="absolute right-3 top-3 text-sm text-gray-500 hover:text-gray-800"
@@ -400,14 +454,15 @@ export default function MyPageClient({
                 <img
                   src={selectedStudent.image}
                   alt={selectedStudent.name}
-                  className="h-16 w-16 rounded-full object-cover border border-gray-200"
+                  className="h-16 w-16 rounded-xl object-cover border border-gray-200"
                 />
               ) : (
-                <div className="h-16 w-16 rounded-full bg-gray-200 border border-gray-200" />
+                <div className="h-16 w-16 rounded-xl bg-gray-200 border border-gray-200" />
               )}
               <div>
-                <h4 className="text-xl font-bold">{username || 'ユーザー名未設定'}</h4>
-                <p className="text-sm text-gray-500">Lv {level || '—'}</p>
+                <h4 className="text-xl font-bold">{nickname || username || 'ユーザー名未設定'}</h4>
+                <p className="text-sm text-gray-500">ID: {username || '—'}</p>
+                <p className="text-sm text-gray-500">Lv {level || '—'} / コスト {cost === '' ? '—' : cost}</p>
               </div>
             </div>
             <div className="mt-4 space-y-2">
@@ -415,6 +470,12 @@ export default function MyPageClient({
               <p className="rounded border border-gray-200 bg-gray-50 p-3 text-sm whitespace-pre-wrap">
                 {bio || '自己紹介はまだ入力されていません。'}
               </p>
+              {socialLinks && (
+                <div>
+                  <p className="text-sm text-gray-600">ソーシャル</p>
+                  <p className="rounded border border-gray-200 bg-gray-50 p-3 text-sm whitespace-pre-wrap">{socialLinks}</p>
+                </div>
+              )}
               <p className="text-xs text-gray-400">メール: {email || '—'}</p>
             </div>
           </div>

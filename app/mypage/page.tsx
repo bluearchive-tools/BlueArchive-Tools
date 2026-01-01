@@ -23,7 +23,7 @@ export default async function MyPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('username, level, bio, icon_student_id')
+    .select('username, nickname, level, bio, icon_student_id, cost, social_links')
     .eq('id', session.user.id)
     .maybeSingle()
 
@@ -37,10 +37,13 @@ export default async function MyPage() {
       </div>
       <MyPageClient
         initialUsername={profile?.username ?? null}
+        initialNickname={profile?.nickname ?? null}
         initialEmail={session.user.email ?? null}
         initialLevel={profile?.level ?? null}
         initialBio={profile?.bio ?? null}
         initialIconStudentId={profile?.icon_student_id ?? null}
+        initialCost={profile?.cost ?? null}
+        initialSocialLinks={profile?.social_links ?? null}
       />
     </main>
   )
