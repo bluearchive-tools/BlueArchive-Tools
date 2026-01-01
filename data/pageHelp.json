@@ -74,10 +74,10 @@
       ]
     },
     "mypage": {
-      "title": "My page",
+      "title": "User settings",
       "body": [
-        "View your profile and account email.",
-        "Update your username from the profile setup link."
+        "Edit your profile information and linked services.",
+        "Manage your Tools ID, nickname, and visibility preferences."
       ]
     },
     "tools-divine-calc": {
@@ -184,10 +184,10 @@
       ]
     },
     "mypage": {
-      "title": "マイページ",
+      "title": "ユーザー設定",
       "body": [
-        "プロフィール情報やメールアドレスを確認できます。",
-        "「変更」リンクからユーザー名を更新してください。"
+        "プロフィール情報や連携サービスを編集できます。",
+        "Tools ID・ニックネームや公開設定を管理してください。"
       ]
     },
     "tools-divine-calc": {

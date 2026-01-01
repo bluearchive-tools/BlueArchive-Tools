@@ -235,6 +235,11 @@ export default function Header() {
                   <Link href="/mypage" className="block px-2 py-1">
                     {t('account.mypage')}
                   </Link>
+                  {username && (
+                    <Link href={`/users/${username}`} className="block px-2 py-1">
+                      {t('account.userProfile')}
+                    </Link>
+                  )}
                   <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
                       <button onClick={signOut} className="block w-full text-left px-2 py-1">
                         {t('account.signOut')}

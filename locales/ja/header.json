@@ -8,7 +8,8 @@
   },
   "account": {
     "label": "アカウント",
-    "mypage": "マイページ",
+    "mypage": "ユーザー設定",
+    "userProfile": "ユーザーページ",
     "signOut": "サインアウト",
     "signInWithGoogle": "Googleでログイン",
     "signInWithDiscord": "Discordでログイン"

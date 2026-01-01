@@ -8,7 +8,8 @@
   },
   "account": {
     "label": "Account",
-    "mypage": "My page",
+    "mypage": "User settings",
+    "userProfile": "User page",
     "signOut": "Sign out",
     "signInWithGoogle": "Continue with Google",
     "signInWithDiscord": "Continue with Discord"
