@@ -10,7 +10,7 @@ import AboutModal from './AboutModal'
 import DiscordSignInButton from './DiscordSignInButton'
 import type { NextRouter } from 'next/router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBell, faCog, faChevronDown, faCircleQuestion, faMoon, faSun } from '@fortawesome/free-solid-svg-icons'
+import { faBell, faCog, faChevronDown, faCircleQuestion, faMoon, faShop, faSun } from '@fortawesome/free-solid-svg-icons'
 import {
   useSession,
   useSupabaseClient,
@@ -214,6 +214,9 @@ export default function Header() {
         <button onClick={openNotice} aria-label={t('actions.notices')}>
           <FontAwesomeIcon icon={faBell} />
         </button>
+        <Link href="/decorations" aria-label="デコレーションショップ" className="text-lg">
+          <FontAwesomeIcon icon={faShop} />
+        </Link>
         <Link href="/settings" aria-label={t('actions.settings')}>
           <FontAwesomeIcon icon={faCog} />
         </Link>
@@ -232,14 +235,14 @@ export default function Header() {
                 <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 dark:text-white text-black shadow p-2 z-10">
                   {session ? (
                     <>
-                  <Link href="/mypage" className="block px-2 py-1">
-                    {t('account.mypage')}
-                  </Link>
                   {username && (
                     <Link href={`/users/${username}`} className="block px-2 py-1">
                       {t('account.userProfile')}
                     </Link>
                   )}
+                  <Link href="/mypage" className="block px-2 py-1">
+                    {t('account.mypage')}
+                  </Link>
                   <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
                       <button onClick={signOut} className="block w-full text-left px-2 py-1">
                         {t('account.signOut')}
