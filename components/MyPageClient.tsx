@@ -6,21 +6,33 @@ import type { UserIdentity } from '@supabase/supabase-js'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faDiscord, faGoogle } from '@fortawesome/free-brands-svg-icons'
 import { faEye, faEyeSlash, faLink, faUnlink, faUserCircle } from '@fortawesome/free-solid-svg-icons'
+import students from '../data/students.json'
 
 interface Props {
   initialUsername: string | null
   initialEmail: string | null
+  initialLevel: number | null
+  initialBio: string | null
+  initialIconStudentId: string | null
 }
 
-export default function MyPageClient({ initialUsername, initialEmail }: Props) {
+export default function MyPageClient({
+  initialUsername,
+  initialEmail,
+  initialLevel,
+  initialBio,
+  initialIconStudentId
+}: Props) {
   const supabase = useSupabaseClient()
   const session = useSession()
   const [username, setUsername] = useState(initialUsername ?? '')
-  const [email, setEmail] = useState(initialEmail ?? '')
+  const email = initialEmail ?? ''
+  const [level, setLevel] = useState<number | ''>(initialLevel ?? '')
+  const [bio, setBio] = useState(initialBio ?? '')
+  const [iconStudentId, setIconStudentId] = useState(initialIconStudentId ?? '')
   const [identities, setIdentities] = useState<UserIdentity[]>([])
   const [busy, setBusy] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
-  const [savingEmail, setSavingEmail] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [showUserId, setShowUserId] = useState(false)
   const profileRef = useRef<HTMLElement | null>(null)
@@ -84,13 +96,31 @@ export default function MyPageClient({ initialUsername, initialEmail }: Props) {
 
   const linkedProviders = new Set(identities.map((id) => id.provider))
 
+  const selectedStudent = useMemo(() => students.find((s) => s.id === iconStudentId), [iconStudentId])
+
+  const copyUserId = async () => {
+    if (!session?.user.id) return
+    try {
+      await navigator.clipboard.writeText(session.user.id)
+      setMessage('User ID をコピーしました')
+    } catch (err) {
+      console.error(err)
+      setMessage('コピーに失敗しました')
+    }
+  }
+
   const saveProfile = async () => {
     if (!session?.user) return
     setSavingProfile(true)
     setMessage(null)
     const { error } = await supabase
       .from('profiles')
-      .update({ username })
+      .update({
+        username,
+        level: level === '' ? null : level,
+        bio,
+        icon_student_id: iconStudentId || null
+      })
       .eq('id', session.user.id)
     setSavingProfile(false)
     if (error) {
@@ -98,18 +128,6 @@ export default function MyPageClient({ initialUsername, initialEmail }: Props) {
       return
     }
     setMessage('プロフィールを更新しました')
-  }
-
-  const saveEmail = async () => {
-    setSavingEmail(true)
-    setMessage(null)
-    const { error } = await supabase.auth.updateUser({ email })
-    setSavingEmail(false)
-    if (error) {
-      setMessage(`メールアドレスの更新に失敗しました: ${error.message}`)
-      return
-    }
-    setMessage('メールアドレスを更新しました。確認メールが届いている場合はご確認ください。')
   }
 
   const scrollTo = (ref: React.RefObject<HTMLElement | null>) => {
@@ -135,7 +153,7 @@ export default function MyPageClient({ initialUsername, initialEmail }: Props) {
             アカウント設定
           </button>
           <button
-            className="w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover.bg-gray-800"
+            className="w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800"
             onClick={() => scrollTo(linksRef)}
           >
             連携サービス
@@ -154,10 +172,10 @@ export default function MyPageClient({ initialUsername, initialEmail }: Props) {
             <FontAwesomeIcon icon={faUserCircle} className="text-3xl text-gray-500" />
             <div>
               <h2 className="text-xl font-semibold">プロフィール設定</h2>
-              <p className="text-sm text-gray-500">ユーザー名を編集できます</p>
+              <p className="text-sm text-gray-500">ユーザー名やプロフィール情報を編集できます</p>
             </div>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <label className="block text-sm text-gray-600">
               ユーザー名
               <input
@@ -167,6 +185,58 @@ export default function MyPageClient({ initialUsername, initialEmail }: Props) {
                 placeholder="ユーザー名"
               />
             </label>
+
+            <label className="block text-sm text-gray-600">
+              ブルアカ レベル
+              <input
+                value={level}
+                onChange={(e) => setLevel(e.target.value === '' ? '' : Number(e.target.value))}
+                type="number"
+                min={1}
+                max={999}
+                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="例: 85"
+              />
+            </label>
+
+            <label className="block text-sm text-gray-600">
+              自己紹介
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                rows={3}
+                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="ひとこと自己紹介を書いてください"
+              />
+            </label>
+
+            <label className="block text-sm text-gray-600">
+              お気に入りの生徒アイコン
+              <div className="mt-1 flex items-center gap-3">
+                {selectedStudent ? (
+                  <img
+                    src={selectedStudent.image}
+                    alt={selectedStudent.name}
+                    className="h-12 w-12 rounded-full object-cover border border-gray-200"
+                  />
+                ) : (
+                  <div className="h-12 w-12 rounded-full bg-gray-200 border border-gray-200" />
+                )}
+                <select
+                  value={iconStudentId}
+                  onChange={(e) => setIconStudentId(e.target.value)}
+                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">選択してください</option>
+                  {students.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </label>
+
             <button
               onClick={saveProfile}
               disabled={savingProfile}
@@ -188,23 +258,11 @@ export default function MyPageClient({ initialUsername, initialEmail }: Props) {
             </div>
           </div>
           <div className="space-y-4">
-            <label className="block text-sm text-gray-600">
-              メールアドレス
-              <input
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                type="email"
-                placeholder="you@example.com"
-              />
-            </label>
-            <button
-              onClick={saveEmail}
-              disabled={savingEmail}
-              className="inline-flex items-center justify-center rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-            >
-              {savingEmail ? '更新中...' : 'メールアドレスを更新'}
-            </button>
+            <div>
+              <p className="text-sm text-gray-600 mb-1">メールアドレス</p>
+              <p className="rounded border border-gray-200 bg-gray-50 px-3 py-2 text-base">{email || '—'}</p>
+              <p className="text-xs text-gray-500 mt-1">メールアドレスの変更は現在サポートしていません。</p>
+            </div>
             <div>
               <p className="text-sm text-gray-600 mb-1">Supabase User ID</p>
               <div className="flex items-center gap-2">
@@ -218,6 +276,13 @@ export default function MyPageClient({ initialUsername, initialEmail }: Props) {
                 >
                   <FontAwesomeIcon icon={showUserId ? faEyeSlash : faEye} />
                   {showUserId ? '隠す' : '表示'}
+                </button>
+                <button
+                  type="button"
+                  onClick={copyUserId}
+                  className="inline-flex items-center gap-1 rounded border border-gray-300 px-3 py-1 text-xs hover:bg-gray-50"
+                >
+                  コピー
                 </button>
               </div>
             </div>
