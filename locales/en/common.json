@@ -3,6 +3,7 @@
   "auth": {
     "login": "Log in",
     "loginWithGoogle": "Sign in with Google",
+    "loginWithDiscord": "Continue with Discord",
     "logout": "Sign out"
   },
   "actions": {

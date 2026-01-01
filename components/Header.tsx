@@ -7,6 +7,7 @@ import NoticeModal from './NoticeModal'
 import DataSyncModal from './DataSyncModal'
 import SquadSyncModal from './SquadSyncModal'
 import AboutModal from './AboutModal'
+import DiscordSignInButton from './DiscordSignInButton'
 import type { NextRouter } from 'next/router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBell, faCog, faChevronDown, faCircleQuestion, faMoon, faSun } from '@fortawesome/free-solid-svg-icons'
@@ -227,20 +228,27 @@ export default function Header() {
             {session && username ? username : t('account.label')}
             <FontAwesomeIcon icon={faChevronDown} />
           </button>
-          {accountOpen && (
-            <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 dark:text-white text-black shadow p-2 z-10">
-              {session ? (
-                <>
+              {accountOpen && (
+                <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 dark:text-white text-black shadow p-2 z-10">
+                  {session ? (
+                    <>
                   <Link href="/mypage" className="block px-2 py-1">
                     {t('account.mypage')}
                   </Link>
-                  <button onClick={signOut} className="block w-full text-left px-2 py-1">
-                    {t('account.signOut')}
-                  </button>
-                </>
-              ) : (
-                <div className="px-2 py-1">
-                  <GoogleSignInButton width={220} theme="outline" size="medium" text="continue_with" />
+                  {username && (
+                    <Link href={`/users/${username}`} className="block px-2 py-1">
+                      {t('account.userProfile')}
+                    </Link>
+                  )}
+                  <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
+                      <button onClick={signOut} className="block w-full text-left px-2 py-1">
+                        {t('account.signOut')}
+                      </button>
+                    </>
+                  ) : (
+                <div className="flex flex-col gap-2 px-2 py-1">
+                  <GoogleSignInButton width={220} theme="outline" size="medium" text="continue_with" className="flex justify-center" />
+                  <DiscordSignInButton label={t('account.signInWithDiscord')} className="w-full" />
                 </div>
               )}
             </div>

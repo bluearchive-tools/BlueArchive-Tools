@@ -3,6 +3,7 @@
   "auth": {
     "login": "ログイン",
     "loginWithGoogle": "Googleでログイン",
+    "loginWithDiscord": "Discordでログイン",
     "logout": "サインアウト"
   },
   "actions": {
