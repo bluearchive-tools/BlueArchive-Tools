@@ -10,7 +10,8 @@
     "label": "アカウント",
     "mypage": "マイページ",
     "signOut": "サインアウト",
-    "signInWithGoogle": "Googleでログイン"
+    "signInWithGoogle": "Googleでログイン",
+    "signInWithDiscord": "Discordでログイン"
   },
   "locale": {
     "label": "言語",

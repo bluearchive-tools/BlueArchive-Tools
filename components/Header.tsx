@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import GoogleSignInButton from './GoogleSignInButton'
+import DiscordSignInButton from './DiscordSignInButton'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import NoticeModal from './NoticeModal'
 import DataSyncModal from './DataSyncModal'
@@ -239,8 +240,9 @@ export default function Header() {
                   </button>
                 </>
               ) : (
-                <div className="px-2 py-1">
-                  <GoogleSignInButton width={220} theme="outline" size="medium" text="continue_with" />
+                <div className="flex flex-col gap-2 px-2 py-1">
+                  <GoogleSignInButton width={220} theme="outline" size="medium" text="continue_with" className="flex justify-center" />
+                  <DiscordSignInButton label={t('account.signInWithDiscord')} className="w-full" />
                 </div>
               )}
             </div>
