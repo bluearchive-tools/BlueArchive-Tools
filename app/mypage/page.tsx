@@ -39,7 +39,7 @@ export default async function MyPage() {
           プロフィールを編集
         </Link>
       </div>
-      <MyPageClient initialUsername={profile?.username ?? null} initialEmail={session.user.email} />
+      <MyPageClient initialUsername={profile?.username ?? null} initialEmail={session.user.email ?? null} />
     </main>
   )
 }
