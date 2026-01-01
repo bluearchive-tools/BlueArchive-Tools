@@ -1,9 +1,13 @@
 // app/users/[username]/page.tsx
 import { cookies } from 'next/headers'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { colord, extend } from 'colord'
+import a11yPlugin from 'colord/plugins/a11y'
 import students from '../../../data/students.json'
 import FriendCodeCopy from '../../../components/FriendCodeCopy'
 import DecorationInfoButton from '../../../components/DecorationInfoButton'
+
+extend([a11yPlugin])
 
 type Params = {
   params: Promise<{
@@ -20,6 +24,15 @@ type Decoration = {
   background_color?: string | null
   text_color?: string | null
   font_family?: string | null
+}
+
+const computeReadableTextColor = (backgroundColor?: string | null, preferred?: string | null) => {
+  if (preferred) return preferred
+  if (!backgroundColor) return undefined
+  const parsed = colord(backgroundColor)
+  if (!parsed.isValid()) return undefined
+  const luminance = parsed.luminance()
+  return luminance > 0.5 ? '#111827' : '#F9FAFB'
 }
 
 export default async function UserPage({ params }: Params) {
@@ -75,6 +88,7 @@ export default async function UserPage({ params }: Params) {
   const appliedDecorations = ((decorationData ?? []) as Decoration[]).filter(Boolean)
   const isRedFrame = appliedDecorations.some((d) => d.style === 'red-gradient')
   const backgroundDecoration = appliedDecorations.find((d) => d.background_color)
+  const textColor = computeReadableTextColor(backgroundDecoration?.background_color, backgroundDecoration?.text_color)
   const fontDecoration = appliedDecorations.find((d) => d.font_family)
 
   return (
@@ -83,14 +97,14 @@ export default async function UserPage({ params }: Params) {
         <p className="text-gray-600">ユーザーが見つかりませんでした。</p>
       ) : (
         <div className={isRedFrame ? 'rounded-xl bg-gradient-to-r from-rose-500 via-red-500 to-orange-400 p-[2px]' : ''}>
-          <div
-            className="relative rounded-lg border border-gray-200 bg-white p-6 shadow-sm space-y-4 dark:border-gray-700 dark:bg-gray-900"
-            style={{
+            <div
+              className="relative rounded-lg border border-gray-200 bg-white p-6 shadow-sm space-y-4 dark:border-gray-700 dark:bg-gray-900"
+              style={{
               background: backgroundDecoration?.background_color ?? undefined,
-              color: backgroundDecoration?.text_color ?? undefined,
+              color: textColor ?? undefined,
               fontFamily: fontDecoration?.font_family ?? undefined,
-            }}
-          >
+              }}
+            >
             <div className="flex items-center gap-4">
               {student ? (
                 <img

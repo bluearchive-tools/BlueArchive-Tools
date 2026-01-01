@@ -7,6 +7,9 @@ import { faShop, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import FriendCodeCopy from '../../components/FriendCodeCopy'
 import DecorationInfoButton from '../../components/DecorationInfoButton'
 import students from '../../data/students.json'
+import { colord, extend } from 'colord'
+import a11yPlugin from 'colord/plugins/a11y'
+extend([a11yPlugin])
 
 type Decoration = {
   id: string
@@ -22,6 +25,15 @@ type Decoration = {
   font_family?: string | null
   bonus_credit?: number | null
   is_active?: boolean
+}
+
+const computeReadableTextColor = (backgroundColor?: string | null, preferred?: string | null) => {
+  if (preferred) return preferred
+  if (!backgroundColor) return undefined
+  const parsed = colord(backgroundColor)
+  if (!parsed.isValid()) return undefined
+  const luminance = parsed.luminance()
+  return luminance > 0.5 ? '#111827' : '#F9FAFB'
 }
 
 type ProfileState = {
@@ -219,6 +231,10 @@ export default function DecorationsPage() {
   const previewBackground = useMemo(
     () => previewDecorations.find((d) => d.background_color),
     [previewDecorations]
+  )
+  const previewTextColor = useMemo(
+    () => computeReadableTextColor(previewBackground?.background_color, previewBackground?.text_color),
+    [previewBackground?.background_color, previewBackground?.text_color]
   )
   const previewFont = useMemo(() => previewDecorations.find((d) => d.font_family), [previewDecorations])
 
@@ -427,13 +443,13 @@ export default function DecorationsPage() {
             </div>
             <div className={previewHasRedFrame ? 'rounded-xl bg-gradient-to-r from-rose-500 via-red-500 to-orange-400 p-[2px]' : ''}>
               <div
-                className="relative flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-                style={{
+                  className="relative flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+                  style={{
                   background: previewBackground?.background_color ?? undefined,
-                  color: previewBackground?.text_color ?? undefined,
+                  color: previewTextColor ?? undefined,
                   fontFamily: previewFont?.font_family ?? undefined,
-                }}
-              >
+                  }}
+                >
                 {previewStudent ? (
                   <img
                     src={previewStudent.image}
@@ -533,7 +549,13 @@ export default function DecorationsPage() {
                   className="rounded border border-gray-300 px-3 py-2 text-sm"
                   placeholder="背景色 (CSS値)"
                   value={newItem.background_color ?? ''}
-                  onChange={(e) => setNewItem((prev) => ({ ...prev, background_color: e.target.value }))}
+                  onChange={(e) =>
+                    setNewItem((prev) => {
+                      const background_color = e.target.value
+                      const text_color = computeReadableTextColor(background_color, prev.text_color ?? null)
+                      return { ...prev, background_color, text_color }
+                    })
+                  }
                 />
                 <input
                   className="rounded border border-gray-300 px-3 py-2 text-sm"
@@ -564,10 +586,12 @@ export default function DecorationsPage() {
                   if (!newItem.emoji) return setMessage('絵文字は必須です。')
                   const id = newItem.id?.trim() || (typeof crypto !== 'undefined' ? crypto.randomUUID() : Date.now().toString())
                   setAdding(true)
+                  const text_color = computeReadableTextColor(newItem.background_color, newItem.text_color ?? null)
                   const payload: Partial<Decoration> & { id: string; price: number; is_active: boolean } = {
                     id,
                     price: newItem.price ?? 0,
                     ...newItem,
+                    text_color,
                     tags: newItem.tags ?? [],
                     is_active: true,
                   }
