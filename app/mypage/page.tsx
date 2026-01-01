@@ -24,7 +24,7 @@ export default async function MyPage() {
   const { data: profile } = await supabase
     .from('profiles')
     .select(
-      'username, nickname, level, bio, icon_student_id, friend_code, friend_code_public, social_links, decoration_id, decoration_ids, decoration_inventory'
+      'username, nickname, level, bio, icon_student_id, friend_code, friend_code_public, social_links, decoration_id, decoration_ids, decoration_inventory, credit'
     )
     .eq('id', session.user.id)
     .maybeSingle()

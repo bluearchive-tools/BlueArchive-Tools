@@ -7,11 +7,19 @@ import { faShop, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import decorations from '../../data/decorations.json'
 import FriendCodeCopy from '../../components/FriendCodeCopy'
 import DecorationInfoButton from '../../components/DecorationInfoButton'
+import students from '../../data/students.json'
 
 type ProfileState = {
-  cost: number
+  credit: number
   decoration_ids: string[]
   decoration_inventory: string[]
+  username: string | null
+  nickname: string | null
+  friend_code: string | null
+  friend_code_public: boolean | null
+  icon_student_id: string | null
+  level: number | null
+  bio: string | null
 }
 
 export default function DecorationsPage() {
@@ -29,7 +37,7 @@ export default function DecorationsPage() {
       if (!session?.user) return
       const { data, error } = await supabase
         .from('profiles')
-        .select('cost, decoration_ids, decoration_inventory')
+        .select('credit, decoration_ids, decoration_inventory, username, nickname, friend_code, friend_code_public, icon_student_id, level, bio')
         .eq('id', session.user.id)
         .maybeSingle()
       if (error) {
@@ -38,9 +46,16 @@ export default function DecorationsPage() {
       }
       if (data) {
         setProfile({
-          cost: data.cost ?? 0,
+          credit: data.credit ?? 0,
           decoration_ids: (data.decoration_ids as string[]) ?? [],
           decoration_inventory: (data.decoration_inventory as string[]) ?? [],
+          username: (data.username as string) ?? null,
+          nickname: (data.nickname as string) ?? null,
+          friend_code: (data.friend_code as string) ?? null,
+          friend_code_public: (data.friend_code_public as boolean) ?? null,
+          icon_student_id: (data.icon_student_id as string) ?? null,
+          level: (data.level as number) ?? null,
+          bio: (data.bio as string) ?? null,
         })
       }
     },
@@ -51,7 +66,7 @@ export default function DecorationsPage() {
     fetchProfile()
   }, [fetchProfile])
 
-  const handlePurchase = async (decorationId: string, price: number) => {
+  const handlePurchase = async (decorationId: string, price: number, bonusCredit?: number, genre?: string) => {
     if (!session?.user) {
       setMessage('購入にはログインが必要です。')
       return
@@ -60,21 +75,25 @@ export default function DecorationsPage() {
       setMessage('プロフィール情報を読み込み中です。')
       return
     }
-    if (profile.cost < price) {
-      setMessage('残高が不足しています。')
+    if (genre !== 'クレジット' && profile.credit < price) {
+      setMessage('クレジットが不足しています。')
       return
     }
     setLoading(true)
     setMessage(null)
-    const nextInventory = Array.from(new Set([...(profile.decoration_inventory ?? []), decorationId]))
+    const nextInventory =
+      genre === 'クレジット' ? profile.decoration_inventory ?? [] : Array.from(new Set([...(profile.decoration_inventory ?? []), decorationId]))
+    const updatedCredit =
+      genre === 'クレジット' ? profile.credit + (bonusCredit ?? 0) : profile.credit - price
+
     const { data, error } = await supabase
       .from('profiles')
       .update({
-        cost: profile.cost - price,
+        credit: updatedCredit,
         decoration_inventory: nextInventory,
       })
       .eq('id', session.user.id)
-      .select('cost, decoration_ids, decoration_inventory')
+      .select('credit, decoration_ids, decoration_inventory, username, nickname, friend_code, friend_code_public, icon_student_id, level, bio')
       .maybeSingle()
 
     setLoading(false)
@@ -84,12 +103,24 @@ export default function DecorationsPage() {
     }
     if (data) {
       setProfile({
-        cost: data.cost ?? 0,
+        credit: data.credit ?? updatedCredit,
         decoration_ids: (data.decoration_ids as string[]) ?? profile.decoration_ids ?? [],
         decoration_inventory: (data.decoration_inventory as string[]) ?? nextInventory,
+        username: (data.username as string) ?? profile.username ?? null,
+        nickname: (data.nickname as string) ?? profile.nickname ?? null,
+        friend_code: (data.friend_code as string) ?? profile.friend_code ?? null,
+        friend_code_public: (data.friend_code_public as boolean) ?? profile.friend_code_public ?? null,
+        icon_student_id: (data.icon_student_id as string) ?? profile.icon_student_id ?? null,
+        level: (data.level as number) ?? profile.level ?? null,
+        bio: (data.bio as string) ?? profile.bio ?? null,
       })
-      setEquipPromptId(decorationId)
-      setMessage('購入しました。装着しますか？')
+      if (genre === 'クレジット') {
+        setEquipPromptId(null)
+        setMessage(`${bonusCredit ?? 0}クレジットを受け取りました。`)
+      } else {
+        setEquipPromptId(decorationId)
+        setMessage('購入しました。装着しますか？')
+      }
     }
   }
 
@@ -101,7 +132,7 @@ export default function DecorationsPage() {
       .from('profiles')
       .update({ decoration_ids: next })
       .eq('id', session.user.id)
-      .select('cost, decoration_ids, decoration_inventory')
+      .select('credit, decoration_ids, decoration_inventory, username, nickname, friend_code, friend_code_public, icon_student_id, level, bio')
       .maybeSingle()
     setEquipLoading(false)
     if (error) {
@@ -110,9 +141,16 @@ export default function DecorationsPage() {
     }
     if (data) {
       setProfile({
-        cost: data.cost ?? profile.cost,
+        credit: data.credit ?? profile.credit,
         decoration_ids: (data.decoration_ids as string[]) ?? next,
         decoration_inventory: (data.decoration_inventory as string[]) ?? profile.decoration_inventory,
+        username: (data.username as string) ?? profile.username ?? null,
+        nickname: (data.nickname as string) ?? profile.nickname ?? null,
+        friend_code: (data.friend_code as string) ?? profile.friend_code ?? null,
+        friend_code_public: (data.friend_code_public as boolean) ?? profile.friend_code_public ?? null,
+        icon_student_id: (data.icon_student_id as string) ?? profile.icon_student_id ?? null,
+        level: (data.level as number) ?? profile.level ?? null,
+        bio: (data.bio as string) ?? profile.bio ?? null,
       })
       setEquipPromptId(null)
       setMessage('装着しました。')
@@ -127,21 +165,49 @@ export default function DecorationsPage() {
 
   const previewHasRedFrame = previewDecorations.some((d) => d.style === 'red-gradient')
 
+  const previewStudent = useMemo(
+    () => students.find((s) => s.id === profile?.icon_student_id),
+    [profile?.icon_student_id]
+  )
+
+  const tags = useMemo(() => {
+    const all = new Set<string>()
+    decorations.forEach((d) => d.tags?.forEach((t) => all.add(t)))
+    return Array.from(all).sort()
+  }, [])
+
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+
+  const filteredDecorations = useMemo(() => {
+    if (selectedTags.length === 0) return decorations
+    return decorations.filter((d) => selectedTags.every((tag) => d.tags?.includes(tag)))
+  }, [selectedTags])
+
+  const decorationsByGenre = useMemo(() => {
+    const map = new Map<string, typeof decorations>()
+    filteredDecorations.forEach((item) => {
+      const genre = item.genre ?? 'その他'
+      if (!map.has(genre)) map.set(genre, [])
+      map.get(genre)!.push(item)
+    })
+    return Array.from(map.entries())
+  }, [filteredDecorations])
+
   return (
     <main className="max-w-5xl mx-auto px-4 py-8 space-y-6">
       <div className="flex items-center gap-3">
         <FontAwesomeIcon icon={faShop} className="text-2xl" />
         <div>
-          <h1 className="text-2xl font-bold">デコレーションショップ</h1>
-          <p className="text-sm text-gray-600">プロフィールを彩るデコレーションを選んで購入できます。</p>
+          <h1 className="text-2xl font-bold">ショップ</h1>
+          <p className="text-sm text-gray-600">デコレーションやクレジットを購入できます。</p>
         </div>
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
         <p className="text-sm text-gray-700">
-          残高:{' '}
+          クレジット残高:{' '}
           {session?.user ? (
-            profile ? `${profile.cost} コスト` : '読み込み中...'
+            profile ? `${profile.credit} クレジット` : '読み込み中...'
           ) : (
             'ログインすると残高が表示されます'
           )}
@@ -149,8 +215,39 @@ export default function DecorationsPage() {
         {message && <p className="mt-2 text-sm text-blue-700">{message}</p>}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {decorations.map((item) => (
+      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900 space-y-2">
+        <p className="text-sm font-semibold text-gray-700">タグで絞り込む</p>
+        <div className="flex flex-wrap gap-2">
+          {tags.map((tag) => {
+            const active = selectedTags.includes(tag)
+            return (
+              <button
+                key={tag}
+                type="button"
+                onClick={() =>
+                  setSelectedTags((prev) => (active ? prev.filter((t) => t !== tag) : [...prev, tag]))
+                }
+                className={`rounded-full border px-3 py-1 text-sm ${active ? 'bg-blue-600 text-white border-blue-600' : 'bg-white hover:bg-gray-50'}`}
+              >
+                #{tag}
+              </button>
+            )
+          })}
+          <button
+            type="button"
+            onClick={() => setSelectedTags([])}
+            className="rounded-full border px-3 py-1 text-sm bg-white hover:bg-gray-50"
+          >
+            クリア
+          </button>
+        </div>
+      </div>
+
+      {decorationsByGenre.map(([genre, items]) => (
+        <div key={genre} className="space-y-2">
+          <h2 className="text-xl font-semibold">{genre}</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {items.map((item) => (
           <div
             key={item.id}
             className={`rounded-lg border bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900 ${
@@ -167,16 +264,27 @@ export default function DecorationsPage() {
               </div>
             </div>
             <p className="mt-3 text-sm text-gray-700">{item.description}</p>
-            <p className="mt-3 text-sm font-semibold text-gray-800">価格: {item.price} コスト</p>
+            <p className="mt-3 text-sm font-semibold text-gray-800">価格: {item.price} クレジット</p>
+            {item.tags && item.tags.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2 text-xs text-gray-600">
+                {item.tags.map((tag) => (
+                  <span key={tag} className="rounded-full bg-gray-100 px-2 py-0.5">#{tag}</span>
+                ))}
+              </div>
+            )}
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"
                 disabled={loading || !session?.user}
-                onClick={() => handlePurchase(item.id, item.price)}
+                onClick={() => handlePurchase(item.id, item.price, item.bonusCredit, item.genre)}
                 className="inline-flex items-center justify-center gap-2 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
               >
                 {loading ? <FontAwesomeIcon icon={faSpinner} className="animate-spin" /> : null}
-                {profile?.decoration_inventory?.includes(item.id) ? '再購入' : '購入'}
+                {item.genre === 'クレジット'
+                  ? '受け取る'
+                  : profile?.decoration_inventory?.includes(item.id)
+                    ? '再購入'
+                    : '購入'}
               </button>
               <button
                 type="button"
@@ -186,12 +294,14 @@ export default function DecorationsPage() {
                 プレビュー
               </button>
             </div>
-            {profile?.decoration_inventory?.includes(item.id) && !profile.decoration_ids?.includes(item.id) && (
+            {item.genre !== 'クレジット' && profile?.decoration_inventory?.includes(item.id) && !profile.decoration_ids?.includes(item.id) && (
               <p className="mt-2 text-xs text-gray-600">未装着です。装着するには「購入」後のモーダルで選択してください。</p>
             )}
           </div>
         ))}
       </div>
+        </div>
+      ))}
 
       {equipPromptId && (
         <div
@@ -246,12 +356,21 @@ export default function DecorationsPage() {
             </div>
             <div className={previewHasRedFrame ? 'rounded-xl bg-gradient-to-r from-rose-500 via-red-500 to-orange-400 p-[2px]' : ''}>
               <div className="relative flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-                <div className="h-16 w-16 rounded-xl bg-gray-200 border border-gray-200" />
+                {previewStudent ? (
+                  <img
+                    src={previewStudent.image}
+                    alt={previewStudent.name}
+                    className="h-16 w-16 rounded-xl object-cover border border-gray-200"
+                  />
+                ) : (
+                  <div className="h-16 w-16 rounded-xl bg-gray-200 border border-gray-200" />
+                )}
                 <div className="flex-1">
-                  <p className="text-sm text-gray-500">Tools ID: preview-user</p>
-                  <h4 className="text-xl font-bold">プレビュー</h4>
+                  <p className="text-sm text-gray-500">Tools ID: {profile?.username ?? 'preview-user'}</p>
+                  <h4 className="text-xl font-bold">{profile?.nickname || profile?.username || 'プレビュー'}</h4>
                   <p className="text-sm text-gray-500 flex items-center gap-1">
-                    <span>Lv — / フレンドコード:</span> <FriendCodeCopy code="0000-0000-0000" disabled />
+                    <span>Lv {profile?.level ?? '—'} / フレンドコード:</span>{' '}
+                    <FriendCodeCopy code={profile?.friend_code ?? undefined} disabled={!profile?.friend_code_public} />
                   </p>
                 </div>
                 <DecorationInfoButton decorations={previewDecorations} />
