@@ -9,6 +9,8 @@
   "account": {
     "label": "Account",
     "mypage": "My page",
+    "linkGoogle": "Link Google",
+    "linkDiscord": "Link Discord",
     "signOut": "Sign out",
     "signInWithGoogle": "Continue with Google",
     "signInWithDiscord": "Continue with Discord"
