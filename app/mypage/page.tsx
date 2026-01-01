@@ -23,7 +23,7 @@ export default async function MyPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('username, nickname, level, bio, icon_student_id, cost, social_links')
+    .select('username, nickname, level, bio, icon_student_id, friend_code, friend_code_public, social_links')
     .eq('id', session.user.id)
     .maybeSingle()
 
@@ -42,7 +42,8 @@ export default async function MyPage() {
         initialLevel={profile?.level ?? null}
         initialBio={profile?.bio ?? null}
         initialIconStudentId={profile?.icon_student_id ?? null}
-        initialCost={profile?.cost ?? null}
+        initialFriendCode={profile?.friend_code ?? null}
+        initialFriendCodePublic={profile?.friend_code_public ?? null}
         initialSocialLinks={profile?.social_links ?? null}
       />
     </main>

@@ -15,7 +15,8 @@ interface Props {
   initialLevel: number | null
   initialBio: string | null
   initialIconStudentId: string | null
-  initialCost: number | null
+  initialFriendCode: string | null
+  initialFriendCodePublic: boolean | null
   initialSocialLinks: string | null
 }
 
@@ -26,7 +27,8 @@ export default function MyPageClient({
   initialLevel,
   initialBio,
   initialIconStudentId,
-  initialCost,
+  initialFriendCode,
+  initialFriendCodePublic,
   initialSocialLinks
 }: Props) {
   const supabase = useSupabaseClient()
@@ -37,8 +39,24 @@ export default function MyPageClient({
   const [level, setLevel] = useState<number | ''>(initialLevel ?? '')
   const [bio, setBio] = useState(initialBio ?? '')
   const [iconStudentId, setIconStudentId] = useState(initialIconStudentId ?? '')
-  const [cost, setCost] = useState<number | ''>(initialCost ?? '')
-  const [socialLinks, setSocialLinks] = useState(initialSocialLinks ?? '')
+  const [friendCode, setFriendCode] = useState(initialFriendCode ?? '')
+  const [friendCodePublic, setFriendCodePublic] = useState<boolean>(initialFriendCodePublic ?? false)
+  const [socialLinks, setSocialLinks] = useState<{ label: string; value: string }[]>(
+    (() => {
+      try {
+        const parsed = initialSocialLinks ? JSON.parse(initialSocialLinks) : []
+        if (Array.isArray(parsed)) {
+          return parsed.map((item) => ({
+            label: typeof item?.label === 'string' ? item.label : '',
+            value: typeof item?.value === 'string' ? item.value : '',
+          }))
+        }
+      } catch {
+        /* ignore */
+      }
+      return [{ label: '', value: '' }]
+    })()
+  )
   const [identities, setIdentities] = useState<UserIdentity[]>([])
   const [busy, setBusy] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
@@ -132,8 +150,9 @@ export default function MyPageClient({
         level: level === '' ? null : level,
         bio,
         icon_student_id: iconStudentId || null,
-        cost: cost === '' ? null : cost,
-        social_links: socialLinks || null
+        friend_code: friendCode || null,
+        friend_code_public: friendCodePublic,
+        social_links: JSON.stringify(socialLinks),
       })
       .eq('id', session.user.id)
     setSavingProfile(false)
@@ -271,27 +290,57 @@ export default function MyPageClient({
               </div>
             </label>
 
-            <label className="block text-sm text-gray-600">
-              コスト（サイト独自通貨）
-              <input
-                value={cost}
-                onChange={(e) => setCost(e.target.value === '' ? '' : Number(e.target.value))}
-                type="number"
-                min={0}
-                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="例: 1000"
-              />
-            </label>
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600">ソーシャルアカウント</p>
+              {socialLinks.map((link, idx) => (
+                <div key={idx} className="flex flex-col gap-2 rounded border border-gray-200 p-2">
+                  <input
+                    value={link.label}
+                    onChange={(e) => {
+                      const next = [...socialLinks]
+                      next[idx] = { ...next[idx], label: e.target.value }
+                      setSocialLinks(next)
+                    }}
+                    className="rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="サービス名 (例: Discord)"
+                  />
+                  <input
+                    value={link.value}
+                    onChange={(e) => {
+                      const next = [...socialLinks]
+                      next[idx] = { ...next[idx], value: e.target.value }
+                      setSocialLinks(next)
+                    }}
+                    className="rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="リンクやID"
+                  />
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setSocialLinks((prev) => [...prev, { label: '', value: '' }])}
+                className="inline-flex items-center justify-center rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50"
+              >
+                ＋ 追加
+              </button>
+            </div>
 
             <label className="block text-sm text-gray-600">
-              ソーシャルアカウント（URLやIDを自由に記入）
-              <textarea
-                value={socialLinks}
-                onChange={(e) => setSocialLinks(e.target.value)}
-                rows={3}
+              フレンドコード
+              <input
+                value={friendCode}
+                onChange={(e) => setFriendCode(e.target.value)}
                 className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="例: Twitter: @example / Discord: username#0000"
+                placeholder="フレンドコードを入力"
               />
+              <label className="mt-2 inline-flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={friendCodePublic}
+                  onChange={(e) => setFriendCodePublic(e.target.checked)}
+                />
+                公開する
+              </label>
             </label>
 
             <div className="flex flex-wrap gap-2">
@@ -461,8 +510,8 @@ export default function MyPageClient({
               )}
               <div>
                 <h4 className="text-xl font-bold">{nickname || username || 'ユーザー名未設定'}</h4>
-                <p className="text-sm text-gray-500">ID: {username || '—'}</p>
-                <p className="text-sm text-gray-500">Lv {level || '—'} / コスト {cost === '' ? '—' : cost}</p>
+                <p className="text-sm text-gray-500">Tools ID: {username || '—'}</p>
+                <p className="text-sm text-gray-500">Lv {level || '—'}</p>
               </div>
             </div>
             <div className="mt-4 space-y-2">
@@ -470,10 +519,18 @@ export default function MyPageClient({
               <p className="rounded border border-gray-200 bg-gray-50 p-3 text-sm whitespace-pre-wrap">
                 {bio || '自己紹介はまだ入力されていません。'}
               </p>
-              {socialLinks && (
-                <div>
+              {friendCode && friendCodePublic && (
+                <p className="text-sm text-gray-600">フレンドコード: {friendCode}</p>
+              )}
+              {socialLinks && socialLinks.length > 0 && (
+                <div className="space-y-1">
                   <p className="text-sm text-gray-600">ソーシャル</p>
-                  <p className="rounded border border-gray-200 bg-gray-50 p-3 text-sm whitespace-pre-wrap">{socialLinks}</p>
+                  {socialLinks.map((link, idx) => (
+                    <p key={idx} className="rounded border border-gray-200 bg-gray-50 p-2 text-sm">
+                      {link.label && <span className="font-semibold mr-1">{link.label}:</span>}
+                      <span>{link.value || '未入力'}</span>
+                    </p>
+                  ))}
                 </div>
               )}
               <p className="text-xs text-gray-400">メール: {email || '—'}</p>
