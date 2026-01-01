@@ -7,7 +7,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faDiscord, faGoogle } from '@fortawesome/free-brands-svg-icons'
 import { faEye, faEyeSlash, faLink, faUnlink, faUserCircle } from '@fortawesome/free-solid-svg-icons'
 import students from '../data/students.json'
-import decorations from '../data/decorations.json'
 import FriendCodeCopy from './FriendCodeCopy'
 import DecorationInfoButton from './DecorationInfoButton'
 
@@ -23,6 +22,19 @@ interface Props {
   initialSocialLinks: string | null
   initialDecorationIds: string[]
   initialDecorationInventory: string[]
+  initialDecorations: {
+    id: string
+    name: string
+    emoji: string
+    description?: string
+    price?: number
+    style?: string
+    genre?: string
+    tags?: string[]
+    background_color?: string | null
+    text_color?: string | null
+    font_family?: string | null
+  }[]
 }
 
 export default function MyPageClient({
@@ -36,7 +48,8 @@ export default function MyPageClient({
   initialFriendCodePublic,
   initialSocialLinks,
   initialDecorationIds,
-  initialDecorationInventory
+  initialDecorationInventory,
+  initialDecorations
 }: Props) {
   const supabase = useSupabaseClient()
   const session = useSession()
@@ -139,13 +152,18 @@ export default function MyPageClient({
 
   const selectedStudent = useMemo(() => students.find((s) => s.id === iconStudentId), [iconStudentId])
   const selectedDecorations = useMemo(
-    () => decorations.filter((d) => decorationIds.includes(d.id)),
-    [decorationIds]
+    () => initialDecorations.filter((d) => decorationIds.includes(d.id)),
+    [decorationIds, initialDecorations]
   )
   const hasRedFrame = useMemo(
     () => selectedDecorations.some((d) => d.style === 'red-gradient'),
     [selectedDecorations]
   )
+  const backgroundDecoration = useMemo(
+    () => selectedDecorations.find((d) => d.background_color),
+    [selectedDecorations]
+  )
+  const fontDecoration = useMemo(() => selectedDecorations.find((d) => d.font_family), [selectedDecorations])
 
   const copyUserId = async () => {
     if (!session?.user.id) return
@@ -388,7 +406,7 @@ export default function MyPageClient({
               </div>
               <p className="text-sm text-gray-600">プロフィールに複数のデコレーションを重ねて表示できます。</p>
               <div className="space-y-2">
-                {decorations.map((item) => {
+                {initialDecorations.map((item) => {
                   const owned = decorationInventory.includes(item.id)
                   const checked = decorationIds.includes(item.id)
                   return (
@@ -583,7 +601,14 @@ export default function MyPageClient({
             <div
               className={`relative ${hasRedFrame ? 'rounded-xl bg-gradient-to-r from-rose-500 via-red-500 to-orange-400 p-[2px]' : ''}`}
             >
-              <div className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+              <div
+                className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+                style={{
+                  background: backgroundDecoration?.background_color ?? undefined,
+                  color: backgroundDecoration?.text_color ?? undefined,
+                  fontFamily: fontDecoration?.font_family ?? undefined,
+                }}
+              >
                 {selectedStudent ? (
                   <img
                     src={selectedStudent.image}

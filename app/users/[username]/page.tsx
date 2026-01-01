@@ -2,7 +2,6 @@
 import { cookies } from 'next/headers'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import students from '../../../data/students.json'
-import decorations from '../../../data/decorations.json'
 import FriendCodeCopy from '../../../components/FriendCodeCopy'
 import DecorationInfoButton from '../../../components/DecorationInfoButton'
 
@@ -10,6 +9,17 @@ type Params = {
   params: Promise<{
     username: string
   }>
+}
+
+type Decoration = {
+  id: string
+  name: string
+  emoji: string
+  description?: string | null
+  style?: string | null
+  background_color?: string | null
+  text_color?: string | null
+  font_family?: string | null
 }
 
 export default async function UserPage({ params }: Params) {
@@ -31,6 +41,19 @@ export default async function UserPage({ params }: Params) {
     .eq('username', username)
     .maybeSingle()
 
+  const appliedDecorationIds =
+    (profile?.decoration_ids as string[] | null) ??
+    (profile?.decoration_id ? [profile.decoration_id as string] : []) ??
+    []
+
+  const { data: decorationData } =
+    appliedDecorationIds.length > 0
+      ? await supabase
+          .from('decorations')
+          .select<Decoration>('id, name, emoji, description, style, background_color, text_color, font_family')
+          .in('id', appliedDecorationIds)
+      : { data: [] as Decoration[] }
+
   const parsedSocial = (() => {
     try {
       const value = profile?.social_links ? JSON.parse(profile.social_links as unknown as string) : []
@@ -49,12 +72,10 @@ export default async function UserPage({ params }: Params) {
   })()
 
   const student = students.find((s) => s.id === profile?.icon_student_id)
-  const appliedDecorationIds =
-    (profile?.decoration_ids as string[] | null) ??
-    (profile?.decoration_id ? [profile.decoration_id as string] : []) ??
-    []
-  const appliedDecorations = decorations.filter((d) => appliedDecorationIds.includes(d.id))
+  const appliedDecorations = (decorationData ?? []).filter(Boolean)
   const isRedFrame = appliedDecorations.some((d) => d.style === 'red-gradient')
+  const backgroundDecoration = appliedDecorations.find((d) => d.background_color)
+  const fontDecoration = appliedDecorations.find((d) => d.font_family)
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
@@ -62,7 +83,14 @@ export default async function UserPage({ params }: Params) {
         <p className="text-gray-600">ユーザーが見つかりませんでした。</p>
       ) : (
         <div className={isRedFrame ? 'rounded-xl bg-gradient-to-r from-rose-500 via-red-500 to-orange-400 p-[2px]' : ''}>
-          <div className="relative rounded-lg border border-gray-200 bg-white p-6 shadow-sm space-y-4 dark:border-gray-700 dark:bg-gray-900">
+          <div
+            className="relative rounded-lg border border-gray-200 bg-white p-6 shadow-sm space-y-4 dark:border-gray-700 dark:bg-gray-900"
+            style={{
+              background: backgroundDecoration?.background_color ?? undefined,
+              color: backgroundDecoration?.text_color ?? undefined,
+              fontFamily: fontDecoration?.font_family ?? undefined,
+            }}
+          >
             <div className="flex items-center gap-4">
               {student ? (
                 <img

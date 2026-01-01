@@ -29,6 +29,11 @@ export default async function MyPage() {
     .eq('id', session.user.id)
     .maybeSingle()
 
+  const { data: decorations } = await supabase
+    .from('decorations')
+    .select('id, name, emoji, description, price, style, genre, tags, background_color, text_color, font_family, bonus_credit, is_active')
+    .eq('is_active', true)
+
   return (
     <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -53,6 +58,7 @@ export default async function MyPage() {
           []
         }
         initialDecorationInventory={(profile?.decoration_inventory as string[] | null) ?? []}
+        initialDecorations={decorations ?? []}
       />
     </main>
   )
