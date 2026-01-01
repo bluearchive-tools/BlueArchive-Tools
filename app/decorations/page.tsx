@@ -566,6 +566,7 @@ export default function DecorationsPage() {
                   setAdding(true)
                   const payload: Partial<Decoration> & { id: string; price: number; is_active: boolean } = {
                     id,
+                    price: newItem.price ?? 0,
                     ...newItem,
                     tags: newItem.tags ?? [],
                     is_active: true,

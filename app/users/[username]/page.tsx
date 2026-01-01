@@ -50,7 +50,7 @@ export default async function UserPage({ params }: Params) {
     appliedDecorationIds.length > 0
       ? await supabase
           .from('decorations')
-          .select<Decoration>('id, name, emoji, description, style, background_color, text_color, font_family')
+          .select('id, name, emoji, description, style, background_color, text_color, font_family')
           .in('id', appliedDecorationIds)
       : { data: [] as Decoration[] }
 
@@ -72,7 +72,7 @@ export default async function UserPage({ params }: Params) {
   })()
 
   const student = students.find((s) => s.id === profile?.icon_student_id)
-  const appliedDecorations = (decorationData ?? []).filter(Boolean)
+  const appliedDecorations = ((decorationData ?? []) as Decoration[]).filter(Boolean)
   const isRedFrame = appliedDecorations.some((d) => d.style === 'red-gradient')
   const backgroundDecoration = appliedDecorations.find((d) => d.background_color)
   const fontDecoration = appliedDecorations.find((d) => d.font_family)
