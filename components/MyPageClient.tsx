@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
+import type { UserIdentity } from '@supabase/supabase-js'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faDiscord, faGoogle } from '@fortawesome/free-brands-svg-icons'
 import { faLink, faUnlink, faUserCircle } from '@fortawesome/free-solid-svg-icons'
@@ -11,19 +12,12 @@ interface Props {
   initialEmail: string | null
 }
 
-type Identity = {
-  identity_id: string
-  provider: string
-  last_sign_in_at?: string | null
-  email?: string | null
-}
-
 export default function MyPageClient({ initialUsername, initialEmail }: Props) {
   const supabase = useSupabaseClient()
   const session = useSession()
   const [username] = useState(initialUsername)
   const [email] = useState(initialEmail)
-  const [identities, setIdentities] = useState<Identity[]>([])
+  const [identities, setIdentities] = useState<UserIdentity[]>([])
   const [busy, setBusy] = useState(false)
 
   const fetchIdentities = async () => {
@@ -32,7 +26,7 @@ export default function MyPageClient({ initialUsername, initialEmail }: Props) {
       console.error(error.message)
       return
     }
-    setIdentities((data?.user?.identities as Identity[]) ?? [])
+    setIdentities((data?.user?.identities as UserIdentity[]) ?? [])
   }
 
   useEffect(() => {
@@ -57,12 +51,9 @@ export default function MyPageClient({ initialUsername, initialEmail }: Props) {
     }
   }
 
-  const handleUnlink = async (identity: Identity) => {
+  const handleUnlink = async (identity: UserIdentity) => {
     setBusy(true)
-    const { error } = await supabase.auth.unlinkIdentity({
-      provider: identity.provider,
-      identity_id: identity.identity_id,
-    })
+    const { error } = await supabase.auth.unlinkIdentity(identity)
     setBusy(false)
     if (error) {
       console.error(error.message)
@@ -78,6 +69,11 @@ export default function MyPageClient({ initialUsername, initialEmail }: Props) {
     }),
     []
   )
+
+  const identityEmail = (identity: UserIdentity) => {
+    const raw = (identity.identity_data as Record<string, unknown> | undefined)?.email
+    return typeof raw === 'string' ? raw : null
+  }
 
   const linkedProviders = new Set(identities.map((id) => id.provider))
 
@@ -144,7 +140,7 @@ export default function MyPageClient({ initialUsername, initialEmail }: Props) {
                 <FontAwesomeIcon icon={providerIcon[identity.provider as 'google' | 'discord'] ?? faLink} />
                 <div>
                   <p className="font-medium capitalize">{identity.provider}</p>
-                  {identity.email && <p className="text-sm text-gray-500">{identity.email}</p>}
+                  {identityEmail(identity) && <p className="text-sm text-gray-500">{identityEmail(identity)}</p>}
                   {identity.last_sign_in_at && (
                     <p className="text-xs text-gray-400">最終サインイン: {new Date(identity.last_sign_in_at).toLocaleString()}</p>
                   )}
