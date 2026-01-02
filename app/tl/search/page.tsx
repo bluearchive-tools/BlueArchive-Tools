@@ -59,6 +59,12 @@ export default function TLSearchPage() {
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [seasonOpen, setSeasonOpen] = useState(false)
 
+  // 動画単体の「同期時に更新しない」フラグ（管理者のみ）
+  const [openTlSkipUpdate, setOpenTlSkipUpdate] = useState(false)
+  const [openTlSkipUpdateLoaded, setOpenTlSkipUpdateLoaded] = useState(false)
+  const [openTlSkipUpdateSaving, setOpenTlSkipUpdateSaving] = useState(false)
+  const [policyError, setPolicyError] = useState('')
+
   const formatScore = (value: string) => {
     const num = parseInt(value || '0')
     return num.toLocaleString()
@@ -138,6 +144,61 @@ export default function TLSearchPage() {
     }
     checkAdmin()
   }, [session, supabase])
+
+
+  // モーダルで開いた動画のフラグ状態を読み込む
+  useEffect(() => {
+    const loadPolicy = async () => {
+      if (!openTl || !isAdmin) return
+      setPolicyError('')
+      setOpenTlSkipUpdateLoaded(false)
+      try {
+        const { data, error } = await supabase
+          .from('tl_video_update_policy')
+          .select('skip_update')
+          .eq('videoid', openTl.videoid)
+          .maybeSingle()
+
+        if (error) throw error
+        setOpenTlSkipUpdate(Boolean(data?.skip_update))
+      } catch {
+        // 取得できない場合は「更新する(=skipしない)」扱いにする
+        setOpenTlSkipUpdate(false)
+      } finally {
+        setOpenTlSkipUpdateLoaded(true)
+      }
+    }
+    loadPolicy()
+  }, [openTl, isAdmin, supabase])
+
+  const setVideoSkipUpdate = async (videoid: string, next: boolean) => {
+    if (!isAdmin) return
+    setPolicyError('')
+    setOpenTlSkipUpdateSaving(true)
+    try {
+      if (next) {
+        const { error } = await supabase
+          .from('tl_video_update_policy')
+          .upsert(
+            { videoid, skip_update: true, updated_at: new Date().toISOString() },
+            { onConflict: 'videoid' }
+          )
+        if (error) throw error
+      } else {
+        // OFF の場合はレコードを消して「更新する」状態に戻す
+        const { error } = await supabase
+          .from('tl_video_update_policy')
+          .delete()
+          .eq('videoid', videoid)
+        if (error) throw error
+      }
+      setOpenTlSkipUpdate(next)
+    } catch {
+      setPolicyError('保存に失敗しました（権限/RLS設定を確認してください）')
+    } finally {
+      setOpenTlSkipUpdateSaving(false)
+    }
+  }
 
   const handleSeasonSelect = (value: string) => {
     setSeason(value)
@@ -600,7 +661,10 @@ export default function TLSearchPage() {
       {openTl && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={() => setOpenTl(null)}
+          onClick={() => {
+            setOpenTl(null)
+            setPolicyError('')
+          }}
         >
           <div
             className="bg-white p-4 rounded max-w-md w-full"
@@ -613,6 +677,25 @@ export default function TLSearchPage() {
             />
             <h3 className="font-bold mb-2">{openTl.title}</h3>
             <p className="whitespace-pre-wrap text-sm">{openTl.description}</p>
+            {isAdmin && (
+              <div className="mt-3 border-t pt-3 text-sm space-y-2">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={openTlSkipUpdate}
+                    disabled={!openTlSkipUpdateLoaded || openTlSkipUpdateSaving}
+                    onChange={(e) =>
+                      setVideoSkipUpdate(openTl.videoid, e.target.checked)
+                    }
+                  />
+                  <span>同期時にこの動画を更新しない</span>
+                </label>
+                <p className="text-xs text-gray-600">
+                  ONにすると、既にDBにあるこのvideoidは同期処理で上書きされません（手動編集を保護）。
+                </p>
+                {policyError && <p className="text-xs text-red-600">{policyError}</p>}
+              </div>
+            )}
             {openTl.formation && openTl.formation !== '[]' && students.length > 0 && (
               <div className="mt-2 space-y-1 text-sm">
                 {JSON.parse(openTl.formation).map((team: unknown[], idx: number) => (
