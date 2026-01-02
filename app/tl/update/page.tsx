@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import TLFetchClient from './TLFetchClient'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 export default async function Page() {
   const supabase = createSupabaseServerClient()
