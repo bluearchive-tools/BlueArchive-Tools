@@ -100,6 +100,33 @@ async function fetchVideos(seasons: Season[]): Promise<VideoItem[]> {
   return results
 }
 
+
+async function fetchFullSnippets(videoIds: string[]): Promise<Record<string, Snippet>> {
+  const out: Record<string, Snippet> = {}
+  if (API_KEYS.length === 0 || videoIds.length === 0) return out
+
+  // YouTube Data API: videos.list supports up to 50 ids per request
+  const base = 'https://www.googleapis.com/youtube/v3/videos?part=snippet&maxResults=50'
+
+  for (let i = 0; i < videoIds.length; i += 50) {
+    const chunk = videoIds.slice(i, i + 50)
+    if (chunk.length === 0) continue
+
+    for (const key of API_KEYS) {
+      const res = await fetch(`${base}&id=${chunk.join(',')}&key=${key}`)
+      if (!res.ok) continue
+
+      const data = await res.json()
+      for (const item of (data.items || []) as Array<{ id: string; snippet: Snippet }>) {
+        if (item?.id) out[item.id] = item.snippet || {}
+      }
+      break
+    }
+  }
+
+  return out
+}
+
 function extractArmor(text: string): string {
   const matched: string[] = []
   if (/爆発|軽装備/.test(text)) matched.push('軽装備')
@@ -381,9 +408,30 @@ try {
       : seasons
 
     const videos = await fetchVideos(targetSeasons)
+
+    const uniqueVideoIds = Array.from(
+      new Set(videos.map((v) => v.id?.videoId).filter((v): v is string => Boolean(v)))
+    )
+
+    // Get full (non-truncated) snippet data via videos.list
+    const fullSnippets = await fetchFullSnippets(uniqueVideoIds)
+
+    // Per-video update policy: if true, do NOT auto-update existing rows
+    const lockedVideoIds = new Set<string>()
+    if (uniqueVideoIds.length > 0) {
+      const { data: flags } = await supabase
+        .from('tl_video_update_policy')
+        .select('videoid, skip_update')
+        .in('videoid', uniqueVideoIds)
+
+      for (const f of (flags || []) as Array<{ videoid: string; skip_update: boolean }>) {
+        if (f?.videoid && f.skip_update) lockedVideoIds.add(f.videoid)
+      }
+    }
     for (const info of videos) {
       const vid = info.id.videoId
-      const seasonNum = guessSeason(info.snippet, seasons)
+      const snippet = fullSnippets[vid] || info.snippet
+      const seasonNum = guessSeason(snippet, seasons)
       if (season && seasonNum !== season) continue
       const table = seasonNum ? `tl_${seasonNum.toLowerCase()}` : 'tl_unknown'
       const { data: exist } = await supabase
@@ -392,7 +440,9 @@ try {
         .eq('videoid', vid)
         .maybeSingle()
 
-      const text = `${info.snippet.title || ''}\n${info.snippet.description || ''}`
+      if (exist && lockedVideoIds.has(vid)) continue
+
+      const text = `${snippet.title || ''}\n${snippet.description || ''}`
       const armor = extractArmor(text)
       const difficulty = extractDifficulty(text)
       const score = extractScore(text)
@@ -408,9 +458,9 @@ try {
         formation,
         guide,
         formation_status: formationStatus,
-        title: info.snippet.title || '',
-        description: info.snippet.description || '',
-        publishedAt: info.snippet.publishedAt,
+        title: snippet.title || '',
+        description: snippet.description || '',
+        publishedAt: snippet.publishedAt,
       }
 
       if (!exist) {
