@@ -22,7 +22,7 @@ export default function DecorationInfoButton({ decorations }: Props) {
   if (!decorations || decorations.length === 0) return null
 
   return (
-    <div className="absolute right-3 top-3">
+    <div className="absolute right-3 top-3 text-gray-700">
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -41,7 +41,7 @@ export default function DecorationInfoButton({ decorations }: Props) {
             if (e.target === e.currentTarget) setOpen(false)
           }}
         >
-          <div className="w-full max-w-md rounded-lg bg-white p-4 shadow-xl dark:bg-gray-900">
+          <div className="w-full max-w-md rounded-lg bg-white p-4 shadow-xl text-gray-900 dark:bg-gray-900 dark:text-gray-50">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">適用中のデコレーション</h3>
               <button

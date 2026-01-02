@@ -9,6 +9,7 @@ import { faEye, faEyeSlash, faLink, faUnlink, faUserCircle } from '@fortawesome/
 import students from '../data/students.json'
 import FriendCodeCopy from './FriendCodeCopy'
 import DecorationInfoButton from './DecorationInfoButton'
+import { colord } from 'colord'
 
 interface Props {
   initialUsername: string | null
@@ -89,6 +90,7 @@ export default function MyPageClient({
   const [showUserId, setShowUserId] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewVisible, setPreviewVisible] = useState(false)
+  const [showUnowned, setShowUnowned] = useState(false)
   const profileRef = useRef<HTMLElement | null>(null)
   const accountRef = useRef<HTMLElement | null>(null)
   const linksRef = useRef<HTMLElement | null>(null)
@@ -151,19 +153,86 @@ export default function MyPageClient({
   const linkedProviders = new Set(identities.map((id) => id.provider))
 
   const selectedStudent = useMemo(() => students.find((s) => s.id === iconStudentId), [iconStudentId])
-  const selectedDecorations = useMemo(
-    () => initialDecorations.filter((d) => decorationIds.includes(d.id)),
-    [decorationIds, initialDecorations]
-  )
+  const selectedDecorations = useMemo(() => {
+    const byGenre = new Map<string, (typeof initialDecorations)[number]>()
+    initialDecorations.forEach((d) => {
+      if (!decorationIds.includes(d.id)) return
+      const key = d.genre ?? d.id
+      if (!byGenre.has(key)) byGenre.set(key, d)
+    })
+    return Array.from(byGenre.values())
+  }, [decorationIds, initialDecorations])
   const hasRedFrame = useMemo(
     () => selectedDecorations.some((d) => d.style === 'red-gradient'),
     [selectedDecorations]
   )
   const backgroundDecoration = useMemo(
-    () => selectedDecorations.find((d) => d.background_color),
+    () =>
+      selectedDecorations.find(
+        (d) => d.background_color || d.style === 'aurora-gradient' || d.style === 'sunset-gradient' || d.genre === '背景'
+      ),
     [selectedDecorations]
   )
   const fontDecoration = useMemo(() => selectedDecorations.find((d) => d.font_family), [selectedDecorations])
+  const textColor =
+    backgroundDecoration?.style === 'aurora-gradient' || backgroundDecoration?.style === 'sunset-gradient'
+      ? backgroundDecoration.text_color ?? '#F8FAFC'
+      : backgroundDecoration?.background_color
+        ? (() => {
+            const parsed = colord(backgroundDecoration.background_color)
+            return parsed.isValid() ? (parsed.isLight() ? '#111827' : '#F9FAFB') : undefined
+          })()
+        : undefined
+  const previewStyle =
+    backgroundDecoration?.style === 'aurora-gradient'
+      ? { backgroundImage: 'linear-gradient(120deg, #0ea5e9, #8b5cf6, #22d3ee)', backgroundSize: '200% 200%', animation: 'ba-aurora 12s ease infinite' }
+      : backgroundDecoration?.style === 'sunset-gradient'
+        ? { backgroundImage: 'linear-gradient(135deg, #f59e0b, #ef4444, #8b5cf6)', backgroundSize: '200% 200%', animation: 'ba-sunset 10s ease infinite' }
+        : backgroundDecoration?.background_color
+          ? { background: backgroundDecoration.background_color }
+          : {}
+  const fieldStyle = {
+    background: backgroundDecoration?.background_color ?? previewStyle.background ?? undefined,
+    backgroundImage: previewStyle.backgroundImage,
+    backgroundSize: previewStyle.backgroundSize,
+    animation: previewStyle.animation,
+    color: textColor ?? undefined,
+    borderColor: textColor ? 'rgba(255,255,255,0.35)' : undefined,
+  }
+  const frameDecoration = useMemo(
+    () =>
+      selectedDecorations.find(
+        (d) => d.genre === 'フレーム' || d.style === 'red-gradient' || d.style === 'aurora-frame' || d.style === 'sunset-frame'
+      ),
+    [selectedDecorations]
+  )
+
+  const decorationsByGenre = useMemo(() => {
+    const map = new Map<string, (typeof initialDecorations)[number][]>()
+    initialDecorations.forEach((d) => {
+      if (!showUnowned && !decorationInventory.includes(d.id)) return
+      const genre = d.genre ?? 'その他'
+      if (!map.has(genre)) map.set(genre, [])
+      map.get(genre)!.push(d)
+    })
+    return Array.from(map.entries())
+  }, [initialDecorations, decorationInventory, showUnowned])
+
+  const toggleDecoration = (itemId: string) => {
+    const item = initialDecorations.find((d) => d.id === itemId)
+    if (!item) return
+    if (!decorationInventory.includes(itemId)) return
+    const key = item.genre ?? item.id
+    setDecorationIds((prev) => {
+      const filtered = prev.filter((id) => {
+        const current = initialDecorations.find((d) => d.id === id)
+        const currentKey = current?.genre ?? current?.id
+        return currentKey !== key
+      })
+      const alreadySelected = prev.includes(itemId)
+      return alreadySelected ? filtered : [...filtered, itemId]
+    })
+  }
 
   const copyUserId = async () => {
     if (!session?.user.id) return
@@ -400,47 +469,59 @@ export default function MyPageClient({
             <div className="mt-4 space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-gray-700">デコレーション</p>
-                <a href="/decorations" className="text-sm text-blue-600 hover:underline">
-                  デコレーションショップへ
-                </a>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowUnowned((v) => !v)}
+                    className="rounded border border-gray-300 px-2 py-1 text-xs font-medium hover:bg-gray-50"
+                  >
+                    {showUnowned ? '未購入を隠す' : '未購入を表示'}
+                  </button>
+                  <a href="/decorations" className="text-sm text-blue-600 hover:underline">
+                    デコレーションショップへ
+                  </a>
+                </div>
               </div>
-              <p className="text-sm text-gray-600">プロフィールに複数のデコレーションを重ねて表示できます。</p>
-              <div className="space-y-2">
-                {initialDecorations.map((item) => {
-                  const owned = decorationInventory.includes(item.id)
-                  const checked = decorationIds.includes(item.id)
-                  return (
-                    <label
-                      key={item.id}
-                      className="flex items-start gap-3 rounded border border-gray-200 bg-gray-50 p-3 text-sm dark:border-gray-700 dark:bg-gray-800"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        disabled={!owned}
-                        onChange={(e) => {
-                          setDecorationIds((prev) =>
-                            e.target.checked ? Array.from(new Set([...prev, item.id])) : prev.filter((id) => id !== item.id)
-                          )
-                        }}
-                        className="mt-1"
-                      />
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg" aria-hidden>
-                            {item.emoji}
-                          </span>
-                          <p className="font-semibold">{item.name}</p>
-                          {!owned && <span className="rounded bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800">未購入</span>}
-                        </div>
-                        <p className="text-gray-600">{item.description}</p>
-                        {item.style === 'red-gradient' && (
-                          <p className="text-xs text-rose-600">効果: 赤グラデーション枠</p>
-                        )}
-                      </div>
-                    </label>
-                  )
-                })}
+              <p className="text-sm text-gray-600">カテゴリごとに1つ選択できます。</p>
+              <div className="space-y-3">
+                {decorationsByGenre.map(([genre, items]) => (
+                  <div key={genre} className="space-y-2">
+                    <p className="text-sm font-semibold text-gray-700">{genre}</p>
+                    <div className="grid gap-2">
+                      {items.map((item) => {
+                        const owned = decorationInventory.includes(item.id)
+                        const checked = decorationIds.includes(item.id)
+                        return (
+                          <label
+                            key={item.id}
+                            className={`flex items-start gap-3 rounded border p-3 text-sm ${
+                              checked ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-gray-50'
+                            } dark:border-gray-700 dark:bg-gray-800`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              disabled={!owned}
+                              onChange={() => toggleDecoration(item.id)}
+                              className="mt-1"
+                            />
+                            <div className="flex-1 space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-lg" aria-hidden>
+                                  {item.emoji}
+                                </span>
+                                <p className="font-semibold">{item.name}</p>
+                                {!owned && <span className="rounded bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800">未購入</span>}
+                              </div>
+                              <p className="text-gray-600">{item.description}</p>
+                              {item.style === 'red-gradient' && <p className="text-xs text-rose-600">効果: 赤グラデーション枠</p>}
+                            </div>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -583,7 +664,7 @@ export default function MyPageClient({
           }}
         >
           <div
-            className={`relative w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl transform transition-all duration-200 ${
+            className={`relative w-full max-w-3xl rounded-xl bg-white p-6 shadow-2xl transform transition-all duration-200 ${
               previewVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
             } dark:bg-gray-900`}
             onClick={(e) => e.stopPropagation()}
@@ -599,56 +680,96 @@ export default function MyPageClient({
               ×
             </button>
             <div
-              className={`relative ${hasRedFrame ? 'rounded-xl bg-gradient-to-r from-rose-500 via-red-500 to-orange-400 p-[2px]' : ''}`}
+              className={`relative ${
+                frameDecoration?.style === 'aurora-frame'
+                  ? 'rounded-xl p-[2px] ba-aurora-frame'
+                  : frameDecoration?.style === 'sunset-frame'
+                    ? 'rounded-xl p-[2px] ba-sunset-frame'
+                    : hasRedFrame
+                      ? 'rounded-xl bg-gradient-to-r from-rose-500 via-red-500 to-orange-400 p-[2px]'
+                      : ''
+              }`}
             >
               <div
-                className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+                className="relative rounded-lg border border-gray-200 bg-white p-6 shadow-sm space-y-4 dark:border-gray-700 dark:bg-gray-900"
                 style={{
-                  background: backgroundDecoration?.background_color ?? undefined,
-                  color: backgroundDecoration?.text_color ?? undefined,
+                  background: backgroundDecoration?.background_color ?? previewStyle.background ?? undefined,
+                  backgroundImage: previewStyle.backgroundImage,
+                  backgroundSize: previewStyle.backgroundSize,
+                  animation: previewStyle.animation,
+                  color: textColor ?? undefined,
                   fontFamily: fontDecoration?.font_family ?? undefined,
                 }}
               >
-                {selectedStudent ? (
-                  <img
-                    src={selectedStudent.image}
-                    alt={selectedStudent.name}
-                    className="h-16 w-16 rounded-xl object-cover border border-gray-200"
-                  />
-                ) : (
-                  <div className="h-16 w-16 rounded-xl bg-gray-200 border border-gray-200" />
-                )}
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500">Tools ID: {username || '—'}</p>
-                  <h4 className="text-xl font-bold">{nickname || username || 'ユーザー名未設定'}</h4>
-                  <p className="text-sm text-gray-500 flex items-center gap-1">
-                    <span>Lv {level || '—'} / フレンドコード:</span>{' '}
-                    <FriendCodeCopy code={friendCode} disabled={!friendCodePublic} />
-                  </p>
-                </div>
-                <DecorationInfoButton decorations={selectedDecorations} />
-              </div>
-            </div>
-            <div className="mt-4 space-y-2">
-              <p className="text-sm text-gray-600">自己紹介</p>
-              <p className="rounded border border-gray-200 bg-gray-50 p-3 text-sm whitespace-pre-wrap">
-                {bio || '自己紹介はまだ入力されていません。'}
-              </p>
-              {socialLinks && socialLinks.length > 0 && (
-                <div className="space-y-1">
-                  <p className="text-sm text-gray-600">ソーシャル</p>
-                  {socialLinks.map((link, idx) => (
-                    <p key={idx} className="rounded border border-gray-200 bg-gray-50 p-2 text-sm">
-                      {link.label && <span className="font-semibold mr-1">{link.label}:</span>}
-                      <span>{link.value || '未入力'}</span>
+                <div className="flex items-center gap-4">
+                  {selectedStudent ? (
+                    <img
+                      src={selectedStudent.image}
+                      alt={selectedStudent.name}
+                      className="h-16 w-16 rounded-xl object-cover border border-gray-200"
+                    />
+                  ) : (
+                    <div className="h-16 w-16 rounded-xl bg-gray-200 border border-gray-200" />
+                  )}
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-500">Tools ID: {username || '—'}</p>
+                    <h4 className="text-xl font-bold">{nickname || username || 'ユーザー名未設定'}</h4>
+                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                      <span>Lv {level || '—'} / フレンドコード:</span>{' '}
+                      <FriendCodeCopy code={friendCode} disabled={!friendCodePublic} />
                     </p>
-                  ))}
+                  </div>
+                  <DecorationInfoButton decorations={selectedDecorations} />
                 </div>
-              )}
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600">自己紹介</p>
+                  <p className="rounded border p-3 text-sm whitespace-pre-wrap" style={fieldStyle}>
+                    {bio || '自己紹介はまだ入力されていません。'}
+                  </p>
+                  {socialLinks && socialLinks.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-600">ソーシャル</p>
+                      {socialLinks.map((link, idx) => (
+                        <p key={idx} className="rounded border p-2 text-sm" style={fieldStyle}>
+                          {link.label && <span className="font-semibold mr-1">{link.label}:</span>}
+                          <span>{link.value || '未入力'}</span>
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes ba-aurora {
+              0% { background-position: 0% 50%; }
+              50% { background-position: 100% 50%; }
+              100% { background-position: 0% 50%; }
+            }
+            @keyframes ba-sunset {
+              0% { background-position: 0% 0%; }
+              50% { background-position: 100% 100%; }
+              100% { background-position: 0% 0%; }
+            }
+            .ba-aurora-frame {
+              background-image: linear-gradient(120deg, #0ea5e9, #8b5cf6, #22d3ee);
+              background-size: 200% 200%;
+              animation: ba-aurora 12s ease infinite;
+            }
+            .ba-sunset-frame {
+              background-image: linear-gradient(135deg, #f59e0b, #ef4444, #8b5cf6);
+              background-size: 200% 200%;
+              animation: ba-sunset 10s ease infinite;
+            }
+          `,
+        }}
+      />
     </div>
   )
 }

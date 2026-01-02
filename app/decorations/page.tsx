@@ -68,6 +68,7 @@ export default function DecorationsPage() {
   })
   const [adding, setAdding] = useState(false)
   const [recentPurchaseId, setRecentPurchaseId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const fetchProfile = useMemo(
     () => async () => {
@@ -429,6 +430,26 @@ export default function DecorationsPage() {
                     <p className="text-lg font-semibold">{item.name}</p>
                     <p className="text-xs text-gray-500">ID: {item.id}</p>
                   </div>
+                  {profile?.admin && (
+                    <button
+                      type="button"
+                      disabled={deletingId === item.id}
+                      onClick={async () => {
+                        setDeletingId(item.id)
+                        const { error } = await supabase.from('decorations').delete().eq('id', item.id)
+                        setDeletingId(null)
+                        if (error) {
+                          setMessage(`削除に失敗しました: ${error.message}`)
+                        } else {
+                          setDecorations((prev) => prev.filter((d) => d.id !== item.id))
+                          setMessage('商品を削除しました。')
+                        }
+                      }}
+                      className="ml-auto rounded border border-red-300 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                    >
+                      {deletingId === item.id ? '削除中...' : '削除'}
+                    </button>
+                  )}
                 </div>
                 <p className="mt-3 text-sm text-gray-700">{item.description}</p>
                 <p className="mt-3 text-sm font-semibold text-gray-800">価格: {item.price} クレジット</p>
