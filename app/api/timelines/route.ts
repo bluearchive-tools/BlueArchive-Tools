@@ -402,6 +402,8 @@ if (pErr || !profile?.admin) {
 }
 
 try {
+    let fullUsed = 0
+    let fallbackUsed = 0
     const { season } = await request.json()
     const raidPath = path.join(process.cwd(), 'data', 'raid.json')
     const raid = JSON.parse(await fs.readFile(raidPath, 'utf-8'))
