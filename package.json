@@ -17,6 +17,7 @@
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/auth-helpers-react": "^0.5.0",
     "@supabase/supabase-js": "^2.49.8",
+    "colord": "^2.9.3",
     "lz-string": "^1.5.0",
     "next": "15.3.8",
     "next-intl": "^4.6.1",
