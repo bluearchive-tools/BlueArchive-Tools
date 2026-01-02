@@ -18,6 +18,7 @@ type Decoration = {
   emoji: string
   description?: string | null
   style?: string | null
+  genre?: string | null
   background_color?: string | null
   text_color?: string | null
   font_family?: string | null
@@ -59,7 +60,7 @@ export default async function UserPage({ params }: Params) {
     appliedDecorationIds.length > 0
       ? await supabase
           .from('decorations')
-          .select('id, name, emoji, description, style, background_color, text_color, font_family')
+          .select('id, name, emoji, description, style, genre, background_color, text_color, font_family')
           .in('id', appliedDecorationIds)
       : { data: [] as Decoration[] }
 
@@ -81,12 +82,17 @@ export default async function UserPage({ params }: Params) {
   })()
 
   const student = students.find((s) => s.id === profile?.icon_student_id)
-  const appliedDecorations = ((decorationData ?? []) as Decoration[]).filter(Boolean)
-  const frameDecoration = appliedDecorations.find(
-    (d) => d.style === 'red-gradient' || d.style === 'aurora-frame' || d.style === 'sunset-frame'
-  )
+  const appliedDecorations = (() => {
+    const map = new Map<string, Decoration>()
+    ;((decorationData ?? []) as Decoration[]).forEach((d) => {
+      const key = d.genre ?? d.id
+      if (!map.has(key)) map.set(key, d)
+    })
+    return Array.from(map.values())
+  })()
+  const frameDecoration = appliedDecorations.find((d) => d.genre === 'フレーム' || d.style === 'red-gradient' || d.style === 'aurora-frame' || d.style === 'sunset-frame')
   const backgroundDecoration = appliedDecorations.find(
-    (d) => d.background_color || d.style === 'aurora-gradient' || d.style === 'sunset-gradient'
+    (d) => d.genre === '背景' || d.background_color || d.style === 'aurora-gradient' || d.style === 'sunset-gradient'
   )
   const textColor =
     backgroundDecoration?.style === 'aurora-gradient' || backgroundDecoration?.style === 'sunset-gradient'

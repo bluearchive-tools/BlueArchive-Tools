@@ -131,11 +131,27 @@ export default function DecorationsPage() {
       setMessage('プロフィール情報を読み込み中です。')
       return
     }
+    const target = decorations.find((d) => d.id === decorationId)
+    const targetGenre = target?.genre ?? null
+    if (genre !== 'クレジット' && profile.decoration_inventory?.includes(decorationId)) {
+      setMessage('すでに所持しています。')
+      return
+    }
     if (genre === 'クレジット' && decorationId === 'credit_daily_1000') {
       const last = profile.daily_credit_claimed_at ? new Date(profile.daily_credit_claimed_at) : null
       const now = new Date()
       if (last && isSameDay(last, now)) {
         setMessage('本日の1000クレジットは受け取り済みです。')
+        return
+      }
+    }
+    if (genre && genre !== 'クレジット') {
+      const equippedConflict = (profile.decoration_ids ?? []).some((id) => {
+        const item = decorations.find((d) => d.id === id)
+        return item && (item.genre ?? item.id) === (targetGenre ?? decorationId)
+      })
+      if (equippedConflict) {
+        setMessage('同じカテゴリの装着は1つまでです。先に装着を外してください。')
         return
       }
     }
@@ -201,7 +217,16 @@ export default function DecorationsPage() {
   const handleEquip = async (decorationId: string) => {
     if (!session?.user || !profile) return
     setEquipLoading(true)
-    const next = Array.from(new Set([...(profile.decoration_ids ?? []), decorationId]))
+    const target = decorations.find((d) => d.id === decorationId)
+    const targetKey = target?.genre ?? decorationId
+    const nextMap = new Map<string, string>()
+    ;(profile.decoration_ids ?? []).forEach((id) => {
+      const item = decorations.find((d) => d.id === id)
+      const key = item?.genre ?? id
+      if (!nextMap.has(key)) nextMap.set(key, id)
+    })
+    nextMap.set(targetKey, decorationId)
+    const next = Array.from(new Set(nextMap.values()))
     const { data, error } = await supabase
       .from('profiles')
       .update({ decoration_ids: next })
@@ -236,9 +261,21 @@ export default function DecorationsPage() {
   }
 
   const previewDecorations = useMemo(() => {
-    const ids = new Set<string>(profile?.decoration_ids ?? [])
-    if (previewId) ids.add(previewId)
-    return decorations.filter((d) => ids.has(d.id))
+    const byGenre = new Map<string, Decoration>()
+    const profileIds = new Set(profile?.decoration_ids ?? [])
+    decorations.forEach((d) => {
+      if (!profileIds.has(d.id)) return
+      const key = d.genre ?? d.id
+      if (!byGenre.has(key)) byGenre.set(key, d)
+    })
+    if (previewId) {
+      const previewItem = decorations.find((d) => d.id === previewId)
+      if (previewItem) {
+        const key = previewItem.genre ?? previewItem.id
+        byGenre.set(key, previewItem)
+      }
+    }
+    return Array.from(byGenre.values())
   }, [previewId, profile?.decoration_ids, decorations])
 
   const frameDecoration = useMemo(
@@ -407,7 +444,7 @@ export default function DecorationsPage() {
                   <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     type="button"
-                    disabled={loading || !session?.user}
+                    disabled={loading || !session?.user || (item.genre !== 'クレジット' && profile?.decoration_inventory?.includes(item.id))}
                     onClick={() => handlePurchase(item.id, item.price, item.bonus_credit ?? undefined, item.genre ?? undefined)}
                     className={`inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-medium text-white disabled:opacity-60 transition ${
                       recentPurchaseId === item.id ? 'bg-green-600 animate-pulse' : 'bg-blue-600 hover:bg-blue-700'
@@ -421,17 +458,21 @@ export default function DecorationsPage() {
                       </>
                     ) : item.genre === 'クレジット' ? (
                       '受け取る'
+                    ) : profile?.decoration_inventory?.includes(item.id) ? (
+                      '所持済み'
                     ) : (
                       '購入'
                     )}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewId(item.id)}
-                    className="inline-flex items-center justify-center rounded border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
-                  >
-                    プレビュー
-                  </button>
+                  {item.genre !== 'クレジット' && (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewId(item.id)}
+                      className="inline-flex items-center justify-center rounded border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
+                    >
+                      プレビュー
+                    </button>
+                  )}
                 </div>
                 {item.genre !== 'クレジット' &&
                   profile?.decoration_inventory?.includes(item.id) &&
