@@ -667,57 +667,95 @@ export default function TLSearchPage() {
           }}
         >
           <div
-            className="bg-white p-4 rounded max-w-md w-full"
+            className="bg-white rounded max-w-md w-full h-[80vh] max-h-[80vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={`https://i.ytimg.com/vi/${openTl.videoid}/hqdefault.jpg`}
-              alt="thumbnail"
-              className="w-full h-auto mb-2"
-            />
-            <h3 className="font-bold mb-2">{openTl.title}</h3>
-            <p className="whitespace-pre-wrap text-sm">{openTl.description}</p>
-            {isAdmin && (
-              <div className="mt-3 border-t pt-3 text-sm space-y-2">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={openTlSkipUpdate}
-                    disabled={!openTlSkipUpdateLoaded || openTlSkipUpdateSaving}
-                    onChange={(e) =>
-                      setVideoSkipUpdate(openTl.videoid, e.target.checked)
-                    }
-                  />
-                  <span>同期時にこの動画を更新しない</span>
-                </label>
-                <p className="text-xs text-gray-600">
-                  ONにすると、既にDBにあるこのvideoidは同期処理で上書きされません（手動編集を保護）。
-                </p>
-                {policyError && <p className="text-xs text-red-600">{policyError}</p>}
-              </div>
-            )}
-            {openTl.formation && openTl.formation !== '[]' && students.length > 0 && (
-              <div className="mt-2 space-y-1 text-sm">
-                {JSON.parse(openTl.formation).map((team: unknown[], idx: number) => (
-                  <div key={idx}>
-                    {team.map((member: unknown, i: number) => {
-                      const obj = member as { id?: string; name?: string; level?: number } | string
-                      const id = typeof obj === 'string' ? obj : obj.id || ''
-                      const name = typeof obj === 'object' && obj && 'name' in obj ? (obj as { name?: string }).name : undefined
-                      const lv = typeof obj === 'object' && obj && 'level' in obj && obj.level ? ` Lv${obj.level}` : ''
-                      const student = students.find((s) => s.id === id)
-                      return (
-                        <p key={i}>{student ? student.name : name || id}{lv}</p>
+            {/* サムネ（固定・クリックで動画を開く） */}
+            <div className="shrink-0 border-b p-4 pb-3">
+              <a
+                href={`https://www.youtube.com/watch?v=${openTl.videoid}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
+                aria-label="YouTubeで動画を開く"
+              >
+                <img
+                  src={`https://i.ytimg.com/vi/${openTl.videoid}/hqdefault.jpg`}
+                  alt="thumbnail"
+                  className="w-full h-auto rounded cursor-pointer"
+                />
+              </a>
+            </div>
+
+            {/* 本文（スクロール） */}
+            <div className="flex-1 overflow-y-auto p-4 pt-3">
+              <h3 className="font-bold mb-2">{openTl.title}</h3>
+              <p className="whitespace-pre-wrap text-sm">{openTl.description}</p>
+
+              {isAdmin && (
+                <div className="mt-3 border-t pt-3 text-sm space-y-2">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={openTlSkipUpdate}
+                      disabled={!openTlSkipUpdateLoaded || openTlSkipUpdateSaving}
+                      onChange={(e) =>
+                        setVideoSkipUpdate(openTl.videoid, e.target.checked)
+                      }
+                    />
+                    <span>同期時にこの動画を更新しない</span>
+                  </label>
+                  <p className="text-xs text-gray-600">
+                    ONにすると、既にDBにあるこのvideoidは同期処理で上書きされません（手動編集を保護）。
+                  </p>
+                  {policyError && (
+                    <p className="text-xs text-red-600">{policyError}</p>
+                  )}
+                </div>
+              )}
+
+              {openTl.formation &&
+                openTl.formation !== '[]' &&
+                students.length > 0 && (
+                  <div className="mt-2 space-y-1 text-sm">
+                    {JSON.parse(openTl.formation).map(
+                      (team: unknown[], idx: number) => (
+                        <div key={idx}>
+                          {team.map((member: unknown, i: number) => {
+                            const obj =
+                              member as
+                                | { id?: string; name?: string; level?: number }
+                                | string
+                            const id = typeof obj === 'string' ? obj : obj.id || ''
+                            const name =
+                              typeof obj === 'object' && obj && 'name' in obj
+                                ? (obj as { name?: string }).name
+                                : undefined
+                            const lv =
+                              typeof obj === 'object' &&
+                              obj &&
+                              'level' in obj &&
+                              obj.level
+                                ? ` Lv${obj.level}`
+                                : ''
+                            const student = students.find((s) => s.id === id)
+                            return (
+                              <p key={i}>
+                                {student ? student.name : name || id}
+                                {lv}
+                              </p>
+                            )
+                          })}
+                        </div>
                       )
-                    })}
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
+                )}
+            </div>
           </div>
         </div>
       )}
-      {editTl && (
+{editTl && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={() => {
