@@ -1,0 +1,5 @@
+[
+  { "id": "spawn", "label": "敵出現", "duration": 2, "skillable": true },
+  { "id": "skill", "label": "ボススキル", "duration": 1.5, "skillable": false },
+  { "id": "stage_change", "label": "ステージ移行", "duration": 3, "skillable": false }
+]

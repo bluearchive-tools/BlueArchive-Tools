@@ -1,0 +1,36 @@
+{
+  "en": {
+    "title": "About this page",
+    "body": [
+      "BlueArchive Tools is a community-driven collection of utilities to help you plan, compare, and share your strategies.",
+      "We keep refining tools as the game evolves. If you find issues or have ideas, feel free to contribute or open an issue."
+    ],
+    "currentPathLabel": "Currently viewing: {path}",
+    "closeLabel": "Close",
+    "discordTitle": "Community Discord",
+    "discordDescription": "Chat with other players, share findings, and get updates.",
+    "discordWidget": {
+      "src": "https://discord.com/widget?id=1454408885820592302&theme=dark",
+      "width": 350,
+      "height": 500,
+      "title": "Discord community widget"
+    }
+  },
+  "ja": {
+    "title": "このページについて",
+    "body": [
+      "BlueArchive Toolsは、計画や比較、共有を助けるコミュニティ主導のユーティリティ集です。",
+      "ゲームのアップデートに合わせてツールを随時改良しています。気になる点やアイデアがあれば、ぜひコントリビュートやIssueをご検討ください。"
+    ],
+    "currentPathLabel": "現在表示しているページ: {path}",
+    "closeLabel": "閉じる",
+    "discordTitle": "コミュニティDiscord",
+    "discordDescription": "他のプレイヤーと交流したり、情報共有や更新情報を受け取れます。",
+    "discordWidget": {
+      "src": "https://discord.com/widget?id=1454408885820592302&theme=dark",
+      "width": 350,
+      "height": 500,
+      "title": "Discordコミュニティウィジェット"
+    }
+  }
+}

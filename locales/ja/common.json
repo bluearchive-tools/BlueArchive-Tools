@@ -1,0 +1,15 @@
+{
+  "appTitle": "BlueArchive Tools",
+  "auth": {
+    "login": "ログイン",
+    "loginWithGoogle": "Googleでログイン",
+    "loginWithDiscord": "Discordでログイン",
+    "logout": "サインアウト"
+  },
+  "actions": {
+    "close": "閉じる"
+  },
+  "messages": {
+    "loginPrompt": "ログインするともっと便利に利用できます！"
+  }
+}
