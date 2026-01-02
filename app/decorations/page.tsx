@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCheck, faShop, faSpinner } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faPen, faQuestionCircle, faShop, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import FriendCodeCopy from '../../components/FriendCodeCopy'
 import DecorationInfoButton from '../../components/DecorationInfoButton'
 import students from '../../data/students.json'
 import { colord } from 'colord'
+import ReactMarkdown from 'react-markdown'
 
 type Decoration = {
   id: string
@@ -66,9 +67,14 @@ export default function DecorationsPage() {
     price: 0,
     genre: 'フレーム',
   })
+  const [editOpen, setEditOpen] = useState<Decoration | null>(null)
+  const [editItem, setEditItem] = useState<Partial<Decoration> | null>(null)
   const [adding, setAdding] = useState(false)
   const [recentPurchaseId, setRecentPurchaseId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [helpOpen, setHelpOpen] = useState(false)
+  const [helpContent, setHelpContent] = useState<string | null>(null)
+  const [helpLoading, setHelpLoading] = useState(false)
 
   const fetchProfile = useMemo(
     () => async () => {
@@ -350,9 +356,28 @@ export default function DecorationsPage() {
     <main className="max-w-5xl mx-auto px-4 py-8 space-y-6">
       <div className="flex items-center gap-3">
         <FontAwesomeIcon icon={faShop} className="text-2xl" />
-        <div>
-          <h1 className="text-2xl font-bold">ショップ</h1>
-          <p className="text-sm text-gray-600">デコレーションやクレジットを購入できます。</p>
+        <div className="flex items-center gap-2">
+          <div>
+            <h1 className="text-2xl font-bold">ショップ</h1>
+            <p className="text-sm text-gray-600">デコレーションやクレジットを購入できます。</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setHelpOpen(true)
+              setHelpLoading(true)
+              const lang = typeof navigator !== 'undefined' && navigator.language.startsWith('ja') ? 'ja' : 'en'
+              fetch(`/helps/${lang}/decorations.md`)
+                .then((res) => (res.ok ? res.text() : Promise.reject(new Error('ヘルプを読み込めませんでした'))))
+                .then((text) => setHelpContent(text))
+                .catch((err) => setMessage(err.message))
+                .finally(() => setHelpLoading(false))
+            }}
+            className="rounded-full border border-gray-300 p-2 text-gray-700 hover:bg-gray-50"
+            aria-label="ショップのヘルプ"
+          >
+            <FontAwesomeIcon icon={faQuestionCircle} />
+          </button>
         </div>
       </div>
 
@@ -492,6 +517,18 @@ export default function DecorationsPage() {
                       className="inline-flex items-center justify-center rounded border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
                     >
                       プレビュー
+                    </button>
+                  )}
+                  {profile?.admin && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditOpen(item)
+                        setEditItem({ ...item })
+                      }}
+                      className="inline-flex items-center justify-center rounded border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
+                    >
+                      <FontAwesomeIcon icon={faPen} /> 編集
                     </button>
                   )}
                 </div>
@@ -742,6 +779,184 @@ export default function DecorationsPage() {
                 {adding ? '追加中...' : '追加する'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {editOpen && editItem && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setEditOpen(null)
+          }}
+        >
+          <div className="w-full max-w-lg rounded-lg bg-white p-5 shadow-2xl dark:bg-gray-900">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold">商品を編集</h3>
+              <button
+                type="button"
+                onClick={() => setEditOpen(null)}
+                className="rounded px-2 py-1 text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+                aria-label="閉じる"
+              >
+                ×
+              </button>
+            </div>
+            <div className="grid gap-3">
+              <input
+                className="rounded border border-gray-300 px-3 py-2 text-sm"
+                placeholder="商品名"
+                value={editItem.name ?? ''}
+                onChange={(e) => setEditItem((prev) => ({ ...(prev ?? {}), name: e.target.value }))}
+              />
+              <input
+                className="rounded border border-gray-300 px-3 py-2 text-sm"
+                placeholder="絵文字"
+                value={editItem.emoji ?? ''}
+                onChange={(e) => setEditItem((prev) => ({ ...(prev ?? {}), emoji: e.target.value }))}
+              />
+              <textarea
+                className="rounded border border-gray-300 px-3 py-2 text-sm"
+                placeholder="説明"
+                value={editItem.description ?? ''}
+                onChange={(e) => setEditItem((prev) => ({ ...(prev ?? {}), description: e.target.value }))}
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  type="number"
+                  className="rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="価格"
+                  value={editItem.price ?? 0}
+                  onChange={(e) => setEditItem((prev) => ({ ...(prev ?? {}), price: Number(e.target.value) }))}
+                />
+                <input
+                  type="number"
+                  className="rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="ボーナスクレジット (クレジット商品用)"
+                  value={editItem.bonus_credit ?? 0}
+                  onChange={(e) => setEditItem((prev) => ({ ...(prev ?? {}), bonus_credit: Number(e.target.value) }))}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  className="rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="ジャンル (例: フレーム/背景/フォント/クレジット)"
+                  value={editItem.genre ?? ''}
+                  onChange={(e) => setEditItem((prev) => ({ ...(prev ?? {}), genre: e.target.value }))}
+                />
+                <input
+                  className="rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="タグ (カンマ区切り)"
+                  value={(editItem.tags ?? []).join(',')}
+                  onChange={(e) =>
+                    setEditItem((prev) => ({
+                      ...(prev ?? {}),
+                      tags: e.target.value.split(',').map((v) => v.trim()).filter(Boolean),
+                    }))
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  className="rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="背景色 (CSS値)"
+                  value={editItem.background_color ?? ''}
+                  onChange={(e) =>
+                    setEditItem((prev) => {
+                      const background_color = e.target.value
+                      const text_color = computeReadableTextColor(background_color, prev?.text_color ?? null)
+                      return { ...(prev ?? {}), background_color, text_color }
+                    })
+                  }
+                />
+                <input
+                  className="rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="文字色 (CSS値)"
+                  value={editItem.text_color ?? ''}
+                  onChange={(e) => setEditItem((prev) => ({ ...(prev ?? {}), text_color: e.target.value }))}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  className="rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="フォントファミリー (CSS)"
+                  value={editItem.font_family ?? ''}
+                  onChange={(e) => setEditItem((prev) => ({ ...(prev ?? {}), font_family: e.target.value }))}
+                />
+                <input
+                  className="rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="スタイル (例: red-gradient)"
+                  value={editItem.style ?? ''}
+                  onChange={(e) => setEditItem((prev) => ({ ...(prev ?? {}), style: e.target.value }))}
+                />
+              </div>
+              <button
+                type="button"
+                disabled={adding}
+                onClick={async () => {
+                  if (!editOpen || !editItem?.name || !editItem.emoji) return setMessage('名前と絵文字は必須です。')
+                  setAdding(true)
+                  const text_color = computeReadableTextColor(editItem.background_color, editItem.text_color ?? null)
+                  const payload: Partial<Decoration> = {
+                    ...editItem,
+                    text_color,
+                    tags: editItem.tags ?? [],
+                  }
+                  const { data, error } = await supabase
+                    .from('decorations')
+                    .update(payload)
+                    .eq('id', editOpen.id)
+                    .select()
+                    .maybeSingle()
+                  setAdding(false)
+                  if (error) {
+                    setMessage(`更新に失敗しました: ${error.message}`)
+                    return
+                  }
+                  if (data) {
+                    setDecorations((prev) => prev.map((d) => (d.id === editOpen.id ? (data as Decoration) : d)))
+                    setEditOpen(null)
+                    setEditItem(null)
+                    setMessage('商品を更新しました。')
+                  }
+                }}
+                className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {adding ? '更新中...' : '更新する'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {helpOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setHelpOpen(false)
+          }}
+        >
+          <div className="w-full max-w-3xl rounded-lg bg-white p-6 shadow-2xl dark:bg-gray-900">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold">ショップのヘルプ</h3>
+              <button
+                type="button"
+                onClick={() => setHelpOpen(false)}
+                className="rounded px-2 py-1 text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+                aria-label="閉じる"
+              >
+                ×
+              </button>
+            </div>
+            {helpLoading ? (
+              <p className="text-sm text-gray-600">読み込み中...</p>
+            ) : helpContent ? (
+              <div className="prose max-w-none dark:prose-invert">
+                <ReactMarkdown>{helpContent}</ReactMarkdown>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-600">ヘルプを読み込めませんでした。</p>
+            )}
           </div>
         </div>
       )}
