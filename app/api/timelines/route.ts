@@ -86,7 +86,8 @@ async function fetchVideos(seasons: Season[]): Promise<VideoItem[]> {
         if (res.ok) {
           const data = await res.json()
           for (const item of data.items as VideoItem[]) {
-            const vid = item.id.videoId
+            const vid = item?.id?.videoId
+            if (!vid) continue
             if (!seen.has(vid)) {
               seen.add(vid)
               results.push(item)
@@ -105,11 +106,16 @@ async function fetchFullSnippets(videoIds: string[]): Promise<Record<string, Sni
   const out: Record<string, Snippet> = {}
   if (API_KEYS.length === 0 || videoIds.length === 0) return out
 
+  const ids = Array.from(
+    new Set(videoIds.filter((v): v is string => typeof v === 'string' && v.length > 0))
+  )
+  if (ids.length === 0) return out
+
   // YouTube Data API: videos.list supports up to 50 ids per request
   const base = 'https://www.googleapis.com/youtube/v3/videos?part=snippet&maxResults=50'
 
-  for (let i = 0; i < videoIds.length; i += 50) {
-    const chunk = videoIds.slice(i, i + 50)
+  for (let i = 0; i < ids.length; i += 50) {
+    const chunk = ids.slice(i, i + 50)
     if (chunk.length === 0) continue
 
     for (const key of API_KEYS) {
@@ -429,8 +435,12 @@ try {
       }
     }
     for (const info of videos) {
-      const vid = info.id.videoId
-      const snippet = fullSnippets[vid] || info.snippet
+      const vid = info?.id?.videoId
+      if (!vid) continue
+      const full = fullSnippets[vid]
+      const snippet = full || info.snippet
+      if (full) fullUsed++
+      else fallbackUsed++
       const seasonNum = guessSeason(snippet, seasons)
       if (season && seasonNum !== season) continue
       const table = seasonNum ? `tl_${seasonNum.toLowerCase()}` : 'tl_unknown'
@@ -493,7 +503,7 @@ try {
       }
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, debug: { fullUsed, fallbackUsed } })
   } catch {
     return NextResponse.json({ success: false }, { status: 500 })
   }
