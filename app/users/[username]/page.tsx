@@ -1,13 +1,10 @@
 // app/users/[username]/page.tsx
 import { cookies } from 'next/headers'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { colord, extend } from 'colord'
-import a11yPlugin from 'colord/plugins/a11y'
+import { colord } from 'colord'
 import students from '../../../data/students.json'
 import FriendCodeCopy from '../../../components/FriendCodeCopy'
 import DecorationInfoButton from '../../../components/DecorationInfoButton'
-
-extend([a11yPlugin])
 
 type Params = {
   params: Promise<{
@@ -31,8 +28,7 @@ const computeReadableTextColor = (backgroundColor?: string | null, preferred?: s
   if (!backgroundColor) return undefined
   const parsed = colord(backgroundColor)
   if (!parsed.isValid()) return undefined
-  const luminance = parsed.luminance()
-  return luminance > 0.5 ? '#111827' : '#F9FAFB'
+  return parsed.isLight() ? '#111827' : '#F9FAFB'
 }
 
 export default async function UserPage({ params }: Params) {
@@ -86,21 +82,57 @@ export default async function UserPage({ params }: Params) {
 
   const student = students.find((s) => s.id === profile?.icon_student_id)
   const appliedDecorations = ((decorationData ?? []) as Decoration[]).filter(Boolean)
-  const isRedFrame = appliedDecorations.some((d) => d.style === 'red-gradient')
-  const backgroundDecoration = appliedDecorations.find((d) => d.background_color)
-  const textColor = computeReadableTextColor(backgroundDecoration?.background_color, backgroundDecoration?.text_color)
+  const frameDecoration = appliedDecorations.find(
+    (d) => d.style === 'red-gradient' || d.style === 'aurora-frame' || d.style === 'sunset-frame'
+  )
+  const backgroundDecoration = appliedDecorations.find(
+    (d) => d.background_color || d.style === 'aurora-gradient' || d.style === 'sunset-gradient'
+  )
+  const textColor =
+    backgroundDecoration?.style === 'aurora-gradient' || backgroundDecoration?.style === 'sunset-gradient'
+      ? backgroundDecoration.text_color ?? '#F8FAFC'
+      : computeReadableTextColor(backgroundDecoration?.background_color, backgroundDecoration?.text_color)
   const fontDecoration = appliedDecorations.find((d) => d.font_family)
+  const surfaceStyle =
+    backgroundDecoration?.style === 'aurora-gradient'
+      ? {
+          backgroundImage: 'linear-gradient(120deg, #0ea5e9, #8b5cf6, #22d3ee)',
+          backgroundSize: '200% 200%',
+          animation: 'ba-aurora 12s ease infinite',
+        }
+      : backgroundDecoration?.style === 'sunset-gradient'
+        ? {
+            backgroundImage: 'linear-gradient(135deg, #f59e0b, #ef4444, #8b5cf6)',
+            backgroundSize: '200% 200%',
+            animation: 'ba-sunset 10s ease infinite',
+          }
+        : backgroundDecoration?.background_color
+          ? { background: backgroundDecoration.background_color }
+          : {}
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
       {!profile ? (
         <p className="text-gray-600">ユーザーが見つかりませんでした。</p>
       ) : (
-        <div className={isRedFrame ? 'rounded-xl bg-gradient-to-r from-rose-500 via-red-500 to-orange-400 p-[2px]' : ''}>
-            <div
-              className="relative rounded-lg border border-gray-200 bg-white p-6 shadow-sm space-y-4 dark:border-gray-700 dark:bg-gray-900"
-              style={{
-              background: backgroundDecoration?.background_color ?? undefined,
+        <div
+          className={
+            frameDecoration?.style === 'aurora-frame'
+              ? 'rounded-xl p-[2px] ba-aurora-frame'
+              : frameDecoration?.style === 'sunset-frame'
+                ? 'rounded-xl p-[2px] ba-sunset-frame'
+                : frameDecoration?.style === 'red-gradient'
+                  ? 'rounded-xl bg-gradient-to-r from-rose-500 via-red-500 to-orange-400 p-[2px]'
+                  : ''
+          }
+        >
+          <div
+            className="relative rounded-lg border border-gray-200 bg-white p-6 shadow-sm space-y-4 dark:border-gray-700 dark:bg-gray-900"
+            style={{
+              background: backgroundDecoration?.background_color ?? surfaceStyle.background ?? undefined,
+              backgroundImage: surfaceStyle.backgroundImage,
+              backgroundSize: surfaceStyle.backgroundSize,
+              animation: surfaceStyle.animation,
               color: textColor ?? undefined,
               fontFamily: fontDecoration?.font_family ?? undefined,
               }}
@@ -145,6 +177,33 @@ export default async function UserPage({ params }: Params) {
           </div>
         </div>
       )}
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes ba-aurora {
+              0% { background-position: 0% 50%; }
+              50% { background-position: 100% 50%; }
+              100% { background-position: 0% 50%; }
+            }
+            @keyframes ba-sunset {
+              0% { background-position: 0% 0%; }
+              50% { background-position: 100% 100%; }
+              100% { background-position: 0% 0%; }
+            }
+            .ba-aurora-frame {
+              background-image: linear-gradient(120deg, #0ea5e9, #8b5cf6, #22d3ee);
+              background-size: 200% 200%;
+              animation: ba-aurora 12s ease infinite;
+            }
+            .ba-sunset-frame {
+              background-image: linear-gradient(135deg, #f59e0b, #ef4444, #8b5cf6);
+              background-size: 200% 200%;
+              animation: ba-sunset 10s ease infinite;
+            }
+          `,
+        }}
+      />
     </main>
   )
 }

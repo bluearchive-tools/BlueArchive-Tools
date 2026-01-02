@@ -7,9 +7,7 @@ import { faShop, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import FriendCodeCopy from '../../components/FriendCodeCopy'
 import DecorationInfoButton from '../../components/DecorationInfoButton'
 import students from '../../data/students.json'
-import { colord, extend } from 'colord'
-import a11yPlugin from 'colord/plugins/a11y'
-extend([a11yPlugin])
+import { colord } from 'colord'
 
 type Decoration = {
   id: string
@@ -32,14 +30,17 @@ const computeReadableTextColor = (backgroundColor?: string | null, preferred?: s
   if (!backgroundColor) return undefined
   const parsed = colord(backgroundColor)
   if (!parsed.isValid()) return undefined
-  const luminance = parsed.luminance()
-  return luminance > 0.5 ? '#111827' : '#F9FAFB'
+  return parsed.isLight() ? '#111827' : '#F9FAFB'
 }
+
+const isSameDay = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 
 type ProfileState = {
   credit: number
   decoration_ids: string[]
   decoration_inventory: string[]
+  daily_credit_claimed_at: string | null
   username: string | null
   nickname: string | null
   friend_code: string | null
@@ -73,7 +74,7 @@ export default function DecorationsPage() {
       const { data, error } = await supabase
         .from('profiles')
         .select(
-          'credit, decoration_ids, decoration_inventory, username, nickname, friend_code, friend_code_public, icon_student_id, level, bio, admin'
+          'credit, decoration_ids, decoration_inventory, daily_credit_claimed_at, username, nickname, friend_code, friend_code_public, icon_student_id, level, bio, admin'
         )
         .eq('id', session.user.id)
         .maybeSingle()
@@ -86,6 +87,7 @@ export default function DecorationsPage() {
           credit: data.credit ?? 0,
           decoration_ids: (data.decoration_ids as string[]) ?? [],
           decoration_inventory: (data.decoration_inventory as string[]) ?? [],
+          daily_credit_claimed_at: (data.daily_credit_claimed_at as string) ?? null,
           username: (data.username as string) ?? null,
           nickname: (data.nickname as string) ?? null,
           friend_code: (data.friend_code as string) ?? null,
@@ -128,6 +130,14 @@ export default function DecorationsPage() {
       setMessage('プロフィール情報を読み込み中です。')
       return
     }
+    if (genre === 'クレジット' && decorationId === 'credit_daily_1000') {
+      const last = profile.daily_credit_claimed_at ? new Date(profile.daily_credit_claimed_at) : null
+      const now = new Date()
+      if (last && isSameDay(last, now)) {
+        setMessage('本日の1000クレジットは受け取り済みです。')
+        return
+      }
+    }
     if (genre !== 'クレジット' && profile.credit < price) {
       setMessage('クレジットが不足しています。')
       return
@@ -144,10 +154,12 @@ export default function DecorationsPage() {
       .update({
         credit: updatedCredit,
         decoration_inventory: nextInventory,
+        daily_credit_claimed_at:
+          genre === 'クレジット' && decorationId === 'credit_daily_1000' ? new Date().toISOString() : profile.daily_credit_claimed_at,
       })
       .eq('id', session.user.id)
       .select(
-        'credit, decoration_ids, decoration_inventory, username, nickname, friend_code, friend_code_public, icon_student_id, level, bio, admin'
+        'credit, decoration_ids, decoration_inventory, daily_credit_claimed_at, username, nickname, friend_code, friend_code_public, icon_student_id, level, bio, admin'
       )
       .maybeSingle()
 
@@ -161,6 +173,9 @@ export default function DecorationsPage() {
         credit: data.credit ?? updatedCredit,
         decoration_ids: (data.decoration_ids as string[]) ?? profile.decoration_ids ?? [],
         decoration_inventory: (data.decoration_inventory as string[]) ?? nextInventory,
+        daily_credit_claimed_at:
+          (data.daily_credit_claimed_at as string) ??
+          (genre === 'クレジット' && decorationId === 'credit_daily_1000' ? new Date().toISOString() : profile.daily_credit_claimed_at),
         username: (data.username as string) ?? profile.username ?? null,
         nickname: (data.nickname as string) ?? profile.nickname ?? null,
         friend_code: (data.friend_code as string) ?? profile.friend_code ?? null,
@@ -189,7 +204,7 @@ export default function DecorationsPage() {
       .update({ decoration_ids: next })
       .eq('id', session.user.id)
       .select(
-        'credit, decoration_ids, decoration_inventory, username, nickname, friend_code, friend_code_public, icon_student_id, level, bio, admin'
+        'credit, decoration_ids, decoration_inventory, daily_credit_claimed_at, username, nickname, friend_code, friend_code_public, icon_student_id, level, bio, admin'
       )
       .maybeSingle()
     setEquipLoading(false)
@@ -202,6 +217,7 @@ export default function DecorationsPage() {
         credit: data.credit ?? profile.credit,
         decoration_ids: (data.decoration_ids as string[]) ?? next,
         decoration_inventory: (data.decoration_inventory as string[]) ?? profile.decoration_inventory,
+        daily_credit_claimed_at: (data.daily_credit_claimed_at as string) ?? profile.daily_credit_claimed_at,
         username: (data.username as string) ?? profile.username ?? null,
         nickname: (data.nickname as string) ?? profile.nickname ?? null,
         friend_code: (data.friend_code as string) ?? profile.friend_code ?? null,
@@ -222,21 +238,49 @@ export default function DecorationsPage() {
     return decorations.filter((d) => ids.has(d.id))
   }, [previewId, profile?.decoration_ids, decorations])
 
-  const previewHasRedFrame = previewDecorations.some((d) => d.style === 'red-gradient')
+  const frameDecoration = useMemo(
+    () =>
+      previewDecorations.find((d) => d.style === 'red-gradient' || d.style === 'aurora-frame' || d.style === 'sunset-frame'),
+    [previewDecorations]
+  )
 
   const previewStudent = useMemo(
     () => students.find((s) => s.id === profile?.icon_student_id),
     [profile?.icon_student_id]
   )
   const previewBackground = useMemo(
-    () => previewDecorations.find((d) => d.background_color),
+    () => previewDecorations.find((d) => d.background_color || d.style === 'aurora-gradient' || d.style === 'sunset-gradient'),
     [previewDecorations]
   )
   const previewTextColor = useMemo(
-    () => computeReadableTextColor(previewBackground?.background_color, previewBackground?.text_color),
-    [previewBackground?.background_color, previewBackground?.text_color]
+    () =>
+      previewBackground?.style === 'aurora-gradient' || previewBackground?.style === 'sunset-gradient'
+        ? previewBackground.text_color ?? '#F8FAFC'
+        : computeReadableTextColor(previewBackground?.background_color, previewBackground?.text_color),
+    [previewBackground?.background_color, previewBackground?.style, previewBackground?.text_color]
   )
   const previewFont = useMemo(() => previewDecorations.find((d) => d.font_family), [previewDecorations])
+
+  const previewStyle = useMemo(() => {
+    if (previewBackground?.style === 'aurora-gradient') {
+      return {
+        backgroundImage: 'linear-gradient(120deg, #0ea5e9, #8b5cf6, #22d3ee)',
+        backgroundSize: '200% 200%',
+        animation: 'ba-aurora 12s ease infinite',
+      }
+    }
+    if (previewBackground?.style === 'sunset-gradient') {
+      return {
+        backgroundImage: 'linear-gradient(135deg, #f59e0b, #ef4444, #8b5cf6)',
+        backgroundSize: '200% 200%',
+        animation: 'ba-sunset 10s ease infinite',
+      }
+    }
+    if (previewBackground?.background_color) {
+      return { background: previewBackground.background_color }
+    }
+    return {}
+  }, [previewBackground])
 
   const tags = useMemo(() => {
     const all = new Set<string>()
@@ -357,7 +401,7 @@ export default function DecorationsPage() {
                     ))}
                   </div>
                 )}
-                <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     type="button"
                     disabled={loading || !session?.user}
@@ -441,11 +485,24 @@ export default function DecorationsPage() {
                 ×
               </button>
             </div>
-            <div className={previewHasRedFrame ? 'rounded-xl bg-gradient-to-r from-rose-500 via-red-500 to-orange-400 p-[2px]' : ''}>
+            <div
+              className={
+                frameDecoration?.style === 'aurora-frame'
+                  ? 'rounded-xl p-[2px] ba-aurora-frame'
+                  : frameDecoration?.style === 'sunset-frame'
+                    ? 'rounded-xl p-[2px] ba-sunset-frame'
+                    : frameDecoration?.style === 'red-gradient'
+                      ? 'rounded-xl bg-gradient-to-r from-rose-500 via-red-500 to-orange-400 p-[2px]'
+                      : ''
+              }
+            >
               <div
                   className="relative flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
                   style={{
-                  background: previewBackground?.background_color ?? undefined,
+                  background: previewBackground?.background_color ?? previewStyle.background ?? undefined,
+                  backgroundImage: previewStyle.backgroundImage,
+                  backgroundSize: previewStyle.backgroundSize,
+                  animation: previewStyle.animation,
                   color: previewTextColor ?? undefined,
                   fontFamily: previewFont?.font_family ?? undefined,
                   }}
@@ -616,6 +673,41 @@ export default function DecorationsPage() {
           </div>
         </div>
       )}
+
+      <style jsx global>{`
+        @keyframes ba-aurora {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+        @keyframes ba-sunset {
+          0% {
+            background-position: 0% 0%;
+          }
+          50% {
+            background-position: 100% 100%;
+          }
+          100% {
+            background-position: 0% 0%;
+          }
+        }
+        .ba-aurora-frame {
+          background-image: linear-gradient(120deg, #0ea5e9, #8b5cf6, #22d3ee);
+          background-size: 200% 200%;
+          animation: ba-aurora 12s ease infinite;
+        }
+        .ba-sunset-frame {
+          background-image: linear-gradient(135deg, #f59e0b, #ef4444, #8b5cf6);
+          background-size: 200% 200%;
+          animation: ba-sunset 10s ease infinite;
+        }
+      `}</style>
     </main>
   )
 }
