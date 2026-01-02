@@ -109,6 +109,14 @@ export default async function UserPage({ params }: Params) {
         : backgroundDecoration?.background_color
           ? { background: backgroundDecoration.background_color }
           : {}
+  const fieldStyle = {
+    background: backgroundDecoration?.background_color ?? surfaceStyle.background ?? undefined,
+    backgroundImage: surfaceStyle.backgroundImage,
+    backgroundSize: surfaceStyle.backgroundSize,
+    animation: surfaceStyle.animation,
+    color: textColor ?? undefined,
+    borderColor: textColor ? 'rgba(255,255,255,0.35)' : undefined,
+  }
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
@@ -159,7 +167,7 @@ export default async function UserPage({ params }: Params) {
             <DecorationInfoButton decorations={appliedDecorations} />
             <div className="space-y-2">
               <p className="text-sm text-gray-600">自己紹介</p>
-              <p className="rounded border border-gray-200 bg-gray-50 p-3 text-sm whitespace-pre-wrap">
+              <p className="rounded border p-3 text-sm whitespace-pre-wrap" style={fieldStyle}>
                 {profile.bio || '自己紹介はまだ入力されていません。'}
               </p>
             </div>
@@ -167,7 +175,7 @@ export default async function UserPage({ params }: Params) {
               <div className="space-y-2">
                 <p className="text-sm text-gray-600">ソーシャル</p>
                 {parsedSocial.map((link, idx) => (
-                  <p key={idx} className="rounded border border-gray-200 bg-gray-50 p-2 text-sm">
+                  <p key={idx} className="rounded border p-2 text-sm" style={fieldStyle}>
                     {link.label && <span className="font-semibold mr-1">{link.label}:</span>}
                     <span>{link.value || '未入力'}</span>
                   </p>

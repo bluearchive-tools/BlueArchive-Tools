@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faShop, faSpinner } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faShop, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import FriendCodeCopy from '../../components/FriendCodeCopy'
 import DecorationInfoButton from '../../components/DecorationInfoButton'
 import students from '../../data/students.json'
@@ -67,6 +67,7 @@ export default function DecorationsPage() {
     genre: 'フレーム',
   })
   const [adding, setAdding] = useState(false)
+  const [recentPurchaseId, setRecentPurchaseId] = useState<string | null>(null)
 
   const fetchProfile = useMemo(
     () => async () => {
@@ -168,11 +169,11 @@ export default function DecorationsPage() {
       setMessage(`購入に失敗しました: ${error.message}`)
       return
     }
-    if (data) {
-      setProfile({
-        credit: data.credit ?? updatedCredit,
-        decoration_ids: (data.decoration_ids as string[]) ?? profile.decoration_ids ?? [],
-        decoration_inventory: (data.decoration_inventory as string[]) ?? nextInventory,
+      if (data) {
+        setProfile({
+          credit: data.credit ?? updatedCredit,
+          decoration_ids: (data.decoration_ids as string[]) ?? profile.decoration_ids ?? [],
+          decoration_inventory: (data.decoration_inventory as string[]) ?? nextInventory,
         daily_credit_claimed_at:
           (data.daily_credit_claimed_at as string) ??
           (genre === 'クレジット' && decorationId === 'credit_daily_1000' ? new Date().toISOString() : profile.daily_credit_claimed_at),
@@ -192,6 +193,8 @@ export default function DecorationsPage() {
         setEquipPromptId(decorationId)
         setMessage('購入しました。装着しますか？')
       }
+      setRecentPurchaseId(decorationId)
+      setTimeout(() => setRecentPurchaseId((prev) => (prev === decorationId ? null : prev)), 2000)
     }
   }
 
@@ -406,14 +409,21 @@ export default function DecorationsPage() {
                     type="button"
                     disabled={loading || !session?.user}
                     onClick={() => handlePurchase(item.id, item.price, item.bonus_credit ?? undefined, item.genre ?? undefined)}
-                    className="inline-flex items-center justify-center gap-2 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+                    className={`inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-medium text-white disabled:opacity-60 transition ${
+                      recentPurchaseId === item.id ? 'bg-green-600 animate-pulse' : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
                   >
                     {loading ? <FontAwesomeIcon icon={faSpinner} className="animate-spin" /> : null}
-                    {item.genre === 'クレジット'
-                      ? '受け取る'
-                      : profile?.decoration_inventory?.includes(item.id)
-                        ? '再購入'
-                        : '購入'}
+                    {recentPurchaseId === item.id && !loading ? (
+                      <>
+                        <FontAwesomeIcon icon={faCheck} className="animate-ping" />
+                        <span>完了</span>
+                      </>
+                    ) : item.genre === 'クレジット' ? (
+                      '受け取る'
+                    ) : (
+                      '購入'
+                    )}
                   </button>
                   <button
                     type="button"
