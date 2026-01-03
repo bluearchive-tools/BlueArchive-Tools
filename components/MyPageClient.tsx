@@ -1129,7 +1129,8 @@ const saveProfile = async () => {
                       <p className="text-sm text-gray-600">ソーシャル</p>
                       {serializedSocialLinks.map((link, idx) => (
                         <p key={idx} className="rounded border p-2 text-sm" style={fieldStyle}>
-                          {link.label && <span className="font-semibold mr-1">{link.label}:</span>}{link.service === 'youtube' && link.verified && <span className=\"ml-1 text-xs\">✅</span>}
+                          {link.label && <span className="font-semibold mr-1">{link.label}:</span>}
+                          {link.service === 'youtube' && link.verified && <span className="mr-1 text-xs">✅</span>}
                           <span>{link.value || '未入力'}</span>
                         </p>
                       ))}
