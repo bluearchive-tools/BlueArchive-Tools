@@ -71,27 +71,39 @@ const socialPlaceholder = (service: SocialService) => {
   return 'リンクやID'
 }
 
-const serializeSocialLinks = (links: SocialLink[]) => {
-  return links
-    .map((link) => {
-      const trimmedLabel = link.label.trim()
-      const trimmedValue = link.value.trim()
-      const displayLabel = socialLabel(link.service, trimmedLabel)
-      const keep = link.service === 'other' ? trimmedLabel || trimmedValue : trimmedValue || !!link.verified
-      return {
-        keep,
-        service: link.service,
-        label: displayLabel,
-        value: link.value,
-        verified: link.verified ?? false,
-        verifiedAt: link.verifiedAt ?? null,
-        channelId: link.channelId ?? null,
-        channelTitle: link.channelTitle ?? null,
-        channelHandle: link.channelHandle ?? null,
-      }
-    })
-    .filter((x) => x.keep)
-    .map(({ keep: _keep, ...rest }) => rest)
+type SerializedSocialLink = {
+  service: SocialService
+  label: string
+  value: string
+  verified: boolean
+  verifiedAt: string | null
+  channelId: string | null
+  channelTitle: string | null
+  channelHandle: string | null
+}
+
+const serializeSocialLinks = (links: SocialLink[]): SerializedSocialLink[] => {
+  const mapped = links.map((link) => {
+    const trimmedLabel = link.label.trim()
+    const trimmedValue = link.value.trim()
+    const displayLabel = socialLabel(link.service, trimmedLabel)
+    const keep = link.service === 'other' ? trimmedLabel || trimmedValue : trimmedValue || !!link.verified
+
+    if (!keep) return null
+
+    return {
+      service: link.service,
+      label: displayLabel,
+      value: link.value,
+      verified: link.verified ?? false,
+      verifiedAt: link.verifiedAt ?? null,
+      channelId: link.channelId ?? null,
+      channelTitle: link.channelTitle ?? null,
+      channelHandle: link.channelHandle ?? null,
+    } satisfies SerializedSocialLink
+  })
+
+  return mapped.filter((x): x is SerializedSocialLink => x !== null)
 }
 
 
@@ -389,26 +401,20 @@ export default function MyPageClient({
 
     return { kind: null, value: '' }
   }
-
-
-  type GoogleApiError = { error?: { message?: string } }
   type YouTubeChannelItem = { id?: string; snippet?: { title?: string; customUrl?: string } }
   type YouTubeChannelsResponse = { items?: YouTubeChannelItem[] }
 
   const getGoogleErrorMessage = (json: unknown): string | null => {
-    if (json && typeof json === 'object') {
-      const obj = json as Record<string, unknown>
-      const err = obj['error']
-      if (err && typeof err === 'object') {
-        const eobj = err as Record<string, unknown>
-        const msg = eobj['message']
-        if (typeof msg === 'string') return msg
-      }
-    }
-    return null
+    if (!json || typeof json !== 'object') return null
+    const obj = json as Record<string, unknown>
+    const err = obj['error']
+    if (!err || typeof err !== 'object') return null
+    const eobj = err as Record<string, unknown>
+    const msg = eobj['message']
+    return typeof msg === 'string' ? msg : null
   }
 
-  const fetchYouTube = async (url: string, token: string) => {
+  const fetchYouTube = async (url: string, token: string): Promise<YouTubeChannelsResponse> => {
     const res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
