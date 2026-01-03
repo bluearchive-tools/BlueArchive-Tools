@@ -422,7 +422,7 @@ export default function MyPageClient({
     })
     const json: unknown = await res.json().catch(() => null)
     if (!res.ok) {
-      const detail = (json && (json.error?.message || JSON.stringify(json))) || res.statusText
+      const detail = getGoogleErrorMessage(json) ?? (json ? JSON.stringify(json) : res.statusText)
       throw new Error(detail)
     }
     return json as YouTubeChannelsResponse
