@@ -91,7 +91,7 @@ const serializeSocialLinks = (links: SocialLink[]) => {
       }
     })
     .filter((x) => x.keep)
-    .map(({ keep, ...rest }) => rest)
+    .map(({ keep: _keep, ...rest }) => rest)
 }
 
 
@@ -390,18 +390,36 @@ export default function MyPageClient({
     return { kind: null, value: '' }
   }
 
+
+  type GoogleApiError = { error?: { message?: string } }
+  type YouTubeChannelItem = { id?: string; snippet?: { title?: string; customUrl?: string } }
+  type YouTubeChannelsResponse = { items?: YouTubeChannelItem[] }
+
+  const getGoogleErrorMessage = (json: unknown): string | null => {
+    if (json && typeof json === 'object') {
+      const obj = json as Record<string, unknown>
+      const err = obj['error']
+      if (err && typeof err === 'object') {
+        const eobj = err as Record<string, unknown>
+        const msg = eobj['message']
+        if (typeof msg === 'string') return msg
+      }
+    }
+    return null
+  }
+
   const fetchYouTube = async (url: string, token: string) => {
     const res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     })
-    const json = await res.json().catch(() => null)
+    const json: unknown = await res.json().catch(() => null)
     if (!res.ok) {
       const detail = (json && (json.error?.message || JSON.stringify(json))) || res.statusText
       throw new Error(detail)
     }
-    return json as any
+    return json as YouTubeChannelsResponse
   }
 
   const verifyYouTubeAtIndex = async (index: number) => {
@@ -507,11 +525,11 @@ export default function MyPageClient({
       } else {
         setMessage(`YouTube を認証しました: ${mineTitle ?? mineId}`)
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err)
       setMessage(
         `YouTube 確認に失敗しました。YouTube 連携（スコープ許可）をやり直してください。詳細: ${
-          err?.message ?? String(err)
+          (err instanceof Error ? err.message : String(err))
         }`
       )
     } finally {
