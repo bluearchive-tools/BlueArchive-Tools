@@ -40,7 +40,16 @@ interface Props {
 
 
 type SocialService = 'x' | 'youtube' | 'other'
-type SocialLink = { service: SocialService; label: string; value: string }
+type SocialLink = {
+  service: SocialService
+  label: string
+  value: string
+  verified?: boolean
+  verifiedAt?: string | null
+  channelId?: string | null
+  channelTitle?: string | null
+  channelHandle?: string | null
+}
 
 const detectSocialService = (label: string): SocialService => {
   const s = label.trim().toLowerCase()
@@ -60,6 +69,29 @@ const socialPlaceholder = (service: SocialService) => {
   if (service === 'x') return '例: @username / https://x.com/...'
   if (service === 'youtube') return '例: https://www.youtube.com/@...'
   return 'リンクやID'
+}
+
+const serializeSocialLinks = (links: SocialLink[]) => {
+  return links
+    .map((link) => {
+      const trimmedLabel = link.label.trim()
+      const trimmedValue = link.value.trim()
+      const displayLabel = socialLabel(link.service, trimmedLabel)
+      const keep = link.service === 'other' ? trimmedLabel || trimmedValue : trimmedValue || !!link.verified
+      return {
+        keep,
+        service: link.service,
+        label: displayLabel,
+        value: link.value,
+        verified: link.verified ?? false,
+        verifiedAt: link.verifiedAt ?? null,
+        channelId: link.channelId ?? null,
+        channelTitle: link.channelTitle ?? null,
+        channelHandle: link.channelHandle ?? null,
+      }
+    })
+    .filter((x) => x.keep)
+    .map(({ keep, ...rest }) => rest)
 }
 
 
@@ -95,21 +127,39 @@ export default function MyPageClient({
         const parsed = initialSocialLinks ? JSON.parse(initialSocialLinks) : []
         if (Array.isArray(parsed)) {
           const normalized = parsed
-            .map((item) => ({
-              label: typeof item?.label === 'string' ? item.label : '',
-              value: typeof item?.value === 'string' ? item.value : '',
-            }))
-            .map((item) => {
-              const service = detectSocialService(item.label)
+            .map((raw) => {
+              const r = raw as Record<string, unknown> | null
+              const label = typeof r?.label === 'string' ? (r.label as string) : ''
+              const value = typeof r?.value === 'string' ? (r.value as string) : ''
+              const serviceRaw = typeof r?.service === 'string' ? (r.service as string) : null
+              const service: SocialService =
+                serviceRaw === 'x' || serviceRaw === 'youtube' || serviceRaw === 'other'
+                  ? (serviceRaw as SocialService)
+                  : detectSocialService(label)
+
+              const verified = typeof r?.verified === 'boolean' ? (r.verified as boolean) : undefined
+              const verifiedAt = typeof r?.verifiedAt === 'string' ? (r.verifiedAt as string) : null
+              const channelId = typeof r?.channelId === 'string' ? (r.channelId as string) : null
+              const channelTitle = typeof r?.channelTitle === 'string' ? (r.channelTitle as string) : null
+              const channelHandle = typeof r?.channelHandle === 'string' ? (r.channelHandle as string) : null
+
               return {
                 service,
-                label: service === 'other' ? item.label : '',
-                value: item.value,
+                label: service === 'other' ? label : '',
+                value,
+                verified,
+                verifiedAt,
+                channelId,
+                channelTitle,
+                channelHandle,
               } satisfies SocialLink
             })
             .filter((item) =>
-              item.service === 'other' ? item.label.trim() || item.value.trim() : item.value.trim()
+              item.service === 'other'
+                ? item.label.trim() || item.value.trim()
+                : item.value.trim() || !!item.verified
             )
+
           if (normalized.length > 0) return normalized
         }
       } catch {
@@ -147,7 +197,7 @@ export default function MyPageClient({
 
   const handleLink = async (provider: 'google' | 'discord') => {
     setBusy(true)
-    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback?next=/mypage` : undefined
     const { data, error } = await supabase.auth.linkIdentity({
       provider,
       options: { redirectTo }
@@ -281,23 +331,242 @@ export default function MyPageClient({
     }
   }
 
-  
 
-  const normalizedSocialLinks = useMemo(() => {
-    return socialLinks
-      .map((link) => {
-        const trimmedLabel = link.label.trim()
-        const trimmedValue = link.value.trim()
-        const keep = link.service === 'other' ? trimmedLabel || trimmedValue : trimmedValue
-        return {
-          keep,
-          label: socialLabel(link.service, trimmedLabel),
-          value: link.value,
-        }
-      })
-      .filter((x) => x.keep)
-      .map(({ label, value }) => ({ label, value }))
-  }, [socialLinks])
+  const youtubeScope = 'https://www.googleapis.com/auth/youtube.readonly'
+
+  const startYouTubeVerify = async (index: number) => {
+    const link = socialLinks[index]
+    if (!link || link.service !== 'youtube') return
+    if (!link.value.trim()) {
+      setMessage('YouTube の欄にチャンネルURL（@handle か UC...）を入力してください')
+      return
+    }
+
+    setBusy(true)
+    setMessage(null)
+
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const redirectTo = origin ? `${origin}/auth/callback?next=/mypage&yt_verify=${index}` : undefined
+
+    const { data, error } = await supabase.auth.linkIdentity({
+      provider: 'google',
+      options: {
+        redirectTo,
+        scopes: youtubeScope,
+        queryParams: {
+          prompt: 'consent',
+          access_type: 'offline',
+          include_granted_scopes: 'true',
+        },
+      },
+    })
+
+    setBusy(false)
+    if (error) {
+      console.error(error.message)
+      setMessage(`YouTube 連携に失敗しました: ${error.message}`)
+      return
+    }
+    if (data?.url) window.location.assign(data.url)
+  }
+
+  const extractYouTubeTarget = (
+    raw: string
+  ): { kind: 'channelId' | 'handle' | 'username' | null; value: string } => {
+    const s = raw.trim()
+
+    const ch = s.match(/(UC[A-Za-z0-9_-]{16,})/)
+    if (ch?.[1]) return { kind: 'channelId', value: ch[1] }
+
+    const h1 = s.match(/\/@([A-Za-z0-9._-]{3,})/)
+    if (h1?.[1]) return { kind: 'handle', value: h1[1] }
+
+    const h2 = s.match(/^@([A-Za-z0-9._-]{3,})$/)
+    if (h2?.[1]) return { kind: 'handle', value: h2[1] }
+
+    const u = s.match(/youtube\.com\/user\/([^/?#]+)/i)
+    if (u?.[1]) return { kind: 'username', value: u[1] }
+
+    return { kind: null, value: '' }
+  }
+
+  const fetchYouTube = async (url: string, token: string) => {
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    const json = await res.json().catch(() => null)
+    if (!res.ok) {
+      const detail = (json && (json.error?.message || JSON.stringify(json))) || res.statusText
+      throw new Error(detail)
+    }
+    return json as any
+  }
+
+  const verifyYouTubeAtIndex = async (index: number) => {
+    const link = socialLinks[index]
+    if (!link || link.service !== 'youtube') return
+
+    const target = extractYouTubeTarget(link.value)
+    if (!target.kind) {
+      setMessage('YouTube は「@handle」または「UC...（チャンネルID）」または「/user/」形式に対応しています')
+      return
+    }
+
+    setBusy(true)
+    setMessage(null)
+
+    try {
+      const { data } = await supabase.auth.getSession()
+      const token = data.session?.provider_token
+      if (!token) {
+        setMessage('YouTube を接続してから確認してください（「接続して確認」）')
+        return
+      }
+
+      const mineJson = await fetchYouTube(
+        'https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true',
+        token
+      )
+      const mine = mineJson?.items?.[0]
+      const mineId: string | undefined = mine?.id
+      const mineTitle: string | undefined = mine?.snippet?.title
+      const mineCustomUrl: string | undefined = mine?.snippet?.customUrl
+
+      if (!mineId) {
+        setMessage('YouTube チャンネル情報を取得できませんでした（mine=true が空）')
+        return
+      }
+
+      let expectedId: string | null = null
+      let expectedHandle: string | null = null
+
+      if (target.kind === 'channelId') {
+        expectedId = target.value
+      } else if (target.kind === 'handle') {
+        expectedHandle = `@${target.value}`
+        const json = await fetchYouTube(
+          `https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle=${encodeURIComponent(
+            target.value
+          )}`,
+          token
+        )
+        expectedId = json?.items?.[0]?.id ?? null
+      } else if (target.kind === 'username') {
+        const json = await fetchYouTube(
+          `https://www.googleapis.com/youtube/v3/channels?part=snippet&forUsername=${encodeURIComponent(
+            target.value
+          )}`,
+          token
+        )
+        expectedId = json?.items?.[0]?.id ?? null
+      }
+
+      if (!expectedId) {
+        setMessage('入力されたチャンネルを特定できませんでした。URL/IDを確認してください。')
+        return
+      }
+
+      if (expectedId !== mineId) {
+        setMessage(
+          `本人確認に失敗しました。入力されたチャンネル（${expectedId}）と、許可したチャンネル（${mineId}）が一致しません。`
+        )
+        return
+      }
+
+      const channelHandle =
+        expectedHandle ||
+        (typeof mineCustomUrl === 'string' && mineCustomUrl.startsWith('@') ? mineCustomUrl : null)
+
+      const verifiedAt = new Date().toISOString()
+
+      const nextLinks: SocialLink[] = socialLinks.map((l, i) =>
+        i === index
+          ? {
+              ...l,
+              verified: true,
+              verifiedAt,
+              channelId: mineId,
+              channelTitle: mineTitle ?? null,
+              channelHandle,
+            }
+          : l
+      )
+
+      setSocialLinks(nextLinks)
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ social_links: JSON.stringify(serializeSocialLinks(nextLinks)) })
+        .eq('id', session?.user.id)
+
+      if (error) {
+        console.error(error.message)
+        setMessage(`認証は成功しましたが保存に失敗しました: ${error.message}`)
+      } else {
+        setMessage(`YouTube を認証しました: ${mineTitle ?? mineId}`)
+      }
+    } catch (err: any) {
+      console.error(err)
+      setMessage(
+        `YouTube 確認に失敗しました。YouTube 連携（スコープ許可）をやり直してください。詳細: ${
+          err?.message ?? String(err)
+        }`
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const clearYouTubeVerification = async (index: number) => {
+    const link = socialLinks[index]
+    if (!link || link.service !== 'youtube') return
+
+    const nextLinks: SocialLink[] = socialLinks.map((l, i) =>
+      i === index
+        ? {
+            ...l,
+            verified: false,
+            verifiedAt: null,
+            channelId: null,
+            channelTitle: null,
+            channelHandle: null,
+          }
+        : l
+    )
+
+    setSocialLinks(nextLinks)
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ social_links: JSON.stringify(serializeSocialLinks(nextLinks)) })
+      .eq('id', session?.user.id)
+
+    if (error) {
+      console.error(error.message)
+      setMessage(`解除に失敗しました: ${error.message}`)
+      return
+    }
+    setMessage('YouTube 認証を解除しました')
+  }
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const raw = params.get('yt_verify')
+    if (!raw) return
+    const idx = Number(raw)
+    if (!Number.isFinite(idx)) return
+    params.delete('yt_verify')
+    const qs = params.toString()
+    const nextUrl = `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash || ''}`
+    window.history.replaceState({}, '', nextUrl)
+    void verifyYouTubeAtIndex(idx)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const serializedSocialLinks = useMemo(() => serializeSocialLinks(socialLinks), [socialLinks])
+
 const saveProfile = async () => {
     if (!session?.user) return
     setSavingProfile(true)
@@ -314,7 +583,7 @@ const saveProfile = async () => {
         friend_code_public: friendCodePublic,
         decoration_ids: decorationIds,
         decoration_inventory: decorationInventory,
-        social_links: JSON.stringify(normalizedSocialLinks),
+        social_links: JSON.stringify(serializedSocialLinks),
       })
       .eq('id', session.user.id)
     setSavingProfile(false)
@@ -517,8 +786,56 @@ const saveProfile = async () => {
                       削除
                     </button>
                   </div>
+
+                  {link.service === 'youtube' && (
+                    <div className="rounded border border-gray-200 bg-gray-50 p-2 text-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="text-gray-700">
+                          {link.verified ? (
+                            <span>
+                              ✅ 認証済み: {link.channelTitle || link.channelHandle || link.channelId || 'YouTube'}
+                            </span>
+                          ) : (
+                            <span>未認証（このチャンネルの所有者確認）</span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => verifyYouTubeAtIndex(idx)}
+                            disabled={busy}
+                            className="rounded border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-gray-100 disabled:opacity-60"
+                          >
+                            確認
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => startYouTubeVerify(idx)}
+                            disabled={busy}
+                            className="rounded border border-blue-300 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
+                          >
+                            接続して確認
+                          </button>
+                          {link.verified && (
+                            <button
+                              type="button"
+                              onClick={() => clearYouTubeVerification(idx)}
+                              disabled={busy}
+                              className="rounded border border-red-300 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+                            >
+                              解除
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        ブランドアカウントでもOKです。確認時は「このYouTubeチャンネル」として許可してください。
+                      </p>
+                    </div>
+                  )}
                 </div>
               ))}
+
               <button
                 type="button"
                 onClick={() =>
@@ -807,12 +1124,12 @@ const saveProfile = async () => {
                   <p className="rounded border p-3 text-sm whitespace-pre-wrap" style={fieldStyle}>
                     {bio || '自己紹介はまだ入力されていません。'}
                   </p>
-                  {normalizedSocialLinks.length > 0 && (
+                  {serializedSocialLinks.length > 0 && (
                     <div className="space-y-1">
                       <p className="text-sm text-gray-600">ソーシャル</p>
-                      {normalizedSocialLinks.map((link, idx) => (
+                      {serializedSocialLinks.map((link, idx) => (
                         <p key={idx} className="rounded border p-2 text-sm" style={fieldStyle}>
-                          {link.label && <span className="font-semibold mr-1">{link.label}:</span>}
+                          {link.label && <span className="font-semibold mr-1">{link.label}:</span>}{link.service === 'youtube' && link.verified && <span className=\"ml-1 text-xs\">✅</span>}
                           <span>{link.value || '未入力'}</span>
                         </p>
                       ))}
