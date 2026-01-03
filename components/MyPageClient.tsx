@@ -38,6 +38,31 @@ interface Props {
   }[]
 }
 
+
+type SocialService = 'x' | 'youtube' | 'other'
+type SocialLink = { service: SocialService; label: string; value: string }
+
+const detectSocialService = (label: string): SocialService => {
+  const s = label.trim().toLowerCase()
+  if (!s) return 'other'
+  if (s === 'x' || s.includes('twitter')) return 'x'
+  if (s.includes('youtube')) return 'youtube'
+  return 'other'
+}
+
+const socialLabel = (service: SocialService, customLabel: string) => {
+  if (service === 'x') return 'X'
+  if (service === 'youtube') return 'YouTube'
+  return customLabel.trim() || 'その他'
+}
+
+const socialPlaceholder = (service: SocialService) => {
+  if (service === 'x') return '例: @username / https://x.com/...'
+  if (service === 'youtube') return '例: https://www.youtube.com/@...'
+  return 'リンクやID'
+}
+
+
 export default function MyPageClient({
   initialUsername,
   initialNickname,
@@ -64,7 +89,7 @@ export default function MyPageClient({
   const [friendCodePublic, setFriendCodePublic] = useState<boolean>(initialFriendCodePublic ?? false)
   const [decorationIds, setDecorationIds] = useState<string[]>(initialDecorationIds ?? [])
   const [decorationInventory] = useState<string[]>(initialDecorationInventory ?? [])
-  const [socialLinks, setSocialLinks] = useState<{ label: string; value: string }[]>(
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>(
     (() => {
       try {
         const parsed = initialSocialLinks ? JSON.parse(initialSocialLinks) : []
@@ -74,15 +99,26 @@ export default function MyPageClient({
               label: typeof item?.label === 'string' ? item.label : '',
               value: typeof item?.value === 'string' ? item.value : '',
             }))
-            .filter((item) => item.label.trim() || item.value.trim())
+            .map((item) => {
+              const service = detectSocialService(item.label)
+              return {
+                service,
+                label: service === 'other' ? item.label : '',
+                value: item.value,
+              } satisfies SocialLink
+            })
+            .filter((item) =>
+              item.service === 'other' ? item.label.trim() || item.value.trim() : item.value.trim()
+            )
           if (normalized.length > 0) return normalized
         }
       } catch {
         /* ignore */
       }
-      return [{ label: '', value: '' }]
+      return [{ service: 'other', label: '', value: '' }]
     })()
   )
+
   const [identities, setIdentities] = useState<UserIdentity[]>([])
   const [busy, setBusy] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
@@ -245,7 +281,24 @@ export default function MyPageClient({
     }
   }
 
-  const saveProfile = async () => {
+  
+
+  const normalizedSocialLinks = useMemo(() => {
+    return socialLinks
+      .map((link) => {
+        const trimmedLabel = link.label.trim()
+        const trimmedValue = link.value.trim()
+        const keep = link.service === 'other' ? trimmedLabel || trimmedValue : trimmedValue
+        return {
+          keep,
+          label: socialLabel(link.service, trimmedLabel),
+          value: link.value,
+        }
+      })
+      .filter((x) => x.keep)
+      .map(({ label, value }) => ({ label, value }))
+  }, [socialLinks])
+const saveProfile = async () => {
     if (!session?.user) return
     setSavingProfile(true)
     setMessage(null)
@@ -261,9 +314,7 @@ export default function MyPageClient({
         friend_code_public: friendCodePublic,
         decoration_ids: decorationIds,
         decoration_inventory: decorationInventory,
-        social_links: JSON.stringify(
-          socialLinks.filter((item) => item.label.trim() || item.value.trim())
-        ),
+        social_links: JSON.stringify(normalizedSocialLinks),
       })
       .eq('id', session.user.id)
     setSavingProfile(false)
@@ -405,16 +456,42 @@ export default function MyPageClient({
               <p className="text-sm text-gray-600">ソーシャルアカウント</p>
               {socialLinks.map((link, idx) => (
                 <div key={idx} className="flex flex-col gap-2 rounded border border-gray-200 p-2">
-                  <input
-                    value={link.label}
-                    onChange={(e) => {
-                      const next = [...socialLinks]
-                      next[idx] = { ...next[idx], label: e.target.value }
-                      setSocialLinks(next)
-                    }}
-                    className="rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="サービス名 (例: Discord)"
-                  />
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <select
+                      value={link.service}
+                      onChange={(e) => {
+                        const service = e.target.value as SocialService
+                        const next = [...socialLinks]
+                        next[idx] = { ...next[idx], service }
+                        setSocialLinks(next)
+                      }}
+                      className="rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-40"
+                    >
+                      <option value="x">X</option>
+                      <option value="youtube">YouTube</option>
+                      <option value="other">その他</option>
+                    </select>
+
+                    {link.service === 'other' ? (
+                      <input
+                        value={link.label}
+                        onChange={(e) => {
+                          const next = [...socialLinks]
+                          next[idx] = { ...next[idx], label: e.target.value }
+                          setSocialLinks(next)
+                        }}
+                        className="flex-1 rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="サービス名 (例: Discord)"
+                      />
+                    ) : (
+                      <input
+                        value={socialLabel(link.service, link.label)}
+                        disabled
+                        className="flex-1 rounded border border-gray-300 bg-gray-100 px-3 py-2 text-base text-gray-500"
+                      />
+                    )}
+                  </div>
+
                   <div className="flex gap-2">
                     <input
                       value={link.value}
@@ -424,13 +501,15 @@ export default function MyPageClient({
                         setSocialLinks(next)
                       }}
                       className="flex-1 rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="リンクやID"
+                      placeholder={socialPlaceholder(link.service)}
                     />
                     <button
                       type="button"
                       onClick={() =>
                         setSocialLinks((prev) =>
-                          prev.length === 1 ? [{ label: '', value: '' }] : prev.filter((_, i) => i !== idx)
+                          prev.length === 1
+                            ? [{ service: 'other', label: '', value: '' }]
+                            : prev.filter((_, i) => i !== idx)
                         )
                       }
                       className="rounded border border-red-300 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
@@ -442,7 +521,9 @@ export default function MyPageClient({
               ))}
               <button
                 type="button"
-                onClick={() => setSocialLinks((prev) => [...prev, { label: '', value: '' }])}
+                onClick={() =>
+                  setSocialLinks((prev) => [...prev, { service: 'other', label: '', value: '' }])
+                }
                 className="inline-flex items-center justify-center rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50"
               >
                 ＋ 追加
@@ -726,10 +807,10 @@ export default function MyPageClient({
                   <p className="rounded border p-3 text-sm whitespace-pre-wrap" style={fieldStyle}>
                     {bio || '自己紹介はまだ入力されていません。'}
                   </p>
-                  {socialLinks && socialLinks.length > 0 && (
+                  {normalizedSocialLinks.length > 0 && (
                     <div className="space-y-1">
                       <p className="text-sm text-gray-600">ソーシャル</p>
-                      {socialLinks.map((link, idx) => (
+                      {normalizedSocialLinks.map((link, idx) => (
                         <p key={idx} className="rounded border p-2 text-sm" style={fieldStyle}>
                           {link.label && <span className="font-semibold mr-1">{link.label}:</span>}
                           <span>{link.value || '未入力'}</span>
