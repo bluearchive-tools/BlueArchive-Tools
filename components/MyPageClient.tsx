@@ -375,6 +375,8 @@ export default function MyPageClient({
   }
 
   const youtubeScope = 'https://www.googleapis.com/auth/youtube.readonly'
+  const YT_VERIFY_LS_KEY = 'ba:yt_verify_pending'
+  type YtVerifyPending = { value: string; startedAt: number }
 
   const startYouTubeVerify = async (index: number) => {
     const link = socialLinks[index]
@@ -388,7 +390,7 @@ export default function MyPageClient({
     setMessage(null)
 
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    const redirectTo = origin ? `${origin}/auth/callback?next=/mypage&yt_verify=${index}` : undefined
+    const redirectTo = origin ? `${origin}/auth/callback` : undefined
 
     try {
       const { data: userData } = await supabase.auth.getUser()
@@ -650,6 +652,40 @@ export default function MyPageClient({
     void verifyYouTubeAtIndex(idx)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // YouTube 検証：redirectTo にクエリを付けられない環境向け（Redirect URL が厳密一致のみの場合）
+  useEffect(() => {
+    const run = async () => {
+      if (typeof window === 'undefined') return
+      const raw = window.localStorage.getItem(YT_VERIFY_LS_KEY)
+      if (!raw) return
+
+      let pending: YtVerifyPending | null = null
+      try {
+        pending = JSON.parse(raw) as YtVerifyPending
+      } catch {
+        window.localStorage.removeItem(YT_VERIFY_LS_KEY)
+        return
+      }
+
+      // 10分以上前なら破棄
+      if (!pending || !pending.value || Date.now() - pending.startedAt > 10 * 60 * 1000) {
+        window.localStorage.removeItem(YT_VERIFY_LS_KEY)
+        return
+      }
+
+      const targetValue = pending.value.trim()
+      const idx2 = socialLinks.findIndex((l) => l.service === 'youtube' && l.value.trim() === targetValue)
+      const index = idx2 >= 0 ? idx2 : socialLinks.findIndex((l) => l.service === 'youtube')
+      if (index < 0) return
+
+      // 一度だけ実行
+      window.localStorage.removeItem(YT_VERIFY_LS_KEY)
+      await verifyYouTubeAtIndex(index)
+    }
+
+    void run()
+  }, [socialLinks])
   const savedSocialLinks = useMemo(() => serializeSocialLinksForSave(socialLinks), [socialLinks])
   const displaySocialLinks = useMemo(() => filterSocialLinksForDisplay(savedSocialLinks), [savedSocialLinks])
 
