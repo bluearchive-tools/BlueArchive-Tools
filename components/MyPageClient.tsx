@@ -364,7 +364,6 @@ export default function MyPageClient({
     }
   }
 
-
   const youtubeScope = 'https://www.googleapis.com/auth/youtube.readonly'
 
   const startYouTubeVerify = async (index: number) => {
@@ -381,29 +380,60 @@ export default function MyPageClient({
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
     const redirectTo = origin ? `${origin}/auth/callback?next=/mypage&yt_verify=${index}` : undefined
 
-    const { data, error } = await supabase.auth.linkIdentity({
-      provider: 'google',
-      options: {
-        redirectTo,
-        scopes: youtubeScope,
-        queryParams: {
-          prompt: 'consent',
-          access_type: 'offline',
-          include_granted_scopes: 'true',
-        },
-      },
-    })
+    try {
+      const { data: userData } = await supabase.auth.getUser()
+      const identities = userData.user?.identities ?? []
+      const hasGoogleIdentity = identities.some((i) => i.provider === 'google')
 
-    setBusy(false)
-    if (error) {
-      console.error(error.message)
-      setMessage(`YouTube 連携に失敗しました: ${error.message}`)
-      return
+      const queryParams = {
+        prompt: 'consent',
+        access_type: 'offline',
+        include_granted_scopes: 'true',
+      } as const
+
+      if (hasGoogleIdentity) {
+        // すでに Google と紐付いている場合は「再認証」でスコープ追加（linkIdentity すると identity_already_exists になり得る）
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo,
+            scopes: youtubeScope,
+            queryParams,
+          },
+        })
+
+        if (error) {
+          console.error(error.message)
+          setMessage(`YouTube 連携に失敗しました: ${error.message}`)
+          return
+        }
+        if (data?.url) window.location.assign(data.url)
+        return
+      }
+
+      // Google 未紐付けの場合は linkIdentity で接続
+      const { data, error } = await supabase.auth.linkIdentity({
+        provider: 'google',
+        options: {
+          redirectTo,
+          scopes: youtubeScope,
+          queryParams,
+        },
+      })
+
+      if (error) {
+        console.error(error.message)
+        setMessage(`YouTube 連携に失敗しました: ${error.message}`)
+        return
+      }
+      if (data?.url) window.location.assign(data.url)
+    } finally {
+      setBusy(false)
     }
-    if (data?.url) window.location.assign(data.url)
   }
 
   const extractYouTubeTarget = (
+
     raw: string
   ): { kind: 'channelId' | 'handle' | 'username' | null; value: string } => {
     const s = raw.trim()
