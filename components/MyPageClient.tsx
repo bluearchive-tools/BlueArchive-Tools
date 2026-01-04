@@ -20,7 +20,7 @@ interface Props {
   initialIconStudentId: string | null
   initialFriendCode: string | null
   initialFriendCodePublic: boolean | null
-  initialSocialLinks: string | null
+  initialSocialLinks: unknown
   initialDecorationIds: string[]
   initialDecorationInventory: string[]
   initialDecorations: {
@@ -157,7 +157,17 @@ export default function MyPageClient({
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>(
     (() => {
       try {
-        const parsed = initialSocialLinks ? JSON.parse(initialSocialLinks) : []
+        const parsed: unknown = (() => {
+          if (!initialSocialLinks) return []
+          if (typeof initialSocialLinks === 'string') {
+            try {
+              return JSON.parse(initialSocialLinks) as unknown
+            } catch {
+              return []
+            }
+          }
+          return initialSocialLinks
+        })()
         if (Array.isArray(parsed)) {
           const normalized = parsed
             .map((raw) => {
@@ -573,7 +583,7 @@ export default function MyPageClient({
 
       const { error } = await supabase
         .from('profiles')
-        .update({ social_links: JSON.stringify(serializeSocialLinksForSave(nextLinks)) })
+        .update({ social_links: serializeSocialLinksForSave(nextLinks) })
         .eq('id', session?.user.id)
 
       if (error) {
@@ -615,7 +625,7 @@ export default function MyPageClient({
 
     const { error } = await supabase
       .from('profiles')
-      .update({ social_links: JSON.stringify(serializeSocialLinksForSave(nextLinks)) })
+      .update({ social_links: serializeSocialLinksForSave(nextLinks) })
       .eq('id', session?.user.id)
 
     if (error) {
@@ -659,7 +669,7 @@ const saveProfile = async () => {
         friend_code_public: friendCodePublic,
         decoration_ids: decorationIds,
         decoration_inventory: decorationInventory,
-        social_links: JSON.stringify(savedSocialLinks),
+        social_links: savedSocialLinks,
       })
       .eq('id', session.user.id)
     setSavingProfile(false)
