@@ -82,14 +82,20 @@ type SerializedSocialLink = {
   channelHandle: string | null
 }
 
-const serializeSocialLinks = (links: SocialLink[]): SerializedSocialLink[] => {
+/**
+ * 保存用:
+ * - X/YouTube は value が空でも保持（後で入力・認証できるようにする）
+ * - その他 は (サービス名 or URL) が空なら保存しない
+ */
+const serializeSocialLinksForSave = (links: SocialLink[]): SerializedSocialLink[] => {
   const mapped = links.map((link) => {
     const trimmedLabel = link.label.trim()
     const trimmedValue = link.value.trim()
     const displayLabel = socialLabel(link.service, trimmedLabel)
-    const keep = link.service === 'other' ? trimmedLabel || trimmedValue : trimmedValue || !!link.verified
 
-    if (!keep) return null
+    if (link.service === 'other') {
+      if (!trimmedLabel && !trimmedValue) return null
+    }
 
     return {
       service: link.service,
@@ -104,6 +110,21 @@ const serializeSocialLinks = (links: SocialLink[]): SerializedSocialLink[] => {
   })
 
   return mapped.filter((x): x is SerializedSocialLink => x !== null)
+}
+
+/**
+ * 表示用（プレビューなど）:
+ * - X/YouTube は URL が空なら表示しない（認証情報があれば表示OK）
+ * - その他 は (サービス名 or URL) があれば表示
+ */
+const filterSocialLinksForDisplay = (links: SerializedSocialLink[]): SerializedSocialLink[] => {
+  return links.filter((link) => {
+    const hasValue = link.value.trim().length > 0
+    if (link.service === 'other') {
+      return link.label.trim().length > 0 || hasValue
+    }
+    return hasValue || link.verified
+  })
 }
 
 
@@ -522,7 +543,7 @@ export default function MyPageClient({
 
       const { error } = await supabase
         .from('profiles')
-        .update({ social_links: JSON.stringify(serializeSocialLinks(nextLinks)) })
+        .update({ social_links: JSON.stringify(serializeSocialLinksForSave(nextLinks)) })
         .eq('id', session?.user.id)
 
       if (error) {
@@ -564,7 +585,7 @@ export default function MyPageClient({
 
     const { error } = await supabase
       .from('profiles')
-      .update({ social_links: JSON.stringify(serializeSocialLinks(nextLinks)) })
+      .update({ social_links: JSON.stringify(serializeSocialLinksForSave(nextLinks)) })
       .eq('id', session?.user.id)
 
     if (error) {
@@ -589,7 +610,8 @@ export default function MyPageClient({
     void verifyYouTubeAtIndex(idx)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  const serializedSocialLinks = useMemo(() => serializeSocialLinks(socialLinks), [socialLinks])
+  const savedSocialLinks = useMemo(() => serializeSocialLinksForSave(socialLinks), [socialLinks])
+  const displaySocialLinks = useMemo(() => filterSocialLinksForDisplay(savedSocialLinks), [savedSocialLinks])
 
 const saveProfile = async () => {
     if (!session?.user) return
@@ -607,7 +629,7 @@ const saveProfile = async () => {
         friend_code_public: friendCodePublic,
         decoration_ids: decorationIds,
         decoration_inventory: decorationInventory,
-        social_links: JSON.stringify(serializedSocialLinks),
+        social_links: JSON.stringify(savedSocialLinks),
       })
       .eq('id', session.user.id)
     setSavingProfile(false)
@@ -1148,10 +1170,10 @@ const saveProfile = async () => {
                   <p className="rounded border p-3 text-sm whitespace-pre-wrap" style={fieldStyle}>
                     {bio || '自己紹介はまだ入力されていません。'}
                   </p>
-                  {serializedSocialLinks.length > 0 && (
+                  {displaySocialLinks.length > 0 && (
                     <div className="space-y-1">
                       <p className="text-sm text-gray-600">ソーシャル</p>
-                      {serializedSocialLinks.map((link, idx) => (
+                      {displaySocialLinks.map((link, idx) => (
                         <p key={idx} className="rounded border p-2 text-sm" style={fieldStyle}>
                           {link.label && <span className="font-semibold mr-1">{link.label}:</span>}
                           {link.service === 'youtube' && link.verified && <span className="mr-1 text-xs">✅</span>}
