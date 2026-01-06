@@ -497,7 +497,7 @@ export default function MyPageClient({
 
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'twitter',
+        provider: 'x',
         options: {
           redirectTo,
           scopes: 'tweet.read users.read offline.access',
