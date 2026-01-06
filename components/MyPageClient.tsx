@@ -479,10 +479,10 @@ export default function MyPageClient({
     setBusy(true)
     setMessage(null)
 
-    // NOTE:
-    // For X/Twitter (OAuth 2.0) we intentionally DO NOT pass `redirectTo`.
-    // There are reported cases where `redirectTo` can cause the X consent flow to fail.
-    // Supabase will redirect to the project's Site URL instead, and we resume verification via localStorage.
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    // Use a stable callback URL (no query params).
+    const redirectTo = origin ? new URL('/auth/callback', origin).toString() : undefined
+
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(
         X_VERIFY_LS_KEY,
@@ -496,7 +496,6 @@ export default function MyPageClient({
 
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
-        // Supabase provider id for X / Twitter OAuth 2.0
         provider: 'x' as unknown as
           | 'google'
           | 'discord'
@@ -506,8 +505,8 @@ export default function MyPageClient({
           | 'twitch'
           | 'spotify',
         options: {
+          redirectTo,
           // Keep scopes minimal for "account ownership" verification.
-          // Add more scopes only if you later need them.
           scopes: 'users.read',
         },
       })
@@ -522,6 +521,7 @@ export default function MyPageClient({
       setBusy(false)
     }
   }
+
 
   const extractYouTubeTarget = (
 
