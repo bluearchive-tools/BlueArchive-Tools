@@ -514,12 +514,9 @@ export default function MyPageClient({
 
       // Otherwise, generic sign in (though usually for verification we assume they are logged in or will log in)
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'x',
         options: {
-          redirectTo,
-          // Explicitly requesting scopes WITHOUT email to test if 'users.email' was causing the 400 error
-          // (If "Request email address" is not checked in X Portal, requesting it causes issues)
-          scopes: 'tweet.read users.read offline.access',
+          // clean redirect URL
+          redirectTo: `${origin}/auth/callback?next=/mypage`,
         },
       })
 
