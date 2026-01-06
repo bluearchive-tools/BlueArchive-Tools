@@ -57,9 +57,10 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get('code')
   const nextParam = requestUrl.searchParams.get('next') ?? '/'
   // Check for Cookie-based verification state (fallback if URL params missing)
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const verifyCookie = cookieStore.get('ba_x_verify')
 
+  const ytVerify = requestUrl.searchParams.get('yt_verify')
   let xVerifyRaw = requestUrl.searchParams.get('x_verify')
   let xHandleCheck = requestUrl.searchParams.get('x_handle_check')
 
