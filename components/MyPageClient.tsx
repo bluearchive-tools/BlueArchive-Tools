@@ -480,6 +480,11 @@ export default function MyPageClient({
     setMessage(null)
 
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
+
+    // Debug: Check which project we are talking to
+    const checkUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    console.log('[startXVerify] Target Supabase URL:', checkUrl)
+
     const redirectTo = origin
       ? (() => {
         const url = new URL('/auth/callback', origin)
@@ -512,7 +517,7 @@ export default function MyPageClient({
         provider: 'x',
         options: {
           redirectTo,
-          scopes: 'users.read',
+          // scopes: 'users.read', // 不要な上書きを削除: 400エラーの原因になるためSupabaseデフォルト（tweet.read, users.read, offline.access）に任せる
         },
       })
 
