@@ -699,11 +699,11 @@ export default function MyPageClient({
     })
     const json: unknown = await res.json().catch(() => null)
     if (!res.ok) {
-      const detail = typeof (json as Record<string, unknown> | null)?.error === 'string'
-        ? (json as Record<string, unknown>).error
-        : json
-          ? JSON.stringify(json)
-          : res.statusText
+      const rawDetail =
+        typeof (json as Record<string, unknown> | null)?.error === 'string'
+          ? (json as Record<string, unknown>).error
+          : json ?? res.statusText
+      const detail = typeof rawDetail === 'string' ? rawDetail : JSON.stringify(rawDetail)
       throw new Error(detail)
     }
     return json as XUserResponse
