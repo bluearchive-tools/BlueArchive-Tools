@@ -480,9 +480,15 @@ export default function MyPageClient({
     setMessage(null)
 
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    // Use a stable callback URL (no query params).
-    const redirectTo = origin ? new URL('/auth/callback', origin).toString() : undefined
+    const redirectTo = (() => {
+      if (!origin) return undefined
+      const url = new URL('/auth/callback', origin)
+      url.searchParams.set('next', '/mypage')
+      url.searchParams.set('x_verify', String(index))
+      return url.toString()
+    })()
 
+    // Store pending state so we can resume verification after redirect.
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(
         X_VERIFY_LS_KEY,
@@ -495,7 +501,40 @@ export default function MyPageClient({
     }
 
     try {
+      // If the user is already signed in, prefer linkIdentity so we don't replace the current session.
+      // (signInWithOAuth starts a sign-in flow and can temporarily "look like" a logout if it errors.)
+      const oauthResult = user
+        ? await supabase.auth.linkIdentity({
+            provider: 'x',
+            options: {
+              redirectTo,
+              scopes: 'users.read',
+            },
+          })
+        : await supabase.auth.signInWithOAuth({
+            provider: 'x',
+            options: {
+              redirectTo,
+              scopes: 'users.read',
+            },
+          })
+
+      const { data, error } = oauthResult
+
+      if (error) {
+        console.error(error.message)
+        setMessage(`X 連携に失敗しました: ${error.message}`)
+        return
+      }
+      if (data?.url) window.location.assign(data.url)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+    try {
       const { data, error } = await supabase.auth.signInWithOAuth({
+        // Supabase provider id for X / Twitter OAuth 2.0
         provider: 'x' as unknown as
           | 'google'
           | 'discord'
@@ -505,8 +544,8 @@ export default function MyPageClient({
           | 'twitch'
           | 'spotify',
         options: {
-          redirectTo,
           // Keep scopes minimal for "account ownership" verification.
+          // Add more scopes only if you later need them.
           scopes: 'users.read',
         },
       })
@@ -521,7 +560,6 @@ export default function MyPageClient({
       setBusy(false)
     }
   }
-
 
   const extractYouTubeTarget = (
 
