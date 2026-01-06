@@ -390,7 +390,20 @@ export default function MyPageClient({
     setMessage(null)
 
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    const redirectTo = origin ? `${origin}/auth/callback` : undefined
+    const redirectTo = (() => {
+      if (!origin) return undefined
+      const url = new URL('/auth/callback', origin)
+      url.searchParams.set('next', '/mypage')
+      url.searchParams.set('yt_verify', String(index))
+      return url.toString()
+    })()
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(
+        YT_VERIFY_LS_KEY,
+        JSON.stringify({ value: link.value, startedAt: Date.now() } satisfies YtVerifyPending)
+      )
+    }
 
     try {
       const { data: userData } = await supabase.auth.getUser()
