@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import type { UserIdentity } from '@supabase/supabase-js'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faDiscord, faGoogle, faXTwitter } from '@fortawesome/free-brands-svg-icons'
+import { faDiscord, faGoogle } from '@fortawesome/free-brands-svg-icons'
 import { faEye, faEyeSlash, faLink, faUnlink, faUserCircle } from '@fortawesome/free-solid-svg-icons'
 import students from '../data/students.json'
 import FriendCodeCopy from './FriendCodeCopy'
@@ -238,7 +238,7 @@ export default function MyPageClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handleLink = async (provider: 'google' | 'discord' | 'twitter') => {
+  const handleLink = async (provider: 'google' | 'discord') => {
     setBusy(true)
     const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback?next=/mypage` : undefined
     const { data, error } = await supabase.auth.linkIdentity({
@@ -270,7 +270,6 @@ export default function MyPageClient({
     () => ({
       google: faGoogle,
       discord: faDiscord,
-      twitter: faXTwitter,
     }),
     []
   )
@@ -1151,7 +1150,7 @@ const saveProfile = async () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold">連携サービス</h3>
-              <p className="text-sm text-gray-500">Google / Discord / X との紐付け管理</p>
+              <p className="text-sm text-gray-500">Google / Discord との紐付け管理</p>
             </div>
             <div className="flex gap-2">
               <button
@@ -1170,14 +1169,6 @@ const saveProfile = async () => {
                 <FontAwesomeIcon icon={faDiscord} />
                 {linkedProviders.has('discord') ? '再連携' : 'Discord を連携'}
               </button>
-              <button
-                onClick={() => handleLink('twitter')}
-                disabled={busy}
-                className="inline-flex items-center gap-2 rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-60"
-              >
-                <FontAwesomeIcon icon={faXTwitter} />
-                {linkedProviders.has('twitter') ? '再連携' : 'X を連携'}
-              </button>
             </div>
           </div>
 
@@ -1189,7 +1180,7 @@ const saveProfile = async () => {
                 className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 dark:border-gray-700"
               >
                 <div className="flex items-center gap-3">
-                  <FontAwesomeIcon icon={providerIcon[identity.provider as 'google' | 'discord' | 'twitter'] ?? faLink} />
+                  <FontAwesomeIcon icon={providerIcon[identity.provider as 'google' | 'discord'] ?? faLink} />
                   <div>
                     <p className="font-medium capitalize">{identity.provider}</p>
                     {identityEmail(identity) && <p className="text-sm text-gray-500">{identityEmail(identity)}</p>}
