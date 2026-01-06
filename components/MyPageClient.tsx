@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import type { UserIdentity } from '@supabase/supabase-js'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faDiscord, faGoogle } from '@fortawesome/free-brands-svg-icons'
+import { faDiscord, faGoogle, faXTwitter } from '@fortawesome/free-brands-svg-icons'
 import { faEye, faEyeSlash, faLink, faUnlink, faUserCircle } from '@fortawesome/free-solid-svg-icons'
 import students from '../data/students.json'
 import FriendCodeCopy from './FriendCodeCopy'
@@ -238,7 +238,7 @@ export default function MyPageClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handleLink = async (provider: 'google' | 'discord') => {
+  const handleLink = async (provider: 'google' | 'discord' | 'twitter') => {
     setBusy(true)
     const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback?next=/mypage` : undefined
     const { data, error } = await supabase.auth.linkIdentity({
@@ -269,7 +269,8 @@ export default function MyPageClient({
   const providerIcon = useMemo(
     () => ({
       google: faGoogle,
-      discord: faDiscord
+      discord: faDiscord,
+      twitter: faXTwitter,
     }),
     []
   )
@@ -376,16 +377,12 @@ export default function MyPageClient({
 
   const youtubeScope = 'https://www.googleapis.com/auth/youtube.readonly'
   const YT_VERIFY_LS_KEY = 'ba:yt_verify_pending'
-  type YtVerifyPending = { value: string; startedAt: number }
+  type YtVerifyPending = { value: string; startedAt: number; index?: number }
   const ytPendingRef = useRef<YtVerifyPending | null>(null)
 
   const startYouTubeVerify = async (index: number) => {
     const link = socialLinks[index]
     if (!link || link.service !== 'youtube') return
-    if (!link.value.trim()) {
-      setMessage('YouTube の欄にチャンネルURL（@handle か UC...）を入力してください')
-      return
-    }
 
     setBusy(true)
     setMessage(null)
@@ -402,7 +399,7 @@ export default function MyPageClient({
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(
         YT_VERIFY_LS_KEY,
-        JSON.stringify({ value: link.value, startedAt: Date.now() } satisfies YtVerifyPending)
+        JSON.stringify({ value: link.value, startedAt: Date.now(), index } satisfies YtVerifyPending)
       )
     }
 
@@ -510,10 +507,6 @@ export default function MyPageClient({
     if (!link || link.service !== 'youtube') return
 
     const target = extractYouTubeTarget(link.value)
-    if (!target.kind) {
-      setMessage('YouTube は「@handle」または「UC...（チャンネルID）」または「/user/」形式に対応しています')
-      return
-    }
 
     setBusy(true)
     setMessage(null)
@@ -562,6 +555,11 @@ export default function MyPageClient({
           token
         )
         expectedId = json?.items?.[0]?.id ?? null
+      } else {
+        // 値が空の場合は、許可したチャンネル (mine) をそのまま認証対象にする
+        expectedId = mineId
+        expectedHandle =
+          typeof mineCustomUrl === 'string' && mineCustomUrl.startsWith('@') ? mineCustomUrl : null
       }
 
       if (!expectedId) {
@@ -581,11 +579,16 @@ export default function MyPageClient({
         (typeof mineCustomUrl === 'string' && mineCustomUrl.startsWith('@') ? mineCustomUrl : null)
 
       const verifiedAt = new Date().toISOString()
+      const valueToSave =
+        link.value.trim() ||
+        channelHandle ||
+        (typeof mineId === 'string' ? mineId : '')
 
       const nextLinks: SocialLink[] = socialLinks.map((l, i) =>
         i === index
           ? {
               ...l,
+              value: valueToSave,
               verified: true,
               verifiedAt,
               channelId: mineId,
@@ -687,18 +690,30 @@ export default function MyPageClient({
       const pending = ytPendingRef.current
 
       // 10分以上前なら破棄
-      if (!pending || !pending.value || Date.now() - pending.startedAt > 10 * 60 * 1000) {
+      if (!pending || typeof pending.value !== 'string' || Date.now() - pending.startedAt > 10 * 60 * 1000) {
         window.localStorage.removeItem(YT_VERIFY_LS_KEY)
         ytPendingRef.current = null
         return
       }
 
       const targetValue = pending.value.trim()
+      const preferredIndex =
+        typeof pending.index === 'number' && socialLinks[pending.index]?.service === 'youtube'
+          ? pending.index
+          : -1
       const idx2 = socialLinks.findIndex((l) => l.service === 'youtube' && l.value.trim() === targetValue)
-      const index = idx2 >= 0 ? idx2 : socialLinks.findIndex((l) => l.service === 'youtube')
+      const index =
+        preferredIndex >= 0
+          ? preferredIndex
+          : idx2 >= 0
+            ? idx2
+            : socialLinks.findIndex((l) => l.service === 'youtube')
 
       if (index < 0) {
-        setSocialLinks((prev) => [...prev, { service: 'youtube', label: '', value: targetValue }])
+        setSocialLinks((prev) => [
+          ...prev,
+          { service: 'youtube', label: '', value: targetValue, verified: false },
+        ])
         return
       }
 
@@ -1136,7 +1151,7 @@ const saveProfile = async () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold">連携サービス</h3>
-              <p className="text-sm text-gray-500">Google / Discord との紐付け管理</p>
+              <p className="text-sm text-gray-500">Google / Discord / X との紐付け管理</p>
             </div>
             <div className="flex gap-2">
               <button
@@ -1155,6 +1170,14 @@ const saveProfile = async () => {
                 <FontAwesomeIcon icon={faDiscord} />
                 {linkedProviders.has('discord') ? '再連携' : 'Discord を連携'}
               </button>
+              <button
+                onClick={() => handleLink('twitter')}
+                disabled={busy}
+                className="inline-flex items-center gap-2 rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-60"
+              >
+                <FontAwesomeIcon icon={faXTwitter} />
+                {linkedProviders.has('twitter') ? '再連携' : 'X を連携'}
+              </button>
             </div>
           </div>
 
@@ -1166,7 +1189,7 @@ const saveProfile = async () => {
                 className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 dark:border-gray-700"
               >
                 <div className="flex items-center gap-3">
-                  <FontAwesomeIcon icon={providerIcon[identity.provider as 'google' | 'discord'] ?? faLink} />
+                  <FontAwesomeIcon icon={providerIcon[identity.provider as 'google' | 'discord' | 'twitter'] ?? faLink} />
                   <div>
                     <p className="font-medium capitalize">{identity.provider}</p>
                     {identityEmail(identity) && <p className="text-sm text-gray-500">{identityEmail(identity)}</p>}
