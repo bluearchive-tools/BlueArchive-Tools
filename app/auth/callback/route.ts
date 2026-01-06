@@ -56,9 +56,24 @@ export async function GET(request: Request) {
 
   const code = requestUrl.searchParams.get('code')
   const nextParam = requestUrl.searchParams.get('next') ?? '/'
-  const ytVerify = requestUrl.searchParams.get('yt_verify')
-  const xVerifyRaw = requestUrl.searchParams.get('x_verify')
-  const xHandleCheck = requestUrl.searchParams.get('x_handle_check')
+  // Check for Cookie-based verification state (fallback if URL params missing)
+  const cookieStore = cookies()
+  const verifyCookie = cookieStore.get('ba_x_verify')
+
+  let xVerifyRaw = requestUrl.searchParams.get('x_verify')
+  let xHandleCheck = requestUrl.searchParams.get('x_handle_check')
+
+  if (!xVerifyRaw && verifyCookie?.value) {
+    try {
+      const state = JSON.parse(decodeURIComponent(verifyCookie.value))
+      if (state.index !== undefined) xVerifyRaw = String(state.index)
+      if (state.handle) xHandleCheck = state.handle
+      console.log('[Callback] Using Cookie State:', state)
+    } catch (e) {
+      console.error('[Callback] Failed to parse cookie state', e)
+    }
+  }
+
   const errorDescription = requestUrl.searchParams.get('error_description')
   const error = requestUrl.searchParams.get('error')
 
