@@ -517,7 +517,9 @@ export default function MyPageClient({
         provider: 'x',
         options: {
           redirectTo,
-          // scopes: 'users.read', // 不要な上書きを削除: 400エラーの原因になるためSupabaseデフォルト（tweet.read, users.read, offline.access）に任せる
+          // Explicitly requesting scopes WITHOUT email to test if 'users.email' was causing the 400 error
+          // (If "Request email address" is not checked in X Portal, requesting it causes issues)
+          scopes: 'tweet.read users.read offline.access',
         },
       })
 
