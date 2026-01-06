@@ -479,30 +479,39 @@ export default function MyPageClient({
     setBusy(true)
     setMessage(null)
 
-    const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    const redirectTo = (() => {
-      if (!origin) return undefined
-      const url = new URL('/auth/callback', origin)
-      url.searchParams.set('next', '/mypage')
-      url.searchParams.set('x_verify', String(index))
-      return url.toString()
-    })()
-
+    // NOTE:
+    // For X/Twitter (OAuth 2.0) we intentionally DO NOT pass `redirectTo`.
+    // There are reported cases where `redirectTo` can cause the X consent flow to fail.
+    // Supabase will redirect to the project's Site URL instead, and we resume verification via localStorage.
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(
         X_VERIFY_LS_KEY,
-        JSON.stringify({ value: link.value, startedAt: Date.now(), index } satisfies XVerifyPending)
+        JSON.stringify({
+          value: link.value,
+          startedAt: Date.now(),
+          index,
+        } satisfies XVerifyPending)
       )
     }
 
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'x' as unknown as Parameters<typeof supabase.auth.signInWithOAuth>[0]['provider'],
+        // Supabase provider id for X / Twitter OAuth 2.0
+        provider: 'x' as unknown as
+          | 'google'
+          | 'discord'
+          | 'github'
+          | 'twitter'
+          | 'facebook'
+          | 'twitch'
+          | 'spotify',
         options: {
-          redirectTo,
-          scopes: 'tweet.read users.read offline.access',
+          // Keep scopes minimal for "account ownership" verification.
+          // Add more scopes only if you later need them.
+          scopes: 'users.read',
         },
       })
+
       if (error) {
         console.error(error.message)
         setMessage(`X 連携に失敗しました: ${error.message}`)
