@@ -479,84 +479,62 @@ export default function MyPageClient({
     setBusy(true)
     setMessage(null)
 
-    const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    const redirectTo = (() => {
-      if (!origin) return undefined
-      const url = new URL('/auth/callback', origin)
-      url.searchParams.set('next', '/mypage')
-      url.searchParams.set('x_verify', String(index))
-      return url.toString()
-    })()
-
-    // Store pending state so we can resume verification after redirect.
+    // Remember which entry we are verifying so we can resume after redirect.
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem(
-        X_VERIFY_LS_KEY,
-        JSON.stringify({
-          value: link.value,
-          startedAt: Date.now(),
-          index,
-        } satisfies XVerifyPending)
-      )
+      const pending: XVerifyPending = { value: link.value, startedAt: Date.now(), index }
+      window.localStorage.setItem(X_VERIFY_LS_KEY, JSON.stringify(pending))
     }
 
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const redirectTo = origin
+      ? (() => {
+          const url = new URL('/auth/callback', origin)
+          url.searchParams.set('next', '/mypage')
+          url.searchParams.set('x_verify', String(index))
+          return url.toString()
+        })()
+      : undefined
+
     try {
-      // If the user is already signed in, prefer linkIdentity so we don't replace the current session.
-      // (signInWithOAuth starts a sign-in flow and can temporarily "look like" a logout if it errors.)
-      const oauthResult = user
-        ? await supabase.auth.linkIdentity({
-            provider: 'x',
-            options: {
-              redirectTo,
-              scopes: 'users.read',
-            },
-          })
-        : await supabase.auth.signInWithOAuth({
-            provider: 'x',
-            options: {
-              redirectTo,
-              scopes: 'users.read',
-            },
-          })
+      const { data: userData } = await supabase.auth.getUser()
+      const isSignedIn = !!userData.user
 
-      const { data, error } = oauthResult
-
-      if (error) {
-        console.error(error.message)
-        setMessage(`X 連携に失敗しました: ${error.message}`)
+      // If the user is already signed in, prefer linking an X identity (so we don't replace the session).
+      if (isSignedIn) {
+        const { data, error } = await supabase.auth.linkIdentity({ provider: 'x' })
+        if (error) throw error
+        if (data?.url && typeof window !== 'undefined') {
+          const u = new URL(data.url)
+          if (redirectTo) u.searchParams.set('redirect_to', redirectTo)
+          u.searchParams.set('scopes', 'users.read')
+          window.location.assign(u.toString())
+          return
+        }
+        setMessage('Xの認証URLが取得できませんでした。')
+        setBusy(false)
         return
       }
-      if (data?.url) window.location.assign(data.url)
-    } finally {
-      setBusy(false)
-    }
-  }
 
-    try {
+      // Otherwise, do a normal OAuth sign-in.
       const { data, error } = await supabase.auth.signInWithOAuth({
-        // Supabase provider id for X / Twitter OAuth 2.0
-        provider: 'x' as unknown as
-          | 'google'
-          | 'discord'
-          | 'github'
-          | 'twitter'
-          | 'facebook'
-          | 'twitch'
-          | 'spotify',
+        provider: 'x',
         options: {
-          // Keep scopes minimal for "account ownership" verification.
-          // Add more scopes only if you later need them.
+          redirectTo,
           scopes: 'users.read',
         },
       })
 
-      if (error) {
-        console.error(error.message)
-        setMessage(`X 連携に失敗しました: ${error.message}`)
+      if (error) throw error
+      if (data?.url && typeof window !== 'undefined') {
+        window.location.assign(data.url)
         return
       }
-      if (data?.url) window.location.assign(data.url)
-    } finally {
+
+      setMessage('Xの認証URLが取得できませんでした。')
+      setBusy(false)
+    } catch (e) {
+      console.error('startXVerify failed', e)
+      setMessage('Xの認証が開始できませんでした。もう一度お試しください。')
       setBusy(false)
     }
   }
