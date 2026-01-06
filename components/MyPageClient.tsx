@@ -377,6 +377,7 @@ export default function MyPageClient({
   const youtubeScope = 'https://www.googleapis.com/auth/youtube.readonly'
   const YT_VERIFY_LS_KEY = 'ba:yt_verify_pending'
   type YtVerifyPending = { value: string; startedAt: number }
+  const ytPendingRef = useRef<YtVerifyPending | null>(null)
 
   const startYouTubeVerify = async (index: number) => {
     const link = socialLinks[index]
@@ -670,35 +671,45 @@ export default function MyPageClient({
   useEffect(() => {
     const run = async () => {
       if (typeof window === 'undefined') return
-      const raw = window.localStorage.getItem(YT_VERIFY_LS_KEY)
-      if (!raw) return
 
-      let pending: YtVerifyPending | null = null
-      try {
-        pending = JSON.parse(raw) as YtVerifyPending
-      } catch {
-        window.localStorage.removeItem(YT_VERIFY_LS_KEY)
-        return
+      if (!ytPendingRef.current) {
+        const raw = window.localStorage.getItem(YT_VERIFY_LS_KEY)
+        if (!raw) return
+
+        try {
+          ytPendingRef.current = JSON.parse(raw) as YtVerifyPending
+        } catch {
+          window.localStorage.removeItem(YT_VERIFY_LS_KEY)
+          return
+        }
       }
+
+      const pending = ytPendingRef.current
 
       // 10分以上前なら破棄
       if (!pending || !pending.value || Date.now() - pending.startedAt > 10 * 60 * 1000) {
         window.localStorage.removeItem(YT_VERIFY_LS_KEY)
+        ytPendingRef.current = null
         return
       }
 
       const targetValue = pending.value.trim()
       const idx2 = socialLinks.findIndex((l) => l.service === 'youtube' && l.value.trim() === targetValue)
       const index = idx2 >= 0 ? idx2 : socialLinks.findIndex((l) => l.service === 'youtube')
-      if (index < 0) return
+
+      if (index < 0) {
+        setSocialLinks((prev) => [...prev, { service: 'youtube', label: '', value: targetValue }])
+        return
+      }
 
       // 一度だけ実行
       window.localStorage.removeItem(YT_VERIFY_LS_KEY)
+      ytPendingRef.current = null
       await verifyYouTubeAtIndex(index)
     }
 
     void run()
-  }, [socialLinks])
+  }, [socialLinks, verifyYouTubeAtIndex])
   const savedSocialLinks = useMemo(() => serializeSocialLinksForSave(socialLinks), [socialLinks])
   const displaySocialLinks = useMemo(() => filterSocialLinksForDisplay(savedSocialLinks), [savedSocialLinks])
 
