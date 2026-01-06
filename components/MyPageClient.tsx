@@ -502,7 +502,7 @@ export default function MyPageClient({
 
       // If already signed in, link identity
       if (isSignedIn) {
-        const { data, error } = await supabase.auth.linkIdentity({ provider: 'twitter' })
+        const { data, error } = await supabase.auth.linkIdentity({ provider: 'x' })
         if (error) throw error
         if (data?.url && typeof window !== 'undefined') {
           const u = new URL(data.url)
@@ -514,7 +514,7 @@ export default function MyPageClient({
 
       // Otherwise, generic sign in (though usually for verification we assume they are logged in or will log in)
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'twitter',
+        provider: 'x',
         options: {
           redirectTo,
           // scopes: 'users.read', // 不要な上書きを削除: 400エラーの原因になるためSupabaseデフォルト（tweet.read, users.read, offline.access）に任せる
