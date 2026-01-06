@@ -8,6 +8,7 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get('code')
   const nextParam = requestUrl.searchParams.get('next') ?? '/'
   const ytVerify = requestUrl.searchParams.get('yt_verify')
+  const xVerify = requestUrl.searchParams.get('x_verify')
 
   // open redirect 対策：アプリ内パスのみ許可
   const safeNext = nextParam.startsWith('/') ? nextParam : '/'
@@ -46,8 +47,9 @@ export async function GET(request: Request) {
   const outUrl = new URL(redirectTo, requestUrl)
 
   // YouTube 検証フローの戻りだけパラメータを引き継ぐ（/mypage へ戻す想定）
-  if (ytVerify && redirectTo === safeNext) {
-    outUrl.searchParams.set('yt_verify', ytVerify)
+  if (redirectTo === safeNext) {
+    if (ytVerify) outUrl.searchParams.set('yt_verify', ytVerify)
+    if (xVerify) outUrl.searchParams.set('x_verify', xVerify)
   }
 
   return NextResponse.redirect(outUrl)

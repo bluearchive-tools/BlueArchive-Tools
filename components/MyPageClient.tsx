@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import type { UserIdentity } from '@supabase/supabase-js'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -49,6 +49,9 @@ type SocialLink = {
   channelId?: string | null
   channelTitle?: string | null
   channelHandle?: string | null
+  xUserId?: string | null
+  xUsername?: string | null
+  xName?: string | null
 }
 
 const detectSocialService = (label: string): SocialService => {
@@ -80,6 +83,9 @@ type SerializedSocialLink = {
   channelId: string | null
   channelTitle: string | null
   channelHandle: string | null
+  xUserId: string | null
+  xUsername: string | null
+  xName: string | null
 }
 
 /**
@@ -106,6 +112,9 @@ const serializeSocialLinksForSave = (links: SocialLink[]): SerializedSocialLink[
       channelId: link.channelId ?? null,
       channelTitle: link.channelTitle ?? null,
       channelHandle: link.channelHandle ?? null,
+      xUserId: link.xUserId ?? null,
+      xUsername: link.xUsername ?? null,
+      xName: link.xName ?? null,
     } satisfies SerializedSocialLink
   })
 
@@ -185,6 +194,9 @@ export default function MyPageClient({
               const channelId = typeof r?.channelId === 'string' ? (r.channelId as string) : null
               const channelTitle = typeof r?.channelTitle === 'string' ? (r.channelTitle as string) : null
               const channelHandle = typeof r?.channelHandle === 'string' ? (r.channelHandle as string) : null
+              const xUserId = typeof r?.xUserId === 'string' ? (r.xUserId as string) : null
+              const xUsername = typeof r?.xUsername === 'string' ? (r.xUsername as string) : null
+              const xName = typeof r?.xName === 'string' ? (r.xName as string) : null
 
               return {
                 service,
@@ -195,6 +207,9 @@ export default function MyPageClient({
                 channelId,
                 channelTitle,
                 channelHandle,
+                xUserId,
+                xUsername,
+                xName,
               } satisfies SocialLink
             })
             .filter((item) =>
@@ -378,6 +393,9 @@ export default function MyPageClient({
   const YT_VERIFY_LS_KEY = 'ba:yt_verify_pending'
   type YtVerifyPending = { value: string; startedAt: number; index?: number }
   const ytPendingRef = useRef<YtVerifyPending | null>(null)
+  const X_VERIFY_LS_KEY = 'ba:x_verify_pending'
+  type XVerifyPending = { value: string; startedAt: number; index?: number }
+  const xPendingRef = useRef<XVerifyPending | null>(null)
 
   const startYouTubeVerify = async (index: number) => {
     const link = socialLinks[index]
@@ -454,6 +472,48 @@ export default function MyPageClient({
     }
   }
 
+  const startXVerify = async (index: number) => {
+    const link = socialLinks[index]
+    if (!link || link.service !== 'x') return
+
+    setBusy(true)
+    setMessage(null)
+
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const redirectTo = (() => {
+      if (!origin) return undefined
+      const url = new URL('/auth/callback', origin)
+      url.searchParams.set('next', '/mypage')
+      url.searchParams.set('x_verify', String(index))
+      return url.toString()
+    })()
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(
+        X_VERIFY_LS_KEY,
+        JSON.stringify({ value: link.value, startedAt: Date.now(), index } satisfies XVerifyPending)
+      )
+    }
+
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'twitter',
+        options: {
+          redirectTo,
+          scopes: 'tweet.read users.read offline.access',
+        },
+      })
+      if (error) {
+        console.error(error.message)
+        setMessage(`X 連携に失敗しました: ${error.message}`)
+        return
+      }
+      if (data?.url) window.location.assign(data.url)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const extractYouTubeTarget = (
 
     raw: string
@@ -501,7 +561,7 @@ export default function MyPageClient({
     return json as YouTubeChannelsResponse
   }
 
-  const verifyYouTubeAtIndex = async (index: number) => {
+  const verifyYouTubeAtIndex = useCallback(async (index: number) => {
     const link = socialLinks[index]
     if (!link || link.service !== 'youtube') return
 
@@ -620,7 +680,111 @@ export default function MyPageClient({
     } finally {
       setBusy(false)
     }
+  }, [socialLinks, supabase, session, setMessage, fetchYouTube])
+
+  const extractXHandle = (raw: string): string | null => {
+    const s = raw.trim()
+    if (!s) return null
+    const m = s.match(/@?([A-Za-z0-9_]{1,15})/)
+    return m?.[1] ?? null
   }
+
+  type XUserResponse = { data?: { id?: string; username?: string; name?: string } }
+
+  const fetchXUser = async (url: string, token: string): Promise<XUserResponse> => {
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    const json: unknown = await res.json().catch(() => null)
+    if (!res.ok) {
+      const detail = typeof (json as Record<string, unknown> | null)?.error === 'string'
+        ? (json as Record<string, unknown>).error
+        : json
+          ? JSON.stringify(json)
+          : res.statusText
+      throw new Error(detail)
+    }
+    return json as XUserResponse
+  }
+
+  const verifyXAtIndex = useCallback(async (index: number) => {
+    const link = socialLinks[index]
+    if (!link || link.service !== 'x') return
+
+    setBusy(true)
+    setMessage(null)
+
+    try {
+      const { data } = await supabase.auth.getSession()
+      const token = data.session?.provider_token
+      if (!token) {
+        setMessage('X を接続してから確認してください（「接続して確認」）')
+        return
+      }
+
+      const me = await fetchXUser(
+        'https://api.twitter.com/2/users/me?user.fields=name,username',
+        token
+      )
+      const user = me?.data
+      const userId = user?.id ?? null
+      const username = user?.username ?? null
+      const name = user?.name ?? null
+
+      if (!userId || !username) {
+        setMessage('X ユーザー情報を取得できませんでした')
+        return
+      }
+
+      const expectedHandle = extractXHandle(link.value) ?? username
+      if (expectedHandle.toLowerCase() !== username.toLowerCase()) {
+        setMessage(`入力されたハンドル（${expectedHandle}）と認証したアカウント（${username}）が一致しません`)
+        return
+      }
+
+      const verifiedAt = new Date().toISOString()
+      const valueToSave = link.value.trim() || `@${username}`
+
+      const nextLinks: SocialLink[] = socialLinks.map((l, i) =>
+        i === index
+          ? {
+              ...l,
+              value: valueToSave,
+              verified: true,
+              verifiedAt,
+              xUserId: userId,
+              xUsername: username,
+              xName: name,
+            }
+          : l
+      )
+
+      setSocialLinks(nextLinks)
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ social_links: serializeSocialLinksForSave(nextLinks) })
+        .eq('id', session?.user.id)
+
+      if (error) {
+        console.error(error.message)
+        setMessage(`X 認証は成功しましたが保存に失敗しました: ${error.message}`)
+      } else {
+        setMessage(`X を認証しました: @${username}`)
+      }
+    } catch (err: unknown) {
+      console.error(err)
+      setMessage(
+        `X 確認に失敗しました。X 連携（OAuth 許可）をやり直してください。詳細: ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      )
+    } finally {
+      setBusy(false)
+    }
+  }, [socialLinks, supabase, session, setMessage, fetchXUser])
 
   const clearYouTubeVerification = async (index: number) => {
     const link = socialLinks[index]
@@ -654,6 +818,38 @@ export default function MyPageClient({
     setMessage('YouTube 認証を解除しました')
   }
 
+  const clearXVerification = async (index: number) => {
+    const link = socialLinks[index]
+    if (!link || link.service !== 'x') return
+
+    const nextLinks: SocialLink[] = socialLinks.map((l, i) =>
+      i === index
+        ? {
+            ...l,
+            verified: false,
+            verifiedAt: null,
+            xUserId: null,
+            xUsername: null,
+            xName: null,
+          }
+        : l
+    )
+
+    setSocialLinks(nextLinks)
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ social_links: serializeSocialLinksForSave(nextLinks) })
+      .eq('id', session?.user.id)
+
+    if (error) {
+      console.error(error.message)
+      setMessage(`解除に失敗しました: ${error.message}`)
+      return
+    }
+    setMessage('X 認証を解除しました')
+  }
+
   useEffect(() => {
     if (typeof window === 'undefined') return
     const params = new URLSearchParams(window.location.search)
@@ -666,8 +862,21 @@ export default function MyPageClient({
     const nextUrl = `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash || ''}`
     window.history.replaceState({}, '', nextUrl)
     void verifyYouTubeAtIndex(idx)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [verifyYouTubeAtIndex])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const raw = params.get('x_verify')
+    if (!raw) return
+    const idx = Number(raw)
+    if (!Number.isFinite(idx)) return
+    params.delete('x_verify')
+    const qs = params.toString()
+    const nextUrl = `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash || ''}`
+    window.history.replaceState({}, '', nextUrl)
+    void verifyXAtIndex(idx)
+  }, [verifyXAtIndex])
 
   // YouTube 検証：redirectTo にクエリを付けられない環境向け（Redirect URL が厳密一致のみの場合）
   useEffect(() => {
@@ -724,6 +933,60 @@ export default function MyPageClient({
 
     void run()
   }, [socialLinks, verifyYouTubeAtIndex])
+
+  useEffect(() => {
+    const run = async () => {
+      if (typeof window === 'undefined') return
+
+      if (!xPendingRef.current) {
+        const raw = window.localStorage.getItem(X_VERIFY_LS_KEY)
+        if (!raw) return
+
+        try {
+          xPendingRef.current = JSON.parse(raw) as XVerifyPending
+        } catch {
+          window.localStorage.removeItem(X_VERIFY_LS_KEY)
+          return
+        }
+      }
+
+      const pending = xPendingRef.current
+
+      // 10分以上前なら破棄
+      if (!pending || typeof pending.value !== 'string' || Date.now() - pending.startedAt > 10 * 60 * 1000) {
+        window.localStorage.removeItem(X_VERIFY_LS_KEY)
+        xPendingRef.current = null
+        return
+      }
+
+      const targetValue = pending.value.trim()
+      const preferredIndex =
+        typeof pending.index === 'number' && socialLinks[pending.index]?.service === 'x'
+          ? pending.index
+          : -1
+      const idx2 = socialLinks.findIndex((l) => l.service === 'x' && l.value.trim() === targetValue)
+      const index =
+        preferredIndex >= 0
+          ? preferredIndex
+          : idx2 >= 0
+            ? idx2
+            : socialLinks.findIndex((l) => l.service === 'x')
+
+      if (index < 0) {
+        setSocialLinks((prev) => [
+          ...prev,
+          { service: 'x', label: '', value: targetValue, verified: false },
+        ])
+        return
+      }
+
+      window.localStorage.removeItem(X_VERIFY_LS_KEY)
+      xPendingRef.current = null
+      await verifyXAtIndex(index)
+    }
+
+    void run()
+  }, [socialLinks, verifyXAtIndex])
   const savedSocialLinks = useMemo(() => serializeSocialLinksForSave(socialLinks), [socialLinks])
   const displaySocialLinks = useMemo(() => filterSocialLinksForDisplay(savedSocialLinks), [savedSocialLinks])
 
@@ -947,22 +1210,29 @@ const saveProfile = async () => {
                     </button>
                   </div>
 
-                  {link.service === 'youtube' && (
+                  {(link.service === 'youtube' || link.service === 'x') && (
                     <div className="rounded border border-gray-200 bg-gray-50 p-2 text-sm">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="text-gray-700">
                           {link.verified ? (
                             <span>
-                              ✅ 認証済み: {link.channelTitle || link.channelHandle || link.channelId || 'YouTube'}
+                              ✅ 認証済み:{' '}
+                              {link.service === 'youtube'
+                                ? link.channelTitle || link.channelHandle || link.channelId || 'YouTube'
+                                : link.xUsername
+                                  ? `@${link.xUsername}`
+                                  : link.value || 'X'}
                             </span>
                           ) : (
-                            <span>未認証（このチャンネルの所有者確認）</span>
+                            <span>未認証（このアカウントの所有者確認）</span>
                           )}
                         </div>
                         <div className="flex flex-wrap gap-2">
                           <button
                             type="button"
-                            onClick={() => verifyYouTubeAtIndex(idx)}
+                            onClick={() =>
+                              link.service === 'youtube' ? verifyYouTubeAtIndex(idx) : verifyXAtIndex(idx)
+                            }
                             disabled={busy}
                             className="rounded border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-gray-100 disabled:opacity-60"
                           >
@@ -970,7 +1240,9 @@ const saveProfile = async () => {
                           </button>
                           <button
                             type="button"
-                            onClick={() => startYouTubeVerify(idx)}
+                            onClick={() =>
+                              link.service === 'youtube' ? startYouTubeVerify(idx) : startXVerify(idx)
+                            }
                             disabled={busy}
                             className="rounded border border-blue-300 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
                           >
@@ -979,7 +1251,11 @@ const saveProfile = async () => {
                           {link.verified && (
                             <button
                               type="button"
-                              onClick={() => clearYouTubeVerification(idx)}
+                              onClick={() =>
+                                link.service === 'youtube'
+                                  ? clearYouTubeVerification(idx)
+                                  : clearXVerification(idx)
+                              }
                               disabled={busy}
                               className="rounded border border-red-300 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
                             >
@@ -988,9 +1264,15 @@ const saveProfile = async () => {
                           )}
                         </div>
                       </div>
-                      <p className="mt-1 text-xs text-gray-500">
-                        ブランドアカウントでもOKです。確認時は「このYouTubeチャンネル」として許可してください。
-                      </p>
+                      {link.service === 'youtube' ? (
+                        <p className="mt-1 text-xs text-gray-500">
+                          ブランドアカウントでもOKです。確認時は「このYouTubeチャンネル」として許可してください。
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-xs text-gray-500">
+                          X OAuth 画面で承認したアカウントと、入力したハンドルが一致していることを確認します。
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
