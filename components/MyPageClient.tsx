@@ -1100,26 +1100,29 @@ export default function MyPageClient({
                             <span>未認証（このアカウントの所有者確認）</span>
                           )}
                         </div>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {link.service === 'x' && (
+                            <span className="text-xs text-gray-500">現在開発中</span>
+                          )}
                           <button
                             type="button"
                             onClick={() =>
                               link.service === 'youtube' ? verifyYouTubeAtIndex(idx) : startXVerify(idx)
                             }
-                            disabled={busy}
+                            disabled={link.service === 'x' || busy}
                             className="rounded border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-gray-100 disabled:opacity-60"
                           >
-                            確認
+                            {link.service === 'x' ? '確認（開発中）' : '確認'}
                           </button>
                           <button
                             type="button"
                             onClick={() =>
                               link.service === 'youtube' ? startYouTubeVerify(idx) : startXVerify(idx)
                             }
-                            disabled={busy}
+                            disabled={link.service === 'x' || busy}
                             className="rounded border border-blue-300 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
                           >
-                            接続して確認
+                            {link.service === 'x' ? '接続して確認（開発中）' : '接続して確認'}
                           </button>
                           {link.verified && (
                             <button
@@ -1129,10 +1132,10 @@ export default function MyPageClient({
                                   ? clearYouTubeVerification(idx)
                                   : clearXVerification(idx)
                               }
-                              disabled={busy}
+                              disabled={link.service === 'x' || busy}
                               className="rounded border border-red-300 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
                             >
-                              解除
+                              {link.service === 'x' ? '解除（開発中）' : '解除'}
                             </button>
                           )}
                         </div>
