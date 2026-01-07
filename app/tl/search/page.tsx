@@ -64,6 +64,13 @@ export default function TLSearchPage() {
   const [openTlSkipUpdateLoaded, setOpenTlSkipUpdateLoaded] = useState(false)
   const [openTlSkipUpdateSaving, setOpenTlSkipUpdateSaving] = useState(false)
   const [policyError, setPolicyError] = useState('')
+  const [tlJsonLinks, setTlJsonLinks] = useState<
+    { id: number; title: string | null; tl_json: string; created_at: string; created_by: string }[]
+  >([])
+  const [tlJsonLoading, setTlJsonLoading] = useState(false)
+  const [tlJsonSaving, setTlJsonSaving] = useState(false)
+  const [tlJsonInput, setTlJsonInput] = useState('')
+  const [tlJsonError, setTlJsonError] = useState('')
 
   const formatScore = (value: string) => {
     const num = parseInt(value || '0')
@@ -170,6 +177,84 @@ export default function TLSearchPage() {
     }
     loadPolicy()
   }, [openTl, isAdmin, supabase])
+
+  useEffect(() => {
+    const loadTlJsonLinks = async () => {
+      if (!openTl) return
+      setTlJsonLoading(true)
+      setTlJsonError('')
+      try {
+        const { data, error } = await supabase
+          .from('tl_video_tljson')
+          .select('id, title, tl_json, created_at, created_by')
+          .eq('videoid', openTl.videoid)
+          .order('created_at', { ascending: false })
+        if (error) throw error
+        setTlJsonLinks(
+          (data ?? []).map((row) => ({
+            id: row.id as number,
+            title: typeof row.title === 'string' ? row.title : null,
+            tl_json: row.tl_json as string,
+            created_at: row.created_at as string,
+            created_by: row.created_by as string,
+          }))
+        )
+      } catch {
+        setTlJsonError('TL JSONの取得に失敗しました')
+      } finally {
+        setTlJsonLoading(false)
+      }
+    }
+    loadTlJsonLinks()
+  }, [openTl, supabase])
+
+  const saveTlJsonLink = async () => {
+    if (!openTl) return
+    if (!session?.user) {
+      setTlJsonError('ログインが必要です')
+      return
+    }
+    const raw = tlJsonInput.trim()
+    if (!raw) {
+      setTlJsonError('JSONを入力してください')
+      return
+    }
+    setTlJsonSaving(true)
+    setTlJsonError('')
+    try {
+      const parsed = JSON.parse(raw) as { projectName?: string }
+      const title =
+        parsed && typeof parsed.projectName === 'string' ? parsed.projectName : ''
+      const { error } = await supabase.from('tl_video_tljson').insert({
+        videoid: openTl.videoid,
+        season: openTl.season ?? '',
+        title,
+        tl_json: raw,
+        created_by: session.user.id,
+      })
+      if (error) throw error
+      setTlJsonInput('')
+      const { data, error: reloadError } = await supabase
+        .from('tl_video_tljson')
+        .select('id, title, tl_json, created_at, created_by')
+        .eq('videoid', openTl.videoid)
+        .order('created_at', { ascending: false })
+      if (reloadError) throw reloadError
+      setTlJsonLinks(
+        (data ?? []).map((row) => ({
+          id: row.id as number,
+          title: typeof row.title === 'string' ? row.title : null,
+          tl_json: row.tl_json as string,
+          created_at: row.created_at as string,
+          created_by: row.created_by as string,
+        }))
+      )
+    } catch {
+      setTlJsonError('JSONの保存に失敗しました（形式を確認してください）')
+    } finally {
+      setTlJsonSaving(false)
+    }
+  }
 
   const setVideoSkipUpdate = async (videoid: string, next: boolean) => {
     if (!isAdmin) return
@@ -713,6 +798,52 @@ export default function TLSearchPage() {
                   )}
                 </div>
               )}
+
+              <div className="mt-3 border-t pt-3 text-sm space-y-2">
+                <h4 className="font-semibold">TLメーカーJSON</h4>
+                <p className="text-xs text-gray-600">
+                  TLメーカーから出力したJSONを動画に紐付けできます。
+                </p>
+                <textarea
+                  value={tlJsonInput}
+                  onChange={(e) => setTlJsonInput(e.target.value)}
+                  placeholder="TLメーカーJSONを貼り付け"
+                  className="w-full rounded border border-gray-300 px-2 py-1 text-xs font-mono h-28"
+                />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="rounded border border-blue-300 px-2 py-1 text-xs text-blue-700 disabled:opacity-60"
+                    disabled={tlJsonSaving}
+                    onClick={saveTlJsonLink}
+                  >
+                    {tlJsonSaving ? '保存中...' : 'この動画に紐付ける'}
+                  </button>
+                  {tlJsonError && (
+                    <span className="text-xs text-red-600">{tlJsonError}</span>
+                  )}
+                </div>
+                {tlJsonLoading ? (
+                  <p className="text-xs text-gray-500">読み込み中...</p>
+                ) : (
+                  <div className="space-y-2">
+                    {tlJsonLinks.length === 0 ? (
+                      <p className="text-xs text-gray-500">まだ紐付けはありません。</p>
+                    ) : (
+                      tlJsonLinks.map((link) => (
+                        <details key={link.id} className="rounded border border-gray-200 p-2">
+                          <summary className="cursor-pointer text-xs">
+                            {link.title || '無題'} / {new Date(link.created_at).toLocaleString()}
+                          </summary>
+                          <pre className="mt-2 whitespace-pre-wrap text-xs">
+                            {link.tl_json}
+                          </pre>
+                        </details>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
 
               {openTl.formation &&
                 openTl.formation !== '[]' &&
