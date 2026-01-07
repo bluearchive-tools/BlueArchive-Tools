@@ -88,7 +88,7 @@ export async function GET(request: Request) {
   console.log('[Callback] Incoming:', { url: request.url, code: !!code, xVerifyRaw, error, errorDescription })
 
   // open redirect 対策：アプリ内パスのみ許可
-  const safeNext = nextParam.startsWith('/') ? nextParam : '/'
+  const safeNext = finalNext.startsWith('/') ? finalNext : '/'
 
   const supabase = createRouteHandlerClient(
     { cookies },
@@ -216,9 +216,12 @@ export async function GET(request: Request) {
   }
 
   // Attach message if any
+
   if (message) {
     outUrl.searchParams.set('message', encodeURIComponent(message))
   }
 
-  return NextResponse.redirect(outUrl)
+  const res = NextResponse.redirect(outUrl)
+  res.cookies.delete('ba_x_verify')
+  return res
 }
