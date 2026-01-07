@@ -516,8 +516,8 @@ export default function MyPageClient({
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'x',
         options: {
-          // clean redirect URL
-          redirectTo: `${origin}/auth/callback?next=/mypage`,
+          // clean redirect URL: Remove params to satisfy strict X validation
+          redirectTo: `${origin}/auth/callback`,
         },
       })
 

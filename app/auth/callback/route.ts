@@ -75,6 +75,13 @@ export async function GET(request: Request) {
     }
   }
 
+  // If we are doing X verification (cookie present), force redirect to /mypage
+  // This handles the case where we stripped ?next=/mypage from the client request
+  let finalNext = nextParam
+  if (verifyCookie?.value) {
+    finalNext = '/mypage'
+  }
+
   const errorDescription = requestUrl.searchParams.get('error_description')
   const error = requestUrl.searchParams.get('error')
 
