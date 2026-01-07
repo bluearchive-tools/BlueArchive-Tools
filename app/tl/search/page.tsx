@@ -64,9 +64,10 @@ export default function TLSearchPage() {
   const [openTlSkipUpdateLoaded, setOpenTlSkipUpdateLoaded] = useState(false)
   const [openTlSkipUpdateSaving, setOpenTlSkipUpdateSaving] = useState(false)
   const [policyError, setPolicyError] = useState('')
-  const [tlJsonLinks, setTlJsonLinks] = useState<
-    { id: number; title: string | null; tl_json: string; created_at: string; created_by: string }[]
-  >([])
+  const [tlJsonValue, setTlJsonValue] = useState('')
+  const [tlJsonTitle, setTlJsonTitle] = useState('')
+  const [tlJsonUpdatedAt, setTlJsonUpdatedAt] = useState<string | null>(null)
+  const [tlJsonAuthor, setTlJsonAuthor] = useState<string | null>(null)
   const [tlJsonLoading, setTlJsonLoading] = useState(false)
   const [tlJsonSaving, setTlJsonSaving] = useState(false)
   const [tlJsonInput, setTlJsonInput] = useState('')
@@ -180,24 +181,34 @@ export default function TLSearchPage() {
 
   useEffect(() => {
     const loadTlJsonLinks = async () => {
-      if (!openTl) return
+      if (!openTl) {
+        setTlJsonValue('')
+        setTlJsonTitle('')
+        setTlJsonUpdatedAt(null)
+        setTlJsonAuthor(null)
+        setTlJsonError('')
+        return
+      }
       setTlJsonLoading(true)
       setTlJsonError('')
       try {
+        const table = openTl.season
+          ? `tl_${openTl.season.toLowerCase()}`
+          : 'tl_unknown'
         const { data, error } = await supabase
-          .from('tl_video_tljson')
-          .select('id, title, tl_json, created_at, created_by')
+          .from(table)
+          .select('tl_json, tl_json_title, tl_json_updated_at, tl_json_created_by')
           .eq('videoid', openTl.videoid)
-          .order('created_at', { ascending: false })
+          .maybeSingle()
         if (error) throw error
-        setTlJsonLinks(
-          (data ?? []).map((row) => ({
-            id: row.id as number,
-            title: typeof row.title === 'string' ? row.title : null,
-            tl_json: row.tl_json as string,
-            created_at: row.created_at as string,
-            created_by: row.created_by as string,
-          }))
+        const payload = data ?? {}
+        setTlJsonValue(typeof payload.tl_json === 'string' ? payload.tl_json : '')
+        setTlJsonTitle(typeof payload.tl_json_title === 'string' ? payload.tl_json_title : '')
+        setTlJsonUpdatedAt(
+          typeof payload.tl_json_updated_at === 'string' ? payload.tl_json_updated_at : null
+        )
+        setTlJsonAuthor(
+          typeof payload.tl_json_created_by === 'string' ? payload.tl_json_created_by : null
         )
       } catch {
         setTlJsonError('TL JSONの取得に失敗しました')
@@ -225,30 +236,25 @@ export default function TLSearchPage() {
       const parsed = JSON.parse(raw) as { projectName?: string }
       const title =
         parsed && typeof parsed.projectName === 'string' ? parsed.projectName : ''
-      const { error } = await supabase.from('tl_video_tljson').insert({
-        videoid: openTl.videoid,
-        season: openTl.season ?? '',
-        title,
-        tl_json: raw,
-        created_by: session.user.id,
-      })
+      const table = openTl.season
+        ? `tl_${openTl.season.toLowerCase()}`
+        : 'tl_unknown'
+      const now = new Date().toISOString()
+      const { error } = await supabase
+        .from(table)
+        .update({
+          tl_json: raw,
+          tl_json_title: title,
+          tl_json_updated_at: now,
+          tl_json_created_by: session.user.id,
+        })
+        .eq('videoid', openTl.videoid)
       if (error) throw error
       setTlJsonInput('')
-      const { data, error: reloadError } = await supabase
-        .from('tl_video_tljson')
-        .select('id, title, tl_json, created_at, created_by')
-        .eq('videoid', openTl.videoid)
-        .order('created_at', { ascending: false })
-      if (reloadError) throw reloadError
-      setTlJsonLinks(
-        (data ?? []).map((row) => ({
-          id: row.id as number,
-          title: typeof row.title === 'string' ? row.title : null,
-          tl_json: row.tl_json as string,
-          created_at: row.created_at as string,
-          created_by: row.created_by as string,
-        }))
-      )
+      setTlJsonValue(raw)
+      setTlJsonTitle(title)
+      setTlJsonUpdatedAt(now)
+      setTlJsonAuthor(session.user.id)
     } catch {
       setTlJsonError('JSONの保存に失敗しました（形式を確認してください）')
     } finally {
@@ -802,7 +808,7 @@ export default function TLSearchPage() {
               <div className="mt-3 border-t pt-3 text-sm space-y-2">
                 <h4 className="font-semibold">TLメーカーJSON</h4>
                 <p className="text-xs text-gray-600">
-                  TLメーカーから出力したJSONを動画に紐付けできます。
+                  TLメーカーから出力したJSONを動画に紐付けできます（各動画で1件）。
                 </p>
                 <textarea
                   value={tlJsonInput}
@@ -827,19 +833,21 @@ export default function TLSearchPage() {
                   <p className="text-xs text-gray-500">読み込み中...</p>
                 ) : (
                   <div className="space-y-2">
-                    {tlJsonLinks.length === 0 ? (
-                      <p className="text-xs text-gray-500">まだ紐付けはありません。</p>
+                    {tlJsonValue ? (
+                      <details className="rounded border border-gray-200 p-2">
+                        <summary className="cursor-pointer text-xs">
+                          {tlJsonTitle || '無題'}
+                          {tlJsonUpdatedAt
+                            ? ` / ${new Date(tlJsonUpdatedAt).toLocaleString()}`
+                            : ''}
+                        </summary>
+                        {tlJsonAuthor && (
+                          <p className="mt-1 text-xs text-gray-500">登録者: {tlJsonAuthor}</p>
+                        )}
+                        <pre className="mt-2 whitespace-pre-wrap text-xs">{tlJsonValue}</pre>
+                      </details>
                     ) : (
-                      tlJsonLinks.map((link) => (
-                        <details key={link.id} className="rounded border border-gray-200 p-2">
-                          <summary className="cursor-pointer text-xs">
-                            {link.title || '無題'} / {new Date(link.created_at).toLocaleString()}
-                          </summary>
-                          <pre className="mt-2 whitespace-pre-wrap text-xs">
-                            {link.tl_json}
-                          </pre>
-                        </details>
-                      ))
+                      <p className="text-xs text-gray-500">まだ紐付けはありません。</p>
                     )}
                   </div>
                 )}
