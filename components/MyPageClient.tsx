@@ -514,6 +514,7 @@ export default function MyPageClient({
 
       // Otherwise, generic sign in (though usually for verification we assume they are logged in or will log in)
       const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'x',
         options: {
           // clean redirect URL
           redirectTo: `${origin}/auth/callback?next=/mypage`,
