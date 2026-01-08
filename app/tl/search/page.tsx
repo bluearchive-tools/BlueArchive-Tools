@@ -846,81 +846,100 @@ export default function TLSearchPage() {
                 </div>
                 <nav className="rounded text-sm">
                   <ul className="divide-y divide-gray-200">
-                    {activeSection === 'overview' && (
+                    <li>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSection('overview')
+                          document.getElementById('section-overview')?.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start',
+                          })
+                        }}
+                        className={`w-full text-left px-2 py-2 ${
+                          activeSection === 'overview'
+                            ? 'text-blue-700'
+                            : 'text-gray-700 hover:text-blue-600'
+                        }`}
+                      >
+                        概要欄
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSection('tl')
+                          document.getElementById('section-tl')?.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start',
+                          })
+                        }}
+                        className={`w-full text-left px-2 py-2 ${
+                          activeSection === 'tl'
+                            ? 'text-blue-700'
+                            : 'text-gray-700 hover:text-blue-600'
+                        }`}
+                      >
+                        TL
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSection('tl-add')
+                          document.getElementById('section-tl-add')?.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start',
+                          })
+                        }}
+                        className={`w-full text-left px-2 py-2 ${
+                          activeSection === 'tl-add'
+                            ? 'text-blue-700'
+                            : 'text-gray-700 hover:text-blue-600'
+                        }`}
+                      >
+                        TL追加
+                      </button>
+                    </li>
+                    {canManage && (
                       <li>
                         <button
                           type="button"
                           onClick={() => {
-                            document.getElementById('section-overview')?.scrollIntoView({
-                              behavior: 'smooth',
-                              block: 'start',
-                            })
-                          }}
-                          className="w-full text-left px-2 py-2 text-blue-700"
-                        >
-                          概要欄
-                        </button>
-                      </li>
-                    )}
-                    {activeSection === 'tl' && (
-                      <li>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            document.getElementById('section-tl')?.scrollIntoView({
-                              behavior: 'smooth',
-                              block: 'start',
-                            })
-                          }}
-                          className="w-full text-left px-2 py-2 text-blue-700"
-                        >
-                          TL
-                        </button>
-                      </li>
-                    )}
-                    {activeSection === 'tl-add' && (
-                      <li>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            document.getElementById('section-tl-add')?.scrollIntoView({
-                              behavior: 'smooth',
-                              block: 'start',
-                            })
-                          }}
-                          className="w-full text-left px-2 py-2 text-blue-700"
-                        >
-                          TL追加
-                        </button>
-                      </li>
-                    )}
-                    {activeSection === 'manage' && canManage && (
-                      <li>
-                        <button
-                          type="button"
-                          onClick={() => {
+                            setActiveSection('manage')
                             document.getElementById('section-manage')?.scrollIntoView({
                               behavior: 'smooth',
                               block: 'start',
                             })
                           }}
-                          className="w-full text-left px-2 py-2 text-blue-700"
+                          className={`w-full text-left px-2 py-2 ${
+                            activeSection === 'manage'
+                              ? 'text-blue-700'
+                              : 'text-gray-700 hover:text-blue-600'
+                          }`}
                         >
                           管理
                         </button>
                       </li>
                     )}
-                    {activeSection === 'developer' && isAdmin && (
+                    {isAdmin && (
                       <li>
                         <button
                           type="button"
                           onClick={() => {
+                            setActiveSection('developer')
                             document.getElementById('section-developer')?.scrollIntoView({
                               behavior: 'smooth',
                               block: 'start',
                             })
                           }}
-                          className="w-full text-left px-2 py-2 text-blue-700"
+                          className={`w-full text-left px-2 py-2 ${
+                            activeSection === 'developer'
+                              ? 'text-blue-700'
+                              : 'text-gray-700 hover:text-blue-600'
+                          }`}
                         >
                           開発者向け
                         </button>
@@ -937,102 +956,108 @@ export default function TLSearchPage() {
 
               {/* 本文（スクロール） */}
               <div className="md:w-7/12 flex-1 overflow-y-auto p-4 pt-3 space-y-3">
-                <div id="section-overview">
-                  <h4 className="font-semibold text-sm">概要</h4>
-                  <p className="whitespace-pre-wrap text-sm">{openTl.description}</p>
-                  {openTl.formation &&
-                    openTl.formation !== '[]' &&
-                    students.length > 0 && (
-                      <div className="mt-2 space-y-1 text-sm">
-                        <h5 className="font-semibold text-xs text-gray-600">編成</h5>
-                        {JSON.parse(openTl.formation).map(
-                          (team: unknown[], idx: number) => (
-                            <div key={idx}>
-                              {team.map((member: unknown, i: number) => {
-                                const obj =
-                                  member as
-                                    | { id?: string; name?: string; level?: number }
-                                    | string
-                                const id = typeof obj === 'string' ? obj : obj.id || ''
-                                const name =
-                                  typeof obj === 'object' && obj && 'name' in obj
-                                    ? (obj as { name?: string }).name
-                                    : undefined
-                                const lv =
-                                  typeof obj === 'object' &&
-                                  obj &&
-                                  'level' in obj &&
-                                  obj.level
-                                    ? ` Lv${obj.level}`
-                                    : ''
-                                const student = students.find((s) => s.id === id)
-                                return (
-                                  <p key={i}>
-                                    {student ? student.name : name || id}
-                                    {lv}
-                                  </p>
-                                )
-                              })}
-                            </div>
-                          )
+                {activeSection === 'overview' && (
+                  <div id="section-overview">
+                    <h4 className="font-semibold text-sm">概要</h4>
+                    <p className="whitespace-pre-wrap text-sm">{openTl.description}</p>
+                    {openTl.formation &&
+                      openTl.formation !== '[]' &&
+                      students.length > 0 && (
+                        <div className="mt-2 space-y-1 text-sm">
+                          <h5 className="font-semibold text-xs text-gray-600">編成</h5>
+                          {JSON.parse(openTl.formation).map(
+                            (team: unknown[], idx: number) => (
+                              <div key={idx}>
+                                {team.map((member: unknown, i: number) => {
+                                  const obj =
+                                    member as
+                                      | { id?: string; name?: string; level?: number }
+                                      | string
+                                  const id = typeof obj === 'string' ? obj : obj.id || ''
+                                  const name =
+                                    typeof obj === 'object' && obj && 'name' in obj
+                                      ? (obj as { name?: string }).name
+                                      : undefined
+                                  const lv =
+                                    typeof obj === 'object' &&
+                                    obj &&
+                                    'level' in obj &&
+                                    obj.level
+                                      ? ` Lv${obj.level}`
+                                      : ''
+                                  const student = students.find((s) => s.id === id)
+                                  return (
+                                    <p key={i}>
+                                      {student ? student.name : name || id}
+                                      {lv}
+                                    </p>
+                                  )
+                                })}
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
+                  </div>
+                )}
+
+                {activeSection === 'tl' && (
+                  <div id="section-tl" className="border-t pt-3 text-sm space-y-2">
+                    <h4 className="font-semibold">TL</h4>
+                    {tlJsonLoading ? (
+                      <p className="text-xs text-gray-500">読み込み中...</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {tlJsonValue ? (
+                          <details className="rounded border border-gray-200 p-2">
+                            <summary className="cursor-pointer text-xs">
+                              {tlJsonTitle || '無題'}
+                              {tlJsonUpdatedAt
+                                ? ` / ${new Date(tlJsonUpdatedAt).toLocaleString()}`
+                                : ''}
+                            </summary>
+                            {tlJsonAuthor && (
+                              <p className="mt-1 text-xs text-gray-500">登録者: {tlJsonAuthor}</p>
+                            )}
+                            <pre className="mt-2 whitespace-pre-wrap text-xs">{tlJsonValue}</pre>
+                          </details>
+                        ) : (
+                          <p className="text-xs text-gray-500">まだ紐付けはありません。</p>
                         )}
                       </div>
                     )}
-                </div>
+                  </div>
+                )}
 
-                <div id="section-tl" className="border-t pt-3 text-sm space-y-2">
-                  <h4 className="font-semibold">TL</h4>
-                  {tlJsonLoading ? (
-                    <p className="text-xs text-gray-500">読み込み中...</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {tlJsonValue ? (
-                        <details className="rounded border border-gray-200 p-2">
-                          <summary className="cursor-pointer text-xs">
-                            {tlJsonTitle || '無題'}
-                            {tlJsonUpdatedAt
-                              ? ` / ${new Date(tlJsonUpdatedAt).toLocaleString()}`
-                              : ''}
-                          </summary>
-                          {tlJsonAuthor && (
-                            <p className="mt-1 text-xs text-gray-500">登録者: {tlJsonAuthor}</p>
-                          )}
-                          <pre className="mt-2 whitespace-pre-wrap text-xs">{tlJsonValue}</pre>
-                        </details>
-                      ) : (
-                        <p className="text-xs text-gray-500">まだ紐付けはありません。</p>
+                {activeSection === 'tl-add' && (
+                  <div id="section-tl-add" className="border-t pt-3 text-sm space-y-2">
+                    <h4 className="font-semibold">TL追加</h4>
+                    <p className="text-xs text-gray-600">
+                      TLメーカーから出力したJSONを動画に紐付けできます（各動画で1件）。
+                    </p>
+                    <textarea
+                      value={tlJsonInput}
+                      onChange={(e) => setTlJsonInput(e.target.value)}
+                      placeholder="TLメーカーJSONを貼り付け"
+                      className="w-full rounded border border-gray-300 px-2 py-1 text-xs font-mono h-28"
+                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        className="rounded border border-blue-300 px-2 py-1 text-xs text-blue-700 disabled:opacity-60"
+                        disabled={tlJsonSaving}
+                        onClick={saveTlJsonLink}
+                      >
+                        {tlJsonSaving ? '保存中...' : 'この動画に紐付ける'}
+                      </button>
+                      {tlJsonError && (
+                        <span className="text-xs text-red-600">{tlJsonError}</span>
                       )}
                     </div>
-                  )}
-                </div>
-
-                <div id="section-tl-add" className="border-t pt-3 text-sm space-y-2">
-                  <h4 className="font-semibold">TL追加</h4>
-                  <p className="text-xs text-gray-600">
-                    TLメーカーから出力したJSONを動画に紐付けできます（各動画で1件）。
-                  </p>
-                  <textarea
-                    value={tlJsonInput}
-                    onChange={(e) => setTlJsonInput(e.target.value)}
-                    placeholder="TLメーカーJSONを貼り付け"
-                    className="w-full rounded border border-gray-300 px-2 py-1 text-xs font-mono h-28"
-                  />
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      className="rounded border border-blue-300 px-2 py-1 text-xs text-blue-700 disabled:opacity-60"
-                      disabled={tlJsonSaving}
-                      onClick={saveTlJsonLink}
-                    >
-                      {tlJsonSaving ? '保存中...' : 'この動画に紐付ける'}
-                    </button>
-                    {tlJsonError && (
-                      <span className="text-xs text-red-600">{tlJsonError}</span>
-                    )}
                   </div>
-                </div>
+                )}
 
-                {canManage && (
+                {activeSection === 'manage' && canManage && (
                   <div id="section-manage" className="border-t pt-3 text-sm space-y-2">
                     <h4 className="font-semibold">管理</h4>
                     <p className="text-xs text-gray-600">
@@ -1044,7 +1069,7 @@ export default function TLSearchPage() {
                   </div>
                 )}
 
-                {isAdmin && (
+                {activeSection === 'developer' && isAdmin && (
                   <div id="section-developer" className="border-t pt-3 text-sm space-y-2">
                     <h4 className="font-semibold">開発者向け</h4>
                     <label className="flex items-center gap-2">
