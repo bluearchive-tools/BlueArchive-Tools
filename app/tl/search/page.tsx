@@ -844,97 +844,83 @@ export default function TLSearchPage() {
                     YouTube
                   </a>
                 </div>
-                <nav className="border rounded p-2 text-sm">
-                  <ul className="space-y-1">
-                    <li>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveSection('overview')
-                          document.getElementById('section-overview')?.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start',
-                          })
-                        }}
-                        className={`w-full text-left rounded px-2 py-1 ${activeSection === 'overview'
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'hover:bg-gray-50'
-                        }`}
-                      >
-                        概要欄
-                      </button>
-                    </li>
-                    <li>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveSection('tl')
-                          document.getElementById('section-tl')?.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start',
-                          })
-                        }}
-                        className={`w-full text-left rounded px-2 py-1 ${activeSection === 'tl'
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'hover:bg-gray-50'
-                        }`}
-                      >
-                        TL
-                      </button>
-                    </li>
-                    <li>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveSection('tl-add')
-                          document.getElementById('section-tl-add')?.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start',
-                          })
-                        }}
-                        className={`w-full text-left rounded px-2 py-1 ${activeSection === 'tl-add'
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'hover:bg-gray-50'
-                        }`}
-                      >
-                        TL追加
-                      </button>
-                    </li>
-                    {canManage && (
+                <nav className="rounded text-sm">
+                  <ul className="divide-y divide-gray-200">
+                    {activeSection === 'overview' && (
                       <li>
                         <button
                           type="button"
                           onClick={() => {
-                            setActiveSection('manage')
+                            document.getElementById('section-overview')?.scrollIntoView({
+                              behavior: 'smooth',
+                              block: 'start',
+                            })
+                          }}
+                          className="w-full text-left px-2 py-2 text-blue-700"
+                        >
+                          概要欄
+                        </button>
+                      </li>
+                    )}
+                    {activeSection === 'tl' && (
+                      <li>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            document.getElementById('section-tl')?.scrollIntoView({
+                              behavior: 'smooth',
+                              block: 'start',
+                            })
+                          }}
+                          className="w-full text-left px-2 py-2 text-blue-700"
+                        >
+                          TL
+                        </button>
+                      </li>
+                    )}
+                    {activeSection === 'tl-add' && (
+                      <li>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            document.getElementById('section-tl-add')?.scrollIntoView({
+                              behavior: 'smooth',
+                              block: 'start',
+                            })
+                          }}
+                          className="w-full text-left px-2 py-2 text-blue-700"
+                        >
+                          TL追加
+                        </button>
+                      </li>
+                    )}
+                    {activeSection === 'manage' && canManage && (
+                      <li>
+                        <button
+                          type="button"
+                          onClick={() => {
                             document.getElementById('section-manage')?.scrollIntoView({
                               behavior: 'smooth',
                               block: 'start',
                             })
                           }}
-                          className={`w-full text-left rounded px-2 py-1 ${activeSection === 'manage'
-                            ? 'bg-blue-50 text-blue-700'
-                            : 'hover:bg-gray-50'
-                          }`}
+                          className="w-full text-left px-2 py-2 text-blue-700"
                         >
                           管理
                         </button>
                       </li>
                     )}
-                    {isAdmin && (
+                    {activeSection === 'developer' && isAdmin && (
                       <li>
                         <button
                           type="button"
                           onClick={() => {
-                            setActiveSection('developer')
                             document.getElementById('section-developer')?.scrollIntoView({
                               behavior: 'smooth',
                               block: 'start',
                             })
                           }}
-                          className={`w-full text-left rounded px-2 py-1 ${activeSection === 'developer'
-                            ? 'bg-blue-50 text-blue-700'
-                            : 'hover:bg-gray-50'
-                          }`}
+                          className="w-full text-left px-2 py-2 text-blue-700"
                         >
                           開発者向け
                         </button>
@@ -954,6 +940,44 @@ export default function TLSearchPage() {
                 <div id="section-overview">
                   <h4 className="font-semibold text-sm">概要</h4>
                   <p className="whitespace-pre-wrap text-sm">{openTl.description}</p>
+                  {openTl.formation &&
+                    openTl.formation !== '[]' &&
+                    students.length > 0 && (
+                      <div className="mt-2 space-y-1 text-sm">
+                        <h5 className="font-semibold text-xs text-gray-600">編成</h5>
+                        {JSON.parse(openTl.formation).map(
+                          (team: unknown[], idx: number) => (
+                            <div key={idx}>
+                              {team.map((member: unknown, i: number) => {
+                                const obj =
+                                  member as
+                                    | { id?: string; name?: string; level?: number }
+                                    | string
+                                const id = typeof obj === 'string' ? obj : obj.id || ''
+                                const name =
+                                  typeof obj === 'object' && obj && 'name' in obj
+                                    ? (obj as { name?: string }).name
+                                    : undefined
+                                const lv =
+                                  typeof obj === 'object' &&
+                                  obj &&
+                                  'level' in obj &&
+                                  obj.level
+                                    ? ` Lv${obj.level}`
+                                    : ''
+                                const student = students.find((s) => s.id === id)
+                                return (
+                                  <p key={i}>
+                                    {student ? student.name : name || id}
+                                    {lv}
+                                  </p>
+                                )
+                              })}
+                            </div>
+                          )
+                        )}
+                      </div>
+                    )}
                 </div>
 
                 <div id="section-tl" className="border-t pt-3 text-sm space-y-2">
@@ -1043,43 +1067,6 @@ export default function TLSearchPage() {
                   </div>
                 )}
 
-                {openTl.formation &&
-                  openTl.formation !== '[]' &&
-                  students.length > 0 && (
-                    <div className="space-y-1 text-sm">
-                      {JSON.parse(openTl.formation).map(
-                        (team: unknown[], idx: number) => (
-                          <div key={idx}>
-                            {team.map((member: unknown, i: number) => {
-                              const obj =
-                                member as
-                                  | { id?: string; name?: string; level?: number }
-                                  | string
-                              const id = typeof obj === 'string' ? obj : obj.id || ''
-                              const name =
-                                typeof obj === 'object' && obj && 'name' in obj
-                                  ? (obj as { name?: string }).name
-                                  : undefined
-                              const lv =
-                                typeof obj === 'object' &&
-                                obj &&
-                                'level' in obj &&
-                                obj.level
-                                  ? ` Lv${obj.level}`
-                                  : ''
-                              const student = students.find((s) => s.id === id)
-                              return (
-                                <p key={i}>
-                                  {student ? student.name : name || id}
-                                  {lv}
-                                </p>
-                              )
-                            })}
-                          </div>
-                        )
-                      )}
-                    </div>
-                  )}
               </div>
             </div>
           </div>
