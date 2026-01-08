@@ -201,7 +201,12 @@ export default function TLSearchPage() {
           .eq('videoid', openTl.videoid)
           .maybeSingle()
         if (error) throw error
-        const payload = data ?? {}
+        const payload = (data ?? {}) as {
+          tl_json?: unknown
+          tl_json_title?: unknown
+          tl_json_updated_at?: unknown
+          tl_json_created_by?: unknown
+        }
         setTlJsonValue(typeof payload.tl_json === 'string' ? payload.tl_json : '')
         setTlJsonTitle(typeof payload.tl_json_title === 'string' ? payload.tl_json_title : '')
         setTlJsonUpdatedAt(
