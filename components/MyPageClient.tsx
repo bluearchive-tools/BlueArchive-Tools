@@ -235,6 +235,7 @@ export default function MyPageClient({
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewVisible, setPreviewVisible] = useState(false)
   const [showUnowned, setShowUnowned] = useState(false)
+  const [activeSection, setActiveSection] = useState<'profile' | 'account' | 'youtube' | 'links'>('profile')
   const profileRef = useRef<HTMLElement | null>(null)
   const accountRef = useRef<HTMLElement | null>(null)
   const linksRef = useRef<HTMLElement | null>(null)
@@ -910,31 +911,53 @@ export default function MyPageClient({
     setPreviewVisible(false)
   }, [previewOpen])
 
+  useEffect(() => {
+    const target =
+      activeSection === 'profile'
+        ? profileRef
+        : activeSection === 'account'
+          ? accountRef
+          : activeSection === 'youtube'
+            ? youtubeRef
+            : linksRef
+    if (target.current) {
+      scrollTo(target)
+    }
+  }, [activeSection])
+
   return (
     <div className="flex flex-col gap-6 lg:flex-row">
       <aside className="w-full lg:w-64 shrink-0 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
         <nav className="space-y-2">
           <button
-            className="w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800"
-            onClick={() => scrollTo(profileRef)}
+            className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
+              activeSection === 'profile' ? 'bg-blue-50 text-blue-700' : ''
+            }`}
+            onClick={() => setActiveSection('profile')}
           >
             プロフィール設定
           </button>
           <button
-            className="w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800"
-            onClick={() => scrollTo(accountRef)}
+            className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
+              activeSection === 'account' ? 'bg-blue-50 text-blue-700' : ''
+            }`}
+            onClick={() => setActiveSection('account')}
           >
             アカウント設定
           </button>
           <button
-            className="w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800"
-            onClick={() => scrollTo(youtubeRef)}
+            className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
+              activeSection === 'youtube' ? 'bg-blue-50 text-blue-700' : ''
+            }`}
+            onClick={() => setActiveSection('youtube')}
           >
             YouTube設定
           </button>
           <button
-            className="w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800"
-            onClick={() => scrollTo(linksRef)}
+            className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
+              activeSection === 'links' ? 'bg-blue-50 text-blue-700' : ''
+            }`}
+            onClick={() => setActiveSection('links')}
           >
             連携サービス
           </button>
@@ -944,28 +967,29 @@ export default function MyPageClient({
       <div className="flex-1 space-y-6">
         {message && <p className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">{message}</p>}
 
-        <section
-          ref={profileRef as unknown as React.RefObject<HTMLElement>}
-          className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
-        >
-          <div className="flex items-center gap-3 mb-4">
-            <FontAwesomeIcon icon={faUserCircle} className="text-3xl text-gray-500" />
-            <div>
-              <h2 className="text-xl font-semibold">プロフィール設定</h2>
-              <p className="text-sm text-gray-500">ユーザー名やプロフィール情報を編集できます</p>
+        {activeSection === 'profile' && (
+          <section
+            ref={profileRef as unknown as React.RefObject<HTMLElement>}
+            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <FontAwesomeIcon icon={faUserCircle} className="text-3xl text-gray-500" />
+              <div>
+                <h2 className="text-xl font-semibold">プロフィール設定</h2>
+                <p className="text-sm text-gray-500">ユーザー名やプロフィール情報を編集できます</p>
+              </div>
             </div>
-          </div>
-          <div className="space-y-4">
-            <label className="block text-sm text-gray-600">
-              ニックネーム（表示名、12文字まで）
-              <input
-                value={nickname}
-                maxLength={12}
-                onChange={(e) => setNickname(e.target.value)}
-                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="例: 先生"
-              />
-            </label>
+            <div className="space-y-4">
+              <label className="block text-sm text-gray-600">
+                ニックネーム（表示名、12文字まで）
+                <input
+                  value={nickname}
+                  maxLength={12}
+                  onChange={(e) => setNickname(e.target.value)}
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="例: 先生"
+                />
+              </label>
 
             <label className="block text-sm text-gray-600">
               ユーザー名
@@ -1268,20 +1292,22 @@ export default function MyPageClient({
                 プレビュー
               </button>
             </div>
-          </div>
-        </section>
-
-        <section
-          ref={accountRef as unknown as React.RefObject<HTMLElement>}
-          className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold">アカウント設定</h3>
-              <p className="text-sm text-gray-500">ログインメールと User ID</p>
             </div>
-          </div>
-          <div className="space-y-4">
+          </section>
+        )}
+
+        {activeSection === 'account' && (
+          <section
+            ref={accountRef as unknown as React.RefObject<HTMLElement>}
+            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">アカウント設定</h3>
+                <p className="text-sm text-gray-500">ログインメールと User ID</p>
+              </div>
+            </div>
+            <div className="space-y-4">
             <div>
               <p className="text-sm text-gray-600 mb-1">メールアドレス</p>
               <p className="rounded border border-gray-200 bg-gray-50 px-3 py-2 text-base">{email || '—'}</p>
@@ -1309,120 +1335,128 @@ export default function MyPageClient({
                 </button>
               </div>
             </div>
-          </div>
-        </section>
-
-        <section
-          ref={youtubeRef as unknown as React.RefObject<HTMLElement>}
-          className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold">YouTube設定</h3>
-              <p className="text-sm text-gray-500">YouTube本人確認・チャンネル情報</p>
             </div>
-          </div>
-          <div className="space-y-3 text-sm">
-            {youtubeLink?.verified ? (
-              <p className="text-gray-700">
-                ✅ 認証済み: {youtubeLink.channelTitle || youtubeLink.channelHandle || youtubeLink.channelId || youtubeLink.value}
-              </p>
-            ) : (
-              <p className="text-gray-600">YouTubeの認証がまだ完了していません。</p>
-            )}
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  if (youtubeIndex >= 0) {
-                    void startYouTubeVerify(youtubeIndex)
-                  } else {
-                    setSocialLinks((prev) => [
-                      ...prev,
-                      { service: 'youtube', label: '', value: '', verified: false },
-                    ])
-                  }
-                }}
-                disabled={busy}
-                className="inline-flex items-center justify-center rounded border border-blue-300 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
-              >
-                {youtubeLink ? 'YouTubeを接続' : 'YouTubeリンクを追加'}
-              </button>
-              {youtubeLink && (
+          </section>
+        )}
+
+        {activeSection === 'youtube' && (
+          <section
+            ref={youtubeRef as unknown as React.RefObject<HTMLElement>}
+            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">YouTube設定</h3>
+                <p className="text-sm text-gray-500">YouTube本人確認・チャンネル情報</p>
+              </div>
+            </div>
+            <div className="space-y-3 text-sm">
+              {youtubeLink?.verified ? (
+                <p className="text-gray-700">
+                  ✅ 認証済み: {youtubeLink.channelTitle || youtubeLink.channelHandle || youtubeLink.channelId || youtubeLink.value}
+                </p>
+              ) : (
+                <p className="text-gray-600">YouTubeの認証がまだ完了していません。</p>
+              )}
+              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={() => scrollTo(linksRef)}
-                  className="inline-flex items-center justify-center rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50"
+                  onClick={() => {
+                    if (youtubeIndex >= 0) {
+                      void startYouTubeVerify(youtubeIndex)
+                    } else {
+                      setSocialLinks((prev) => [
+                        ...prev,
+                        { service: 'youtube', label: '', value: '', verified: false },
+                      ])
+                    }
+                  }}
+                  disabled={busy}
+                  className="inline-flex items-center justify-center rounded border border-blue-300 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
                 >
-                  連携サービスへ
+                  {youtubeLink ? 'YouTubeを接続' : 'YouTubeリンクを追加'}
                 </button>
-              )}
+                {youtubeLink && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveSection('links')
+                      scrollTo(linksRef)
+                    }}
+                    className="inline-flex items-center justify-center rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50"
+                  >
+                    連携サービスへ
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
-        <section
-          ref={linksRef as unknown as React.RefObject<HTMLElement>}
-          className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold">連携サービス</h3>
-              <p className="text-sm text-gray-500">Google / Discord との紐付け管理</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleLink('google')}
-                disabled={busy}
-                className="inline-flex items-center gap-2 rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-60"
-              >
-                <FontAwesomeIcon icon={faGoogle} />
-                {linkedProviders.has('google') ? '再連携' : 'Google を連携'}
-              </button>
-              <button
-                onClick={() => handleLink('discord')}
-                disabled={busy}
-                className="inline-flex items-center gap-2 rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-60"
-              >
-                <FontAwesomeIcon icon={faDiscord} />
-                {linkedProviders.has('discord') ? '再連携' : 'Discord を連携'}
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {identities.length === 0 && <p className="text-sm text-gray-500">まだ外部サービスは連携されていません。</p>}
-            {identities.map((identity) => (
-              <div
-                key={identity.identity_id}
-                className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 dark:border-gray-700"
-              >
-                <div className="flex items-center gap-3">
-                  <FontAwesomeIcon icon={providerIcon[identity.provider as 'google' | 'discord'] ?? faLink} />
-                  <div>
-                    <p className="font-medium capitalize">{identity.provider}</p>
-                    {identityEmail(identity) && <p className="text-sm text-gray-500">{identityEmail(identity)}</p>}
-                    {identity.last_sign_in_at && (
-                      <p className="text-xs text-gray-400">最終サインイン: {new Date(identity.last_sign_in_at).toLocaleString()}</p>
-                    )}
-                  </div>
-                </div>
+        {activeSection === 'links' && (
+          <section
+            ref={linksRef as unknown as React.RefObject<HTMLElement>}
+            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">連携サービス</h3>
+                <p className="text-sm text-gray-500">Google / Discord との紐付け管理</p>
+              </div>
+              <div className="flex gap-2">
                 <button
-                  onClick={() => handleUnlink(identity)}
-                  disabled={busy || identities.length <= 1}
-                  className="inline-flex items-center gap-2 rounded border border-red-300 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                  onClick={() => handleLink('google')}
+                  disabled={busy}
+                  className="inline-flex items-center gap-2 rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-60"
                 >
-                  <FontAwesomeIcon icon={faUnlink} /> 解除
+                  <FontAwesomeIcon icon={faGoogle} />
+                  {linkedProviders.has('google') ? '再連携' : 'Google を連携'}
+                </button>
+                <button
+                  onClick={() => handleLink('discord')}
+                  disabled={busy}
+                  className="inline-flex items-center gap-2 rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-60"
+                >
+                  <FontAwesomeIcon icon={faDiscord} />
+                  {linkedProviders.has('discord') ? '再連携' : 'Discord を連携'}
                 </button>
               </div>
-            ))}
-            {identities.length > 0 && identities.length <= 1 && (
-              <p className="text-xs text-gray-400">
-                すべて解除することはできません。別の連携を追加してから解除してください。
-              </p>
-            )}
-          </div>
-        </section>
+            </div>
+
+            <div className="space-y-3">
+              {identities.length === 0 && <p className="text-sm text-gray-500">まだ外部サービスは連携されていません。</p>}
+              {identities.map((identity) => (
+                <div
+                  key={identity.identity_id}
+                  className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 dark:border-gray-700"
+                >
+                  <div className="flex items-center gap-3">
+                    <FontAwesomeIcon icon={providerIcon[identity.provider as 'google' | 'discord'] ?? faLink} />
+                    <div>
+                      <p className="font-medium capitalize">{identity.provider}</p>
+                      {identityEmail(identity) && <p className="text-sm text-gray-500">{identityEmail(identity)}</p>}
+                      {identity.last_sign_in_at && (
+                        <p className="text-xs text-gray-400">最終サインイン: {new Date(identity.last_sign_in_at).toLocaleString()}</p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleUnlink(identity)}
+                    disabled={busy || identities.length <= 1}
+                    className="inline-flex items-center gap-2 rounded border border-red-300 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                  >
+                    <FontAwesomeIcon icon={faUnlink} /> 解除
+                  </button>
+                </div>
+              ))}
+              {identities.length > 0 && identities.length <= 1 && (
+                <p className="text-xs text-gray-400">
+                  すべて解除することはできません。別の連携を追加してから解除してください。
+                </p>
+              )}
+            </div>
+          </section>
+        )}
       </div>
 
       {previewOpen && (
