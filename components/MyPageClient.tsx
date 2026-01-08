@@ -238,6 +238,7 @@ export default function MyPageClient({
   const profileRef = useRef<HTMLElement | null>(null)
   const accountRef = useRef<HTMLElement | null>(null)
   const linksRef = useRef<HTMLElement | null>(null)
+  const youtubeRef = useRef<HTMLElement | null>(null)
 
   const fetchIdentities = async () => {
     const { data, error } = await supabase.auth.getUser()
@@ -297,6 +298,11 @@ export default function MyPageClient({
   }
 
   const linkedProviders = new Set(identities.map((id) => id.provider))
+  const youtubeIndex = useMemo(
+    () => socialLinks.findIndex((link) => link.service === 'youtube'),
+    [socialLinks]
+  )
+  const youtubeLink = youtubeIndex >= 0 ? socialLinks[youtubeIndex] : null
 
   const selectedStudent = useMemo(() => students.find((s) => s.id === iconStudentId), [iconStudentId])
   const selectedDecorations = useMemo(() => {
@@ -922,6 +928,12 @@ export default function MyPageClient({
           </button>
           <button
             className="w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800"
+            onClick={() => scrollTo(youtubeRef)}
+          >
+            YouTube設定
+          </button>
+          <button
+            className="w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800"
             onClick={() => scrollTo(linksRef)}
           >
             連携サービス
@@ -1296,6 +1308,55 @@ export default function MyPageClient({
                   コピー
                 </button>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          ref={youtubeRef as unknown as React.RefObject<HTMLElement>}
+          className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold">YouTube設定</h3>
+              <p className="text-sm text-gray-500">YouTube本人確認・チャンネル情報</p>
+            </div>
+          </div>
+          <div className="space-y-3 text-sm">
+            {youtubeLink?.verified ? (
+              <p className="text-gray-700">
+                ✅ 認証済み: {youtubeLink.channelTitle || youtubeLink.channelHandle || youtubeLink.channelId || youtubeLink.value}
+              </p>
+            ) : (
+              <p className="text-gray-600">YouTubeの認証がまだ完了していません。</p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (youtubeIndex >= 0) {
+                    void startYouTubeVerify(youtubeIndex)
+                  } else {
+                    setSocialLinks((prev) => [
+                      ...prev,
+                      { service: 'youtube', label: '', value: '', verified: false },
+                    ])
+                  }
+                }}
+                disabled={busy}
+                className="inline-flex items-center justify-center rounded border border-blue-300 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
+              >
+                {youtubeLink ? 'YouTubeを接続' : 'YouTubeリンクを追加'}
+              </button>
+              {youtubeLink && (
+                <button
+                  type="button"
+                  onClick={() => scrollTo(linksRef)}
+                  className="inline-flex items-center justify-center rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50"
+                >
+                  連携サービスへ
+                </button>
+              )}
             </div>
           </div>
         </section>
