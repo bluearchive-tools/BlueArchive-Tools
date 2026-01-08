@@ -46,6 +46,7 @@ type SocialLink = {
   value: string
   verified?: boolean
   verifiedAt?: string | null
+  autoFormationStatus?: boolean
   channelId?: string | null
   channelTitle?: string | null
   channelHandle?: string | null
@@ -80,6 +81,7 @@ type SerializedSocialLink = {
   value: string
   verified: boolean
   verifiedAt: string | null
+  autoFormationStatus: boolean
   channelId: string | null
   channelTitle: string | null
   channelHandle: string | null
@@ -109,6 +111,7 @@ const serializeSocialLinksForSave = (links: SocialLink[]): SerializedSocialLink[
       value: link.value,
       verified: link.verified ?? false,
       verifiedAt: link.verifiedAt ?? null,
+      autoFormationStatus: link.autoFormationStatus ?? false,
       channelId: link.channelId ?? null,
       channelTitle: link.channelTitle ?? null,
       channelHandle: link.channelHandle ?? null,
@@ -191,6 +194,8 @@ export default function MyPageClient({
 
               const verified = typeof r?.verified === 'boolean' ? (r.verified as boolean) : undefined
               const verifiedAt = typeof r?.verifiedAt === 'string' ? (r.verifiedAt as string) : null
+              const autoFormationStatus =
+                typeof r?.autoFormationStatus === 'boolean' ? (r.autoFormationStatus as boolean) : false
               const channelId = typeof r?.channelId === 'string' ? (r.channelId as string) : null
               const channelTitle = typeof r?.channelTitle === 'string' ? (r.channelTitle as string) : null
               const channelHandle = typeof r?.channelHandle === 'string' ? (r.channelHandle as string) : null
@@ -204,6 +209,7 @@ export default function MyPageClient({
                 value,
                 verified,
                 verifiedAt,
+                autoFormationStatus,
                 channelId,
                 channelTitle,
                 channelHandle,
@@ -230,13 +236,15 @@ export default function MyPageClient({
   const [identities, setIdentities] = useState<UserIdentity[]>([])
   const [busy, setBusy] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
+  const [savingSocial, setSavingSocial] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [showUserId, setShowUserId] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewVisible, setPreviewVisible] = useState(false)
   const [showUnowned, setShowUnowned] = useState(false)
-  const [activeSection, setActiveSection] = useState<'profile' | 'account' | 'youtube' | 'links'>('profile')
+  const [activeSection, setActiveSection] = useState<'profile' | 'social' | 'account' | 'youtube' | 'links'>('profile')
   const profileRef = useRef<HTMLElement | null>(null)
+  const socialRef = useRef<HTMLElement | null>(null)
   const accountRef = useRef<HTMLElement | null>(null)
   const linksRef = useRef<HTMLElement | null>(null)
   const youtubeRef = useRef<HTMLElement | null>(null)
@@ -870,6 +878,24 @@ export default function MyPageClient({
   const savedSocialLinks = useMemo(() => serializeSocialLinksForSave(socialLinks), [socialLinks])
   const displaySocialLinks = useMemo(() => filterSocialLinksForDisplay(savedSocialLinks), [savedSocialLinks])
 
+  const saveSocialLinks = async () => {
+    if (!session?.user) return
+    setSavingSocial(true)
+    setMessage(null)
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        social_links: savedSocialLinks,
+      })
+      .eq('id', session.user.id)
+    setSavingSocial(false)
+    if (error) {
+      setMessage(`ソーシャル設定の更新に失敗しました: ${error.message}`)
+      return
+    }
+    setMessage('ソーシャル設定を更新しました')
+  }
+
   const saveProfile = async () => {
     if (!session?.user) return
     setSavingProfile(true)
@@ -911,20 +937,6 @@ export default function MyPageClient({
     setPreviewVisible(false)
   }, [previewOpen])
 
-  useEffect(() => {
-    const target =
-      activeSection === 'profile'
-        ? profileRef
-        : activeSection === 'account'
-          ? accountRef
-          : activeSection === 'youtube'
-            ? youtubeRef
-            : linksRef
-    if (target.current) {
-      scrollTo(target)
-    }
-  }, [activeSection])
-
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
       <aside className="w-full lg:w-64 shrink-0 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
@@ -936,6 +948,14 @@ export default function MyPageClient({
             onClick={() => setActiveSection('profile')}
           >
             プロフィール設定
+          </button>
+          <button
+            className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
+              activeSection === 'social' ? 'bg-blue-50 text-blue-700' : ''
+            }`}
+            onClick={() => setActiveSection('social')}
+          >
+            ソーシャルアカウント
           </button>
           <button
             className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
@@ -1053,8 +1073,113 @@ export default function MyPageClient({
               </div>
             </label>
 
+            <label className="block text-sm text-gray-600">
+              フレンドコード
+              <input
+                value={friendCode}
+                onChange={(e) => setFriendCode(e.target.value)}
+                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="フレンドコードを入力"
+              />
+              <label className="mt-2 inline-flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={friendCodePublic}
+                  onChange={(e) => setFriendCodePublic(e.target.checked)}
+                />
+                公開する
+              </label>
+            </label>
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-gray-700">デコレーション</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowUnowned((v) => !v)}
+                    className="rounded border border-gray-300 px-2 py-1 text-xs font-medium hover:bg-gray-50"
+                  >
+                    {showUnowned ? '未購入を隠す' : '未購入を表示'}
+                  </button>
+                  <a href="/decorations" className="text-sm text-blue-600 hover:underline">
+                    デコレーションショップへ
+                  </a>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600">カテゴリごとに1つ選択できます。</p>
+              <div className="space-y-3">
+                {decorationsByGenre.map(([genre, items]) => (
+                  <div key={genre} className="space-y-2">
+                    <p className="text-sm font-semibold text-gray-700">{genre}</p>
+                    <div className="grid gap-2">
+                      {items.map((item) => {
+                        const owned = decorationInventory.includes(item.id)
+                        const checked = decorationIds.includes(item.id)
+                        return (
+                          <label
+                            key={item.id}
+                            className={`flex items-start gap-3 rounded border p-3 text-sm ${checked ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-gray-50'
+                              } dark:border-gray-700 dark:bg-gray-800`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              disabled={!owned}
+                              onChange={() => toggleDecoration(item.id)}
+                              className="mt-1"
+                            />
+                            <div className="flex-1 space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-lg" aria-hidden>
+                                  {item.emoji}
+                                </span>
+                                <p className="font-semibold">{item.name}</p>
+                                {!owned && <span className="rounded bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800">未購入</span>}
+                              </div>
+                              <p className="text-gray-600">{item.description}</p>
+                              {item.style === 'red-gradient' && <p className="text-xs text-rose-600">効果: 赤グラデーション枠</p>}
+                            </div>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={saveProfile}
+                disabled={savingProfile}
+                className="inline-flex items-center justify-center rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {savingProfile ? '保存中...' : '保存'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewOpen(true)}
+                className="inline-flex items-center justify-center rounded border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
+              >
+                プレビュー
+              </button>
+            </div>
+            </div>
+          </section>
+        )}
+
+        {activeSection === 'social' && (
+          <section
+            ref={socialRef as unknown as React.RefObject<HTMLElement>}
+            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">ソーシャルアカウント</h3>
+                <p className="text-sm text-gray-500">公開プロフィールに表示するリンクを管理します</p>
+              </div>
+            </div>
             <div className="space-y-2">
-              <p className="text-sm text-gray-600">ソーシャルアカウント</p>
               {socialLinks.map((link, idx) => (
                 <div key={idx} className="flex flex-col gap-2 rounded border border-gray-200 p-2">
                   <div className="flex flex-col gap-2 sm:flex-row">
@@ -1200,98 +1325,14 @@ export default function MyPageClient({
                 ＋ 追加
               </button>
             </div>
-
-            <label className="block text-sm text-gray-600">
-              フレンドコード
-              <input
-                value={friendCode}
-                onChange={(e) => setFriendCode(e.target.value)}
-                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="フレンドコードを入力"
-              />
-              <label className="mt-2 inline-flex items-center gap-2 text-sm text-gray-700">
-                <input
-                  type="checkbox"
-                  checked={friendCodePublic}
-                  onChange={(e) => setFriendCodePublic(e.target.checked)}
-                />
-                公開する
-              </label>
-            </label>
-            <div className="mt-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-gray-700">デコレーション</p>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowUnowned((v) => !v)}
-                    className="rounded border border-gray-300 px-2 py-1 text-xs font-medium hover:bg-gray-50"
-                  >
-                    {showUnowned ? '未購入を隠す' : '未購入を表示'}
-                  </button>
-                  <a href="/decorations" className="text-sm text-blue-600 hover:underline">
-                    デコレーションショップへ
-                  </a>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600">カテゴリごとに1つ選択できます。</p>
-              <div className="space-y-3">
-                {decorationsByGenre.map(([genre, items]) => (
-                  <div key={genre} className="space-y-2">
-                    <p className="text-sm font-semibold text-gray-700">{genre}</p>
-                    <div className="grid gap-2">
-                      {items.map((item) => {
-                        const owned = decorationInventory.includes(item.id)
-                        const checked = decorationIds.includes(item.id)
-                        return (
-                          <label
-                            key={item.id}
-                            className={`flex items-start gap-3 rounded border p-3 text-sm ${checked ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-gray-50'
-                              } dark:border-gray-700 dark:bg-gray-800`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              disabled={!owned}
-                              onChange={() => toggleDecoration(item.id)}
-                              className="mt-1"
-                            />
-                            <div className="flex-1 space-y-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-lg" aria-hidden>
-                                  {item.emoji}
-                                </span>
-                                <p className="font-semibold">{item.name}</p>
-                                {!owned && <span className="rounded bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800">未購入</span>}
-                              </div>
-                              <p className="text-gray-600">{item.description}</p>
-                              {item.style === 'red-gradient' && <p className="text-xs text-rose-600">効果: 赤グラデーション枠</p>}
-                            </div>
-                          </label>
-                        )
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap gap-2">
               <button
-                onClick={saveProfile}
-                disabled={savingProfile}
+                onClick={saveSocialLinks}
+                disabled={savingSocial}
                 className="inline-flex items-center justify-center rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
               >
-                {savingProfile ? '保存中...' : '保存'}
+                {savingSocial ? '保存中...' : '保存'}
               </button>
-              <button
-                type="button"
-                onClick={() => setPreviewOpen(true)}
-                className="inline-flex items-center justify-center rounded border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
-              >
-                プレビュー
-              </button>
-            </div>
             </div>
           </section>
         )}
@@ -1358,6 +1399,35 @@ export default function MyPageClient({
               ) : (
                 <p className="text-gray-600">YouTubeの認証がまだ完了していません。</p>
               )}
+              <div className="rounded border border-gray-200 bg-gray-50 p-3 text-sm">
+                <label className="flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    checked={youtubeLink?.autoFormationStatus ?? false}
+                    onChange={(e) => {
+                      const nextValue = e.target.checked
+                      setSocialLinks((prev) => {
+                        const idx = prev.findIndex((link) => link.service === 'youtube')
+                        if (idx >= 0) {
+                          const next = [...prev]
+                          next[idx] = { ...next[idx], autoFormationStatus: nextValue }
+                          return next
+                        }
+                        return [
+                          ...prev,
+                          { service: 'youtube', label: '', value: '', verified: false, autoFormationStatus: nextValue },
+                        ]
+                      })
+                    }}
+                  />
+                  <span className="text-gray-700">
+                    投稿した動画の編成に、サイトに登録済みのステータスを自動追加する
+                  </span>
+                </label>
+                <p className="mt-2 text-xs text-gray-500">
+                  TL 登録時に「自動」でステータスを補完する設定です。手動管理したい場合はオフにしてください。
+                </p>
+              </div>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -1388,6 +1458,14 @@ export default function MyPageClient({
                     連携サービスへ
                   </button>
                 )}
+                <button
+                  type="button"
+                  onClick={saveSocialLinks}
+                  disabled={savingSocial}
+                  className="inline-flex items-center justify-center rounded border border-blue-300 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
+                >
+                  {savingSocial ? '保存中...' : 'YouTube設定を保存'}
+                </button>
               </div>
             </div>
           </section>
