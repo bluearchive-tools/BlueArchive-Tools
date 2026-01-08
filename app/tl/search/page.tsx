@@ -78,6 +78,7 @@ export default function TLSearchPage() {
   const [tlJsonInput, setTlJsonInput] = useState('')
   const [tlJsonError, setTlJsonError] = useState('')
   const [tlInputMode, setTlInputMode] = useState<'json' | 'text'>('json')
+  const [modalClosing, setModalClosing] = useState(false)
 
   const formatScore = (value: string) => {
     const num = parseInt(value || '0')
@@ -245,6 +246,7 @@ export default function TLSearchPage() {
       return
     }
     setActiveSection('overview')
+    setModalClosing(false)
     const loadVideoChannelId = async () => {
       setOwnerCheckLoading(true)
       try {
@@ -263,6 +265,23 @@ export default function TLSearchPage() {
     }
     void loadVideoChannelId()
   }, [openTl])
+
+  useEffect(() => {
+    if (!openTl) return
+    document.body.classList.add('overflow-hidden')
+    return () => {
+      document.body.classList.remove('overflow-hidden')
+    }
+  }, [openTl])
+
+  const closeModal = () => {
+    if (modalClosing) return
+    setModalClosing(true)
+    window.setTimeout(() => {
+      setOpenTl(null)
+      setPolicyError('')
+    }, 200)
+  }
 
   const saveTlJsonLink = async () => {
     if (!openTl) return
@@ -807,14 +826,11 @@ export default function TLSearchPage() {
       )}
       {openTl && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={() => {
-            setOpenTl(null)
-            setPolicyError('')
-          }}
+          className={`fixed inset-0 flex items-center justify-center z-50 transition-opacity duration-200 ${modalClosing ? 'opacity-0' : 'opacity-100'} bg-black/50`}
+          onClick={closeModal}
         >
           <div
-            className="bg-white rounded w-full max-w-5xl h-[80vh] max-h-[80vh] flex flex-col overflow-hidden"
+            className={`bg-white rounded w-full max-w-5xl h-[80vh] max-h-[80vh] flex flex-col overflow-hidden transition-all duration-200 ${modalClosing ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col md:flex-row h-full">
