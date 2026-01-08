@@ -911,8 +911,8 @@ export default function MyPageClient({
   }, [previewOpen])
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[240px,1fr]">
-      <aside className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+    <div className="flex flex-col gap-6 lg:flex-row">
+      <aside className="w-full lg:w-64 shrink-0 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
         <nav className="space-y-2">
           <button
             className="w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800"
@@ -941,7 +941,7 @@ export default function MyPageClient({
         </nav>
       </aside>
 
-      <div className="space-y-6">
+      <div className="flex-1 space-y-6">
         {message && <p className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">{message}</p>}
 
         <section
