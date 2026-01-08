@@ -77,6 +77,7 @@ export default function TLSearchPage() {
   const [tlJsonSaving, setTlJsonSaving] = useState(false)
   const [tlJsonInput, setTlJsonInput] = useState('')
   const [tlJsonError, setTlJsonError] = useState('')
+  const [tlInputMode, setTlInputMode] = useState<'json' | 'text'>('json')
 
   const formatScore = (value: string) => {
     const num = parseInt(value || '0')
@@ -277,9 +278,14 @@ export default function TLSearchPage() {
     setTlJsonSaving(true)
     setTlJsonError('')
     try {
-      const parsed = JSON.parse(raw) as { projectName?: string }
-      const title =
-        parsed && typeof parsed.projectName === 'string' ? parsed.projectName : ''
+      let title = ''
+      if (tlInputMode === 'json') {
+        const parsed = JSON.parse(raw) as { projectName?: string }
+        title =
+          parsed && typeof parsed.projectName === 'string' ? parsed.projectName : ''
+      } else {
+        title = 'text'
+      }
       const table = openTl.season
         ? `tl_${openTl.season.toLowerCase()}`
         : 'tl_unknown'
@@ -812,7 +818,7 @@ export default function TLSearchPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col md:flex-row h-full">
-              <div className="md:w-5/12 border-b md:border-b-0 md:border-r p-4 space-y-3">
+              <div className="md:w-5/12 border-b md:border-b-0 md:border-r p-4 space-y-3 overflow-y-auto">
                 <a
                   href={`https://www.youtube.com/watch?v=${openTl.videoid}`}
                   target="_blank"
@@ -955,7 +961,7 @@ export default function TLSearchPage() {
               </div>
 
               {/* 本文（スクロール） */}
-              <div className="md:w-7/12 flex-1 overflow-y-auto p-4 pt-3 space-y-3">
+              <div className="md:w-7/12 flex-1 overflow-y-auto p-4 pt-3 space-y-4">
                 {activeSection === 'overview' && (
                   <div id="section-overview">
                     <h4 className="font-semibold text-sm">概要</h4>
@@ -1002,7 +1008,7 @@ export default function TLSearchPage() {
                 )}
 
                 {activeSection === 'tl' && (
-                  <div id="section-tl" className="border-t pt-3 text-sm space-y-2">
+                  <div id="section-tl" className="text-sm space-y-2">
                     <h4 className="font-semibold">TL</h4>
                     {tlJsonLoading ? (
                       <p className="text-xs text-gray-500">読み込み中...</p>
@@ -1030,17 +1036,66 @@ export default function TLSearchPage() {
                 )}
 
                 {activeSection === 'tl-add' && (
-                  <div id="section-tl-add" className="border-t pt-3 text-sm space-y-2">
+                  <div id="section-tl-add" className="text-sm space-y-2">
                     <h4 className="font-semibold">TL追加</h4>
                     <p className="text-xs text-gray-600">
-                      TLメーカーから出力したJSONを動画に紐付けできます（各動画で1件）。
+                      TLメーカーJSONまたはテキスト形式のTLを紐付けできます（各動画で1件）。
                     </p>
-                    <textarea
-                      value={tlJsonInput}
-                      onChange={(e) => setTlJsonInput(e.target.value)}
-                      placeholder="TLメーカーJSONを貼り付け"
-                      className="w-full rounded border border-gray-300 px-2 py-1 text-xs font-mono h-28"
-                    />
+                    <div className="flex flex-wrap gap-4 text-xs">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="tl-input-mode"
+                          checked={tlInputMode === 'json'}
+                          onChange={() => setTlInputMode('json')}
+                        />
+                        <span>TLメーカーJSON</span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="tl-input-mode"
+                          checked={tlInputMode === 'text'}
+                          onChange={() => setTlInputMode('text')}
+                        />
+                        <span>テキスト形式</span>
+                      </label>
+                    </div>
+                    {tlInputMode === 'json' ? (
+                      <div className="space-y-2">
+                        <textarea
+                          value={tlJsonInput}
+                          onChange={(e) => setTlJsonInput(e.target.value)}
+                          placeholder="TLメーカーJSONを貼り付け"
+                          className="w-full rounded border border-gray-300 px-2 py-1 text-xs font-mono h-28"
+                        />
+                        <label className="block text-xs text-gray-600">
+                          JSONファイルをアップロード
+                          <input
+                            type="file"
+                            accept="application/json"
+                            className="mt-1 block w-full text-xs"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (!file) return
+                              const reader = new FileReader()
+                              reader.onload = () => {
+                                const text = typeof reader.result === 'string' ? reader.result : ''
+                                setTlJsonInput(text)
+                              }
+                              reader.readAsText(file)
+                            }}
+                          />
+                        </label>
+                      </div>
+                    ) : (
+                      <textarea
+                        value={tlJsonInput}
+                        onChange={(e) => setTlJsonInput(e.target.value)}
+                        placeholder="TLテキストを入力"
+                        className="w-full rounded border border-gray-300 px-2 py-1 text-xs font-mono h-28"
+                      />
+                    )}
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -1058,7 +1113,7 @@ export default function TLSearchPage() {
                 )}
 
                 {activeSection === 'manage' && canManage && (
-                  <div id="section-manage" className="border-t pt-3 text-sm space-y-2">
+                  <div id="section-manage" className="text-sm space-y-2">
                     <h4 className="font-semibold">管理</h4>
                     <p className="text-xs text-gray-600">
                       YouTube本人確認済みの投稿者として管理できます。
@@ -1070,7 +1125,7 @@ export default function TLSearchPage() {
                 )}
 
                 {activeSection === 'developer' && isAdmin && (
-                  <div id="section-developer" className="border-t pt-3 text-sm space-y-2">
+                  <div id="section-developer" className="text-sm space-y-2">
                     <h4 className="font-semibold">開発者向け</h4>
                     <label className="flex items-center gap-2">
                       <input
