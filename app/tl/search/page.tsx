@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUser, faUserSlash } from '@fortawesome/free-solid-svg-icons'
+import { faYoutube } from '@fortawesome/free-brands-svg-icons'
 import { Timeline } from '../../../types/timeline'
 import PageHelpButton from '../../../components/PageHelpButton'
 
@@ -46,6 +47,10 @@ export default function TLSearchPage() {
   const [loadingMessage, setLoadingMessage] = useState('')
   const [openTl, setOpenTl] = useState<Timeline | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [youtubeChannelId, setYoutubeChannelId] = useState<string | null>(null)
+  const [videoChannelId, setVideoChannelId] = useState<string | null>(null)
+  const [ownerCheckLoading, setOwnerCheckLoading] = useState(false)
+  const [activeSection, setActiveSection] = useState('overview')
   const [students, setStudents] = useState<Student[]>([])
   const [editTl, setEditTl] = useState<Timeline | null>(null)
   const [editScore, setEditScore] = useState('')
@@ -144,10 +149,19 @@ export default function TLSearchPage() {
       if (session) {
         const { data } = await supabase
           .from('profiles')
-          .select('admin')
+          .select('admin, social_links')
           .eq('id', session.user.id)
           .maybeSingle()
         setIsAdmin(Boolean(data?.admin))
+        const links = Array.isArray(data?.social_links)
+          ? (data?.social_links as Array<Record<string, unknown>>)
+          : []
+        const yt = links.find(
+          (l) => l?.service === 'youtube' && l?.verified === true
+        )
+        setYoutubeChannelId(
+          typeof yt?.channelId === 'string' ? yt.channelId : null
+        )
       }
     }
     checkAdmin()
@@ -224,6 +238,31 @@ export default function TLSearchPage() {
     loadTlJsonLinks()
   }, [openTl, supabase])
 
+  useEffect(() => {
+    if (!openTl) {
+      setVideoChannelId(null)
+      return
+    }
+    setActiveSection('overview')
+    const loadVideoChannelId = async () => {
+      setOwnerCheckLoading(true)
+      try {
+        const res = await fetch(`/api/youtube/video-owner?videoid=${openTl.videoid}`)
+        if (!res.ok) {
+          setVideoChannelId(null)
+          return
+        }
+        const json = (await res.json()) as { channelId?: string }
+        setVideoChannelId(typeof json.channelId === 'string' ? json.channelId : null)
+      } catch {
+        setVideoChannelId(null)
+      } finally {
+        setOwnerCheckLoading(false)
+      }
+    }
+    void loadVideoChannelId()
+  }, [openTl])
+
   const saveTlJsonLink = async () => {
     if (!openTl) return
     if (!session?.user) {
@@ -266,6 +305,12 @@ export default function TLSearchPage() {
       setTlJsonSaving(false)
     }
   }
+
+  const canManage =
+    Boolean(session?.user) &&
+    Boolean(youtubeChannelId) &&
+    Boolean(videoChannelId) &&
+    youtubeChannelId === videoChannelId
 
   const setVideoSkipUpdate = async (videoid: string, next: boolean) => {
     if (!isAdmin) return
@@ -792,23 +837,192 @@ export default function TLSearchPage() {
                     href={`https://www.youtube.com/watch?v=${openTl.videoid}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-gray-50"
+                    className="inline-flex items-center gap-1 rounded border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-gray-50"
+                    aria-label="YouTubeで動画を開く"
                   >
-                    動画に飛ぶ
+                    <FontAwesomeIcon icon={faYoutube} />
+                    YouTube
                   </a>
-                  <button
-                    type="button"
-                    className="rounded border border-blue-300 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50"
-                    onClick={() => {
-                      const el = document.getElementById('tl-json-form')
-                      el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                    }}
-                  >
-                    TL追加へ
-                  </button>
                 </div>
+                <nav className="border rounded p-2 text-sm">
+                  <ul className="space-y-1">
+                    <li>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSection('overview')
+                          document.getElementById('section-overview')?.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start',
+                          })
+                        }}
+                        className={`w-full text-left rounded px-2 py-1 ${activeSection === 'overview'
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        概要欄
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSection('tl')
+                          document.getElementById('section-tl')?.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start',
+                          })
+                        }}
+                        className={`w-full text-left rounded px-2 py-1 ${activeSection === 'tl'
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        TL
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSection('tl-add')
+                          document.getElementById('section-tl-add')?.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start',
+                          })
+                        }}
+                        className={`w-full text-left rounded px-2 py-1 ${activeSection === 'tl-add'
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        TL追加
+                      </button>
+                    </li>
+                    {canManage && (
+                      <li>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveSection('manage')
+                            document.getElementById('section-manage')?.scrollIntoView({
+                              behavior: 'smooth',
+                              block: 'start',
+                            })
+                          }}
+                          className={`w-full text-left rounded px-2 py-1 ${activeSection === 'manage'
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          管理
+                        </button>
+                      </li>
+                    )}
+                    {isAdmin && (
+                      <li>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveSection('developer')
+                            document.getElementById('section-developer')?.scrollIntoView({
+                              behavior: 'smooth',
+                              block: 'start',
+                            })
+                          }}
+                          className={`w-full text-left rounded px-2 py-1 ${activeSection === 'developer'
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          開発者向け
+                        </button>
+                      </li>
+                    )}
+                  </ul>
+                </nav>
                 {isAdmin && (
-                  <div className="border-t pt-3 text-sm space-y-2">
+                  <p className="text-xs text-gray-500">
+                    開発者向けの項目は「開発者向け」セクションにあります。
+                  </p>
+                )}
+              </div>
+
+              {/* 本文（スクロール） */}
+              <div className="md:w-7/12 flex-1 overflow-y-auto p-4 pt-3 space-y-3">
+                <div id="section-overview">
+                  <h4 className="font-semibold text-sm">概要</h4>
+                  <p className="whitespace-pre-wrap text-sm">{openTl.description}</p>
+                </div>
+
+                <div id="section-tl" className="border-t pt-3 text-sm space-y-2">
+                  <h4 className="font-semibold">TL</h4>
+                  {tlJsonLoading ? (
+                    <p className="text-xs text-gray-500">読み込み中...</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {tlJsonValue ? (
+                        <details className="rounded border border-gray-200 p-2">
+                          <summary className="cursor-pointer text-xs">
+                            {tlJsonTitle || '無題'}
+                            {tlJsonUpdatedAt
+                              ? ` / ${new Date(tlJsonUpdatedAt).toLocaleString()}`
+                              : ''}
+                          </summary>
+                          {tlJsonAuthor && (
+                            <p className="mt-1 text-xs text-gray-500">登録者: {tlJsonAuthor}</p>
+                          )}
+                          <pre className="mt-2 whitespace-pre-wrap text-xs">{tlJsonValue}</pre>
+                        </details>
+                      ) : (
+                        <p className="text-xs text-gray-500">まだ紐付けはありません。</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div id="section-tl-add" className="border-t pt-3 text-sm space-y-2">
+                  <h4 className="font-semibold">TL追加</h4>
+                  <p className="text-xs text-gray-600">
+                    TLメーカーから出力したJSONを動画に紐付けできます（各動画で1件）。
+                  </p>
+                  <textarea
+                    value={tlJsonInput}
+                    onChange={(e) => setTlJsonInput(e.target.value)}
+                    placeholder="TLメーカーJSONを貼り付け"
+                    className="w-full rounded border border-gray-300 px-2 py-1 text-xs font-mono h-28"
+                  />
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="rounded border border-blue-300 px-2 py-1 text-xs text-blue-700 disabled:opacity-60"
+                      disabled={tlJsonSaving}
+                      onClick={saveTlJsonLink}
+                    >
+                      {tlJsonSaving ? '保存中...' : 'この動画に紐付ける'}
+                    </button>
+                    {tlJsonError && (
+                      <span className="text-xs text-red-600">{tlJsonError}</span>
+                    )}
+                  </div>
+                </div>
+
+                {canManage && (
+                  <div id="section-manage" className="border-t pt-3 text-sm space-y-2">
+                    <h4 className="font-semibold">管理</h4>
+                    <p className="text-xs text-gray-600">
+                      YouTube本人確認済みの投稿者として管理できます。
+                    </p>
+                    {ownerCheckLoading && (
+                      <p className="text-xs text-gray-500">確認中...</p>
+                    )}
+                  </div>
+                )}
+
+                {isAdmin && (
+                  <div id="section-developer" className="border-t pt-3 text-sm space-y-2">
+                    <h4 className="font-semibold">開発者向け</h4>
                     <label className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -828,62 +1042,6 @@ export default function TLSearchPage() {
                     )}
                   </div>
                 )}
-              </div>
-
-              {/* 本文（スクロール） */}
-              <div className="md:w-7/12 flex-1 overflow-y-auto p-4 pt-3 space-y-3">
-                <div>
-                  <h4 className="font-semibold text-sm">概要</h4>
-                  <p className="whitespace-pre-wrap text-sm">{openTl.description}</p>
-                </div>
-
-              <div id="tl-json-form" className="border-t pt-3 text-sm space-y-2">
-                <h4 className="font-semibold">TLメーカーJSON</h4>
-                <p className="text-xs text-gray-600">
-                  TLメーカーから出力したJSONを動画に紐付けできます（各動画で1件）。
-                </p>
-                <textarea
-                  value={tlJsonInput}
-                  onChange={(e) => setTlJsonInput(e.target.value)}
-                  placeholder="TLメーカーJSONを貼り付け"
-                  className="w-full rounded border border-gray-300 px-2 py-1 text-xs font-mono h-28"
-                />
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="rounded border border-blue-300 px-2 py-1 text-xs text-blue-700 disabled:opacity-60"
-                    disabled={tlJsonSaving}
-                    onClick={saveTlJsonLink}
-                  >
-                    {tlJsonSaving ? '保存中...' : 'この動画に紐付ける'}
-                  </button>
-                  {tlJsonError && (
-                    <span className="text-xs text-red-600">{tlJsonError}</span>
-                  )}
-                </div>
-                {tlJsonLoading ? (
-                  <p className="text-xs text-gray-500">読み込み中...</p>
-                ) : (
-                  <div className="space-y-2">
-                    {tlJsonValue ? (
-                      <details className="rounded border border-gray-200 p-2">
-                        <summary className="cursor-pointer text-xs">
-                          {tlJsonTitle || '無題'}
-                          {tlJsonUpdatedAt
-                            ? ` / ${new Date(tlJsonUpdatedAt).toLocaleString()}`
-                            : ''}
-                        </summary>
-                        {tlJsonAuthor && (
-                          <p className="mt-1 text-xs text-gray-500">登録者: {tlJsonAuthor}</p>
-                        )}
-                        <pre className="mt-2 whitespace-pre-wrap text-xs">{tlJsonValue}</pre>
-                      </details>
-                    ) : (
-                      <p className="text-xs text-gray-500">まだ紐付けはありません。</p>
-                    )}
-                  </div>
-                )}
-              </div>
 
                 {openTl.formation &&
                   openTl.formation !== '[]' &&
