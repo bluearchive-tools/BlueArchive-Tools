@@ -2,6 +2,8 @@
 import { cookies } from 'next/headers'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { colord } from 'colord'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faUserCheck } from '@fortawesome/free-solid-svg-icons'
 import students from '../../../data/students.json'
 import FriendCodeCopy from '../../../components/FriendCodeCopy'
 import DecorationInfoButton from '../../../components/DecorationInfoButton'
@@ -24,6 +26,13 @@ type Decoration = {
   font_family?: string | null
 }
 
+type ParsedSocialLink = {
+  label: string
+  value: string
+  service: string
+  verified?: boolean
+}
+
 const computeReadableTextColor = (backgroundColor?: string | null, preferred?: string | null) => {
   if (preferred) return preferred
   if (!backgroundColor) return undefined
@@ -31,6 +40,49 @@ const computeReadableTextColor = (backgroundColor?: string | null, preferred?: s
   if (!parsed.isValid()) return undefined
   return parsed.isLight() ? '#111827' : '#F9FAFB'
 }
+
+const normalizeUrl = (value: string) => {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+  if (/^www\./i.test(trimmed)) return `https://${trimmed}`
+  return null
+}
+
+const socialValueToUrl = (service: string, value: string) => {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  const direct = normalizeUrl(trimmed)
+  if (direct) return direct
+  if (service === 'youtube') {
+    const handle = trimmed.startsWith('@') ? trimmed.slice(1) : trimmed
+    if (/^UC[A-Za-z0-9_-]{16,}$/.test(trimmed)) {
+      return `https://www.youtube.com/channel/${trimmed}`
+    }
+    if (trimmed.includes('youtube.com') || trimmed.includes('youtu.be')) {
+      return `https://${trimmed}`
+    }
+    return `https://www.youtube.com/@${handle}`
+  }
+  if (service === 'x' || service === 'twitter') {
+    const handle = trimmed.startsWith('@') ? trimmed.slice(1) : trimmed
+    return `https://x.com/${handle}`
+  }
+  if (/\.[a-z]{2,}/i.test(trimmed)) {
+    return `https://${trimmed}`
+  }
+  return null
+}
+
+const renderVerifiedBadge = () => (
+  <span className="relative inline-flex items-center group">
+    <FontAwesomeIcon icon={faUserCheck} className="text-green-600" />
+    <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-max -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 shadow transition group-hover:opacity-100">
+      本人認証済み
+      <span className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-gray-900" />
+    </span>
+  </span>
+)
 
 export default async function UserPage({ params }: Params) {
   const { username } = await params
@@ -72,13 +124,15 @@ export default async function UserPage({ params }: Params) {
           .map((item) => ({
             label: typeof item?.label === 'string' ? item.label : '',
             value: typeof item?.value === 'string' ? item.value : '',
+            service: typeof item?.service === 'string' ? item.service : 'other',
+            verified: typeof item?.verified === 'boolean' ? item.verified : false,
           }))
           .filter((item) => item.label.trim() || item.value.trim())
       }
     } catch {
       /* ignore */
     }
-    return [] as { label: string; value: string }[]
+    return [] as ParsedSocialLink[]
   })()
 
   const student = students.find((s) => s.id === profile?.icon_student_id)
@@ -130,15 +184,14 @@ export default async function UserPage({ params }: Params) {
         <p className="text-gray-600">ユーザーが見つかりませんでした。</p>
       ) : (
         <div
-          className={
-            frameDecoration?.style === 'aurora-frame'
-              ? 'rounded-xl p-[2px] ba-aurora-frame'
-              : frameDecoration?.style === 'sunset-frame'
-                ? 'rounded-xl p-[2px] ba-sunset-frame'
-                : frameDecoration?.style === 'red-gradient'
-                  ? 'rounded-xl bg-gradient-to-r from-rose-500 via-red-500 to-orange-400 p-[2px]'
-                  : ''
-          }
+          className={`relative ${frameDecoration?.style === 'aurora-frame'
+            ? 'rounded-xl p-[2px] ba-aurora-frame'
+            : frameDecoration?.style === 'sunset-frame'
+              ? 'rounded-xl p-[2px] ba-sunset-frame'
+              : frameDecoration?.style === 'red-gradient'
+                ? 'rounded-xl bg-gradient-to-r from-rose-500 via-red-500 to-orange-400 p-[2px]'
+                : ''
+            }`}
         >
           <div
             className="relative rounded-lg border border-gray-200 bg-white p-6 shadow-sm space-y-4 dark:border-gray-700 dark:bg-gray-900"
@@ -161,16 +214,16 @@ export default async function UserPage({ params }: Params) {
               ) : (
                 <div className="h-16 w-16 rounded-xl bg-gray-200 border border-gray-200" />
               )}
-              <div>
-                <p className="text-sm text-gray-500">Tools ID: {profile.username}</p>
-                <h2 className="text-xl font-semibold">{profile.nickname || profile.username}</h2>
+              <div className="flex-1">
+                <p className="text-sm text-gray-500">Tools ID: {profile.username || '—'}</p>
+                <h4 className="text-xl font-bold">{profile.nickname || profile.username || 'ユーザー名未設定'}</h4>
                 <p className="text-sm text-gray-500 flex items-center gap-1">
                   <span>Lv {profile.level ?? '—'} / フレンドコード:</span>
                   <FriendCodeCopy code={profile.friend_code} disabled={!profile.friend_code_public} />
                 </p>
               </div>
+              <DecorationInfoButton decorations={appliedDecorations} />
             </div>
-            <DecorationInfoButton decorations={appliedDecorations} />
             <div className="space-y-2">
               <p className="text-sm text-gray-600">自己紹介</p>
               <p className="rounded border p-3 text-sm whitespace-pre-wrap" style={fieldStyle}>
@@ -178,14 +231,31 @@ export default async function UserPage({ params }: Params) {
               </p>
             </div>
             {parsedSocial.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <p className="text-sm text-gray-600">ソーシャル</p>
-                {parsedSocial.map((link, idx) => (
-                  <p key={idx} className="rounded border p-2 text-sm" style={fieldStyle}>
-                    {link.label && <span className="font-semibold mr-1">{link.label}:</span>}
-                    <span>{link.value || '未入力'}</span>
-                  </p>
-                ))}
+                {parsedSocial.map((link, idx) => {
+                  const href = socialValueToUrl(link.service, link.value)
+                  return (
+                    <p key={idx} className="rounded border p-2 text-sm" style={fieldStyle}>
+                      {link.label && <span className="font-semibold mr-1">{link.label}:</span>}
+                      {link.service === 'youtube' && link.verified && (
+                        <span className="mr-1 text-xs">{renderVerifiedBadge()}</span>
+                      )}
+                      {href ? (
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="underline underline-offset-2"
+                        >
+                          {link.value || '未入力'}
+                        </a>
+                      ) : (
+                        <span>{link.value || '未入力'}</span>
+                      )}
+                    </p>
+                  )
+                })}
               </div>
             )}
           </div>
