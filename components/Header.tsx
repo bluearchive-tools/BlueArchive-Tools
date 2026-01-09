@@ -41,14 +41,14 @@ export default function Header() {
   useEffect(() => {
     const fetchProfile = async () => {
       if (session) {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('profiles')
           .select('username')
           .eq('id', session.user.id)
           .maybeSingle()
         if (data) {
           setUsername(data?.username ?? null)
-        } else if (pathname !== '/profile/setup') {
+        } else if (!error && pathname !== '/profile/setup') {
           router.push('/profile/setup')
         }
       }
@@ -124,6 +124,8 @@ export default function Header() {
       localStorage.removeItem(`sync_done_${session.user.id}`)
     }
     await supabase.auth.signOut()
+    setAccountOpen(false)
+    router.push('/')
   }
 
   const toggleTheme = () => toggle()

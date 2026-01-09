@@ -10,6 +10,7 @@ type SocialLink = {
   value: string
   verified?: boolean
   verifiedAt?: string | null
+  autoFormationStatus?: boolean
   channelId?: string | null
   channelTitle?: string | null
   channelHandle?: string | null
@@ -40,6 +41,7 @@ const serializeSocialLinksForSave = (links: SocialLink[]) => {
       value: link.value,
       verified: link.verified ?? false,
       verifiedAt: link.verifiedAt ?? null,
+      autoFormationStatus: link.autoFormationStatus ?? false,
       channelId: link.channelId ?? null,
       channelTitle: link.channelTitle ?? null,
       channelHandle: link.channelHandle ?? null,

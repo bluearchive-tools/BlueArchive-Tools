@@ -46,6 +46,7 @@ type SocialLink = {
   value: string
   verified?: boolean
   verifiedAt?: string | null
+  autoFormationStatus?: boolean
   channelId?: string | null
   channelTitle?: string | null
   channelHandle?: string | null
@@ -80,6 +81,7 @@ type SerializedSocialLink = {
   value: string
   verified: boolean
   verifiedAt: string | null
+  autoFormationStatus: boolean
   channelId: string | null
   channelTitle: string | null
   channelHandle: string | null
@@ -109,6 +111,7 @@ const serializeSocialLinksForSave = (links: SocialLink[]): SerializedSocialLink[
       value: link.value,
       verified: link.verified ?? false,
       verifiedAt: link.verifiedAt ?? null,
+      autoFormationStatus: link.autoFormationStatus ?? false,
       channelId: link.channelId ?? null,
       channelTitle: link.channelTitle ?? null,
       channelHandle: link.channelHandle ?? null,
@@ -191,6 +194,8 @@ export default function MyPageClient({
 
               const verified = typeof r?.verified === 'boolean' ? (r.verified as boolean) : undefined
               const verifiedAt = typeof r?.verifiedAt === 'string' ? (r.verifiedAt as string) : null
+              const autoFormationStatus =
+                typeof r?.autoFormationStatus === 'boolean' ? (r.autoFormationStatus as boolean) : false
               const channelId = typeof r?.channelId === 'string' ? (r.channelId as string) : null
               const channelTitle = typeof r?.channelTitle === 'string' ? (r.channelTitle as string) : null
               const channelHandle = typeof r?.channelHandle === 'string' ? (r.channelHandle as string) : null
@@ -204,6 +209,7 @@ export default function MyPageClient({
                 value,
                 verified,
                 verifiedAt,
+                autoFormationStatus,
                 channelId,
                 channelTitle,
                 channelHandle,
@@ -230,14 +236,18 @@ export default function MyPageClient({
   const [identities, setIdentities] = useState<UserIdentity[]>([])
   const [busy, setBusy] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
+  const [savingSocial, setSavingSocial] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [showUserId, setShowUserId] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewVisible, setPreviewVisible] = useState(false)
   const [showUnowned, setShowUnowned] = useState(false)
+  const [activeSection, setActiveSection] = useState<'profile' | 'social' | 'account' | 'youtube' | 'links'>('profile')
   const profileRef = useRef<HTMLElement | null>(null)
+  const socialRef = useRef<HTMLElement | null>(null)
   const accountRef = useRef<HTMLElement | null>(null)
   const linksRef = useRef<HTMLElement | null>(null)
+  const youtubeRef = useRef<HTMLElement | null>(null)
 
   const fetchIdentities = async () => {
     const { data, error } = await supabase.auth.getUser()
@@ -297,6 +307,11 @@ export default function MyPageClient({
   }
 
   const linkedProviders = new Set(identities.map((id) => id.provider))
+  const youtubeIndex = useMemo(
+    () => socialLinks.findIndex((link) => link.service === 'youtube'),
+    [socialLinks]
+  )
+  const youtubeLink = youtubeIndex >= 0 ? socialLinks[youtubeIndex] : null
 
   const selectedStudent = useMemo(() => students.find((s) => s.id === iconStudentId), [iconStudentId])
   const selectedDecorations = useMemo(() => {
@@ -863,6 +878,24 @@ export default function MyPageClient({
   const savedSocialLinks = useMemo(() => serializeSocialLinksForSave(socialLinks), [socialLinks])
   const displaySocialLinks = useMemo(() => filterSocialLinksForDisplay(savedSocialLinks), [savedSocialLinks])
 
+  const saveSocialLinks = async () => {
+    if (!session?.user) return
+    setSavingSocial(true)
+    setMessage(null)
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        social_links: savedSocialLinks,
+      })
+      .eq('id', session.user.id)
+    setSavingSocial(false)
+    if (error) {
+      setMessage(`ソーシャル設定の更新に失敗しました: ${error.message}`)
+      return
+    }
+    setMessage('ソーシャル設定を更新しました')
+  }
+
   const saveProfile = async () => {
     if (!session?.user) return
     setSavingProfile(true)
@@ -905,55 +938,78 @@ export default function MyPageClient({
   }, [previewOpen])
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[240px,1fr]">
-      <aside className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+    <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+      <aside className="w-full lg:w-64 shrink-0 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
         <nav className="space-y-2">
           <button
-            className="w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800"
-            onClick={() => scrollTo(profileRef)}
+            className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
+              activeSection === 'profile' ? 'bg-blue-50 text-blue-700' : ''
+            }`}
+            onClick={() => setActiveSection('profile')}
           >
             プロフィール設定
           </button>
           <button
-            className="w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800"
-            onClick={() => scrollTo(accountRef)}
+            className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
+              activeSection === 'social' ? 'bg-blue-50 text-blue-700' : ''
+            }`}
+            onClick={() => setActiveSection('social')}
+          >
+            ソーシャルアカウント
+          </button>
+          <button
+            className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
+              activeSection === 'account' ? 'bg-blue-50 text-blue-700' : ''
+            }`}
+            onClick={() => setActiveSection('account')}
           >
             アカウント設定
           </button>
           <button
-            className="w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800"
-            onClick={() => scrollTo(linksRef)}
+            className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
+              activeSection === 'youtube' ? 'bg-blue-50 text-blue-700' : ''
+            }`}
+            onClick={() => setActiveSection('youtube')}
+          >
+            YouTube設定
+          </button>
+          <button
+            className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
+              activeSection === 'links' ? 'bg-blue-50 text-blue-700' : ''
+            }`}
+            onClick={() => setActiveSection('links')}
           >
             連携サービス
           </button>
         </nav>
       </aside>
 
-      <div className="space-y-6">
+      <div className="flex-1 space-y-6">
         {message && <p className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">{message}</p>}
 
-        <section
-          ref={profileRef as unknown as React.RefObject<HTMLElement>}
-          className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
-        >
-          <div className="flex items-center gap-3 mb-4">
-            <FontAwesomeIcon icon={faUserCircle} className="text-3xl text-gray-500" />
-            <div>
-              <h2 className="text-xl font-semibold">プロフィール設定</h2>
-              <p className="text-sm text-gray-500">ユーザー名やプロフィール情報を編集できます</p>
+        {activeSection === 'profile' && (
+          <section
+            ref={profileRef as unknown as React.RefObject<HTMLElement>}
+            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <FontAwesomeIcon icon={faUserCircle} className="text-3xl text-gray-500" />
+              <div>
+                <h2 className="text-xl font-semibold">プロフィール設定</h2>
+                <p className="text-sm text-gray-500">ユーザー名やプロフィール情報を編集できます</p>
+              </div>
             </div>
-          </div>
-          <div className="space-y-4">
-            <label className="block text-sm text-gray-600">
-              ニックネーム（表示名、12文字まで）
-              <input
-                value={nickname}
-                maxLength={12}
-                onChange={(e) => setNickname(e.target.value)}
-                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="例: 先生"
-              />
-            </label>
+            <div className="space-y-4">
+              <label className="block text-sm text-gray-600">
+                ニックネーム（表示名、12文字まで）
+                <input
+                  value={nickname}
+                  maxLength={12}
+                  onChange={(e) => setNickname(e.target.value)}
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="例: 先生"
+                />
+              </label>
 
             <label className="block text-sm text-gray-600">
               ユーザー名
@@ -1016,151 +1072,6 @@ export default function MyPageClient({
                 </select>
               </div>
             </label>
-
-            <div className="space-y-2">
-              <p className="text-sm text-gray-600">ソーシャルアカウント</p>
-              {socialLinks.map((link, idx) => (
-                <div key={idx} className="flex flex-col gap-2 rounded border border-gray-200 p-2">
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <select
-                      value={link.service}
-                      onChange={(e) => {
-                        const service = e.target.value as SocialService
-                        const next = [...socialLinks]
-                        next[idx] = { ...next[idx], service }
-                        setSocialLinks(next)
-                      }}
-                      className="rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-40"
-                    >
-                      <option value="x">X</option>
-                      <option value="youtube">YouTube</option>
-                      <option value="other">その他</option>
-                    </select>
-
-                    {link.service === 'other' ? (
-                      <input
-                        value={link.label}
-                        onChange={(e) => {
-                          const next = [...socialLinks]
-                          next[idx] = { ...next[idx], label: e.target.value }
-                          setSocialLinks(next)
-                        }}
-                        className="flex-1 rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="サービス名 (例: Discord)"
-                      />
-                    ) : (
-                      <input
-                        value={socialLabel(link.service, link.label)}
-                        disabled
-                        className="flex-1 rounded border border-gray-300 bg-gray-100 px-3 py-2 text-base text-gray-500"
-                      />
-                    )}
-                  </div>
-
-                  <div className="flex gap-2">
-                    <input
-                      value={link.value}
-                      onChange={(e) => {
-                        const next = [...socialLinks]
-                        next[idx] = { ...next[idx], value: e.target.value }
-                        setSocialLinks(next)
-                      }}
-                      className="flex-1 rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder={socialPlaceholder(link.service)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setSocialLinks((prev) =>
-                          prev.length === 1
-                            ? [{ service: 'other', label: '', value: '' }]
-                            : prev.filter((_, i) => i !== idx)
-                        )
-                      }
-                      className="rounded border border-red-300 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-                    >
-                      削除
-                    </button>
-                  </div>
-
-                  {(link.service === 'youtube' || link.service === 'x') && (
-                    <div className="rounded border border-gray-200 bg-gray-50 p-2 text-sm">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="text-gray-700">
-                          {link.verified ? (
-                            <span>
-                              ✅ 認証済み:{' '}
-                              {link.service === 'youtube'
-                                ? link.channelTitle || link.channelHandle || link.channelId || 'YouTube'
-                                : link.xUsername
-                                  ? `@${link.xUsername}`
-                                  : link.value || 'X'}
-                            </span>
-                          ) : (
-                            <span>未認証（このアカウントの所有者確認）</span>
-                          )}
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              link.service === 'youtube' ? verifyYouTubeAtIndex(idx) : startXVerify(idx)
-                            }
-                            disabled={busy}
-                            className="rounded border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-gray-100 disabled:opacity-60"
-                          >
-                            確認
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              link.service === 'youtube' ? startYouTubeVerify(idx) : startXVerify(idx)
-                            }
-                            disabled={busy}
-                            className="rounded border border-blue-300 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
-                          >
-                            接続して確認
-                          </button>
-                          {link.verified && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                link.service === 'youtube'
-                                  ? clearYouTubeVerification(idx)
-                                  : clearXVerification(idx)
-                              }
-                              disabled={busy}
-                              className="rounded border border-red-300 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
-                            >
-                              解除
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      {link.service === 'youtube' ? (
-                        <p className="mt-1 text-xs text-gray-500">
-                          ブランドアカウントでもOKです。確認時は「このYouTubeチャンネル」として許可してください。
-                        </p>
-                      ) : (
-                        <p className="mt-1 text-xs text-gray-500">
-                          X OAuth 画面で承認したアカウントと、入力したハンドルが一致していることを確認します。
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              <button
-                type="button"
-                onClick={() =>
-                  setSocialLinks((prev) => [...prev, { service: 'other', label: '', value: '' }])
-                }
-                className="inline-flex items-center justify-center rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50"
-              >
-                ＋ 追加
-              </button>
-            </div>
 
             <label className="block text-sm text-gray-600">
               フレンドコード
@@ -1253,20 +1164,191 @@ export default function MyPageClient({
                 プレビュー
               </button>
             </div>
-          </div>
-        </section>
-
-        <section
-          ref={accountRef as unknown as React.RefObject<HTMLElement>}
-          className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold">アカウント設定</h3>
-              <p className="text-sm text-gray-500">ログインメールと User ID</p>
             </div>
-          </div>
-          <div className="space-y-4">
+          </section>
+        )}
+
+        {activeSection === 'social' && (
+          <section
+            ref={socialRef as unknown as React.RefObject<HTMLElement>}
+            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">ソーシャルアカウント</h3>
+                <p className="text-sm text-gray-500">公開プロフィールに表示するリンクを管理します</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {socialLinks.map((link, idx) => (
+                <div key={idx} className="flex flex-col gap-2 rounded border border-gray-200 p-2">
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <select
+                      value={link.service}
+                      onChange={(e) => {
+                        const service = e.target.value as SocialService
+                        const next = [...socialLinks]
+                        next[idx] = { ...next[idx], service }
+                        setSocialLinks(next)
+                      }}
+                      className="rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-40"
+                    >
+                      <option value="x">X</option>
+                      <option value="youtube">YouTube</option>
+                      <option value="other">その他</option>
+                    </select>
+
+                    {link.service === 'other' ? (
+                      <input
+                        value={link.label}
+                        onChange={(e) => {
+                          const next = [...socialLinks]
+                          next[idx] = { ...next[idx], label: e.target.value }
+                          setSocialLinks(next)
+                        }}
+                        className="flex-1 rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="サービス名 (例: Discord)"
+                      />
+                    ) : (
+                      <input
+                        value={socialLabel(link.service, link.label)}
+                        disabled
+                        className="flex-1 rounded border border-gray-300 bg-gray-100 px-3 py-2 text-base text-gray-500"
+                      />
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      value={link.value}
+                      onChange={(e) => {
+                        const next = [...socialLinks]
+                        next[idx] = { ...next[idx], value: e.target.value }
+                        setSocialLinks(next)
+                      }}
+                      className="flex-1 rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder={socialPlaceholder(link.service)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSocialLinks((prev) =>
+                          prev.length === 1
+                            ? [{ service: 'other', label: '', value: '' }]
+                            : prev.filter((_, i) => i !== idx)
+                        )
+                      }
+                      className="rounded border border-red-300 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                    >
+                      削除
+                    </button>
+                  </div>
+
+                  {(link.service === 'youtube' || link.service === 'x') && (
+                    <div className="rounded border border-gray-200 bg-gray-50 p-2 text-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="text-gray-700">
+                          {link.verified ? (
+                            <span>
+                              ✅ 認証済み:{' '}
+                              {link.service === 'youtube'
+                                ? link.channelTitle || link.channelHandle || link.channelId || 'YouTube'
+                                : link.xUsername
+                                  ? `@${link.xUsername}`
+                                  : link.value || 'X'}
+                            </span>
+                          ) : (
+                            <span>未認証（このアカウントの所有者確認）</span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {link.service === 'x' && (
+                            <span className="text-xs text-gray-500">現在開発中</span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              link.service === 'youtube' ? verifyYouTubeAtIndex(idx) : startXVerify(idx)
+                            }
+                            disabled={link.service === 'x' || busy}
+                            className="rounded border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-gray-100 disabled:opacity-60"
+                          >
+                            {link.service === 'x' ? '確認（開発中）' : '確認'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              link.service === 'youtube' ? startYouTubeVerify(idx) : startXVerify(idx)
+                            }
+                            disabled={link.service === 'x' || busy}
+                            className="rounded border border-blue-300 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
+                          >
+                            {link.service === 'x' ? '接続して確認（開発中）' : '接続して確認'}
+                          </button>
+                          {link.verified && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                link.service === 'youtube'
+                                  ? clearYouTubeVerification(idx)
+                                  : clearXVerification(idx)
+                              }
+                              disabled={link.service === 'x' || busy}
+                              className="rounded border border-red-300 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+                            >
+                              {link.service === 'x' ? '解除（開発中）' : '解除'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {link.service === 'youtube' ? (
+                        <p className="mt-1 text-xs text-gray-500">
+                          ブランドアカウントでもOKです。確認時は「このYouTubeチャンネル」として許可してください。
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-xs text-gray-500">
+                          X OAuth 画面で承認したアカウントと、入力したハンドルが一致していることを確認します。
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={() =>
+                  setSocialLinks((prev) => [...prev, { service: 'other', label: '', value: '' }])
+                }
+                className="inline-flex items-center justify-center rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50"
+              >
+                ＋ 追加
+              </button>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                onClick={saveSocialLinks}
+                disabled={savingSocial}
+                className="inline-flex items-center justify-center rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {savingSocial ? '保存中...' : '保存'}
+              </button>
+            </div>
+          </section>
+        )}
+
+        {activeSection === 'account' && (
+          <section
+            ref={accountRef as unknown as React.RefObject<HTMLElement>}
+            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">アカウント設定</h3>
+                <p className="text-sm text-gray-500">ログインメールと User ID</p>
+              </div>
+            </div>
+            <div className="space-y-4">
             <div>
               <p className="text-sm text-gray-600 mb-1">メールアドレス</p>
               <p className="rounded border border-gray-200 bg-gray-50 px-3 py-2 text-base">{email || '—'}</p>
@@ -1294,71 +1376,165 @@ export default function MyPageClient({
                 </button>
               </div>
             </div>
-          </div>
-        </section>
-
-        <section
-          ref={linksRef as unknown as React.RefObject<HTMLElement>}
-          className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold">連携サービス</h3>
-              <p className="text-sm text-gray-500">Google / Discord との紐付け管理</p>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleLink('google')}
-                disabled={busy}
-                className="inline-flex items-center gap-2 rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-60"
-              >
-                <FontAwesomeIcon icon={faGoogle} />
-                {linkedProviders.has('google') ? '再連携' : 'Google を連携'}
-              </button>
-              <button
-                onClick={() => handleLink('discord')}
-                disabled={busy}
-                className="inline-flex items-center gap-2 rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-60"
-              >
-                <FontAwesomeIcon icon={faDiscord} />
-                {linkedProviders.has('discord') ? '再連携' : 'Discord を連携'}
-              </button>
-            </div>
-          </div>
+          </section>
+        )}
 
-          <div className="space-y-3">
-            {identities.length === 0 && <p className="text-sm text-gray-500">まだ外部サービスは連携されていません。</p>}
-            {identities.map((identity) => (
-              <div
-                key={identity.identity_id}
-                className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 dark:border-gray-700"
-              >
-                <div className="flex items-center gap-3">
-                  <FontAwesomeIcon icon={providerIcon[identity.provider as 'google' | 'discord'] ?? faLink} />
-                  <div>
-                    <p className="font-medium capitalize">{identity.provider}</p>
-                    {identityEmail(identity) && <p className="text-sm text-gray-500">{identityEmail(identity)}</p>}
-                    {identity.last_sign_in_at && (
-                      <p className="text-xs text-gray-400">最終サインイン: {new Date(identity.last_sign_in_at).toLocaleString()}</p>
-                    )}
-                  </div>
-                </div>
+        {activeSection === 'youtube' && (
+          <section
+            ref={youtubeRef as unknown as React.RefObject<HTMLElement>}
+            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">YouTube設定</h3>
+                <p className="text-sm text-gray-500">YouTube本人確認・チャンネル情報</p>
+              </div>
+            </div>
+            <div className="space-y-3 text-sm">
+              {youtubeLink?.verified ? (
+                <p className="text-gray-700">
+                  ✅ 認証済み: {youtubeLink.channelTitle || youtubeLink.channelHandle || youtubeLink.channelId || youtubeLink.value}
+                </p>
+              ) : (
+                <p className="text-gray-600">YouTubeの認証がまだ完了していません。</p>
+              )}
+              <div className="rounded border border-gray-200 bg-gray-50 p-3 text-sm">
+                <label className="flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    checked={youtubeLink?.autoFormationStatus ?? false}
+                    onChange={(e) => {
+                      const nextValue = e.target.checked
+                      setSocialLinks((prev) => {
+                        const idx = prev.findIndex((link) => link.service === 'youtube')
+                        if (idx >= 0) {
+                          const next = [...prev]
+                          next[idx] = { ...next[idx], autoFormationStatus: nextValue }
+                          return next
+                        }
+                        return [
+                          ...prev,
+                          { service: 'youtube', label: '', value: '', verified: false, autoFormationStatus: nextValue },
+                        ]
+                      })
+                    }}
+                  />
+                  <span className="text-gray-700">
+                    投稿した動画の編成に、サイトに登録済みのステータスを自動追加する
+                  </span>
+                </label>
+                <p className="mt-2 text-xs text-gray-500">
+                  TL 登録時に「自動」でステータスを補完する設定です。手動管理したい場合はオフにしてください。
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => handleUnlink(identity)}
-                  disabled={busy || identities.length <= 1}
-                  className="inline-flex items-center gap-2 rounded border border-red-300 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                  type="button"
+                  onClick={() => {
+                    if (youtubeIndex >= 0) {
+                      void startYouTubeVerify(youtubeIndex)
+                    } else {
+                      setSocialLinks((prev) => [
+                        ...prev,
+                        { service: 'youtube', label: '', value: '', verified: false },
+                      ])
+                    }
+                  }}
+                  disabled={busy}
+                  className="inline-flex items-center justify-center rounded border border-blue-300 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
                 >
-                  <FontAwesomeIcon icon={faUnlink} /> 解除
+                  {youtubeLink ? 'YouTubeを接続' : 'YouTubeリンクを追加'}
+                </button>
+                {youtubeLink && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveSection('links')
+                      scrollTo(linksRef)
+                    }}
+                    className="inline-flex items-center justify-center rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50"
+                  >
+                    連携サービスへ
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={saveSocialLinks}
+                  disabled={savingSocial}
+                  className="inline-flex items-center justify-center rounded border border-blue-300 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
+                >
+                  {savingSocial ? '保存中...' : 'YouTube設定を保存'}
                 </button>
               </div>
-            ))}
-            {identities.length > 0 && identities.length <= 1 && (
-              <p className="text-xs text-gray-400">
-                すべて解除することはできません。別の連携を追加してから解除してください。
-              </p>
-            )}
-          </div>
-        </section>
+            </div>
+          </section>
+        )}
+
+        {activeSection === 'links' && (
+          <section
+            ref={linksRef as unknown as React.RefObject<HTMLElement>}
+            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">連携サービス</h3>
+                <p className="text-sm text-gray-500">Google / Discord との紐付け管理</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleLink('google')}
+                  disabled={busy}
+                  className="inline-flex items-center gap-2 rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-60"
+                >
+                  <FontAwesomeIcon icon={faGoogle} />
+                  {linkedProviders.has('google') ? '再連携' : 'Google を連携'}
+                </button>
+                <button
+                  onClick={() => handleLink('discord')}
+                  disabled={busy}
+                  className="inline-flex items-center gap-2 rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-60"
+                >
+                  <FontAwesomeIcon icon={faDiscord} />
+                  {linkedProviders.has('discord') ? '再連携' : 'Discord を連携'}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {identities.length === 0 && <p className="text-sm text-gray-500">まだ外部サービスは連携されていません。</p>}
+              {identities.map((identity) => (
+                <div
+                  key={identity.identity_id}
+                  className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 dark:border-gray-700"
+                >
+                  <div className="flex items-center gap-3">
+                    <FontAwesomeIcon icon={providerIcon[identity.provider as 'google' | 'discord'] ?? faLink} />
+                    <div>
+                      <p className="font-medium capitalize">{identity.provider}</p>
+                      {identityEmail(identity) && <p className="text-sm text-gray-500">{identityEmail(identity)}</p>}
+                      {identity.last_sign_in_at && (
+                        <p className="text-xs text-gray-400">最終サインイン: {new Date(identity.last_sign_in_at).toLocaleString()}</p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleUnlink(identity)}
+                    disabled={busy || identities.length <= 1}
+                    className="inline-flex items-center gap-2 rounded border border-red-300 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                  >
+                    <FontAwesomeIcon icon={faUnlink} /> 解除
+                  </button>
+                </div>
+              ))}
+              {identities.length > 0 && identities.length <= 1 && (
+                <p className="text-xs text-gray-400">
+                  すべて解除することはできません。別の連携を追加してから解除してください。
+                </p>
+              )}
+            </div>
+          </section>
+        )}
       </div>
 
       {previewOpen && (
