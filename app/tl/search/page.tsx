@@ -72,6 +72,12 @@ const parseSocialLinks = (raw: unknown): SocialLink[] => {
   return []
 }
 
+const parseAllowedIdentifiers = (raw: string) =>
+  raw
+    .split(/[\n,]+/)
+    .map((v) => v.trim())
+    .filter(Boolean)
+
 export default function TLSearchPage() {
   const session = useSession()
   const supabase = useSupabaseClient()
@@ -85,6 +91,7 @@ export default function TLSearchPage() {
   const [loadingMessage, setLoadingMessage] = useState('')
   const [openTl, setOpenTl] = useState<Timeline | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [currentUsername, setCurrentUsername] = useState<string | null>(null)
   const [youtubeChannelId, setYoutubeChannelId] = useState<string | null>(null)
   const [videoChannelId, setVideoChannelId] = useState<string | null>(null)
   const [ownerCheckLoading, setOwnerCheckLoading] = useState(false)
@@ -216,12 +223,13 @@ export default function TLSearchPage() {
                       Array.isArray(rawAllowed)
                         ? (rawAllowed as string[])
                         : typeof rawAllowed === 'string'
-                          ? rawAllowed.split(',').map((s) => s.trim()).filter(Boolean)
+                          ? parseAllowedIdentifiers(rawAllowed)
                           : []
+                    const allowTl = row.allow_tl !== false
                     acc[row.videoid as string] = {
                       includeSquad: Boolean(row.include_squad),
-                      allowTl: row.allow_tl !== false,
-                      tlLocked: Boolean(row.tl_locked),
+                      allowTl,
+                      tlLocked: !allowTl,
                       visibility:
                         (row.visibility as 'public' | 'restricted' | 'private') ??
                         'public',
@@ -255,7 +263,7 @@ export default function TLSearchPage() {
       if (session) {
         const { data } = await supabase
           .from('profiles')
-          .select('admin, social_links')
+          .select('admin, social_links, username')
           .eq('id', session.user.id)
           .maybeSingle()
         setIsAdmin(Boolean(data?.admin))
@@ -266,6 +274,7 @@ export default function TLSearchPage() {
         setYoutubeChannelId(
           typeof yt?.channelId === 'string' ? yt.channelId : null
         )
+        setCurrentUsername(typeof data?.username === 'string' ? data.username : null)
       }
     }
     checkAdmin()
@@ -295,13 +304,13 @@ export default function TLSearchPage() {
         Array.isArray(rawAllowed)
           ? (rawAllowed as string[])
           : typeof rawAllowed === 'string'
-            ? rawAllowed.split(',').map((s) => s.trim()).filter(Boolean)
+            ? parseAllowedIdentifiers(rawAllowed)
             : []
       const allowTl = data?.allow_tl !== false
       setOpenTlSettings({
         includeSquad: Boolean(data?.include_squad),
         allowTl,
-        tlLocked: Boolean(data?.tl_locked) && allowTl,
+        tlLocked: !allowTl,
         visibility: (data?.visibility as 'public' | 'restricted' | 'private') ?? 'public',
         allowedUserIds: allowed,
         ownerUserId:
@@ -600,12 +609,11 @@ export default function TLSearchPage() {
     if (!openTl || !session?.user || !openTlSettings) return
     setSettingsSaving(true)
     setSettingsError('')
-    const locked = openTlSettings.allowTl ? openTlSettings.tlLocked : false
     const payload = {
       videoid: openTl.videoid,
       include_squad: openTlSettings.includeSquad,
       allow_tl: openTlSettings.allowTl,
-      tl_locked: locked,
+      tl_locked: !openTlSettings.allowTl,
       visibility: openTlSettings.visibility,
       allowed_user_ids: openTlSettings.allowedUserIds,
       owner_user_id: openTlSettings.ownerUserId ?? session.user.id,
@@ -624,7 +632,7 @@ export default function TLSearchPage() {
       [openTl.videoid]: {
         includeSquad: openTlSettings.includeSquad,
         allowTl: openTlSettings.allowTl,
-        tlLocked: locked,
+        tlLocked: !openTlSettings.allowTl,
         visibility: openTlSettings.visibility,
         allowedUserIds: openTlSettings.allowedUserIds,
         ownerUserId: openTlSettings.ownerUserId ?? session.user.id,
@@ -796,25 +804,26 @@ export default function TLSearchPage() {
             .in('videoid', ids)
           const settingsMap = (settingsData ?? []).reduce(
             (acc: Record<string, VideoSettings>, row) => {
-              const rawAllowed = row.allowed_user_ids
-              const allowed =
-                Array.isArray(rawAllowed)
-                  ? (rawAllowed as string[])
-                  : typeof rawAllowed === 'string'
-                    ? rawAllowed.split(',').map((s) => s.trim()).filter(Boolean)
-                    : []
-              acc[row.videoid as string] = {
-                includeSquad: Boolean(row.include_squad),
-                allowTl: row.allow_tl !== false,
-                tlLocked: Boolean(row.tl_locked),
-                visibility:
-                  (row.visibility as 'public' | 'restricted' | 'private') ?? 'public',
-                allowedUserIds: allowed,
-                ownerUserId:
-                  typeof row.owner_user_id === 'string'
-                    ? row.owner_user_id
-                    : null,
-              }
+      const rawAllowed = row.allowed_user_ids
+      const allowed =
+        Array.isArray(rawAllowed)
+          ? (rawAllowed as string[])
+          : typeof rawAllowed === 'string'
+            ? parseAllowedIdentifiers(rawAllowed)
+            : []
+      const allowTl = row.allow_tl !== false
+      acc[row.videoid as string] = {
+        includeSquad: Boolean(row.include_squad),
+        allowTl,
+        tlLocked: !allowTl,
+        visibility:
+          (row.visibility as 'public' | 'restricted' | 'private') ?? 'public',
+        allowedUserIds: allowed,
+        ownerUserId:
+          typeof row.owner_user_id === 'string'
+            ? row.owner_user_id
+            : null,
+      }
               return acc
             },
             {}
@@ -965,7 +974,14 @@ export default function TLSearchPage() {
       return ownerId === session.user.id
     }
     const allowed = settings.allowedUserIds ?? []
-    return ownerId === session.user.id || allowed.includes(session.user.id)
+    const normalizedAllowed = allowed.map((value) => value.toLowerCase())
+    const currentId = session.user.id.toLowerCase()
+    const currentName = currentUsername?.toLowerCase() ?? ''
+    return (
+      ownerId === session.user.id ||
+      normalizedAllowed.includes(currentId) ||
+      (currentName && normalizedAllowed.includes(currentName))
+    )
   })
 
   const filtered = visibleTimelines.filter((t) => {
@@ -1688,7 +1704,7 @@ export default function TLSearchPage() {
                             <input
                               type="radio"
                               name="tl-edit-policy"
-                              checked={openTlSettings.allowTl && !openTlSettings.tlLocked}
+                              checked={openTlSettings.allowTl}
                               onChange={() =>
                                 setOpenTlSettings((prev) =>
                                   prev ? { ...prev, allowTl: true, tlLocked: false } : prev
@@ -1701,27 +1717,14 @@ export default function TLSearchPage() {
                             <input
                               type="radio"
                               name="tl-edit-policy"
-                              checked={openTlSettings.allowTl && openTlSettings.tlLocked}
+                              checked={!openTlSettings.allowTl}
                               onChange={() =>
                                 setOpenTlSettings((prev) =>
-                                  prev ? { ...prev, allowTl: true, tlLocked: true } : prev
+                                  prev ? { ...prev, allowTl: false, tlLocked: true } : prev
                                 )
                               }
                             />
-                            <span>変更をロックする</span>
-                          </label>
-                          <label className="flex items-center gap-2">
-                            <input
-                              type="radio"
-                              name="tl-edit-policy"
-                              checked={!openTlSettings.allowTl && !openTlSettings.tlLocked}
-                              onChange={() =>
-                                setOpenTlSettings((prev) =>
-                                  prev ? { ...prev, allowTl: false, tlLocked: false } : prev
-                                )
-                              }
-                            />
-                            <span>変更を許可しない</span>
+                            <span>変更をロックする（許可しない）</span>
                           </label>
                         </div>
                         <div className="space-y-2">
@@ -1760,17 +1763,14 @@ export default function TLSearchPage() {
                                   prev
                                     ? {
                                         ...prev,
-                                        allowedUserIds: e.target.value
-                                          .split('\n')
-                                          .map((v) => v.trim())
-                                          .filter(Boolean),
+                                        allowedUserIds: parseAllowedIdentifiers(e.target.value),
                                       }
                                     : prev
                                 )
                               }
                               className="w-full rounded border border-gray-300 px-2 py-1 text-xs"
                               rows={3}
-                              placeholder="許可するprofilesのIDを改行で入力"
+                              placeholder="許可するprofilesのIDまたはユーザー名を改行/カンマで入力"
                             />
                           )}
                           <label className="flex items-center gap-2">
