@@ -42,6 +42,7 @@ type VideoSettings = {
   visibility?: VideoVisibility
   allowedUserIds?: string[]
   ownerUserId?: string | null
+  hideTlUntilYoutube?: boolean
 }
 
 type SocialLink = {
@@ -137,6 +138,7 @@ export default function TLSearchPage() {
     visibility: VideoVisibility
     allowedUserIds: string[]
     ownerUserId: string | null
+    hideTlUntilYoutube: boolean
   } | null>(null)
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [settingsError, setSettingsError] = useState('')
@@ -213,7 +215,7 @@ export default function TLSearchPage() {
                 const { data: settingsData } = await supabase
                   .from('tl_video_settings')
                   .select(
-                    'videoid, include_squad, allow_tl, tl_locked, visibility, allowed_user_ids, owner_user_id'
+                    'videoid, include_squad, allow_tl, tl_locked, visibility, allowed_user_ids, owner_user_id, hide_tl_until_youtube'
                   )
                   .in('videoid', ids)
                 const settingsMap = (settingsData ?? []).reduce(
@@ -238,6 +240,7 @@ export default function TLSearchPage() {
                         typeof row.owner_user_id === 'string'
                           ? row.owner_user_id
                           : null,
+                      hideTlUntilYoutube: row.hide_tl_until_youtube !== false,
                     }
                     return acc
                   },
@@ -290,7 +293,7 @@ export default function TLSearchPage() {
       const { data, error } = await supabase
         .from('tl_video_settings')
         .select(
-          'include_squad, allow_tl, tl_locked, visibility, allowed_user_ids, owner_user_id'
+          'include_squad, allow_tl, tl_locked, visibility, allowed_user_ids, owner_user_id, hide_tl_until_youtube'
         )
         .eq('videoid', openTl.videoid)
         .maybeSingle()
@@ -315,6 +318,7 @@ export default function TLSearchPage() {
         allowedUserIds: allowed,
         ownerUserId:
           typeof data?.owner_user_id === 'string' ? data.owner_user_id : session.user.id,
+        hideTlUntilYoutube: data?.hide_tl_until_youtube !== false,
       })
     }
     void loadSettings()
@@ -617,6 +621,7 @@ export default function TLSearchPage() {
       visibility: openTlSettings.visibility,
       allowed_user_ids: openTlSettings.allowedUserIds,
       owner_user_id: openTlSettings.ownerUserId ?? session.user.id,
+      hide_tl_until_youtube: openTlSettings.hideTlUntilYoutube,
       updated_at: new Date().toISOString(),
     }
     const { error } = await supabase
@@ -636,6 +641,7 @@ export default function TLSearchPage() {
         visibility: openTlSettings.visibility,
         allowedUserIds: openTlSettings.allowedUserIds,
         ownerUserId: openTlSettings.ownerUserId ?? session.user.id,
+        hideTlUntilYoutube: openTlSettings.hideTlUntilYoutube,
       },
     }))
   }
@@ -823,6 +829,7 @@ export default function TLSearchPage() {
           typeof row.owner_user_id === 'string'
             ? row.owner_user_id
             : null,
+        hideTlUntilYoutube: row.hide_tl_until_youtube !== false,
       }
               return acc
             },
@@ -1542,7 +1549,19 @@ export default function TLSearchPage() {
                       <p className="text-xs text-gray-500">読み込み中...</p>
                     ) : (
                       <div className="space-y-2">
-                        {tlJsonValue ? (
+                        {openTlSettings?.hideTlUntilYoutube ? (
+                          <div className="rounded border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600 space-y-2">
+                            <p>この動画は「YouTubeで開く」までTLを表示しない設定になっています。</p>
+                            <a
+                              href={`https://www.youtube.com/watch?v=${openTl.videoid}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-2 rounded border border-blue-300 px-3 py-1 text-xs text-blue-700 hover:bg-blue-50"
+                            >
+                              YouTubeで開く
+                            </a>
+                          </div>
+                        ) : tlJsonValue ? (
                           <details className="rounded border border-gray-200 p-2">
                             <summary className="cursor-pointer text-xs">
                               {tlJsonTitle || '無題'}
@@ -1571,7 +1590,7 @@ export default function TLSearchPage() {
                         ) : (
                           <p className="text-xs text-gray-500">まだ紐付けはありません。</p>
                         )}
-                        {tlJsonValue && (
+                        {tlJsonValue && !openTlSettings?.hideTlUntilYoutube && (
                           <div className="flex items-center gap-2">
                             <button
                               type="button"
@@ -1727,6 +1746,20 @@ export default function TLSearchPage() {
                             <span>変更をロックする（許可しない）</span>
                           </label>
                         </div>
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={openTlSettings.hideTlUntilYoutube}
+                            onChange={(e) =>
+                              setOpenTlSettings((prev) =>
+                                prev
+                                  ? { ...prev, hideTlUntilYoutube: e.target.checked }
+                                  : prev
+                              )
+                            }
+                          />
+                          <span>動画を開くまでTLを非表示にする</span>
+                        </label>
                         <div className="space-y-2">
                           <p className="text-xs text-gray-600">TL検索の公開範囲</p>
                           <label className="flex items-center gap-2">
