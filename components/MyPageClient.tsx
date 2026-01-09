@@ -598,6 +598,16 @@ export default function MyPageClient({
     return json as YouTubeChannelsResponse
   }
 
+  const resolveUserId = useCallback(async (): Promise<string | null> => {
+    if (session?.user?.id) return session.user.id
+    const { data: userData, error } = await supabase.auth.getUser()
+    if (error) {
+      console.error(error.message)
+      return null
+    }
+    return userData.user?.id ?? null
+  }, [session, supabase])
+
   const verifyYouTubeAtIndex = useCallback(async (index: number) => {
     const link = socialLinks[index]
     if (!link || link.service !== 'youtube') return
@@ -608,6 +618,12 @@ export default function MyPageClient({
     setMessage(null)
 
     try {
+      const userId = await resolveUserId()
+      if (!userId) {
+        setMessage('ユーザー情報を取得できませんでした。再ログインしてお試しください。')
+        return
+      }
+
       const { data } = await supabase.auth.getSession()
       const token = data.session?.provider_token
       if (!token) {
@@ -699,7 +715,7 @@ export default function MyPageClient({
       const { error } = await supabase
         .from('profiles')
         .update({ social_links: serializeSocialLinksForSave(nextLinks) })
-        .eq('id', session?.user.id)
+        .eq('id', userId)
 
       if (error) {
         console.error(error.message)
@@ -716,7 +732,7 @@ export default function MyPageClient({
     } finally {
       setBusy(false)
     }
-  }, [socialLinks, supabase, session, setMessage, fetchYouTube])
+  }, [socialLinks, supabase, resolveUserId, setMessage, fetchYouTube])
 
 
 
@@ -741,10 +757,16 @@ export default function MyPageClient({
 
     setSocialLinks(nextLinks)
 
+    const userId = await resolveUserId()
+    if (!userId) {
+      setMessage('ユーザー情報を取得できませんでした。再ログインしてお試しください。')
+      return
+    }
+
     const { error } = await supabase
       .from('profiles')
       .update({ social_links: serializeSocialLinksForSave(nextLinks) })
-      .eq('id', session?.user.id)
+      .eq('id', userId)
 
     if (error) {
       console.error(error.message)
@@ -773,10 +795,16 @@ export default function MyPageClient({
 
     setSocialLinks(nextLinks)
 
+    const userId = await resolveUserId()
+    if (!userId) {
+      setMessage('ユーザー情報を取得できませんでした。再ログインしてお試しください。')
+      return
+    }
+
     const { error } = await supabase
       .from('profiles')
       .update({ social_links: serializeSocialLinksForSave(nextLinks) })
-      .eq('id', session?.user.id)
+      .eq('id', userId)
 
     if (error) {
       console.error(error.message)
