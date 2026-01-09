@@ -45,6 +45,17 @@ type VideoSettings = {
   hideTlUntilYoutube?: boolean
 }
 
+type VideoSettingsRow = {
+  videoid: string
+  include_squad?: boolean | null
+  allow_tl?: boolean | null
+  tl_locked?: boolean | null
+  visibility?: VideoVisibility | null
+  allowed_user_ids?: string[] | string | null
+  owner_user_id?: string | null
+  hide_tl_until_youtube?: boolean | null
+}
+
 type SocialLink = {
   service?: string
   verified?: boolean
@@ -218,7 +229,7 @@ export default function TLSearchPage() {
                     'videoid, include_squad, allow_tl, tl_locked, visibility, allowed_user_ids, owner_user_id, hide_tl_until_youtube'
                   )
                   .in('videoid', ids)
-                const settingsMap = (settingsData ?? []).reduce(
+                const settingsMap = ((settingsData ?? []) as VideoSettingsRow[]).reduce(
                   (acc: Record<string, VideoSettings>, row) => {
                     const rawAllowed = row.allowed_user_ids
                     const allowed =
@@ -808,8 +819,8 @@ export default function TLSearchPage() {
               'videoid, include_squad, allow_tl, tl_locked, visibility, allowed_user_ids, owner_user_id'
             )
             .in('videoid', ids)
-          const settingsMap = (settingsData ?? []).reduce(
-            (acc: Record<string, VideoSettings>, row) => {
+      const settingsMap = ((settingsData ?? []) as VideoSettingsRow[]).reduce(
+        (acc: Record<string, VideoSettings>, row) => {
       const rawAllowed = row.allowed_user_ids
       const allowed =
         Array.isArray(rawAllowed)
