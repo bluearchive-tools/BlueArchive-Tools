@@ -1047,11 +1047,11 @@ export default function MyPageClient({
   useEffect(() => {
     if (!message) return
     const toastId = Date.now() + Math.random()
-    setToasts((prev) => [...prev, { id: toastId, text: message }])
+    setToasts((prev) => [{ id: toastId, text: message }, ...prev])
     setMessage(null)
     const id = window.setTimeout(() => {
       setToasts((prev) => prev.filter((toast) => toast.id !== toastId))
-    }, 4000)
+    }, 2000)
     return () => window.clearTimeout(id)
   }, [message])
 
@@ -1108,10 +1108,10 @@ export default function MyPageClient({
             {toasts.map((toast) => (
               <div
                 key={toast.id}
-                className="toast-item overflow-hidden rounded border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 shadow-lg"
+                className="toast-item relative overflow-hidden rounded border border-blue-200 bg-blue-50 px-4 py-3 pb-4 text-sm text-blue-800 shadow-lg"
               >
                 <div>{toast.text}</div>
-                <div className="mt-2 h-1 w-full overflow-hidden rounded bg-blue-100">
+                <div className="toast-bar absolute bottom-0 left-0 right-0 h-1 bg-blue-100">
                   <div className="toast-progress h-full bg-blue-400" />
                 </div>
               </div>
@@ -1905,14 +1905,14 @@ export default function MyPageClient({
               100% { opacity: 0; transform: translateY(-6px); }
             }
             .toast-item {
-              animation: toast-in-out 4s ease-in-out forwards;
+              animation: toast-in-out 2s ease-in-out forwards;
             }
             @keyframes toast-progress {
               0% { width: 100%; }
               100% { width: 0%; }
             }
             .toast-progress {
-              animation: toast-progress 4s linear forwards;
+              animation: toast-progress 2s linear forwards;
             }
           `,
         }}
