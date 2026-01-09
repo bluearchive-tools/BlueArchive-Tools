@@ -196,6 +196,18 @@ const filterSocialLinksForDisplay = (links: SerializedSocialLink[]): SerializedS
   })
 }
 
+const mergeVerifiedSocialLinks = (
+  current: SerializedSocialLink[],
+  existing: SerializedSocialLink[]
+): SerializedSocialLink[] => {
+  const hasService = new Set(current.map((link) => link.service))
+  const missingVerified = existing.filter(
+    (link) => link.verified && (link.service === 'youtube' || link.service === 'x') && !hasService.has(link.service)
+  )
+  if (missingVerified.length === 0) return current
+  return [...current, ...missingVerified]
+}
+
 
 export default function MyPageClient({
   initialUsername,
@@ -988,10 +1000,20 @@ export default function MyPageClient({
     if (!session?.user) return
     setSavingSocial(true)
     setMessage(null)
+    let mergedLinks = savedSocialLinks
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('social_links')
+      .eq('id', session.user.id)
+      .maybeSingle()
+    const existingLinks = Array.isArray(existingProfile?.social_links)
+      ? (existingProfile?.social_links as SerializedSocialLink[])
+      : []
+    mergedLinks = mergeVerifiedSocialLinks(savedSocialLinks, existingLinks)
     const { error } = await supabase
       .from('profiles')
       .update({
-        social_links: savedSocialLinks,
+        social_links: mergedLinks,
         tl_default_settings: tlDefaults,
       })
       .eq('id', session.user.id)
@@ -1007,6 +1029,16 @@ export default function MyPageClient({
     if (!session?.user) return
     setSavingProfile(true)
     setMessage(null)
+    let mergedLinks = savedSocialLinks
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('social_links')
+      .eq('id', session.user.id)
+      .maybeSingle()
+    const existingLinks = Array.isArray(existingProfile?.social_links)
+      ? (existingProfile?.social_links as SerializedSocialLink[])
+      : []
+    mergedLinks = mergeVerifiedSocialLinks(savedSocialLinks, existingLinks)
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -1019,7 +1051,7 @@ export default function MyPageClient({
         friend_code_public: friendCodePublic,
         decoration_ids: decorationIds,
         decoration_inventory: decorationInventory,
-        social_links: savedSocialLinks,
+        social_links: mergedLinks,
       })
       .eq('id', session.user.id)
     setSavingProfile(false)
