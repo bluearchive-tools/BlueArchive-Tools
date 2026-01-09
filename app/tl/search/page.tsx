@@ -34,6 +34,16 @@ interface RaidData {
   seasons: Season[]
 }
 
+type VideoVisibility = 'public' | 'restricted' | 'private'
+type VideoSettings = {
+  includeSquad?: boolean
+  allowTl?: boolean
+  tlLocked?: boolean
+  visibility?: VideoVisibility
+  allowedUserIds?: string[]
+  ownerUserId?: string | null
+}
+
 export default function TLSearchPage() {
   const session = useSession()
   const supabase = useSupabaseClient()
@@ -79,6 +89,29 @@ export default function TLSearchPage() {
   const [tlJsonError, setTlJsonError] = useState('')
   const [tlInputMode, setTlInputMode] = useState<'json' | 'text'>('json')
   const [modalClosing, setModalClosing] = useState(false)
+  const [videoSettingsMap, setVideoSettingsMap] = useState<Record<string, VideoSettings>>({})
+  const [openTlSettings, setOpenTlSettings] = useState<{
+    includeSquad: boolean
+    allowTl: boolean
+    tlLocked: boolean
+    visibility: VideoVisibility
+    allowedUserIds: string[]
+    ownerUserId: string | null
+  } | null>(null)
+  const [settingsSaving, setSettingsSaving] = useState(false)
+  const [settingsError, setSettingsError] = useState('')
+  const [myVideosOpen, setMyVideosOpen] = useState(false)
+  const [myVideosLoading, setMyVideosLoading] = useState(false)
+  const [myVideosError, setMyVideosError] = useState('')
+  const [myVideos, setMyVideos] = useState<
+    Array<{
+      videoid: string
+      title: string
+      description: string
+      publishedAt?: string
+      thumbnail?: string
+    }>
+  >([])
 
   const formatScore = (value: string) => {
     const num = parseInt(value || '0')
@@ -135,6 +168,44 @@ export default function TLSearchPage() {
                 return parseInt(b.score || '0') - parseInt(a.score || '0')
               })
               setTimelines(data)
+              if (data.length > 0) {
+                const ids = data.map((t) => t.videoid)
+                const { data: settingsData } = await supabase
+                  .from('tl_video_settings')
+                  .select(
+                    'videoid, include_squad, allow_tl, tl_locked, visibility, allowed_user_ids, owner_user_id'
+                  )
+                  .in('videoid', ids)
+                const settingsMap = (settingsData ?? []).reduce(
+                  (acc: Record<string, VideoSettings>, row) => {
+                    const rawAllowed = row.allowed_user_ids
+                    const allowed =
+                      Array.isArray(rawAllowed)
+                        ? (rawAllowed as string[])
+                        : typeof rawAllowed === 'string'
+                          ? rawAllowed.split(',').map((s) => s.trim()).filter(Boolean)
+                          : []
+                    acc[row.videoid as string] = {
+                      includeSquad: Boolean(row.include_squad),
+                      allowTl: row.allow_tl !== false,
+                      tlLocked: Boolean(row.tl_locked),
+                      visibility:
+                        (row.visibility as 'public' | 'restricted' | 'private') ??
+                        'public',
+                      allowedUserIds: allowed,
+                      ownerUserId:
+                        typeof row.owner_user_id === 'string'
+                          ? row.owner_user_id
+                          : null,
+                    }
+                    return acc
+                  },
+                  {}
+                )
+                setVideoSettingsMap(settingsMap)
+              } else {
+                setVideoSettingsMap({})
+              }
             }
             setLoadingMessage('')
           }
@@ -168,6 +239,45 @@ export default function TLSearchPage() {
     }
     checkAdmin()
   }, [session, supabase])
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      if (!openTl || !session?.user) {
+        setOpenTlSettings(null)
+        return
+      }
+      setSettingsError('')
+      const { data, error } = await supabase
+        .from('tl_video_settings')
+        .select(
+          'include_squad, allow_tl, tl_locked, visibility, allowed_user_ids, owner_user_id'
+        )
+        .eq('videoid', openTl.videoid)
+        .maybeSingle()
+      if (error) {
+        setSettingsError('管理設定の取得に失敗しました')
+        setOpenTlSettings(null)
+        return
+      }
+      const rawAllowed = data?.allowed_user_ids
+      const allowed =
+        Array.isArray(rawAllowed)
+          ? (rawAllowed as string[])
+          : typeof rawAllowed === 'string'
+            ? rawAllowed.split(',').map((s) => s.trim()).filter(Boolean)
+            : []
+      setOpenTlSettings({
+        includeSquad: Boolean(data?.include_squad),
+        allowTl: data?.allow_tl !== false,
+        tlLocked: Boolean(data?.tl_locked),
+        visibility: (data?.visibility as 'public' | 'restricted' | 'private') ?? 'public',
+        allowedUserIds: allowed,
+        ownerUserId:
+          typeof data?.owner_user_id === 'string' ? data.owner_user_id : session.user.id,
+      })
+    }
+    void loadSettings()
+  }, [openTl, session, supabase])
 
 
   // モーダルで開いた動画のフラグ状態を読み込む
@@ -289,6 +399,14 @@ export default function TLSearchPage() {
       setTlJsonError('ログインが必要です')
       return
     }
+    if (openTlSettings?.tlLocked) {
+      setTlJsonError('この動画はTL変更がロックされています')
+      return
+    }
+    if (openTlSettings && openTlSettings.allowTl === false) {
+      setTlJsonError('この動画はTL登録/変更が許可されていません')
+      return
+    }
     const raw = tlJsonInput.trim()
     if (!raw) {
       setTlJsonError('JSONを入力してください')
@@ -336,6 +454,7 @@ export default function TLSearchPage() {
     Boolean(youtubeChannelId) &&
     Boolean(videoChannelId) &&
     youtubeChannelId === videoChannelId
+  const tlEditLocked = Boolean(openTlSettings?.tlLocked || openTlSettings?.allowTl === false)
 
   const setVideoSkipUpdate = async (videoid: string, next: boolean) => {
     if (!isAdmin) return
@@ -363,6 +482,128 @@ export default function TLSearchPage() {
       setPolicyError('保存に失敗しました（権限/RLS設定を確認してください）')
     } finally {
       setOpenTlSkipUpdateSaving(false)
+    }
+  }
+
+  const saveVideoSettings = async () => {
+    if (!openTl || !session?.user || !openTlSettings) return
+    setSettingsSaving(true)
+    setSettingsError('')
+    const payload = {
+      videoid: openTl.videoid,
+      include_squad: openTlSettings.includeSquad,
+      allow_tl: openTlSettings.allowTl,
+      tl_locked: openTlSettings.tlLocked,
+      visibility: openTlSettings.visibility,
+      allowed_user_ids: openTlSettings.allowedUserIds,
+      owner_user_id: openTlSettings.ownerUserId ?? session.user.id,
+      updated_at: new Date().toISOString(),
+    }
+    const { error } = await supabase
+      .from('tl_video_settings')
+      .upsert(payload, { onConflict: 'videoid' })
+    setSettingsSaving(false)
+    if (error) {
+      setSettingsError('管理設定の保存に失敗しました')
+      return
+    }
+    setVideoSettingsMap((prev) => ({
+      ...prev,
+      [openTl.videoid]: {
+        includeSquad: openTlSettings.includeSquad,
+        allowTl: openTlSettings.allowTl,
+        tlLocked: openTlSettings.tlLocked,
+        visibility: openTlSettings.visibility,
+        allowedUserIds: openTlSettings.allowedUserIds,
+        ownerUserId: openTlSettings.ownerUserId ?? session.user.id,
+      },
+    }))
+  }
+
+  const openMyVideos = async () => {
+    if (!youtubeChannelId) return
+    setMyVideosOpen(true)
+    setMyVideosLoading(true)
+    setMyVideosError('')
+    try {
+      const { data } = await supabase.auth.getSession()
+      const token = data.session?.provider_token
+      if (!token) {
+        setMyVideosError('YouTube連携が必要です（マイページで接続してください）')
+        setMyVideosLoading(false)
+        return
+      }
+      const params = new URLSearchParams({
+        part: 'snippet',
+        channelId: youtubeChannelId,
+        q: 'ブルアカ',
+        type: 'video',
+        order: 'date',
+        maxResults: '20',
+      })
+      const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      if (!res.ok) {
+        setMyVideosError('YouTubeの動画取得に失敗しました')
+        setMyVideosLoading(false)
+        return
+      }
+      const json = (await res.json()) as {
+        items?: Array<{
+          id?: { videoId?: string }
+          snippet?: { title?: string; description?: string; publishedAt?: string; thumbnails?: Record<string, { url?: string }> }
+        }>
+      }
+      const items = (json.items ?? [])
+        .map((item) => {
+          const videoid = item.id?.videoId
+          if (!videoid) return null
+          const snippet = item.snippet ?? {}
+          return {
+            videoid,
+            title: snippet.title ?? '',
+            description: snippet.description ?? '',
+            publishedAt: snippet.publishedAt,
+            thumbnail: snippet.thumbnails?.medium?.url ?? snippet.thumbnails?.default?.url ?? undefined,
+          }
+        })
+        .filter((item): item is NonNullable<typeof item> => Boolean(item))
+        .filter((item) => item.title.includes('ブルアカ'))
+      setMyVideos(items)
+    } catch {
+      setMyVideosError('YouTubeの動画取得に失敗しました')
+    } finally {
+      setMyVideosLoading(false)
+    }
+  }
+
+  const addMyVideoToList = (
+    video: { videoid: string; title: string; description: string; publishedAt?: string },
+    openAfter: boolean
+  ) => {
+    const timeline: Timeline = {
+      id: Math.floor(Date.now() + Math.random() * 1000),
+      armor: '',
+      difficulty: '',
+      videoid: video.videoid,
+      score: '',
+      formation: '[]',
+      guide: false,
+      formationStatus: 'none',
+      title: video.title,
+      description: video.description,
+      publishedAt: video.publishedAt,
+      season: '',
+    }
+    setTimelines((prev) => {
+      if (prev.some((t) => t.videoid === video.videoid)) return prev
+      return [timeline, ...prev]
+    })
+    if (openAfter) {
+      setOpenTl(timeline)
     }
   }
 
@@ -429,6 +670,43 @@ export default function TLSearchPage() {
           return parseInt(b.score || '0') - parseInt(a.score || '0')
         })
         setTimelines(data)
+        if (data.length > 0) {
+          const ids = data.map((t) => t.videoid)
+          const { data: settingsData } = await supabase
+            .from('tl_video_settings')
+            .select(
+              'videoid, include_squad, allow_tl, tl_locked, visibility, allowed_user_ids, owner_user_id'
+            )
+            .in('videoid', ids)
+          const settingsMap = (settingsData ?? []).reduce(
+            (acc: Record<string, VideoSettings>, row) => {
+              const rawAllowed = row.allowed_user_ids
+              const allowed =
+                Array.isArray(rawAllowed)
+                  ? (rawAllowed as string[])
+                  : typeof rawAllowed === 'string'
+                    ? rawAllowed.split(',').map((s) => s.trim()).filter(Boolean)
+                    : []
+              acc[row.videoid as string] = {
+                includeSquad: Boolean(row.include_squad),
+                allowTl: row.allow_tl !== false,
+                tlLocked: Boolean(row.tl_locked),
+                visibility:
+                  (row.visibility as 'public' | 'restricted' | 'private') ?? 'public',
+                allowedUserIds: allowed,
+                ownerUserId:
+                  typeof row.owner_user_id === 'string'
+                    ? row.owner_user_id
+                    : null,
+              }
+              return acc
+            },
+            {}
+          )
+          setVideoSettingsMap(settingsMap)
+        } else {
+          setVideoSettingsMap({})
+        }
       }
       setLoadingMessage('')
     } catch {
@@ -560,7 +838,21 @@ export default function TLSearchPage() {
     return true
   })
 
-  const filtered = timelines.filter((t) => {
+  const visibleTimelines = timelines.filter((t) => {
+    const settings = videoSettingsMap[t.videoid]
+    if (!settings) return true
+    const visibility = settings.visibility ?? 'public'
+    if (visibility === 'public') return true
+    if (!session?.user?.id) return false
+    const ownerId = settings.ownerUserId ?? null
+    if (visibility === 'private') {
+      return ownerId === session.user.id
+    }
+    const allowed = settings.allowedUserIds ?? []
+    return ownerId === session.user.id || allowed.includes(session.user.id)
+  })
+
+  const filtered = visibleTimelines.filter((t) => {
     const armorOk = armor ? t.armor === armor : true
     const difficultyOk = difficulty ? t.difficulty === difficulty : true
     const guideOk = filterGuide ? Boolean(t.guide) : true
@@ -628,9 +920,18 @@ export default function TLSearchPage() {
 
   return (
     <main className="p-4 space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <h2 className="text-xl">TL検索</h2>
         <PageHelpButton pageKey="tl-search" />
+        {youtubeChannelId && (
+          <button
+            type="button"
+            onClick={openMyVideos}
+            className="ml-auto inline-flex items-center gap-1 rounded border border-blue-300 px-3 py-1 text-sm font-medium text-blue-700 hover:bg-blue-50"
+          >
+            ＋ 自分の動画を追加
+          </button>
+        )}
       </div>
       <div className="space-y-2">
         <div className="flex flex-wrap gap-2 items-center">
@@ -823,6 +1124,85 @@ export default function TLSearchPage() {
             <TimelineCard key={t.id} t={t} />
           ))}
         </ul>
+      )}
+      {myVideosOpen && (
+        <div
+          className="fixed inset-0 flex items-center justify-center z-50 bg-black/50"
+          onClick={() => setMyVideosOpen(false)}
+        >
+          <div
+            className="bg-white rounded w-full max-w-3xl max-h-[80vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <div>
+                <h3 className="font-semibold">自分の動画を追加</h3>
+                <p className="text-xs text-gray-500">
+                  タイトルに「ブルアカ」を含む動画のみ表示しています。
+                </p>
+              </div>
+              <button
+                type="button"
+                className="text-sm text-gray-500 hover:text-gray-800"
+                onClick={() => setMyVideosOpen(false)}
+              >
+                閉じる
+              </button>
+            </div>
+            <div className="p-4 space-y-3 max-h-[65vh] overflow-y-auto">
+              {myVideosLoading && <p className="text-sm text-gray-500">読み込み中...</p>}
+              {myVideosError && <p className="text-sm text-red-600">{myVideosError}</p>}
+              {!myVideosLoading && !myVideosError && myVideos.length === 0 && (
+                <p className="text-sm text-gray-500">対象の動画が見つかりませんでした。</p>
+              )}
+              {myVideos.map((video) => {
+                const alreadyAdded = timelines.some((t) => t.videoid === video.videoid)
+                return (
+                  <div
+                    key={video.videoid}
+                    className="flex flex-col sm:flex-row gap-3 border rounded p-3"
+                  >
+                    <img
+                      src={video.thumbnail ?? `https://i.ytimg.com/vi/${video.videoid}/mqdefault.jpg`}
+                      alt="thumbnail"
+                      className="w-full sm:w-40 h-auto rounded"
+                    />
+                    <div className="flex-1 space-y-1">
+                      <p className="text-sm font-semibold">{video.title}</p>
+                      <p className="text-xs text-gray-500 line-clamp-2">{video.description}</p>
+                      {video.publishedAt && (
+                        <p className="text-xs text-gray-400">
+                          {new Date(video.publishedAt).toLocaleString()}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        <button
+                          type="button"
+                          disabled={alreadyAdded}
+                          onClick={() => addMyVideoToList(video, false)}
+                          className="rounded border border-gray-300 px-2 py-1 text-xs disabled:opacity-60"
+                        >
+                          {alreadyAdded ? '追加済み' : '追加'}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={alreadyAdded}
+                          onClick={() => {
+                            addMyVideoToList(video, true)
+                            setMyVideosOpen(false)
+                          }}
+                          className="rounded border border-blue-300 px-2 py-1 text-xs text-blue-700 disabled:opacity-60"
+                        >
+                          追加して設定
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
       )}
       {openTl && (
         <div
@@ -1116,13 +1496,16 @@ export default function TLSearchPage() {
                       <button
                         type="button"
                         className="rounded border border-blue-300 px-2 py-1 text-xs text-blue-700 disabled:opacity-60"
-                        disabled={tlJsonSaving}
+                        disabled={tlJsonSaving || tlEditLocked}
                         onClick={saveTlJsonLink}
                       >
                         {tlJsonSaving ? '保存中...' : 'この動画に紐付ける'}
                       </button>
                       {tlJsonError && (
                         <span className="text-xs text-red-600">{tlJsonError}</span>
+                      )}
+                      {tlEditLocked && !tlJsonError && (
+                        <span className="text-xs text-gray-500">この動画はTL変更が制限されています</span>
                       )}
                     </div>
                   </div>
@@ -1136,6 +1519,122 @@ export default function TLSearchPage() {
                     </p>
                     {ownerCheckLoading && (
                       <p className="text-xs text-gray-500">確認中...</p>
+                    )}
+                    {openTlSettings && (
+                      <div className="space-y-3">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={openTlSettings.includeSquad}
+                            onChange={(e) =>
+                              setOpenTlSettings((prev) =>
+                                prev
+                                  ? { ...prev, includeSquad: e.target.checked }
+                                  : prev
+                              )
+                            }
+                          />
+                          <span>部隊のデータを含める</span>
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={openTlSettings.allowTl}
+                            onChange={(e) =>
+                              setOpenTlSettings((prev) =>
+                                prev ? { ...prev, allowTl: e.target.checked } : prev
+                              )
+                            }
+                          />
+                          <span>TL登録/変更を許可する</span>
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={openTlSettings.tlLocked}
+                            onChange={(e) =>
+                              setOpenTlSettings((prev) =>
+                                prev ? { ...prev, tlLocked: e.target.checked } : prev
+                              )
+                            }
+                          />
+                          <span>TL変更をロックする</span>
+                        </label>
+                        <div className="space-y-2">
+                          <p className="text-xs text-gray-600">TL検索の公開範囲</p>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="visibility"
+                              checked={openTlSettings.visibility === 'public'}
+                              onChange={() =>
+                                setOpenTlSettings((prev) =>
+                                  prev ? { ...prev, visibility: 'public' } : prev
+                                )
+                              }
+                            />
+                            <span>全体公開</span>
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="visibility"
+                              checked={openTlSettings.visibility === 'restricted'}
+                              onChange={() =>
+                                setOpenTlSettings((prev) =>
+                                  prev ? { ...prev, visibility: 'restricted' } : prev
+                                )
+                              }
+                            />
+                            <span>特定ユーザーのみ（ID指定）</span>
+                          </label>
+                          {openTlSettings.visibility === 'restricted' && (
+                            <textarea
+                              value={openTlSettings.allowedUserIds.join('\n')}
+                              onChange={(e) =>
+                                setOpenTlSettings((prev) =>
+                                  prev
+                                    ? {
+                                        ...prev,
+                                        allowedUserIds: e.target.value
+                                          .split('\n')
+                                          .map((v) => v.trim())
+                                          .filter(Boolean),
+                                      }
+                                    : prev
+                                )
+                              }
+                              className="w-full rounded border border-gray-300 px-2 py-1 text-xs"
+                              rows={3}
+                              placeholder="許可するユーザーIDを改行で入力"
+                            />
+                          )}
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="visibility"
+                              checked={openTlSettings.visibility === 'private'}
+                              onChange={() =>
+                                setOpenTlSettings((prev) =>
+                                  prev ? { ...prev, visibility: 'private' } : prev
+                                )
+                              }
+                            />
+                            <span>非公開（自分だけ表示）</span>
+                          </label>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={saveVideoSettings}
+                          disabled={settingsSaving}
+                          className="rounded border border-blue-300 px-3 py-1 text-xs text-blue-700 disabled:opacity-60"
+                        >
+                          {settingsSaving ? '保存中...' : '設定を保存'}
+                        </button>
+                        {settingsError && (
+                          <p className="text-xs text-red-600">{settingsError}</p>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
