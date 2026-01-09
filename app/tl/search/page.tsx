@@ -297,10 +297,11 @@ export default function TLSearchPage() {
           : typeof rawAllowed === 'string'
             ? rawAllowed.split(',').map((s) => s.trim()).filter(Boolean)
             : []
+      const allowTl = data?.allow_tl !== false
       setOpenTlSettings({
         includeSquad: Boolean(data?.include_squad),
-        allowTl: data?.allow_tl !== false,
-        tlLocked: Boolean(data?.tl_locked),
+        allowTl,
+        tlLocked: Boolean(data?.tl_locked) && allowTl,
         visibility: (data?.visibility as 'public' | 'restricted' | 'private') ?? 'public',
         allowedUserIds: allowed,
         ownerUserId:
@@ -449,11 +450,11 @@ export default function TLSearchPage() {
       setTlJsonError('ログインが必要です')
       return
     }
-    if (openTlSettings?.tlLocked) {
+    if (!canEditTl && openTlSettings?.tlLocked) {
       setTlJsonError('この動画はTL変更がロックされています')
       return
     }
-    if (openTlSettings && openTlSettings.allowTl === false) {
+    if (!canEditTl && openTlSettings && openTlSettings.allowTl === false) {
       setTlJsonError('この動画はTL登録/変更が許可されていません')
       return
     }
@@ -513,12 +514,58 @@ export default function TLSearchPage() {
     }
   }
 
+  const clearTlJsonLink = async () => {
+    if (!openTl) return
+    if (!session?.user) {
+      setTlJsonError('ログインが必要です')
+      return
+    }
+    if (!canEditTl) {
+      setTlJsonError('このTLを削除する権限がありません')
+      return
+    }
+    setTlJsonSaving(true)
+    setTlJsonError('')
+    try {
+      const table = openTl.season
+        ? `tl_${openTl.season.toLowerCase()}`
+        : 'tl_unknown'
+      const now = new Date().toISOString()
+      const { error } = await supabase
+        .from(table)
+        .update({
+          tl_json: null,
+          tl_json_title: null,
+          tl_json_updated_at: now,
+          tl_json_created_by: null,
+        })
+        .eq('videoid', openTl.videoid)
+      if (error) throw error
+      setTlJsonValue('')
+      setTlJsonTitle('')
+      setTlJsonUpdatedAt(now)
+      setTlJsonAuthor(null)
+      setTlJsonAuthorProfile(null)
+      setTlJsonInput('')
+    } catch {
+      setTlJsonError('TLの削除に失敗しました')
+    } finally {
+      setTlJsonSaving(false)
+    }
+  }
+
   const canManage =
     Boolean(session?.user) &&
     Boolean(youtubeChannelId) &&
     Boolean(videoChannelId) &&
     youtubeChannelId === videoChannelId
-  const tlEditLocked = Boolean(openTlSettings?.tlLocked || openTlSettings?.allowTl === false)
+  const canEditTl = Boolean(
+    session?.user &&
+      (canManage || (tlJsonAuthor && session.user.id === tlJsonAuthor))
+  )
+  const tlEditLocked = Boolean(
+    !canEditTl && (openTlSettings?.tlLocked || openTlSettings?.allowTl === false)
+  )
 
   const setVideoSkipUpdate = async (videoid: string, next: boolean) => {
     if (!isAdmin) return
@@ -553,11 +600,12 @@ export default function TLSearchPage() {
     if (!openTl || !session?.user || !openTlSettings) return
     setSettingsSaving(true)
     setSettingsError('')
+    const locked = openTlSettings.allowTl ? openTlSettings.tlLocked : false
     const payload = {
       videoid: openTl.videoid,
       include_squad: openTlSettings.includeSquad,
       allow_tl: openTlSettings.allowTl,
-      tl_locked: openTlSettings.tlLocked,
+      tl_locked: locked,
       visibility: openTlSettings.visibility,
       allowed_user_ids: openTlSettings.allowedUserIds,
       owner_user_id: openTlSettings.ownerUserId ?? session.user.id,
@@ -576,7 +624,7 @@ export default function TLSearchPage() {
       [openTl.videoid]: {
         includeSquad: openTlSettings.includeSquad,
         allowTl: openTlSettings.allowTl,
-        tlLocked: openTlSettings.tlLocked,
+        tlLocked: locked,
         visibility: openTlSettings.visibility,
         allowedUserIds: openTlSettings.allowedUserIds,
         ownerUserId: openTlSettings.ownerUserId ?? session.user.id,
@@ -1507,6 +1555,23 @@ export default function TLSearchPage() {
                         ) : (
                           <p className="text-xs text-gray-500">まだ紐付けはありません。</p>
                         )}
+                        {tlJsonValue && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              className="rounded border border-red-300 px-2 py-1 text-xs text-red-700 disabled:opacity-60"
+                              disabled={tlJsonSaving || !canEditTl}
+                              onClick={clearTlJsonLink}
+                            >
+                              TLを削除
+                            </button>
+                            {!canEditTl && (
+                              <span className="text-xs text-gray-500">
+                                投稿者またはTL追加者のみ削除できます
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1617,30 +1682,48 @@ export default function TLSearchPage() {
                           />
                           <span>部隊のデータを含める</span>
                         </label>
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={openTlSettings.allowTl}
-                            onChange={(e) =>
-                              setOpenTlSettings((prev) =>
-                                prev ? { ...prev, allowTl: e.target.checked } : prev
-                              )
-                            }
-                          />
-                          <span>TL登録/変更を許可する</span>
-                        </label>
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={openTlSettings.tlLocked}
-                            onChange={(e) =>
-                              setOpenTlSettings((prev) =>
-                                prev ? { ...prev, tlLocked: e.target.checked } : prev
-                              )
-                            }
-                          />
-                          <span>TL変更をロックする</span>
-                        </label>
+                        <div className="space-y-2">
+                          <p className="text-xs text-gray-600">TL登録/変更の設定</p>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="tl-edit-policy"
+                              checked={openTlSettings.allowTl && !openTlSettings.tlLocked}
+                              onChange={() =>
+                                setOpenTlSettings((prev) =>
+                                  prev ? { ...prev, allowTl: true, tlLocked: false } : prev
+                                )
+                              }
+                            />
+                            <span>変更を許可する</span>
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="tl-edit-policy"
+                              checked={openTlSettings.allowTl && openTlSettings.tlLocked}
+                              onChange={() =>
+                                setOpenTlSettings((prev) =>
+                                  prev ? { ...prev, allowTl: true, tlLocked: true } : prev
+                                )
+                              }
+                            />
+                            <span>変更をロックする</span>
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="tl-edit-policy"
+                              checked={!openTlSettings.allowTl && !openTlSettings.tlLocked}
+                              onChange={() =>
+                                setOpenTlSettings((prev) =>
+                                  prev ? { ...prev, allowTl: false, tlLocked: false } : prev
+                                )
+                              }
+                            />
+                            <span>変更を許可しない</span>
+                          </label>
+                        </div>
                         <div className="space-y-2">
                           <p className="text-xs text-gray-600">TL検索の公開範囲</p>
                           <label className="flex items-center gap-2">
