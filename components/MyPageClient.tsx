@@ -99,10 +99,10 @@ const normalizeTlDefaults = (raw: unknown): TlDefaultSettings => {
     hideTlUntilYoutube: true,
   }
   if (!raw) return defaults
-  let parsed = raw
+  let parsed: unknown = raw
   if (typeof raw === 'string') {
     try {
-      parsed = JSON.parse(raw) as unknown
+      parsed = JSON.parse(raw)
     } catch {
       return defaults
     }
