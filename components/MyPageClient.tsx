@@ -299,6 +299,7 @@ export default function MyPageClient({
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingSocial, setSavingSocial] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [toasts, setToasts] = useState<Array<{ id: number; text: string }>>([])
   const [showUserId, setShowUserId] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewVisible, setPreviewVisible] = useState(false)
@@ -1045,8 +1046,11 @@ export default function MyPageClient({
 
   useEffect(() => {
     if (!message) return
+    const toastId = Date.now() + Math.random()
+    setToasts((prev) => [...prev, { id: toastId, text: message }])
+    setMessage(null)
     const id = window.setTimeout(() => {
-      setMessage(null)
+      setToasts((prev) => prev.filter((toast) => toast.id !== toastId))
     }, 4000)
     return () => window.clearTimeout(id)
   }, [message])
@@ -1099,9 +1103,19 @@ export default function MyPageClient({
       </aside>
 
       <div className="flex-1 space-y-6">
-        {message && (
-          <div className="fixed bottom-4 right-4 z-50 max-w-sm rounded border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 shadow-lg">
-            {message}
+        {toasts.length > 0 && (
+          <div className="fixed top-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2">
+            {toasts.map((toast) => (
+              <div
+                key={toast.id}
+                className="toast-item overflow-hidden rounded border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 shadow-lg"
+              >
+                <div>{toast.text}</div>
+                <div className="mt-2 h-1 w-full overflow-hidden rounded bg-blue-100">
+                  <div className="toast-progress h-full bg-blue-400" />
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -1883,6 +1897,22 @@ export default function MyPageClient({
               background-image: linear-gradient(135deg, #f59e0b, #ef4444, #8b5cf6);
               background-size: 200% 200%;
               animation: ba-sunset 10s ease infinite;
+            }
+            @keyframes toast-in-out {
+              0% { opacity: 0; transform: translateY(-8px); }
+              10% { opacity: 1; transform: translateY(0); }
+              90% { opacity: 1; transform: translateY(0); }
+              100% { opacity: 0; transform: translateY(-6px); }
+            }
+            .toast-item {
+              animation: toast-in-out 4s ease-in-out forwards;
+            }
+            @keyframes toast-progress {
+              0% { width: 100%; }
+              100% { width: 0%; }
+            }
+            .toast-progress {
+              animation: toast-progress 4s linear forwards;
             }
           `,
         }}
