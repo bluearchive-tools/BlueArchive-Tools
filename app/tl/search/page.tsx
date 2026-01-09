@@ -141,6 +141,7 @@ export default function TLSearchPage() {
   const [tlJsonError, setTlJsonError] = useState('')
   const [tlInputMode, setTlInputMode] = useState<'json' | 'text'>('json')
   const [modalClosing, setModalClosing] = useState(false)
+  const [tlRevealUnlocked, setTlRevealUnlocked] = useState<Record<string, boolean>>({})
   const [videoSettingsMap, setVideoSettingsMap] = useState<Record<string, VideoSettings>>({})
   const [openTlSettings, setOpenTlSettings] = useState<{
     includeSquad: boolean
@@ -374,6 +375,10 @@ export default function TLSearchPage() {
       }
       setTlJsonLoading(true)
       setTlJsonError('')
+      setTlRevealUnlocked((prev) => ({
+        ...prev,
+        [openTl.videoid]: false,
+      }))
       try {
         const table = openTl.season
           ? `tl_${openTl.season.toLowerCase()}`
@@ -1560,17 +1565,29 @@ export default function TLSearchPage() {
                       <p className="text-xs text-gray-500">読み込み中...</p>
                     ) : (
                       <div className="space-y-2">
-                        {openTlSettings?.hideTlUntilYoutube ? (
+                        {openTlSettings?.hideTlUntilYoutube &&
+                        !tlRevealUnlocked[openTl.videoid] ? (
                           <div className="rounded border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600 space-y-2">
-                            <p>この動画は「YouTubeで開く」までTLを表示しない設定になっています。</p>
-                            <a
-                              href={`https://www.youtube.com/watch?v=${openTl.videoid}`}
-                              target="_blank"
-                              rel="noreferrer"
+                            <p>
+                              再生数の公平性を守るため、YouTubeで動画を開くまでTLを表示しない設定になっています。
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setTlRevealUnlocked((prev) => ({
+                                  ...prev,
+                                  [openTl.videoid]: true,
+                                }))
+                                window.open(
+                                  `https://www.youtube.com/watch?v=${openTl.videoid}`,
+                                  '_blank',
+                                  'noopener,noreferrer'
+                                )
+                              }}
                               className="inline-flex items-center gap-2 rounded border border-blue-300 px-3 py-1 text-xs text-blue-700 hover:bg-blue-50"
                             >
                               YouTubeで開く
-                            </a>
+                            </button>
                           </div>
                         ) : tlJsonValue ? (
                           <details className="rounded border border-gray-200 p-2">
