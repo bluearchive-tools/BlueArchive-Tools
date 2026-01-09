@@ -21,6 +21,7 @@ interface Props {
   initialFriendCode: string | null
   initialFriendCodePublic: boolean | null
   initialSocialLinks: unknown
+  initialTlDefaults: unknown
   initialDecorationIds: string[]
   initialDecorationInventory: string[]
   initialDecorations: {
@@ -55,6 +56,14 @@ type SocialLink = {
   xName?: string | null
 }
 
+type TlDefaultSettings = {
+  includeSquad: boolean
+  allowTl: boolean
+  visibility: 'public' | 'restricted' | 'private'
+  allowedUserIds: string[]
+  hideTlUntilYoutube: boolean
+}
+
 const detectSocialService = (label: string): SocialService => {
   const s = label.trim().toLowerCase()
   if (!s) return 'other'
@@ -73,6 +82,46 @@ const socialPlaceholder = (service: SocialService) => {
   if (service === 'x') return '例: @username / https://x.com/...'
   if (service === 'youtube') return '例: https://www.youtube.com/@...'
   return 'リンクやID'
+}
+
+const parseAllowedIdentifiers = (raw: string) =>
+  raw
+    .split(/[\n,]+/)
+    .map((v) => v.trim())
+    .filter(Boolean)
+
+const normalizeTlDefaults = (raw: unknown): TlDefaultSettings => {
+  const defaults: TlDefaultSettings = {
+    includeSquad: true,
+    allowTl: true,
+    visibility: 'public',
+    allowedUserIds: [],
+    hideTlUntilYoutube: true,
+  }
+  if (!raw) return defaults
+  let parsed = raw
+  if (typeof raw === 'string') {
+    try {
+      parsed = JSON.parse(raw) as unknown
+    } catch {
+      return defaults
+    }
+  }
+  if (!parsed || typeof parsed !== 'object') return defaults
+  const obj = parsed as Record<string, unknown>
+  return {
+    includeSquad: typeof obj.includeSquad === 'boolean' ? obj.includeSquad : defaults.includeSquad,
+    allowTl: typeof obj.allowTl === 'boolean' ? obj.allowTl : defaults.allowTl,
+    visibility:
+      obj.visibility === 'public' || obj.visibility === 'restricted' || obj.visibility === 'private'
+        ? obj.visibility
+        : defaults.visibility,
+    allowedUserIds: Array.isArray(obj.allowedUserIds)
+      ? (obj.allowedUserIds as string[]).filter(Boolean)
+      : defaults.allowedUserIds,
+    hideTlUntilYoutube:
+      typeof obj.hideTlUntilYoutube === 'boolean' ? obj.hideTlUntilYoutube : defaults.hideTlUntilYoutube,
+  }
 }
 
 const isYouTubeNetworkBlocked = (err: unknown) => {
@@ -158,6 +207,7 @@ export default function MyPageClient({
   initialFriendCode,
   initialFriendCodePublic,
   initialSocialLinks,
+  initialTlDefaults,
   initialDecorationIds,
   initialDecorationInventory,
   initialDecorations
@@ -239,6 +289,9 @@ export default function MyPageClient({
       }
       return [{ service: 'other', label: '', value: '' }]
     })()
+  )
+  const [tlDefaults, setTlDefaults] = useState<TlDefaultSettings>(
+    () => normalizeTlDefaults(initialTlDefaults)
   )
 
   const [identities, setIdentities] = useState<UserIdentity[]>([])
@@ -938,6 +991,7 @@ export default function MyPageClient({
       .from('profiles')
       .update({
         social_links: savedSocialLinks,
+        tl_default_settings: tlDefaults,
       })
       .eq('id', session.user.id)
     setSavingSocial(false)
@@ -1487,6 +1541,109 @@ export default function MyPageClient({
                 <p className="mt-2 text-xs text-gray-500">
                   TL 登録時に「自動」でステータスを補完する設定です。手動管理したい場合はオフにしてください。
                 </p>
+              </div>
+              <div className="rounded border border-gray-200 bg-gray-50 p-3 text-sm space-y-3">
+                <div>
+                  <p className="font-semibold text-sm text-gray-700">動画のデフォルト管理設定</p>
+                  <p className="text-xs text-gray-500">
+                    自分の投稿動画や手動追加する動画に対して、初期値として適用する設定です。
+                  </p>
+                </div>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={tlDefaults.includeSquad}
+                    onChange={(e) =>
+                      setTlDefaults((prev) => ({ ...prev, includeSquad: e.target.checked }))
+                    }
+                  />
+                  <span>部隊のデータを含める</span>
+                </label>
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-600">TL登録/変更の設定</p>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="tl-default-edit-policy"
+                      checked={tlDefaults.allowTl}
+                      onChange={() =>
+                        setTlDefaults((prev) => ({ ...prev, allowTl: true }))
+                      }
+                    />
+                    <span>変更を許可する</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="tl-default-edit-policy"
+                      checked={!tlDefaults.allowTl}
+                      onChange={() =>
+                        setTlDefaults((prev) => ({ ...prev, allowTl: false }))
+                      }
+                    />
+                    <span>変更をロックする（許可しない）</span>
+                  </label>
+                </div>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={tlDefaults.hideTlUntilYoutube}
+                    onChange={(e) =>
+                      setTlDefaults((prev) => ({ ...prev, hideTlUntilYoutube: e.target.checked }))
+                    }
+                  />
+                  <span>動画を開くまでTLを非表示にする</span>
+                </label>
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-600">TL検索の公開範囲</p>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="tl-default-visibility"
+                      checked={tlDefaults.visibility === 'public'}
+                      onChange={() =>
+                        setTlDefaults((prev) => ({ ...prev, visibility: 'public' }))
+                      }
+                    />
+                    <span>全体公開</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="tl-default-visibility"
+                      checked={tlDefaults.visibility === 'restricted'}
+                      onChange={() =>
+                        setTlDefaults((prev) => ({ ...prev, visibility: 'restricted' }))
+                      }
+                    />
+                    <span>特定ユーザーのみ（profilesのID指定）</span>
+                  </label>
+                  {tlDefaults.visibility === 'restricted' && (
+                    <textarea
+                      value={tlDefaults.allowedUserIds.join('\n')}
+                      onChange={(e) =>
+                        setTlDefaults((prev) => ({
+                          ...prev,
+                          allowedUserIds: parseAllowedIdentifiers(e.target.value),
+                        }))
+                      }
+                      className="w-full rounded border border-gray-300 px-2 py-1 text-xs"
+                      rows={3}
+                      placeholder="許可するprofilesのIDまたはユーザー名を改行/カンマで入力"
+                    />
+                  )}
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="tl-default-visibility"
+                      checked={tlDefaults.visibility === 'private'}
+                      onChange={() =>
+                        setTlDefaults((prev) => ({ ...prev, visibility: 'private' }))
+                      }
+                    />
+                    <span>非公開（自分だけ表示）</span>
+                  </label>
+                </div>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button

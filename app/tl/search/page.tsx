@@ -104,6 +104,13 @@ export default function TLSearchPage() {
   const [openTl, setOpenTl] = useState<Timeline | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [currentUsername, setCurrentUsername] = useState<string | null>(null)
+  const [userTlDefaults, setUserTlDefaults] = useState<{
+    includeSquad: boolean
+    allowTl: boolean
+    visibility: VideoVisibility
+    allowedUserIds: string[]
+    hideTlUntilYoutube: boolean
+  } | null>(null)
   const [youtubeChannelId, setYoutubeChannelId] = useState<string | null>(null)
   const [videoChannelId, setVideoChannelId] = useState<string | null>(null)
   const [ownerCheckLoading, setOwnerCheckLoading] = useState(false)
@@ -278,7 +285,7 @@ export default function TLSearchPage() {
       if (session) {
         const { data } = await supabase
           .from('profiles')
-          .select('admin, social_links, username')
+          .select('admin, social_links, username, tl_default_settings')
           .eq('id', session.user.id)
           .maybeSingle()
         setIsAdmin(Boolean(data?.admin))
@@ -290,6 +297,31 @@ export default function TLSearchPage() {
           typeof yt?.channelId === 'string' ? yt.channelId : null
         )
         setCurrentUsername(typeof data?.username === 'string' ? data.username : null)
+        const rawDefaults = data?.tl_default_settings
+        if (rawDefaults && typeof rawDefaults === 'object') {
+          const obj = rawDefaults as Record<string, unknown>
+          setUserTlDefaults({
+            includeSquad: typeof obj.includeSquad === 'boolean' ? obj.includeSquad : true,
+            allowTl: typeof obj.allowTl === 'boolean' ? obj.allowTl : true,
+            visibility:
+              obj.visibility === 'public' || obj.visibility === 'restricted' || obj.visibility === 'private'
+                ? obj.visibility
+                : 'public',
+            allowedUserIds: Array.isArray(obj.allowedUserIds)
+              ? (obj.allowedUserIds as string[]).filter(Boolean)
+              : [],
+            hideTlUntilYoutube:
+              typeof obj.hideTlUntilYoutube === 'boolean' ? obj.hideTlUntilYoutube : true,
+          })
+        } else {
+          setUserTlDefaults({
+            includeSquad: true,
+            allowTl: true,
+            visibility: 'public',
+            allowedUserIds: [],
+            hideTlUntilYoutube: true,
+          })
+        }
       }
     }
     checkAdmin()
@@ -314,6 +346,25 @@ export default function TLSearchPage() {
         setOpenTlSettings(null)
         return
       }
+      if (!data) {
+        const fallback = userTlDefaults ?? {
+          includeSquad: true,
+          allowTl: true,
+          visibility: 'public' as VideoVisibility,
+          allowedUserIds: [],
+          hideTlUntilYoutube: true,
+        }
+        setOpenTlSettings({
+          includeSquad: fallback.includeSquad,
+          allowTl: fallback.allowTl,
+          tlLocked: !fallback.allowTl,
+          visibility: fallback.visibility,
+          allowedUserIds: fallback.allowedUserIds,
+          ownerUserId: session.user.id,
+          hideTlUntilYoutube: fallback.hideTlUntilYoutube,
+        })
+        return
+      }
       const rawAllowed = data?.allowed_user_ids
       const allowed =
         Array.isArray(rawAllowed)
@@ -334,7 +385,7 @@ export default function TLSearchPage() {
       })
     }
     void loadSettings()
-  }, [openTl, session, supabase])
+  }, [openTl, session, supabase, userTlDefaults])
 
 
   // モーダルで開いた動画のフラグ状態を読み込む
