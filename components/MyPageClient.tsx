@@ -5,7 +5,7 @@ import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import type { UserIdentity } from '@supabase/supabase-js'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faDiscord, faGoogle, faXTwitter } from '@fortawesome/free-brands-svg-icons'
-import { faEye, faEyeSlash, faLink, faUnlink, faUserCircle } from '@fortawesome/free-solid-svg-icons'
+import { faEye, faEyeSlash, faLink, faUnlink, faUserCheck, faUserCircle } from '@fortawesome/free-solid-svg-icons'
 import students from '../data/students.json'
 import FriendCodeCopy from './FriendCodeCopy'
 import DecorationInfoButton from './DecorationInfoButton'
@@ -73,6 +73,14 @@ const socialPlaceholder = (service: SocialService) => {
   if (service === 'x') return '例: @username / https://x.com/...'
   if (service === 'youtube') return '例: https://www.youtube.com/@...'
   return 'リンクやID'
+}
+
+const isYouTubeNetworkBlocked = (err: unknown) => {
+  if (err instanceof TypeError) return true
+  if (err instanceof Error) {
+    return /failed to fetch|networkerror|load failed|blocked/i.test(err.message)
+  }
+  return false
 }
 
 type SerializedSocialLink = {
@@ -312,6 +320,18 @@ export default function MyPageClient({
     [socialLinks]
   )
   const youtubeLink = youtubeIndex >= 0 ? socialLinks[youtubeIndex] : null
+  const isGoogleLinked = linkedProviders.has('google')
+  const isXLinked = linkedProviders.has('x') || linkedProviders.has('twitter')
+
+  const renderVerifiedBadge = () => (
+    <span className="relative inline-flex items-center group">
+      <FontAwesomeIcon icon={faUserCheck} className="text-green-600" />
+      <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-max -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 shadow transition group-hover:opacity-100">
+        本人認証済み
+        <span className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-gray-900" />
+      </span>
+    </span>
+  )
 
   const selectedStudent = useMemo(() => students.find((s) => s.id === iconStudentId), [iconStudentId])
   const selectedDecorations = useMemo(() => {
@@ -627,7 +647,7 @@ export default function MyPageClient({
       const { data } = await supabase.auth.getSession()
       const token = data.session?.provider_token
       if (!token) {
-        setMessage('YouTube を接続してから確認してください（「接続して確認」）')
+        setMessage('YouTube と接続してから更新してください（「接続する」）')
         return
       }
 
@@ -725,10 +745,14 @@ export default function MyPageClient({
       }
     } catch (err: unknown) {
       console.error(err)
-      setMessage(
-        `YouTube 確認に失敗しました。YouTube 連携（スコープ許可）をやり直してください。詳細: ${(err instanceof Error ? err.message : String(err))
-        }`
-      )
+      if (isYouTubeNetworkBlocked(err)) {
+        setMessage('YouTubeへの通信がブロックされています。ネットワークや拡張機能の設定をご確認ください。')
+      } else {
+        setMessage(
+          `YouTube 確認に失敗しました。YouTube 連携（スコープ許可）をやり直してください。詳細: ${(err instanceof Error ? err.message : String(err))
+          }`
+        )
+      }
     } finally {
       setBusy(false)
     }
@@ -1277,8 +1301,9 @@ export default function MyPageClient({
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="text-gray-700">
                           {link.verified ? (
-                            <span>
-                              ✅ 認証済み:{' '}
+                            <span className="inline-flex items-center gap-1">
+                              {renderVerifiedBadge()}
+                              <span>認証済み:</span>{' '}
                               {link.service === 'youtube'
                                 ? link.channelTitle || link.channelHandle || link.channelId || 'YouTube'
                                 : link.xUsername
@@ -1301,7 +1326,7 @@ export default function MyPageClient({
                             disabled={link.service === 'x' || busy}
                             className="rounded border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-gray-100 disabled:opacity-60"
                           >
-                            {link.service === 'x' ? '確認（開発中）' : '確認'}
+                            {link.service === 'x' ? '更新（開発中）' : '更新'}
                           </button>
                           <button
                             type="button"
@@ -1311,7 +1336,11 @@ export default function MyPageClient({
                             disabled={link.service === 'x' || busy}
                             className="rounded border border-blue-300 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
                           >
-                            {link.service === 'x' ? '接続して確認（開発中）' : '接続して確認'}
+                            {link.service === 'x'
+                              ? `${isXLinked ? '接続先を変更する' : '接続する'}（開発中）`
+                              : isGoogleLinked
+                                ? '接続先を変更する'
+                                : '接続する'}
                           </button>
                           {link.verified && (
                             <button
@@ -1421,8 +1450,11 @@ export default function MyPageClient({
             </div>
             <div className="space-y-3 text-sm">
               {youtubeLink?.verified ? (
-                <p className="text-gray-700">
-                  ✅ 認証済み: {youtubeLink.channelTitle || youtubeLink.channelHandle || youtubeLink.channelId || youtubeLink.value}
+                <p className="flex items-center gap-1 text-gray-700">
+                  {renderVerifiedBadge()}
+                  <span>
+                    認証済み: {youtubeLink.channelTitle || youtubeLink.channelHandle || youtubeLink.channelId || youtubeLink.value}
+                  </span>
                 </p>
               ) : (
                 <p className="text-gray-600">YouTubeの認証がまだ完了していません。</p>
@@ -1472,7 +1504,7 @@ export default function MyPageClient({
                   disabled={busy}
                   className="inline-flex items-center justify-center rounded border border-blue-300 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
                 >
-                  {youtubeLink ? 'YouTubeを接続' : 'YouTubeリンクを追加'}
+                  {youtubeLink ? (isGoogleLinked ? '接続先を変更する' : '接続する') : 'YouTubeリンクを追加'}
                 </button>
                 {youtubeLink && (
                   <button
@@ -1645,7 +1677,9 @@ export default function MyPageClient({
                       {displaySocialLinks.map((link, idx) => (
                         <p key={idx} className="rounded border p-2 text-sm" style={fieldStyle}>
                           {link.label && <span className="font-semibold mr-1">{link.label}:</span>}
-                          {link.service === 'youtube' && link.verified && <span className="mr-1 text-xs">✅</span>}
+                          {link.service === 'youtube' && link.verified && (
+                            <span className="mr-1 text-xs">{renderVerifiedBadge()}</span>
+                          )}
                           <span>{link.value || '未入力'}</span>
                         </p>
                       ))}

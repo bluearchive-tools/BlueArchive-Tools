@@ -44,6 +44,14 @@ type VideoSettings = {
   ownerUserId?: string | null
 }
 
+const isYouTubeNetworkBlocked = (err: unknown) => {
+  if (err instanceof TypeError) return true
+  if (err instanceof Error) {
+    return /failed to fetch|networkerror|load failed|blocked/i.test(err.message)
+  }
+  return false
+}
+
 export default function TLSearchPage() {
   const session = useSession()
   const supabase = useSupabaseClient()
@@ -573,8 +581,12 @@ export default function TLSearchPage() {
         .filter((item): item is NonNullable<typeof item> => Boolean(item))
         .filter((item) => item.title.includes('ブルアカ'))
       setMyVideos(items)
-    } catch {
-      setMyVideosError('YouTubeの動画取得に失敗しました')
+    } catch (err) {
+      if (isYouTubeNetworkBlocked(err)) {
+        setMyVideosError('YouTubeへの通信がブロックされています。ネットワークや拡張機能の設定をご確認ください。')
+      } else {
+        setMyVideosError('YouTubeの動画取得に失敗しました')
+      }
     } finally {
       setMyVideosLoading(false)
     }
