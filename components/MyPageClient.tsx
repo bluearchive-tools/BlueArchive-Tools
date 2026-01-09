@@ -1043,6 +1043,14 @@ export default function MyPageClient({
     setPreviewVisible(false)
   }, [previewOpen])
 
+  useEffect(() => {
+    if (!message) return
+    const id = window.setTimeout(() => {
+      setMessage(null)
+    }, 4000)
+    return () => window.clearTimeout(id)
+  }, [message])
+
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
       <aside className="w-full lg:w-64 shrink-0 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
@@ -1091,7 +1099,11 @@ export default function MyPageClient({
       </aside>
 
       <div className="flex-1 space-y-6">
-        {message && <p className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">{message}</p>}
+        {message && (
+          <div className="fixed bottom-4 right-4 z-50 max-w-sm rounded border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 shadow-lg">
+            {message}
+          </div>
+        )}
 
         {activeSection === 'profile' && (
           <section
