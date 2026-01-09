@@ -91,6 +91,11 @@ export default function TLSearchPage() {
   const [tlJsonTitle, setTlJsonTitle] = useState('')
   const [tlJsonUpdatedAt, setTlJsonUpdatedAt] = useState<string | null>(null)
   const [tlJsonAuthor, setTlJsonAuthor] = useState<string | null>(null)
+  const [tlJsonAuthorProfile, setTlJsonAuthorProfile] = useState<{
+    id: string
+    username: string | null
+    nickname: string | null
+  } | null>(null)
   const [tlJsonLoading, setTlJsonLoading] = useState(false)
   const [tlJsonSaving, setTlJsonSaving] = useState(false)
   const [tlJsonInput, setTlJsonInput] = useState('')
@@ -320,6 +325,7 @@ export default function TLSearchPage() {
         setTlJsonTitle('')
         setTlJsonUpdatedAt(null)
         setTlJsonAuthor(null)
+        setTlJsonAuthorProfile(null)
         setTlJsonError('')
         return
       }
@@ -346,9 +352,27 @@ export default function TLSearchPage() {
         setTlJsonUpdatedAt(
           typeof payload.tl_json_updated_at === 'string' ? payload.tl_json_updated_at : null
         )
-        setTlJsonAuthor(
+        const authorId =
           typeof payload.tl_json_created_by === 'string' ? payload.tl_json_created_by : null
-        )
+        setTlJsonAuthor(authorId)
+        if (authorId) {
+          const { data: authorProfile } = await supabase
+            .from('profiles')
+            .select('id, username, nickname')
+            .eq('id', authorId)
+            .maybeSingle()
+          setTlJsonAuthorProfile(
+            authorProfile
+              ? {
+                  id: authorProfile.id as string,
+                  username: typeof authorProfile.username === 'string' ? authorProfile.username : null,
+                  nickname: typeof authorProfile.nickname === 'string' ? authorProfile.nickname : null,
+                }
+              : null
+          )
+        } else {
+          setTlJsonAuthorProfile(null)
+        }
       } catch {
         setTlJsonError('TL JSONの取得に失敗しました')
       } finally {
@@ -450,6 +474,20 @@ export default function TLSearchPage() {
       setTlJsonTitle(title)
       setTlJsonUpdatedAt(now)
       setTlJsonAuthor(session.user.id)
+      const { data: authorProfile } = await supabase
+        .from('profiles')
+        .select('id, username, nickname')
+        .eq('id', session.user.id)
+        .maybeSingle()
+      setTlJsonAuthorProfile(
+        authorProfile
+          ? {
+              id: authorProfile.id as string,
+              username: typeof authorProfile.username === 'string' ? authorProfile.username : null,
+              nickname: typeof authorProfile.nickname === 'string' ? authorProfile.nickname : null,
+            }
+          : null
+      )
     } catch {
       setTlJsonError('JSONの保存に失敗しました（形式を確認してください）')
     } finally {
@@ -1431,7 +1469,20 @@ export default function TLSearchPage() {
                                 : ''}
                             </summary>
                             {tlJsonAuthor && (
-                              <p className="mt-1 text-xs text-gray-500">登録者: {tlJsonAuthor}</p>
+                              <p className="mt-1 text-xs text-gray-500">
+                                TL追加者:{' '}
+                                {tlJsonAuthorProfile?.username ? (
+                                  <a
+                                    href={`/users/${tlJsonAuthorProfile.username}`}
+                                    className="underline underline-offset-2"
+                                  >
+                                    {tlJsonAuthorProfile.nickname ||
+                                      tlJsonAuthorProfile.username}
+                                  </a>
+                                ) : (
+                                  tlJsonAuthor
+                                )}
+                              </p>
                             )}
                             <pre className="mt-2 whitespace-pre-wrap text-xs">{tlJsonValue}</pre>
                           </details>
@@ -1598,7 +1649,7 @@ export default function TLSearchPage() {
                                 )
                               }
                             />
-                            <span>特定ユーザーのみ（ID指定）</span>
+                            <span>特定ユーザーのみ（profilesのID指定）</span>
                           </label>
                           {openTlSettings.visibility === 'restricted' && (
                             <textarea
@@ -1618,7 +1669,7 @@ export default function TLSearchPage() {
                               }
                               className="w-full rounded border border-gray-300 px-2 py-1 text-xs"
                               rows={3}
-                              placeholder="許可するユーザーIDを改行で入力"
+                              placeholder="許可するprofilesのIDを改行で入力"
                             />
                           )}
                           <label className="flex items-center gap-2">

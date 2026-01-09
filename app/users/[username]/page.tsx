@@ -118,7 +118,13 @@ export default async function UserPage({ params }: Params) {
 
   const parsedSocial = (() => {
     try {
-      const value = profile?.social_links ? JSON.parse(profile.social_links as unknown as string) : []
+      const rawLinks = profile?.social_links
+      const value =
+        Array.isArray(rawLinks)
+          ? rawLinks
+          : rawLinks
+            ? JSON.parse(rawLinks as unknown as string)
+            : []
       if (Array.isArray(value)) {
         return value
           .map((item) => ({
