@@ -44,12 +44,32 @@ type VideoSettings = {
   ownerUserId?: string | null
 }
 
+type SocialLink = {
+  service?: string
+  verified?: boolean
+  channelId?: string | null
+}
+
 const isYouTubeNetworkBlocked = (err: unknown) => {
   if (err instanceof TypeError) return true
   if (err instanceof Error) {
     return /failed to fetch|networkerror|load failed|blocked/i.test(err.message)
   }
   return false
+}
+
+const parseSocialLinks = (raw: unknown): SocialLink[] => {
+  if (!raw) return []
+  if (Array.isArray(raw)) return raw as SocialLink[]
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw)
+      return Array.isArray(parsed) ? (parsed as SocialLink[]) : []
+    } catch {
+      return []
+    }
+  }
+  return []
 }
 
 export default function TLSearchPage() {
@@ -239,9 +259,7 @@ export default function TLSearchPage() {
           .eq('id', session.user.id)
           .maybeSingle()
         setIsAdmin(Boolean(data?.admin))
-        const links = Array.isArray(data?.social_links)
-          ? (data?.social_links as Array<Record<string, unknown>>)
-          : []
+        const links = parseSocialLinks(data?.social_links)
         const yt = links.find(
           (l) => l?.service === 'youtube' && l?.verified === true
         )
