@@ -16,6 +16,7 @@ import AddEnemyModal from '../../../components/AddEnemyModal'
 import PageHelpButton from '../../../components/PageHelpButton'
 import equipmentJson from '@/data/equipment.json'
 import AboutModal from '../../../components/AboutModal'
+import StudentSelect from '../../../components/StudentSelect'
 
 
 
@@ -503,6 +504,11 @@ export default function TLMakerPage() {
   const [squadIndex, setSquadIndex] = useState(0)
   const [projectName, setProjectName] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false)
+  const [quickMembers, setQuickMembers] = useState<{ strikers: string[]; specials: string[] }>({
+    strikers: ['', '', '', ''],
+    specials: ['', ''],
+  })
   const [hasCache, setHasCache] = useState(false)
   const [userStats, setUserStats] = useState<Record<string, UserStudent>>({})
   const [initialized, setInitialized] = useState(false)
@@ -1093,6 +1099,12 @@ useEffect(() => {
       setSelectedGroup(groups[0])
     }
   }, [showCreateModal, selectedGroup, groups])
+
+  useEffect(() => {
+    if (!showCreateModal) return
+    setQuickCreateOpen(false)
+    setQuickMembers({ strikers: ['', '', '', ''], specials: ['', ''] })
+  }, [showCreateModal])
 
   useEffect(() => {
     const raw = localStorage.getItem('tlLength')
@@ -2818,6 +2830,9 @@ function resolveBuffText(
     }
   }, [pageLayoutMode, pageBlockRects])
 
+  const quickStrikers = useMemo(() => students.filter((s) => s.role === 'STRIKER'), [students])
+  const quickSpecials = useMemo(() => students.filter((s) => s.role === 'SPECIAL'), [students])
+
   useEffect(() => {
     if (pageLayoutMode !== 'free') return
     setPageBlockRects((prev) => {
@@ -3063,7 +3078,9 @@ function resolveBuffText(
           onClick={() => setShowCreateModal(false)}
         >
           <div
-            className="relative w-full max-w-lg rounded-lg border border-gray-200 bg-white p-6 shadow-lg space-y-4"
+            className={`relative w-full rounded-lg border border-gray-200 bg-white p-6 shadow-lg space-y-4 ${
+              quickCreateOpen ? 'max-w-3xl' : 'max-w-lg'
+            }`}
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -3105,9 +3122,56 @@ function resolveBuffText(
                       {g.name}
                     </option>
                   ))}
-                </select>
-              </label>
+                  </select>
+                </label>
+              <button
+                type="button"
+                onClick={() => setQuickCreateOpen((prev) => !prev)}
+                className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+              >
+                {quickCreateOpen ? '編成のクイック作成を閉じる' : '編成をクイック作成'}
+              </button>
             </div>
+            {quickCreateOpen && (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
+                <div>
+                  <p className="text-sm font-semibold">編成をクイック編集</p>
+                  <p className="text-xs text-gray-500">/squads の編集 UI を簡易表示しています。</p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {quickMembers.strikers.map((value, idx) => (
+                    <div key={`quick-striker-${idx}`} className="space-y-1">
+                      <p className="text-xs text-gray-500">STRIKER {idx + 1}</p>
+                      <StudentSelect
+                        students={quickStrikers}
+                        value={value}
+                        onChange={(id) =>
+                          setQuickMembers((prev) => ({
+                            ...prev,
+                            strikers: prev.strikers.map((v, i) => (i === idx ? id : v)),
+                          }))
+                        }
+                      />
+                    </div>
+                  ))}
+                  {quickMembers.specials.map((value, idx) => (
+                    <div key={`quick-special-${idx}`} className="space-y-1">
+                      <p className="text-xs text-gray-500">SPECIAL {idx + 1}</p>
+                      <StudentSelect
+                        students={quickSpecials}
+                        value={value}
+                        onChange={(id) =>
+                          setQuickMembers((prev) => ({
+                            ...prev,
+                            specials: prev.specials.map((v, i) => (i === idx ? id : v)),
+                          }))
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 type="button"
@@ -3119,7 +3183,16 @@ function resolveBuffText(
               <button
                 type="button"
                 onClick={() => {
-                  if (selectedGroup) {
+                  if (quickCreateOpen) {
+                    const members = [...quickMembers.strikers, ...quickMembers.specials]
+                    applyMembers(members)
+                    setSkills([])
+                    setMarkers([])
+                    if (members.some((m) => m)) {
+                      addNormalSkills(members)
+                    }
+                    setSquadIndex(0)
+                  } else if (selectedGroup) {
                     const sq = selectedGroup.squads[0]
                     const members = [...sq.strikers, ...sq.specials]
 
