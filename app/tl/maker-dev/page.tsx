@@ -16,6 +16,7 @@ import AddEnemyModal from '../../../components/AddEnemyModal'
 import PageHelpButton from '../../../components/PageHelpButton'
 import equipmentJson from '@/data/equipment.json'
 import AboutModal from '../../../components/AboutModal'
+import StudentSelect from '../../../components/StudentSelect'
 
 
 
@@ -503,6 +504,11 @@ export default function TLMakerPage() {
   const [squadIndex, setSquadIndex] = useState(0)
   const [projectName, setProjectName] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false)
+  const [quickMembers, setQuickMembers] = useState<{ strikers: string[]; specials: string[] }>({
+    strikers: ['', '', '', ''],
+    specials: ['', ''],
+  })
   const [hasCache, setHasCache] = useState(false)
   const [userStats, setUserStats] = useState<Record<string, UserStudent>>({})
   const [initialized, setInitialized] = useState(false)
@@ -1093,6 +1099,12 @@ useEffect(() => {
       setSelectedGroup(groups[0])
     }
   }, [showCreateModal, selectedGroup, groups])
+
+  useEffect(() => {
+    if (!showCreateModal) return
+    setQuickCreateOpen(false)
+    setQuickMembers({ strikers: ['', '', '', ''], specials: ['', ''] })
+  }, [showCreateModal])
 
   useEffect(() => {
     const raw = localStorage.getItem('tlLength')
@@ -2818,6 +2830,9 @@ function resolveBuffText(
     }
   }, [pageLayoutMode, pageBlockRects])
 
+  const quickStrikers = useMemo(() => students.filter((s) => s.role === 'STRIKER'), [students])
+  const quickSpecials = useMemo(() => students.filter((s) => s.role === 'SPECIAL'), [students])
+
   useEffect(() => {
     if (pageLayoutMode !== 'free') return
     setPageBlockRects((prev) => {
@@ -3059,77 +3074,149 @@ function resolveBuffText(
 
       {showCreateModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
           onClick={() => setShowCreateModal(false)}
         >
           <div
-            className="border rounded p-4 bg-white space-y-2 w-72"
+            className={`relative w-full rounded-lg border border-gray-200 bg-white p-6 shadow-lg space-y-4 ${
+              quickCreateOpen ? 'max-w-3xl' : 'max-w-lg'
+            }`}
             onClick={(e) => e.stopPropagation()}
           >
             <button
               type="button"
               onClick={() => setShowCreateModal(false)}
-              className="absolute top-1 right-1"
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
               aria-label="閉じる"
             >
               <FontAwesomeIcon icon={faTimes} />
             </button>
-            <div className="text-sm font-bold">TL作成</div>
-            <label className="flex items-center gap-2">
-              <span>名前:</span>
-              <input
-                type="text"
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                className="border rounded p-1 flex-1"
-              />
-            </label>
-            <label className="flex items-center gap-2">
-              <span>編成:</span>
-              <select
-                value={selectedGroup?.id || ''}
-                onChange={(e) => {
-                  const g = groups.find((gr) => gr.id === e.target.value) || null
-                  setSelectedGroup(g)
-                }}
-                className="border rounded p-1 flex-1"
+            <div>
+              <h2 className="text-lg font-semibold">新規プロジェクト</h2>
+              <p className="text-sm text-gray-500">プロジェクト名と編成を選んで開始します。</p>
+            </div>
+            <div className="space-y-3">
+              <label className="block text-sm text-gray-600">
+                名前
+                <input
+                  type="text"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="例: クロカゲ・市街地"
+                />
+              </label>
+              <label className="block text-sm text-gray-600">
+                編成
+                <select
+                  value={selectedGroup?.id || ''}
+                  onChange={(e) => {
+                    const g = groups.find((gr) => gr.id === e.target.value) || null
+                    setSelectedGroup(g)
+                  }}
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                >
+                  <option value="">未選択</option>
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name}
+                    </option>
+                  ))}
+                  </select>
+                </label>
+              <button
+                type="button"
+                onClick={() => setQuickCreateOpen((prev) => !prev)}
+                className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
               >
-                <option value="">--</option>
-                {groups.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              onClick={() => {
-                if (selectedGroup) {
-  const sq = selectedGroup.squads[0]
-  const members = [...sq.strikers, ...sq.specials]
+                {quickCreateOpen ? '編成のクイック作成を閉じる' : '編成をクイック作成'}
+              </button>
+            </div>
+            {quickCreateOpen && (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
+                <div>
+                  <p className="text-sm font-semibold">編成をクイック編集</p>
+                  <p className="text-xs text-gray-500">/squads の編集 UI を簡易表示しています。</p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {quickMembers.strikers.map((value, idx) => (
+                    <div key={`quick-striker-${idx}`} className="space-y-1">
+                      <p className="text-xs text-gray-500">STRIKER {idx + 1}</p>
+                      <StudentSelect
+                        students={quickStrikers}
+                        value={value}
+                        onChange={(id) =>
+                          setQuickMembers((prev) => ({
+                            ...prev,
+                            strikers: prev.strikers.map((v, i) => (i === idx ? id : v)),
+                          }))
+                        }
+                      />
+                    </div>
+                  ))}
+                  {quickMembers.specials.map((value, idx) => (
+                    <div key={`quick-special-${idx}`} className="space-y-1">
+                      <p className="text-xs text-gray-500">SPECIAL {idx + 1}</p>
+                      <StudentSelect
+                        students={quickSpecials}
+                        value={value}
+                        onChange={(id) =>
+                          setQuickMembers((prev) => ({
+                            ...prev,
+                            specials: prev.specials.map((v, i) => (i === idx ? id : v)),
+                          }))
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (quickCreateOpen) {
+                    const members = [...quickMembers.strikers, ...quickMembers.specials]
+                    applyMembers(members)
+                    setSkills([])
+                    setMarkers([])
+                    if (members.some((m) => m)) {
+                      addNormalSkills(members)
+                    }
+                    setSquadIndex(0)
+                  } else if (selectedGroup) {
+                    const sq = selectedGroup.squads[0]
+                    const members = [...sq.strikers, ...sq.specials]
 
-  applyMembers(members)
-  setSkills([])
-  setMarkers([])
-  addNormalSkills(members)
+                    applyMembers(members)
+                    setSkills([])
+                    setMarkers([])
+                    addNormalSkills(members)
 
-  setSquadIndex(0)
-} else {
-  const empty = Array(6).fill('')
-  applyMembers(empty)
-  setSkills([])
-  setMarkers([])
-}
+                    setSquadIndex(0)
+                  } else {
+                    const empty = Array(6).fill('')
+                    applyMembers(empty)
+                    setSkills([])
+                    setMarkers([])
+                  }
 
-setInitialized(true)
-setShowCreateModal(false)
-
-              }}
-              className="border px-2 py-1 bg-blue-500 text-white rounded"
-            >
-              作成
-            </button>
+                  setInitialized(true)
+                  setShowCreateModal(false)
+                }}
+                className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+              >
+                作成
+              </button>
+            </div>
           </div>
         </div>
       )}

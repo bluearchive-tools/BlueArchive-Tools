@@ -5,7 +5,7 @@ import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import type { UserIdentity } from '@supabase/supabase-js'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faDiscord, faGoogle, faXTwitter } from '@fortawesome/free-brands-svg-icons'
-import { faEye, faEyeSlash, faLink, faUnlink, faUserCircle } from '@fortawesome/free-solid-svg-icons'
+import { faEye, faEyeSlash, faLink, faUnlink, faUserCheck, faUserCircle } from '@fortawesome/free-solid-svg-icons'
 import students from '../data/students.json'
 import FriendCodeCopy from './FriendCodeCopy'
 import DecorationInfoButton from './DecorationInfoButton'
@@ -21,6 +21,7 @@ interface Props {
   initialFriendCode: string | null
   initialFriendCodePublic: boolean | null
   initialSocialLinks: unknown
+  initialTlDefaults: unknown
   initialDecorationIds: string[]
   initialDecorationInventory: string[]
   initialDecorations: {
@@ -55,6 +56,14 @@ type SocialLink = {
   xName?: string | null
 }
 
+type TlDefaultSettings = {
+  includeSquad: boolean
+  allowTl: boolean
+  visibility: 'public' | 'restricted' | 'private'
+  allowedUserIds: string[]
+  hideTlUntilYoutube: boolean
+}
+
 const detectSocialService = (label: string): SocialService => {
   const s = label.trim().toLowerCase()
   if (!s) return 'other'
@@ -73,6 +82,54 @@ const socialPlaceholder = (service: SocialService) => {
   if (service === 'x') return '例: @username / https://x.com/...'
   if (service === 'youtube') return '例: https://www.youtube.com/@...'
   return 'リンクやID'
+}
+
+const parseAllowedIdentifiers = (raw: string) =>
+  raw
+    .split(/[\n,]+/)
+    .map((v) => v.trim())
+    .filter(Boolean)
+
+const normalizeTlDefaults = (raw: unknown): TlDefaultSettings => {
+  const defaults: TlDefaultSettings = {
+    includeSquad: true,
+    allowTl: true,
+    visibility: 'public',
+    allowedUserIds: [],
+    hideTlUntilYoutube: true,
+  }
+  if (!raw) return defaults
+  let parsed: unknown = raw
+  if (typeof raw === 'string') {
+    try {
+      parsed = JSON.parse(raw)
+    } catch {
+      return defaults
+    }
+  }
+  if (!parsed || typeof parsed !== 'object') return defaults
+  const obj = parsed as Record<string, unknown>
+  return {
+    includeSquad: typeof obj.includeSquad === 'boolean' ? obj.includeSquad : defaults.includeSquad,
+    allowTl: typeof obj.allowTl === 'boolean' ? obj.allowTl : defaults.allowTl,
+    visibility:
+      obj.visibility === 'public' || obj.visibility === 'restricted' || obj.visibility === 'private'
+        ? obj.visibility
+        : defaults.visibility,
+    allowedUserIds: Array.isArray(obj.allowedUserIds)
+      ? (obj.allowedUserIds as string[]).filter(Boolean)
+      : defaults.allowedUserIds,
+    hideTlUntilYoutube:
+      typeof obj.hideTlUntilYoutube === 'boolean' ? obj.hideTlUntilYoutube : defaults.hideTlUntilYoutube,
+  }
+}
+
+const isYouTubeNetworkBlocked = (err: unknown) => {
+  if (err instanceof TypeError) return true
+  if (err instanceof Error) {
+    return /failed to fetch|networkerror|load failed|blocked/i.test(err.message)
+  }
+  return false
 }
 
 type SerializedSocialLink = {
@@ -139,6 +196,18 @@ const filterSocialLinksForDisplay = (links: SerializedSocialLink[]): SerializedS
   })
 }
 
+const mergeVerifiedSocialLinks = (
+  current: SerializedSocialLink[],
+  existing: SerializedSocialLink[]
+): SerializedSocialLink[] => {
+  const hasService = new Set(current.map((link) => link.service))
+  const missingVerified = existing.filter(
+    (link) => link.verified && (link.service === 'youtube' || link.service === 'x') && !hasService.has(link.service)
+  )
+  if (missingVerified.length === 0) return current
+  return [...current, ...missingVerified]
+}
+
 
 export default function MyPageClient({
   initialUsername,
@@ -150,6 +219,7 @@ export default function MyPageClient({
   initialFriendCode,
   initialFriendCodePublic,
   initialSocialLinks,
+  initialTlDefaults,
   initialDecorationIds,
   initialDecorationInventory,
   initialDecorations
@@ -232,12 +302,16 @@ export default function MyPageClient({
       return [{ service: 'other', label: '', value: '' }]
     })()
   )
+  const [tlDefaults, setTlDefaults] = useState<TlDefaultSettings>(
+    () => normalizeTlDefaults(initialTlDefaults)
+  )
 
   const [identities, setIdentities] = useState<UserIdentity[]>([])
   const [busy, setBusy] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingSocial, setSavingSocial] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [toasts, setToasts] = useState<Array<{ id: number; text: string }>>([])
   const [showUserId, setShowUserId] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewVisible, setPreviewVisible] = useState(false)
@@ -312,6 +386,18 @@ export default function MyPageClient({
     [socialLinks]
   )
   const youtubeLink = youtubeIndex >= 0 ? socialLinks[youtubeIndex] : null
+  const isGoogleLinked = linkedProviders.has('google')
+  const isXLinked = linkedProviders.has('x') || linkedProviders.has('twitter')
+
+  const renderVerifiedBadge = () => (
+    <span className="relative inline-flex items-center group">
+      <FontAwesomeIcon icon={faUserCheck} className="text-green-600" />
+      <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-max -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 shadow transition group-hover:opacity-100">
+        本人認証済み
+        <span className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-gray-900" />
+      </span>
+    </span>
+  )
 
   const selectedStudent = useMemo(() => students.find((s) => s.id === iconStudentId), [iconStudentId])
   const selectedDecorations = useMemo(() => {
@@ -598,6 +684,16 @@ export default function MyPageClient({
     return json as YouTubeChannelsResponse
   }
 
+  const resolveUserId = useCallback(async (): Promise<string | null> => {
+    if (session?.user?.id) return session.user.id
+    const { data: userData, error } = await supabase.auth.getUser()
+    if (error) {
+      console.error(error.message)
+      return null
+    }
+    return userData.user?.id ?? null
+  }, [session, supabase])
+
   const verifyYouTubeAtIndex = useCallback(async (index: number) => {
     const link = socialLinks[index]
     if (!link || link.service !== 'youtube') return
@@ -608,10 +704,16 @@ export default function MyPageClient({
     setMessage(null)
 
     try {
+      const userId = await resolveUserId()
+      if (!userId) {
+        setMessage('ユーザー情報を取得できませんでした。再ログインしてお試しください。')
+        return
+      }
+
       const { data } = await supabase.auth.getSession()
       const token = data.session?.provider_token
       if (!token) {
-        setMessage('YouTube を接続してから確認してください（「接続して確認」）')
+        setMessage('YouTube と接続してから更新してください（「接続する」）')
         return
       }
 
@@ -699,7 +801,7 @@ export default function MyPageClient({
       const { error } = await supabase
         .from('profiles')
         .update({ social_links: serializeSocialLinksForSave(nextLinks) })
-        .eq('id', session?.user.id)
+        .eq('id', userId)
 
       if (error) {
         console.error(error.message)
@@ -709,14 +811,18 @@ export default function MyPageClient({
       }
     } catch (err: unknown) {
       console.error(err)
-      setMessage(
-        `YouTube 確認に失敗しました。YouTube 連携（スコープ許可）をやり直してください。詳細: ${(err instanceof Error ? err.message : String(err))
-        }`
-      )
+      if (isYouTubeNetworkBlocked(err)) {
+        setMessage('YouTubeへの通信がブロックされています。ネットワークや拡張機能の設定をご確認ください。')
+      } else {
+        setMessage(
+          `YouTube 確認に失敗しました。YouTube 連携（スコープ許可）をやり直してください。詳細: ${(err instanceof Error ? err.message : String(err))
+          }`
+        )
+      }
     } finally {
       setBusy(false)
     }
-  }, [socialLinks, supabase, session, setMessage, fetchYouTube])
+  }, [socialLinks, supabase, resolveUserId, setMessage, fetchYouTube])
 
 
 
@@ -741,10 +847,16 @@ export default function MyPageClient({
 
     setSocialLinks(nextLinks)
 
+    const userId = await resolveUserId()
+    if (!userId) {
+      setMessage('ユーザー情報を取得できませんでした。再ログインしてお試しください。')
+      return
+    }
+
     const { error } = await supabase
       .from('profiles')
       .update({ social_links: serializeSocialLinksForSave(nextLinks) })
-      .eq('id', session?.user.id)
+      .eq('id', userId)
 
     if (error) {
       console.error(error.message)
@@ -773,10 +885,16 @@ export default function MyPageClient({
 
     setSocialLinks(nextLinks)
 
+    const userId = await resolveUserId()
+    if (!userId) {
+      setMessage('ユーザー情報を取得できませんでした。再ログインしてお試しください。')
+      return
+    }
+
     const { error } = await supabase
       .from('profiles')
       .update({ social_links: serializeSocialLinksForSave(nextLinks) })
-      .eq('id', session?.user.id)
+      .eq('id', userId)
 
     if (error) {
       console.error(error.message)
@@ -882,10 +1000,21 @@ export default function MyPageClient({
     if (!session?.user) return
     setSavingSocial(true)
     setMessage(null)
+    let mergedLinks = savedSocialLinks
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('social_links')
+      .eq('id', session.user.id)
+      .maybeSingle()
+    const existingLinks = Array.isArray(existingProfile?.social_links)
+      ? (existingProfile?.social_links as SerializedSocialLink[])
+      : []
+    mergedLinks = mergeVerifiedSocialLinks(savedSocialLinks, existingLinks)
     const { error } = await supabase
       .from('profiles')
       .update({
-        social_links: savedSocialLinks,
+        social_links: mergedLinks,
+        tl_default_settings: tlDefaults,
       })
       .eq('id', session.user.id)
     setSavingSocial(false)
@@ -900,6 +1029,16 @@ export default function MyPageClient({
     if (!session?.user) return
     setSavingProfile(true)
     setMessage(null)
+    let mergedLinks = savedSocialLinks
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('social_links')
+      .eq('id', session.user.id)
+      .maybeSingle()
+    const existingLinks = Array.isArray(existingProfile?.social_links)
+      ? (existingProfile?.social_links as SerializedSocialLink[])
+      : []
+    mergedLinks = mergeVerifiedSocialLinks(savedSocialLinks, existingLinks)
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -912,7 +1051,7 @@ export default function MyPageClient({
         friend_code_public: friendCodePublic,
         decoration_ids: decorationIds,
         decoration_inventory: decorationInventory,
-        social_links: savedSocialLinks,
+        social_links: mergedLinks,
       })
       .eq('id', session.user.id)
     setSavingProfile(false)
@@ -936,6 +1075,17 @@ export default function MyPageClient({
     }
     setPreviewVisible(false)
   }, [previewOpen])
+
+  useEffect(() => {
+    if (!message) return
+    const toastId = Date.now() + Math.random()
+    setToasts((prev) => [{ id: toastId, text: message }, ...prev])
+    setMessage(null)
+    const id = window.setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== toastId))
+    }, 2000)
+    return () => window.clearTimeout(id)
+  }, [message])
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
@@ -985,7 +1135,21 @@ export default function MyPageClient({
       </aside>
 
       <div className="flex-1 space-y-6">
-        {message && <p className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">{message}</p>}
+        {toasts.length > 0 && (
+          <div className="fixed top-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2">
+            {toasts.map((toast) => (
+              <div
+                key={toast.id}
+                className="toast-item relative overflow-hidden rounded border border-blue-200 bg-blue-50 px-4 py-3 pb-4 text-sm text-blue-800 shadow-lg"
+              >
+                <div>{toast.text}</div>
+                <div className="toast-bar absolute bottom-0 left-0 right-0 h-1 bg-blue-100">
+                  <div className="toast-progress h-full bg-blue-400" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {activeSection === 'profile' && (
           <section
@@ -1249,8 +1413,9 @@ export default function MyPageClient({
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="text-gray-700">
                           {link.verified ? (
-                            <span>
-                              ✅ 認証済み:{' '}
+                            <span className="inline-flex items-center gap-1">
+                              {renderVerifiedBadge()}
+                              <span>認証済み:</span>{' '}
                               {link.service === 'youtube'
                                 ? link.channelTitle || link.channelHandle || link.channelId || 'YouTube'
                                 : link.xUsername
@@ -1273,7 +1438,7 @@ export default function MyPageClient({
                             disabled={link.service === 'x' || busy}
                             className="rounded border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-gray-100 disabled:opacity-60"
                           >
-                            {link.service === 'x' ? '確認（開発中）' : '確認'}
+                            {link.service === 'x' ? '更新（開発中）' : '更新'}
                           </button>
                           <button
                             type="button"
@@ -1283,7 +1448,11 @@ export default function MyPageClient({
                             disabled={link.service === 'x' || busy}
                             className="rounded border border-blue-300 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
                           >
-                            {link.service === 'x' ? '接続して確認（開発中）' : '接続して確認'}
+                            {link.service === 'x'
+                              ? `${isXLinked ? '接続先を変更する' : '接続する'}（開発中）`
+                              : isGoogleLinked
+                                ? '接続先を変更する'
+                                : '接続する'}
                           </button>
                           {link.verified && (
                             <button
@@ -1393,8 +1562,11 @@ export default function MyPageClient({
             </div>
             <div className="space-y-3 text-sm">
               {youtubeLink?.verified ? (
-                <p className="text-gray-700">
-                  ✅ 認証済み: {youtubeLink.channelTitle || youtubeLink.channelHandle || youtubeLink.channelId || youtubeLink.value}
+                <p className="flex items-center gap-1 text-gray-700">
+                  {renderVerifiedBadge()}
+                  <span>
+                    認証済み: {youtubeLink.channelTitle || youtubeLink.channelHandle || youtubeLink.channelId || youtubeLink.value}
+                  </span>
                 </p>
               ) : (
                 <p className="text-gray-600">YouTubeの認証がまだ完了していません。</p>
@@ -1428,6 +1600,109 @@ export default function MyPageClient({
                   TL 登録時に「自動」でステータスを補完する設定です。手動管理したい場合はオフにしてください。
                 </p>
               </div>
+              <div className="rounded border border-gray-200 bg-gray-50 p-3 text-sm space-y-3">
+                <div>
+                  <p className="font-semibold text-sm text-gray-700">動画のデフォルト管理設定</p>
+                  <p className="text-xs text-gray-500">
+                    自分の投稿動画や手動追加する動画に対して、初期値として適用する設定です。
+                  </p>
+                </div>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={tlDefaults.includeSquad}
+                    onChange={(e) =>
+                      setTlDefaults((prev) => ({ ...prev, includeSquad: e.target.checked }))
+                    }
+                  />
+                  <span>部隊のデータを含める</span>
+                </label>
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-600">TL登録/変更の設定</p>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="tl-default-edit-policy"
+                      checked={tlDefaults.allowTl}
+                      onChange={() =>
+                        setTlDefaults((prev) => ({ ...prev, allowTl: true }))
+                      }
+                    />
+                    <span>変更を許可する</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="tl-default-edit-policy"
+                      checked={!tlDefaults.allowTl}
+                      onChange={() =>
+                        setTlDefaults((prev) => ({ ...prev, allowTl: false }))
+                      }
+                    />
+                    <span>変更をロックする（許可しない）</span>
+                  </label>
+                </div>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={tlDefaults.hideTlUntilYoutube}
+                    onChange={(e) =>
+                      setTlDefaults((prev) => ({ ...prev, hideTlUntilYoutube: e.target.checked }))
+                    }
+                  />
+                  <span>動画を開くまでTLを非表示にする</span>
+                </label>
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-600">TL検索の公開範囲</p>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="tl-default-visibility"
+                      checked={tlDefaults.visibility === 'public'}
+                      onChange={() =>
+                        setTlDefaults((prev) => ({ ...prev, visibility: 'public' }))
+                      }
+                    />
+                    <span>全体公開</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="tl-default-visibility"
+                      checked={tlDefaults.visibility === 'restricted'}
+                      onChange={() =>
+                        setTlDefaults((prev) => ({ ...prev, visibility: 'restricted' }))
+                      }
+                    />
+                    <span>特定ユーザーのみ（profilesのID指定）</span>
+                  </label>
+                  {tlDefaults.visibility === 'restricted' && (
+                    <textarea
+                      value={tlDefaults.allowedUserIds.join('\n')}
+                      onChange={(e) =>
+                        setTlDefaults((prev) => ({
+                          ...prev,
+                          allowedUserIds: parseAllowedIdentifiers(e.target.value),
+                        }))
+                      }
+                      className="w-full rounded border border-gray-300 px-2 py-1 text-xs"
+                      rows={3}
+                      placeholder="許可するprofilesのIDまたはユーザー名を改行/カンマで入力"
+                    />
+                  )}
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="tl-default-visibility"
+                      checked={tlDefaults.visibility === 'private'}
+                      onChange={() =>
+                        setTlDefaults((prev) => ({ ...prev, visibility: 'private' }))
+                      }
+                    />
+                    <span>非公開（自分だけ表示）</span>
+                  </label>
+                </div>
+              </div>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -1444,7 +1719,7 @@ export default function MyPageClient({
                   disabled={busy}
                   className="inline-flex items-center justify-center rounded border border-blue-300 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
                 >
-                  {youtubeLink ? 'YouTubeを接続' : 'YouTubeリンクを追加'}
+                  {youtubeLink ? (isGoogleLinked ? '接続先を変更する' : '接続する') : 'YouTubeリンクを追加'}
                 </button>
                 {youtubeLink && (
                   <button
@@ -1617,7 +1892,9 @@ export default function MyPageClient({
                       {displaySocialLinks.map((link, idx) => (
                         <p key={idx} className="rounded border p-2 text-sm" style={fieldStyle}>
                           {link.label && <span className="font-semibold mr-1">{link.label}:</span>}
-                          {link.service === 'youtube' && link.verified && <span className="mr-1 text-xs">✅</span>}
+                          {link.service === 'youtube' && link.verified && (
+                            <span className="mr-1 text-xs">{renderVerifiedBadge()}</span>
+                          )}
                           <span>{link.value || '未入力'}</span>
                         </p>
                       ))}
@@ -1652,6 +1929,22 @@ export default function MyPageClient({
               background-image: linear-gradient(135deg, #f59e0b, #ef4444, #8b5cf6);
               background-size: 200% 200%;
               animation: ba-sunset 10s ease infinite;
+            }
+            @keyframes toast-in-out {
+              0% { opacity: 0; transform: translateY(-8px); }
+              10% { opacity: 1; transform: translateY(0); }
+              90% { opacity: 1; transform: translateY(0); }
+              100% { opacity: 0; transform: translateY(-6px); }
+            }
+            .toast-item {
+              animation: toast-in-out 2s ease-in-out forwards;
+            }
+            @keyframes toast-progress {
+              0% { width: 100%; }
+              100% { width: 0%; }
+            }
+            .toast-progress {
+              animation: toast-progress 2s linear forwards;
             }
           `,
         }}
