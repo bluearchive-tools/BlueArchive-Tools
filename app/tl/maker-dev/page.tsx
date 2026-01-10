@@ -3059,77 +3059,91 @@ function resolveBuffText(
 
       {showCreateModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
           onClick={() => setShowCreateModal(false)}
         >
           <div
-            className="border rounded p-4 bg-white space-y-2 w-72"
+            className="relative w-full max-w-lg rounded-lg border border-gray-200 bg-white p-6 shadow-lg space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               type="button"
               onClick={() => setShowCreateModal(false)}
-              className="absolute top-1 right-1"
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
               aria-label="閉じる"
             >
               <FontAwesomeIcon icon={faTimes} />
             </button>
-            <div className="text-sm font-bold">TL作成</div>
-            <label className="flex items-center gap-2">
-              <span>名前:</span>
-              <input
-                type="text"
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                className="border rounded p-1 flex-1"
-              />
-            </label>
-            <label className="flex items-center gap-2">
-              <span>編成:</span>
-              <select
-                value={selectedGroup?.id || ''}
-                onChange={(e) => {
-                  const g = groups.find((gr) => gr.id === e.target.value) || null
-                  setSelectedGroup(g)
-                }}
-                className="border rounded p-1 flex-1"
+            <div>
+              <h2 className="text-lg font-semibold">新規プロジェクト</h2>
+              <p className="text-sm text-gray-500">プロジェクト名と編成を選んで開始します。</p>
+            </div>
+            <div className="space-y-3">
+              <label className="block text-sm text-gray-600">
+                名前
+                <input
+                  type="text"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="例: クロカゲ・市街地"
+                />
+              </label>
+              <label className="block text-sm text-gray-600">
+                編成
+                <select
+                  value={selectedGroup?.id || ''}
+                  onChange={(e) => {
+                    const g = groups.find((gr) => gr.id === e.target.value) || null
+                    setSelectedGroup(g)
+                  }}
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                >
+                  <option value="">未選択</option>
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
               >
-                <option value="">--</option>
-                {groups.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              onClick={() => {
-                if (selectedGroup) {
-  const sq = selectedGroup.squads[0]
-  const members = [...sq.strikers, ...sq.specials]
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedGroup) {
+                    const sq = selectedGroup.squads[0]
+                    const members = [...sq.strikers, ...sq.specials]
 
-  applyMembers(members)
-  setSkills([])
-  setMarkers([])
-  addNormalSkills(members)
+                    applyMembers(members)
+                    setSkills([])
+                    setMarkers([])
+                    addNormalSkills(members)
 
-  setSquadIndex(0)
-} else {
-  const empty = Array(6).fill('')
-  applyMembers(empty)
-  setSkills([])
-  setMarkers([])
-}
+                    setSquadIndex(0)
+                  } else {
+                    const empty = Array(6).fill('')
+                    applyMembers(empty)
+                    setSkills([])
+                    setMarkers([])
+                  }
 
-setInitialized(true)
-setShowCreateModal(false)
-
-              }}
-              className="border px-2 py-1 bg-blue-500 text-white rounded"
-            >
-              作成
-            </button>
+                  setInitialized(true)
+                  setShowCreateModal(false)
+                }}
+                className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+              >
+                作成
+              </button>
+            </div>
           </div>
         </div>
       )}
