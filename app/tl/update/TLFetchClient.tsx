@@ -76,6 +76,12 @@ export default function TLFetchClient() {
       >
         取得
       </button>
+      <a
+        href="/tl/pending"
+        className="ml-2 inline-flex items-center rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-50"
+      >
+        保留TL管理へ
+      </a>
       {message && <p>{message}</p>}
       {logs.length > 0 && (
         <div className="rounded border border-gray-200 bg-gray-50 p-3 text-xs">
