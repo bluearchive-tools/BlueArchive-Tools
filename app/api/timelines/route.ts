@@ -144,6 +144,8 @@ if (pErr || !profile?.admin) {
 }
 
 try {
+    const url = new URL(request.url)
+    const shouldStream = url.searchParams.get('stream') === '1'
     const { season } = await request.json()
     const raidPath = path.join(process.cwd(), 'data', 'raid.json')
     const raid = JSON.parse(await fs.readFile(raidPath, 'utf-8'))
@@ -151,6 +153,34 @@ try {
 
     const writer = supabaseAdmin ?? auth
     await ensureTables(writer, seasons)
+
+    if (shouldStream) {
+      const encoder = new TextEncoder()
+      const stream = new ReadableStream({
+        async start(controller) {
+          const push = (payload: unknown) => {
+            controller.enqueue(encoder.encode(`${JSON.stringify(payload)}\n`))
+          }
+          try {
+            const result = await upsertTimelines({
+              supabase: writer,
+              seasons,
+              season,
+              log: (message) => push({ type: 'log', message }),
+            })
+            push({ type: 'done', success: true, debug: result })
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'unknown'
+            push({ type: 'done', success: false, error: message })
+          } finally {
+            controller.close()
+          }
+        },
+      })
+      return new Response(stream, {
+        headers: { 'Content-Type': 'application/x-ndjson; charset=utf-8' },
+      })
+    }
 
     const logs: string[] = []
     const result = await upsertTimelines({
