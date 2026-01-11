@@ -395,54 +395,32 @@ export async function upsertTimelines(params: {
   const pushLog = (message: string) => {
     if (log) log(message)
   }
-  let pending = 0
-    const storedId = toStoredVideoId('youtube', vid)
-    if (!seasonNum || (season && seasonNum !== season)) {
-      const reason = seasonNum ? 'season_mismatch' : 'season_unknown'
-      const text = `${snippet.title || ''}\n${snippet.description || ''}`
-      const formation = await extractFormation(supabase, text)
-      await upsertPendingVideo(supabase, {
-        videoid: storedId,
-        platform: 'youtube',
-        title: snippet.title || '',
-        description: snippet.description || '',
-        publishedAt: snippet.publishedAt,
-        armor: extractArmor(text),
-        difficulty: extractDifficulty(text),
-        score: extractScore(text),
-        formation,
-        guide: extractGuide(text),
-        formationStatus: formation !== '[]' ? 'auto' : 'none',
-        seasonGuess: seasonNum,
-        reason,
-        raw: { snippet },
-      })
-      pending++
-      pushLog(`YouTube ${vid}: 保留(${reason})`)
-      continue
-    }
-    const table = `tl_${seasonNum.toLowerCase()}`
-    title: string
-    description: string
-    published_at?: string
-    suggested_season?: string | null
-    reason: string
-  }) => {
-    await supabase
-      .from('tl_pending_videos')
-      .upsert(
-        {
-          videoid: entry.videoid,
-          platform: entry.platform,
-          title: entry.title,
-          description: entry.description,
-          published_at: entry.published_at ?? null,
-          suggested_season: entry.suggested_season ?? null,
-          reason: entry.reason,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'videoid' }
-      )
+  const upsertPendingFromSnippet = async (
+    platform: 'youtube' | 'bilibili',
+    storedId: string,
+    snippet: Snippet,
+    seasonNum: string | null,
+    reason: 'season_unknown' | 'season_mismatch',
+    raw?: Record<string, unknown>
+  ) => {
+    const text = `${snippet.title || ''}\n${snippet.description || ''}`
+    const formation = await extractFormation(supabase, text)
+    await upsertPendingVideo(supabase, {
+      videoid: storedId,
+      platform,
+      title: snippet.title || '',
+      description: snippet.description || '',
+      publishedAt: snippet.publishedAt,
+      armor: extractArmor(text),
+      difficulty: extractDifficulty(text),
+      score: extractScore(text),
+      formation,
+      guide: extractGuide(text),
+      formationStatus: formation && formation !== '[]' ? 'auto' : 'none',
+      seasonGuess: seasonNum,
+      reason,
+      raw,
+    })
   }
   let fullUsed = 0
   let fallbackUsed = 0
@@ -486,74 +464,39 @@ export async function upsertTimelines(params: {
   for (const info of ytVideos) {
     const vid = info?.id?.videoId
     if (!vid) continue
+    const storedId = toStoredVideoId('youtube', vid)
+    if (lockedVideoIds.has(storedId)) {
+      pushLog(`YouTube ${vid}: 更新保護のためスキップ`)
+      continue
+    }
     const full = ytSnippets[vid]
     const snippet = full || info.snippet
     if (full) fullUsed++
     else fallbackUsed++
     const seasonNum = guessSeason(snippet, seasons)
     if (season && seasonNum !== season) {
-      await upsertPending({
-        videoid: storedId,
-        platform: 'youtube',
-        title: snippet.title || '',
-        description: snippet.description || '',
-        published_at: snippet.publishedAt,
-        suggested_season: seasonNum,
-        reason: seasonNum ? 'season_mismatch' : 'season_unknown',
+      const reason = seasonNum ? 'season_mismatch' : 'season_unknown'
+      await upsertPendingFromSnippet('youtube', storedId, snippet, seasonNum, reason, {
+        snippet,
       })
       pending++
       pushLog(`YouTube ${vid}: シーズン不一致のため保留 (detected=${seasonNum ?? 'unknown'})`)
       continue
     }
     if (!seasonNum) {
-      await upsertPending({
-        videoid: storedId,
-        platform: 'youtube',
-        title: snippet.title || '',
-        description: snippet.description || '',
-        published_at: snippet.publishedAt,
-        suggested_season: seasonNum,
-        reason: 'season_unknown',
+      await upsertPendingFromSnippet('youtube', storedId, snippet, seasonNum, 'season_unknown', {
+        snippet,
       })
       pending++
       pushLog(`YouTube ${vid}: シーズン判定不能のため保留`)
       continue
     }
     const table = seasonNum ? `tl_${seasonNum.toLowerCase()}` : 'tl_unknown'
-    const storedId = toStoredVideoId('youtube', vid)
     const { data: exist } = await supabase
       .from(table)
       .select('*')
       .eq('videoid', storedId)
       .maybeSingle()
-
-    if (!seasonNum || (season && seasonNum !== season)) {
-      const reason = seasonNum ? 'season_mismatch' : 'season_unknown'
-      const text = `${snippet.title || ''}\n${snippet.description || ''}`
-      const formation = await extractFormation(supabase, text)
-      await upsertPendingVideo(supabase, {
-        videoid: storedId,
-        platform: 'bilibili',
-        title: snippet.title || '',
-        description: snippet.description || '',
-        publishedAt: snippet.publishedAt,
-        armor: extractArmor(text),
-        difficulty: extractDifficulty(text),
-        score: extractScore(text),
-        formation,
-        guide: extractGuide(text),
-        formationStatus: formation && formation !== '[]' ? 'auto' : 'none',
-        seasonGuess: seasonNum,
-        reason,
-        raw: { snippet },
-      })
-      pending++
-      pushLog(`Bilibili ${info.bvid}: 保留(${reason})`)
-      continue
-    }
-    const table = `tl_${seasonNum.toLowerCase()}`
-      continue
-    }
 
     const text = `${snippet.title || ''}\n${snippet.description || ''}`
     const armor = extractArmor(text)
@@ -617,8 +560,7 @@ export async function upsertTimelines(params: {
   for (const info of biliVideos) {
     const storedId = toStoredVideoId('bilibili', info.bvid)
     if (lockedVideoIds.has(storedId)) {
-  pushLog(`保留件数=${pending}`)
-  return { fullUsed, fallbackUsed, updated, pending }
+      pushLog(`Bilibili ${info.bvid}: 更新保護のためスキップ`)
       continue
     }
 
@@ -629,28 +571,17 @@ export async function upsertTimelines(params: {
     }
     const seasonNum = guessSeason(snippet, seasons)
     if (season && seasonNum !== season) {
-      await upsertPending({
-        videoid: storedId,
-        platform: 'bilibili',
-        title: snippet.title || '',
-        description: snippet.description || '',
-        published_at: snippet.publishedAt,
-        suggested_season: seasonNum,
-        reason: seasonNum ? 'season_mismatch' : 'season_unknown',
+      const reason = seasonNum ? 'season_mismatch' : 'season_unknown'
+      await upsertPendingFromSnippet('bilibili', storedId, snippet, seasonNum, reason, {
+        snippet,
       })
       pending++
       pushLog(`Bilibili ${info.bvid}: シーズン不一致のため保留 (detected=${seasonNum ?? 'unknown'})`)
       continue
     }
     if (!seasonNum) {
-      await upsertPending({
-        videoid: storedId,
-        platform: 'bilibili',
-        title: snippet.title || '',
-        description: snippet.description || '',
-        published_at: snippet.publishedAt,
-        suggested_season: seasonNum,
-        reason: 'season_unknown',
+      await upsertPendingFromSnippet('bilibili', storedId, snippet, seasonNum, 'season_unknown', {
+        snippet,
       })
       pending++
       pushLog(`Bilibili ${info.bvid}: シーズン判定不能のため保留`)
