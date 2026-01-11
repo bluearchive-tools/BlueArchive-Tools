@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseRouteClient } from '@/lib/supabase-server'
+import { isValidSeasonNumber } from '@/lib/raid-data'
 
 const ensureAdmin = async () => {
   const auth = createSupabaseRouteClient()
@@ -62,8 +63,17 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
       return NextResponse.json({ error: 'not_found' }, { status: 404 })
     }
 
-    const targetSeason = body.seasonTarget ?? pending.season_target ?? pending.season_guess ?? ''
-    const table = targetSeason ? `tl_${targetSeason.toLowerCase()}` : 'tl_unknown'
+    const rawTargetSeason =
+      body.seasonTarget ?? pending.season_target ?? pending.season_guess ?? ''
+    const normalizedTargetSeason = rawTargetSeason
+      ? rawTargetSeason.trim().toUpperCase()
+      : ''
+    if (normalizedTargetSeason && !(await isValidSeasonNumber(normalizedTargetSeason))) {
+      return NextResponse.json({ error: 'invalid_season' }, { status: 400 })
+    }
+    const table = normalizedTargetSeason
+      ? `tl_${normalizedTargetSeason.toLowerCase()}`
+      : 'tl_unknown'
 
     const entry = {
       armor: pending.armor ?? '',
@@ -105,7 +115,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
       .from('tl_pending_videos')
       .update({
         status: 'approved',
-        season_target: targetSeason || null,
+        season_target: normalizedTargetSeason || null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', Number(id))

@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { isValidSeasonNumber } from '@/lib/raid-data'
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -28,8 +29,12 @@ export async function PUT(request: NextRequest) {
     if (!season) {
       return NextResponse.json({ success: false }, { status: 400 })
     }
+    const normalizedSeason = season.trim().toUpperCase()
+    if (!(await isValidSeasonNumber(normalizedSeason))) {
+      return NextResponse.json({ success: false }, { status: 400 })
+    }
     const id = request.nextUrl.pathname.split('/').pop()!
-    const table = season ? `tl_${season.toLowerCase()}` : 'tl_unknown'
+    const table = `tl_${normalizedSeason.toLowerCase()}`
     const update: Record<string, unknown> = {}
     if (score !== undefined) update.score = score
     if (guide !== undefined) update.guide = guide
