@@ -12,6 +12,7 @@ interface Season {
 export default function TLFetchClient() {
   const [seasons, setSeasons] = useState<Season[]>([])
   const [season, setSeason] = useState('')
+  const [platform, setPlatform] = useState<'all' | 'youtube' | 'bilibili'>('all')
   const [message, setMessage] = useState('')
   const [logs, setLogs] = useState<string[]>([])
 
@@ -37,7 +38,7 @@ export default function TLFetchClient() {
       const res = await fetch('/api/timelines?stream=1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ season }),
+        body: JSON.stringify({ season, platform }),
       })
       if (!res.body) {
         setMessage('エラーが発生しました')
@@ -87,18 +88,29 @@ export default function TLFetchClient() {
         <h2 className="text-lg font-bold">TL取得</h2>
         <PageHelpButton pageKey="tl-update" />
       </div>
-      <select
-        value={season}
-        onChange={e => setSeason(e.target.value)}
-        className="border rounded px-2 py-1"
-      >
-        <option value="">シーズンを選択</option>
-        {seasons.map(s => (
-          <option key={s.number} value={s.number}>
-            {`シーズン${s.number} (${s.startDate}~${s.endDate})`}
-          </option>
-        ))}
-      </select>
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          value={season}
+          onChange={e => setSeason(e.target.value)}
+          className="border rounded px-2 py-1"
+        >
+          <option value="">シーズンを選択</option>
+          {seasons.map(s => (
+            <option key={s.number} value={s.number}>
+              {`シーズン${s.number} (${s.startDate}~${s.endDate})`}
+            </option>
+          ))}
+        </select>
+        <select
+          value={platform}
+          onChange={e => setPlatform(e.target.value as 'all' | 'youtube' | 'bilibili')}
+          className="border rounded px-2 py-1"
+        >
+          <option value="all">全て</option>
+          <option value="youtube">YouTubeのみ</option>
+          <option value="bilibili">Bilibiliのみ</option>
+        </select>
+      </div>
       <button
         onClick={handleFetch}
         className="bg-blue-500 text-white px-4 py-1 rounded"

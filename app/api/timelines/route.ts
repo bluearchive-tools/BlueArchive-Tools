@@ -151,7 +151,16 @@ export async function POST(request: Request) {
   try {
     const url = new URL(request.url)
     const shouldStream = url.searchParams.get('stream') === '1'
-    const { season } = await request.json()
+    const { season, platform } = await request.json()
+    const normalizedPlatform =
+      platform === 'youtube' || platform === 'bilibili'
+        ? platform
+        : platform === 'all' || platform == null
+          ? null
+          : 'invalid'
+    if (normalizedPlatform === 'invalid') {
+      return NextResponse.json({ error: 'invalid_platform' }, { status: 400 })
+    }
     const normalizedSeason = season ? season.trim().toUpperCase() : null
     if (normalizedSeason && !(await isValidSeasonNumber(normalizedSeason))) {
       return NextResponse.json({ error: 'invalid_season' }, { status: 400 })
@@ -176,6 +185,7 @@ export async function POST(request: Request) {
               seasons,
               season: normalizedSeason,
               log: (message) => push({ type: 'log', message }),
+              platform: normalizedPlatform,
             })
             push({ type: 'done', success: true, debug: result })
           } catch (error) {
@@ -197,6 +207,7 @@ export async function POST(request: Request) {
       seasons,
       season: normalizedSeason,
       log: (message) => logs.push(message),
+      platform: normalizedPlatform,
     })
 
     return NextResponse.json({ success: true, debug: result, logs })

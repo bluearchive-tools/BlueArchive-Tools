@@ -476,8 +476,9 @@ export async function upsertTimelines(params: {
   seasons: TLSeason[]
   season?: string | null
   log?: (message: string) => void
+  platform?: 'youtube' | 'bilibili' | null
 }) {
-  const { supabase, seasons, season, log } = params
+  const { supabase, seasons, season, log, platform } = params
   const pushLog = (message: string) => {
     if (log) log(message)
   }
@@ -499,15 +500,18 @@ export async function upsertTimelines(params: {
     }
   }
 
-  const ytVideos = await fetchYouTubeVideos(targetSeasons)
+  const ytVideos =
+    platform === 'bilibili' ? [] : await fetchYouTubeVideos(targetSeasons)
   pushLog(`YouTube検索結果: ${ytVideos.length}件`)
   const ytIds = ytVideos
     .map((v) => v.id?.videoId)
     .filter((v): v is string => Boolean(v))
-  const ytSnippets = await fetchYouTubeSnippets(ytIds)
+  const ytSnippets =
+    platform === 'bilibili' ? {} : await fetchYouTubeSnippets(ytIds)
   pushLog(`YouTube詳細スニペット取得: ${Object.keys(ytSnippets).length}件`)
 
-  const biliVideos = await fetchBilibiliVideos(targetSeasons)
+  const biliVideos =
+    platform === 'youtube' ? [] : await fetchBilibiliVideos(targetSeasons)
   pushLog(`Bilibili検索結果: ${biliVideos.length}件`)
 
   const allVideoIds = [
