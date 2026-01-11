@@ -440,64 +440,43 @@ export async function fetchBilibiliVideos(seasons: TLSeason[]) {
     replacements = {}
     baseKeywords = []
   }
-  const bossTerrainMap = await getBossTerrainMap()
   for (const s of seasons) {
-    const bossTerms = getBossQueryVariants(s.boss)
-    if (bossTerms.length === 0) continue
-    const includeArmor = shouldIncludeArmor(s.number)
-    const includeTerrain =
-      s.boss && (bossTerrainMap.get(s.boss)?.size ?? 0) > 1
-    const terrain = includeTerrain ? s.terrain : undefined
-    const armors =
-      includeArmor && s.defenseArmors && s.defenseArmors.length > 0
-        ? s.defenseArmors
-        : [undefined]
-    for (const boss of bossTerms) {
-      for (const armor of armors) {
-        const queries = buildBilibiliQueries(
-          [boss, terrain, armor],
-          replacements,
-          baseKeywords,
-          ''
-        )
-        for (const query of queries) {
-          const params = new URLSearchParams({
-            search_type: 'video',
-            keyword: query,
-            order: 'pubdate',
-            page: '1',
-            page_size: '50',
+    const armors = s.defenseArmors && s.defenseArmors.length > 0 ? s.defenseArmors : ['']
+    for (const armor of armors) {
+      const queries = buildBilibiliQueries([s.boss, s.terrain, armor], replacements, baseKeywords)
+      for (const query of queries) {
+        const params = new URLSearchParams({
+          search_type: 'video',
+          keyword: query,
+          order: 'pubdate',
+          page: '1',
+          page_size: '50',
+        })
+        const res = await fetch(`https://api.bilibili.com/x/web-interface/search/type?${params}`)
+        if (!res.ok) continue
+        const json = (await res.json()) as {
+          data?: {
+            result?: Array<{
+              bvid?: string
+              title?: string
+              description?: string
+              pubdate?: number
+              pic?: string
+            }>
+          }
+        }
+        const items = json.data?.result ?? []
+        for (const item of items) {
+          if (!item?.bvid) continue
+          if (seen.has(item.bvid)) continue
+          seen.add(item.bvid)
+          results.push({
+            bvid: item.bvid,
+            title: stripHtml(item.title ?? ''),
+            description: stripHtml(item.description ?? ''),
+            publishedAt: item.pubdate ? new Date(item.pubdate * 1000).toISOString() : undefined,
+            thumbnail: item.pic ? (item.pic.startsWith('//') ? `https:${item.pic}` : item.pic) : undefined,
           })
-          const res = await fetch(
-            `https://api.bilibili.com/x/web-interface/search/type?${params}`
-          )
-          if (!res.ok) continue
-          const json = (await res.json()) as {
-            data?: {
-              result?: Array<{
-                bvid?: string
-                title?: string
-                description?: string
-                pubdate?: number
-                pic?: string
-              }>
-            }
-          }
-          const items = json.data?.result ?? []
-          for (const item of items) {
-            if (!item?.bvid) continue
-            if (seen.has(item.bvid)) continue
-            seen.add(item.bvid)
-            results.push({
-              bvid: item.bvid,
-              title: stripHtml(item.title ?? ''),
-              description: stripHtml(item.description ?? ''),
-              publishedAt: item.pubdate ? new Date(item.pubdate * 1000).toISOString() : undefined,
-              thumbnail: item.pic
-                ? (item.pic.startsWith('//') ? `https:${item.pic}` : item.pic)
-                : undefined,
-            })
-          }
         }
       }
     }
@@ -593,8 +572,12 @@ export async function upsertTimelines(params: {
     : seasons
   pushLog(`開始: 対象シーズン=${targetSeasons.map((s) => s.number).join(',') || 'なし'}`)
   const seasonStartMap = new Map<string, string>()
+  const seasonArmorMap = new Map<string, string>()
   for (const s of seasons) {
     seasonStartMap.set(s.number, s.startDate)
+    if (s.defenseArmors && s.defenseArmors.length > 0) {
+      seasonArmorMap.set(s.number, s.defenseArmors[0])
+    }
   }
 
   const ytVideos = await fetchYouTubeVideos(targetSeasons)
@@ -641,32 +624,11 @@ export async function upsertTimelines(params: {
     else fallbackUsed++
     const seasonNum = guessSeason(snippet, seasons)
     if (season && seasonNum !== season) {
-      const reason = seasonNum ? 'season_mismatch' : 'season_unknown'
-      await upsertPendingFromSnippet(
-        'youtube',
-        storedId,
-        snippet,
-        seasonNum,
-        reason,
-        { snippet },
-        season
-      )
-      pending++
-      pushLog(`YouTube ${vid}: シーズン不一致のため保留 (detected=${seasonNum ?? 'unknown'})`)
+      pushLog(`YouTube ${vid}: シーズン不一致のためスキップ (detected=${seasonNum ?? 'unknown'})`)
       continue
     }
     if (!seasonNum) {
-      await upsertPendingFromSnippet(
-        'youtube',
-        storedId,
-        snippet,
-        seasonNum,
-        'season_unknown',
-        { snippet },
-        season ?? null
-      )
-      pending++
-      pushLog(`YouTube ${vid}: シーズン判定不能のため保留`)
+      pushLog(`YouTube ${vid}: シーズン判定不能のためスキップ`)
       continue
     }
     if (lockedVideoIds.has(storedId)) {
@@ -681,7 +643,8 @@ export async function upsertTimelines(params: {
       .maybeSingle()
 
     const text = `${snippet.title || ''}\n${snippet.description || ''}`
-    const armor = extractArmor(text)
+    const armor =
+      seasonNum.startsWith('S') ? seasonArmorMap.get(seasonNum) ?? '' : extractArmor(text)
     const score = extractScore(text)
     const difficulty = normalizeDifficulty(text, score)
     const formation = await extractFormation(supabase, text)
@@ -753,32 +716,11 @@ export async function upsertTimelines(params: {
     }
     const seasonNum = guessSeason(snippet, seasons)
     if (season && seasonNum !== season) {
-      const reason = seasonNum ? 'season_mismatch' : 'season_unknown'
-      await upsertPendingFromSnippet(
-        'bilibili',
-        storedId,
-        snippet,
-        seasonNum,
-        reason,
-        { snippet },
-        season
-      )
-      pending++
-      pushLog(`Bilibili ${info.bvid}: シーズン不一致のため保留 (detected=${seasonNum ?? 'unknown'})`)
+      pushLog(`Bilibili ${info.bvid}: シーズン不一致のためスキップ (detected=${seasonNum ?? 'unknown'})`)
       continue
     }
     if (!seasonNum) {
-      await upsertPendingFromSnippet(
-        'bilibili',
-        storedId,
-        snippet,
-        seasonNum,
-        'season_unknown',
-        { snippet },
-        season ?? null
-      )
-      pending++
-      pushLog(`Bilibili ${info.bvid}: シーズン判定不能のため保留`)
+      pushLog(`Bilibili ${info.bvid}: シーズン判定不能のためスキップ`)
       continue
     }
     if (lockedVideoIds.has(storedId)) {
@@ -793,7 +735,8 @@ export async function upsertTimelines(params: {
       .maybeSingle()
 
     const text = `${snippet.title || ''}\n${snippet.description || ''}`
-    const armor = extractArmor(text)
+    const armor =
+      seasonNum.startsWith('S') ? seasonArmorMap.get(seasonNum) ?? '' : extractArmor(text)
     const score = extractScore(text)
     const difficulty = normalizeDifficulty(text, score)
     const formation = await extractFormation(supabase, text)
