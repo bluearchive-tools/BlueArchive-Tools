@@ -40,7 +40,7 @@ interface Props {
 }
 
 
-type SocialService = 'x' | 'youtube' | 'other'
+type SocialService = 'x' | 'youtube' | 'bilibili' | 'other'
 type SocialLink = {
   service: SocialService
   label: string
@@ -69,18 +69,21 @@ const detectSocialService = (label: string): SocialService => {
   if (!s) return 'other'
   if (s === 'x' || s.includes('twitter')) return 'x'
   if (s.includes('youtube')) return 'youtube'
+  if (s.includes('bilibili') || s.includes('bili') || s.includes('b站')) return 'bilibili'
   return 'other'
 }
 
 const socialLabel = (service: SocialService, customLabel: string) => {
   if (service === 'x') return 'X'
   if (service === 'youtube') return 'YouTube'
+  if (service === 'bilibili') return 'Bilibili'
   return customLabel.trim() || 'その他'
 }
 
 const socialPlaceholder = (service: SocialService) => {
   if (service === 'x') return '例: @username / https://x.com/...'
   if (service === 'youtube') return '例: https://www.youtube.com/@...'
+  if (service === 'bilibili') return '例: https://space.bilibili.com/123456 / UID'
   return 'リンクやID'
 }
 
@@ -160,6 +163,9 @@ const serializeSocialLinksForSave = (links: SocialLink[]): SerializedSocialLink[
 
     if (link.service === 'other') {
       if (!trimmedLabel && !trimmedValue) return null
+    }
+    if (link.service === 'bilibili' && !trimmedValue) {
+      return null
     }
 
     return {
@@ -258,7 +264,7 @@ export default function MyPageClient({
               const value = typeof r?.value === 'string' ? (r.value as string) : ''
               const serviceRaw = typeof r?.service === 'string' ? (r.service as string) : null
               const service: SocialService =
-                serviceRaw === 'x' || serviceRaw === 'youtube' || serviceRaw === 'other'
+                serviceRaw === 'x' || serviceRaw === 'youtube' || serviceRaw === 'bilibili' || serviceRaw === 'other'
                   ? (serviceRaw as SocialService)
                   : detectSocialService(label)
 
@@ -1359,6 +1365,7 @@ export default function MyPageClient({
                     >
                       <option value="x">X</option>
                       <option value="youtube">YouTube</option>
+                      <option value="bilibili">Bilibili</option>
                       <option value="other">その他</option>
                     </select>
 

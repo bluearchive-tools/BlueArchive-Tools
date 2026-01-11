@@ -3,7 +3,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse } from 'next/server'
 
 // Type definitions for logic reproduction
-type SocialService = 'x' | 'youtube' | 'other'
+type SocialService = 'x' | 'youtube' | 'bilibili' | 'other'
 type SocialLink = {
   service: SocialService
   label: string
@@ -22,6 +22,7 @@ type SocialLink = {
 const socialLabel = (service: SocialService, customLabel: string) => {
   if (service === 'x') return 'X'
   if (service === 'youtube') return 'YouTube'
+  if (service === 'bilibili') return 'Bilibili'
   return customLabel.trim() || 'その他'
 }
 
