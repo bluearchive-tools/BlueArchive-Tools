@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faUser, faUserSlash } from '@fortawesome/free-solid-svg-icons'
+import { faLink, faUser, faUserSlash } from '@fortawesome/free-solid-svg-icons'
 import { faYoutube } from '@fortawesome/free-brands-svg-icons'
 import { Timeline } from '../../../types/timeline'
 import PageHelpButton from '../../../components/PageHelpButton'
@@ -60,6 +60,7 @@ type SocialLink = {
   service?: string
   verified?: boolean
   channelId?: string | null
+  biliUid?: string | null
 }
 
 const isYouTubeNetworkBlocked = (err: unknown) => {
@@ -90,6 +91,16 @@ const parseAllowedIdentifiers = (raw: string) =>
     .map((v) => v.trim())
     .filter(Boolean)
 
+const parseVideoRef = (videoid: string) => {
+  if (videoid.startsWith('bili:')) {
+    return { platform: 'bilibili' as const, id: videoid.replace(/^bili:/, '') }
+  }
+  return { platform: 'youtube' as const, id: videoid }
+}
+
+const toStoredVideoId = (platform: 'youtube' | 'bilibili', id: string) =>
+  platform === 'bilibili' ? `bili:${id}` : id
+
 export default function TLSearchPage() {
   const session = useSession()
   const supabase = useSupabaseClient()
@@ -112,6 +123,7 @@ export default function TLSearchPage() {
     hideTlUntilYoutube: boolean
   } | null>(null)
   const [youtubeChannelId, setYoutubeChannelId] = useState<string | null>(null)
+  const [bilibiliUid, setBilibiliUid] = useState<string | null>(null)
   const [videoChannelId, setVideoChannelId] = useState<string | null>(null)
   const [ownerCheckLoading, setOwnerCheckLoading] = useState(false)
   const [activeSection, setActiveSection] = useState('overview')
@@ -162,6 +174,7 @@ export default function TLSearchPage() {
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [settingsError, setSettingsError] = useState('')
   const [myVideosOpen, setMyVideosOpen] = useState(false)
+  const [myVideosPlatform, setMyVideosPlatform] = useState<'youtube' | 'bilibili'>('youtube')
   const [myVideosLoading, setMyVideosLoading] = useState(false)
   const [myVideosError, setMyVideosError] = useState('')
   const [myVideos, setMyVideos] = useState<
@@ -171,12 +184,26 @@ export default function TLSearchPage() {
       description: string
       publishedAt?: string
       thumbnail?: string
+      platform: 'youtube' | 'bilibili'
     }>
   >([])
 
   const formatScore = (value: string) => {
     const num = parseInt(value || '0')
     return num.toLocaleString()
+  }
+
+  const getVideoMeta = (videoid: string, thumbnail?: string) => {
+    const { platform, id } = parseVideoRef(videoid)
+    const url =
+      platform === 'youtube'
+        ? `https://www.youtube.com/watch?v=${id}`
+        : `https://www.bilibili.com/video/${id}`
+    const label = platform === 'youtube' ? 'YouTube' : 'Bilibili'
+    const resolvedThumbnail =
+      thumbnail ||
+      (platform === 'youtube' ? `https://i.ytimg.com/vi/${id}/mqdefault.jpg` : null)
+    return { platform, id, url, label, thumbnail: resolvedThumbnail }
   }
 
   const getDayText = (t: Timeline) => {
@@ -293,9 +320,13 @@ export default function TLSearchPage() {
         const yt = links.find(
           (l) => l?.service === 'youtube' && l?.verified === true
         )
+        const bili = links.find(
+          (l) => l?.service === 'bilibili' && l?.verified === true
+        )
         setYoutubeChannelId(
           typeof yt?.channelId === 'string' ? yt.channelId : null
         )
+        setBilibiliUid(typeof bili?.biliUid === 'string' ? bili.biliUid : null)
         setCurrentUsername(typeof data?.username === 'string' ? data.username : null)
         const rawDefaults = data?.tl_default_settings
         if (rawDefaults && typeof rawDefaults === 'object') {
@@ -489,9 +520,14 @@ export default function TLSearchPage() {
     setActiveSection('overview')
     setModalClosing(false)
     const loadVideoChannelId = async () => {
+      const { platform, id } = parseVideoRef(openTl.videoid)
+      if (platform !== 'youtube') {
+        setVideoChannelId(null)
+        return
+      }
       setOwnerCheckLoading(true)
       try {
-        const res = await fetch(`/api/youtube/video-owner?videoid=${openTl.videoid}`)
+        const res = await fetch(`/api/youtube/video-owner?videoid=${id}`)
         if (!res.ok) {
           setVideoChannelId(null)
           return
@@ -713,64 +749,111 @@ export default function TLSearchPage() {
     }))
   }
 
-  const openMyVideos = async () => {
-    if (!youtubeChannelId) return
+  const openMyVideos = async (platform: 'youtube' | 'bilibili') => {
+    setMyVideosPlatform(platform)
     setMyVideosOpen(true)
     setMyVideosLoading(true)
     setMyVideosError('')
+    setMyVideos([])
     try {
-      const { data } = await supabase.auth.getSession()
-      const token = data.session?.provider_token
-      if (!token) {
-        setMyVideosError('YouTube連携が必要です（マイページで接続してください）')
-        setMyVideosLoading(false)
+      if (platform === 'youtube') {
+        if (!youtubeChannelId) {
+          setMyVideosError('YouTube連携が必要です（マイページで接続してください）')
+          return
+        }
+        const { data } = await supabase.auth.getSession()
+        const token = data.session?.provider_token
+        if (!token) {
+          setMyVideosError('YouTube連携が必要です（マイページで接続してください）')
+          return
+        }
+        const params = new URLSearchParams({
+          part: 'snippet',
+          channelId: youtubeChannelId,
+          q: 'ブルアカ',
+          type: 'video',
+          order: 'date',
+          maxResults: '20',
+        })
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params.toString()}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        if (!res.ok) {
+          setMyVideosError('YouTubeの動画取得に失敗しました')
+          return
+        }
+        const json = (await res.json()) as {
+          items?: Array<{
+            id?: { videoId?: string }
+            snippet?: {
+              title?: string
+              description?: string
+              publishedAt?: string
+              thumbnails?: Record<string, { url?: string }>
+            }
+          }>
+        }
+        const items = (json.items ?? [])
+          .map((item) => {
+            const videoid = item.id?.videoId
+            if (!videoid) return null
+            const snippet = item.snippet ?? {}
+            return {
+              videoid,
+              title: snippet.title ?? '',
+              description: snippet.description ?? '',
+              publishedAt: snippet.publishedAt,
+              thumbnail: snippet.thumbnails?.medium?.url ?? snippet.thumbnails?.default?.url ?? undefined,
+              platform: 'youtube' as const,
+            }
+          })
+          .filter((item): item is NonNullable<typeof item> => Boolean(item))
+          .filter((item) => item.title.includes('ブルアカ'))
+        setMyVideos(items)
         return
       }
+
+      if (!bilibiliUid) {
+        setMyVideosError('Bilibili連携が必要です（マイページで接続してください）')
+        return
+      }
+
       const params = new URLSearchParams({
-        part: 'snippet',
-        channelId: youtubeChannelId,
-        q: 'ブルアカ',
-        type: 'video',
-        order: 'date',
-        maxResults: '20',
+        mid: bilibiliUid,
+        ps: '20',
+        pn: '1',
+        order: 'pubdate',
       })
-      const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params.toString()}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      const res = await fetch(`https://api.bilibili.com/x/space/arc/search?${params.toString()}`)
       if (!res.ok) {
-        setMyVideosError('YouTubeの動画取得に失敗しました')
-        setMyVideosLoading(false)
+        setMyVideosError('Bilibiliの動画取得に失敗しました')
         return
       }
       const json = (await res.json()) as {
-        items?: Array<{
-          id?: { videoId?: string }
-          snippet?: { title?: string; description?: string; publishedAt?: string; thumbnails?: Record<string, { url?: string }> }
-        }>
+        data?: { list?: { vlist?: Array<{ bvid?: string; title?: string; description?: string; pic?: string; created?: number }> } }
       }
-      const items = (json.items ?? [])
+      const items = (json.data?.list?.vlist ?? [])
         .map((item) => {
-          const videoid = item.id?.videoId
-          if (!videoid) return null
-          const snippet = item.snippet ?? {}
+          if (!item?.bvid) return null
           return {
-            videoid,
-            title: snippet.title ?? '',
-            description: snippet.description ?? '',
-            publishedAt: snippet.publishedAt,
-            thumbnail: snippet.thumbnails?.medium?.url ?? snippet.thumbnails?.default?.url ?? undefined,
+            videoid: item.bvid,
+            title: item.title ?? '',
+            description: item.description ?? '',
+            publishedAt: item.created ? new Date(item.created * 1000).toISOString() : undefined,
+            thumbnail: item.pic ? (item.pic.startsWith('//') ? `https:${item.pic}` : item.pic) : undefined,
+            platform: 'bilibili' as const,
           }
         })
         .filter((item): item is NonNullable<typeof item> => Boolean(item))
         .filter((item) => item.title.includes('ブルアカ'))
       setMyVideos(items)
     } catch (err) {
-      if (isYouTubeNetworkBlocked(err)) {
+      if (platform === 'youtube' && isYouTubeNetworkBlocked(err)) {
         setMyVideosError('YouTubeへの通信がブロックされています。ネットワークや拡張機能の設定をご確認ください。')
       } else {
-        setMyVideosError('YouTubeの動画取得に失敗しました')
+        setMyVideosError(`${platform === 'youtube' ? 'YouTube' : 'Bilibili'}の動画取得に失敗しました`)
       }
     } finally {
       setMyVideosLoading(false)
@@ -778,14 +861,23 @@ export default function TLSearchPage() {
   }
 
   const addMyVideoToList = (
-    video: { videoid: string; title: string; description: string; publishedAt?: string },
+    video: {
+      videoid: string
+      title: string
+      description: string
+      publishedAt?: string
+      thumbnail?: string
+      platform: 'youtube' | 'bilibili'
+    },
     openAfter: boolean
   ) => {
+    const storedId = toStoredVideoId(video.platform, video.videoid)
     const timeline: Timeline = {
       id: Math.floor(Date.now() + Math.random() * 1000),
       armor: '',
       difficulty: '',
-      videoid: video.videoid,
+      videoid: storedId,
+      platform: video.platform,
       score: '',
       formation: '[]',
       guide: false,
@@ -794,9 +886,10 @@ export default function TLSearchPage() {
       description: video.description,
       publishedAt: video.publishedAt,
       season: '',
+      thumbnail: video.thumbnail,
     }
     setTimelines((prev) => {
-      if (prev.some((t) => t.videoid === video.videoid)) return prev
+      if (prev.some((t) => t.videoid === storedId)) return prev
       return [timeline, ...prev]
     })
     if (openAfter) {
@@ -956,34 +1049,42 @@ export default function TLSearchPage() {
   }
 }
 
-  const TimelineCard = ({ t }: { t: Timeline }) => (
-    <li
-      key={t.id}
-      className="border rounded p-2 space-y-1 text-sm cursor-pointer relative"
-      onClick={() => setOpenTl(t)}
-    >
-      {isAdmin && (
-        <button
-          className="absolute -top-2 right-1 bg-white/80 border text-xs px-1 rounded"
-          onClick={(e) => {
-            e.stopPropagation()
-            setEditTl(t)
-            setEditScore(t.score)
-            setEditGuide(Boolean(t.guide))
-            setEditFormationStatus(t.formationStatus || 'none')
-            setEditArmor(t.armor)
-            setEditFormation(t.formation)
-          }}
+  const TimelineCard = ({ t }: { t: Timeline }) => {
+    const meta = getVideoMeta(t.videoid, t.thumbnail)
+    return (
+      <li
+        key={t.id}
+        className="border rounded p-2 space-y-1 text-sm cursor-pointer relative"
+        onClick={() => setOpenTl(t)}
+      >
+        {isAdmin && (
+          <button
+            className="absolute -top-2 right-1 bg-white/80 border text-xs px-1 rounded"
+            onClick={(e) => {
+              e.stopPropagation()
+              setEditTl(t)
+              setEditScore(t.score)
+              setEditGuide(Boolean(t.guide))
+              setEditFormationStatus(t.formationStatus || 'none')
+              setEditArmor(t.armor)
+              setEditFormation(t.formation)
+            }}
           >
             編集
           </button>
         )}
         <div className="relative">
-          <img
-            src={`https://i.ytimg.com/vi/${t.videoid}/mqdefault.jpg`}
-            alt="thumbnail"
-            className="w-full h-auto mb-1"
-          />
+          {meta.thumbnail ? (
+            <img
+              src={meta.thumbnail}
+              alt="thumbnail"
+              className="w-full h-auto mb-1"
+            />
+          ) : (
+            <div className="mb-1 flex h-32 w-full items-center justify-center rounded bg-gray-100 text-xs text-gray-500">
+              {meta.label} thumbnail unavailable
+            </div>
+          )}
           <span className="absolute top-1 right-1 bg-black/50 text-white text-xs px-1">
             {getDayText(t)}
           </span>
@@ -1006,8 +1107,9 @@ export default function TLSearchPage() {
             <FontAwesomeIcon icon={faUser} className="text-green-500 ml-1" />
           )}
         </p>
-    </li>
-  )
+      </li>
+    )
+  }
 
   const terrains = raidData?.terrains ?? []
   const armors = raidData?.armors ?? []
@@ -1036,6 +1138,12 @@ export default function TLSearchPage() {
     if (terrain && s.terrain !== terrain) return false
     return true
   })
+
+  const openTlMeta = openTl ? getVideoMeta(openTl.videoid, openTl.thumbnail) : null
+  const openTlThumbnail =
+    openTlMeta?.platform === 'youtube'
+      ? `https://i.ytimg.com/vi/${openTlMeta.id}/hqdefault.jpg`
+      : openTlMeta?.thumbnail ?? null
 
   const visibleTimelines = timelines.filter((t) => {
     const settings = videoSettingsMap[t.videoid]
@@ -1129,14 +1237,27 @@ export default function TLSearchPage() {
       <div className="flex items-center gap-2 flex-wrap">
         <h2 className="text-xl">TL検索</h2>
         <PageHelpButton pageKey="tl-search" />
-        {youtubeChannelId && (
-          <button
-            type="button"
-            onClick={openMyVideos}
-            className="ml-auto inline-flex items-center gap-1 rounded border border-blue-300 px-3 py-1 text-sm font-medium text-blue-700 hover:bg-blue-50"
-          >
-            ＋ 自分の動画を追加
-          </button>
+        {(youtubeChannelId || bilibiliUid) && (
+          <div className="ml-auto flex flex-wrap gap-2">
+            {youtubeChannelId && (
+              <button
+                type="button"
+                onClick={() => openMyVideos('youtube')}
+                className="inline-flex items-center gap-1 rounded border border-blue-300 px-3 py-1 text-sm font-medium text-blue-700 hover:bg-blue-50"
+              >
+                ＋ 自分の動画を追加 (YouTube)
+              </button>
+            )}
+            {bilibiliUid && (
+              <button
+                type="button"
+                onClick={() => openMyVideos('bilibili')}
+                className="inline-flex items-center gap-1 rounded border border-blue-300 px-3 py-1 text-sm font-medium text-blue-700 hover:bg-blue-50"
+              >
+                ＋ 自分の動画を追加 (Bilibili)
+              </button>
+            )}
+          </div>
         )}
       </div>
       <div className="space-y-2">
@@ -1342,7 +1463,9 @@ export default function TLSearchPage() {
           >
             <div className="flex items-center justify-between px-4 py-3 border-b">
               <div>
-                <h3 className="font-semibold">自分の動画を追加</h3>
+                <h3 className="font-semibold">
+                  自分の動画を追加 ({myVideosPlatform === 'youtube' ? 'YouTube' : 'Bilibili'})
+                </h3>
                 <p className="text-xs text-gray-500">
                   タイトルに「ブルアカ」を含む動画のみ表示しています。
                 </p>
@@ -1362,17 +1485,29 @@ export default function TLSearchPage() {
                 <p className="text-sm text-gray-500">対象の動画が見つかりませんでした。</p>
               )}
               {myVideos.map((video) => {
-                const alreadyAdded = timelines.some((t) => t.videoid === video.videoid)
+                const storedId = toStoredVideoId(video.platform, video.videoid)
+                const alreadyAdded = timelines.some((t) => t.videoid === storedId)
                 return (
                   <div
                     key={video.videoid}
                     className="flex flex-col sm:flex-row gap-3 border rounded p-3"
                   >
-                    <img
-                      src={video.thumbnail ?? `https://i.ytimg.com/vi/${video.videoid}/mqdefault.jpg`}
-                      alt="thumbnail"
-                      className="w-full sm:w-40 h-auto rounded"
-                    />
+                    {video.thumbnail || video.platform === 'youtube' ? (
+                      <img
+                        src={
+                          video.thumbnail ??
+                          (video.platform === 'youtube'
+                            ? `https://i.ytimg.com/vi/${video.videoid}/mqdefault.jpg`
+                            : '')
+                        }
+                        alt="thumbnail"
+                        className="w-full sm:w-40 h-auto rounded"
+                      />
+                    ) : (
+                      <div className="flex w-full sm:w-40 items-center justify-center rounded bg-gray-100 text-xs text-gray-500">
+                        Bilibili thumbnail unavailable
+                      </div>
+                    )}
                     <div className="flex-1 space-y-1">
                       <p className="text-sm font-semibold">{video.title}</p>
                       <p className="text-xs text-gray-500 line-clamp-2">{video.description}</p>
@@ -1422,34 +1557,44 @@ export default function TLSearchPage() {
             <div className="flex flex-col md:flex-row h-full">
               <div className="md:w-5/12 border-b md:border-b-0 md:border-r p-4 space-y-3 overflow-y-auto">
                 <a
-                  href={`https://www.youtube.com/watch?v=${openTl.videoid}`}
+                  href={openTlMeta?.url ?? '#'}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block"
-                  aria-label="YouTubeで動画を開く"
+                  aria-label={`${openTlMeta?.label ?? '動画'}で動画を開く`}
                 >
-                  <img
-                    src={`https://i.ytimg.com/vi/${openTl.videoid}/hqdefault.jpg`}
-                    alt="thumbnail"
-                    className="w-full h-auto rounded cursor-pointer"
-                  />
+                  {openTlThumbnail ? (
+                    <img
+                      src={openTlThumbnail}
+                      alt="thumbnail"
+                      className="w-full h-auto rounded cursor-pointer"
+                    />
+                  ) : (
+                    <div className="flex h-48 w-full items-center justify-center rounded bg-gray-100 text-sm text-gray-500">
+                      {openTlMeta?.label ?? '動画'} thumbnail unavailable
+                    </div>
+                  )}
                 </a>
                 <div>
                   <h3 className="font-bold text-base">{openTl.title}</h3>
                   <p className="text-xs text-gray-500 break-all">
-                    videoid: {openTl.videoid}
+                    videoid: {openTlMeta?.id ?? openTl.videoid}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <a
-                    href={`https://www.youtube.com/watch?v=${openTl.videoid}`}
+                    href={openTlMeta?.url ?? '#'}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 rounded border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-gray-50"
-                    aria-label="YouTubeで動画を開く"
+                    aria-label={`${openTlMeta?.label ?? '動画'}で動画を開く`}
                   >
-                    <FontAwesomeIcon icon={faYoutube} />
-                    YouTube
+                    {openTlMeta?.platform === 'youtube' ? (
+                      <FontAwesomeIcon icon={faYoutube} />
+                    ) : (
+                      <FontAwesomeIcon icon={faLink} />
+                    )}
+                    {openTlMeta?.label ?? '動画'}
                   </a>
                 </div>
                 <nav className="rounded text-sm">
@@ -1620,7 +1765,7 @@ export default function TLSearchPage() {
                         !tlRevealUnlocked[openTl.videoid] ? (
                           <div className="rounded border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600 space-y-2">
                             <p>
-                              再生数の公平性を守るため、YouTubeで動画を開くまでTLを表示しない設定になっています。
+                              再生数の公平性を守るため、動画を開くまでTLを表示しない設定になっています。
                             </p>
                             <button
                               type="button"
@@ -1629,15 +1774,13 @@ export default function TLSearchPage() {
                                   ...prev,
                                   [openTl.videoid]: true,
                                 }))
-                                window.open(
-                                  `https://www.youtube.com/watch?v=${openTl.videoid}`,
-                                  '_blank',
-                                  'noopener,noreferrer'
-                                )
+                                if (openTlMeta?.url) {
+                                  window.open(openTlMeta.url, '_blank', 'noopener,noreferrer')
+                                }
                               }}
                               className="inline-flex items-center gap-2 rounded border border-blue-300 px-3 py-1 text-xs text-blue-700 hover:bg-blue-50"
                             >
-                              YouTubeで開く
+                              {openTlMeta?.label ?? '動画'}で開く
                             </button>
                           </div>
                         ) : tlJsonValue ? (

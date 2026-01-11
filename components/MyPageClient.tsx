@@ -1193,7 +1193,7 @@ export default function MyPageClient({
             }`}
             onClick={() => setActiveSection('youtube')}
           >
-            YouTube設定
+            YouTube/Bilibili設定
           </button>
           <button
             className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
@@ -1647,8 +1647,8 @@ export default function MyPageClient({
           >
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold">YouTube設定</h3>
-                <p className="text-sm text-gray-500">YouTube本人確認・チャンネル情報</p>
+                <h3 className="text-lg font-semibold">YouTube/Bilibili設定</h3>
+                <p className="text-sm text-gray-500">YouTube/Bilibili本人確認・チャンネル情報</p>
               </div>
             </div>
             <div className="space-y-3 text-sm">
@@ -1830,7 +1830,7 @@ export default function MyPageClient({
                   disabled={savingSocial}
                   className="inline-flex items-center justify-center rounded border border-blue-300 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
                 >
-                  {savingSocial ? '保存中...' : 'YouTube設定を保存'}
+                  {savingSocial ? '保存中...' : 'YouTube/Bilibili設定を保存'}
                 </button>
               </div>
             </div>
