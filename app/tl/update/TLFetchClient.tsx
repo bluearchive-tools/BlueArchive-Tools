@@ -13,6 +13,7 @@ export default function TLFetchClient() {
   const [seasons, setSeasons] = useState<Season[]>([])
   const [season, setSeason] = useState('')
   const [message, setMessage] = useState('')
+  const [logs, setLogs] = useState<string[]>([])
 
   useEffect(() => {
     const load = async () => {
@@ -31,16 +32,20 @@ export default function TLFetchClient() {
 
   const handleFetch = async () => {
     setMessage('取得中...')
+    setLogs([])
     try {
       const res = await fetch('/api/timelines', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ season }),
       })
+      const json = (await res.json()) as { logs?: string[] }
       if (res.ok) {
         setMessage('保存しました')
+        setLogs(Array.isArray(json.logs) ? json.logs : [])
       } else {
         setMessage('エラーが発生しました')
+        setLogs(Array.isArray(json.logs) ? json.logs : [])
       }
     } catch {
       setMessage('エラーが発生しました')
@@ -72,6 +77,18 @@ export default function TLFetchClient() {
         取得
       </button>
       {message && <p>{message}</p>}
+      {logs.length > 0 && (
+        <div className="rounded border border-gray-200 bg-gray-50 p-3 text-xs">
+          <p className="font-semibold mb-2">実行ログ</p>
+          <ul className="space-y-1">
+            {logs.map((log, index) => (
+              <li key={`${log}-${index}`} className="break-all">
+                {log}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </main>
   )
 }

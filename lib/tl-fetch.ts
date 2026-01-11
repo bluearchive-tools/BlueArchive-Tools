@@ -344,8 +344,12 @@ export async function upsertTimelines(params: {
   supabase: SupabaseClient
   seasons: TLSeason[]
   season?: string | null
+  log?: (message: string) => void
 }) {
-  const { supabase, seasons, season } = params
+  const { supabase, seasons, season, log } = params
+  const pushLog = (message: string) => {
+    if (log) log(message)
+  }
   let fullUsed = 0
   let fallbackUsed = 0
   let updated = 0
@@ -353,14 +357,18 @@ export async function upsertTimelines(params: {
   const targetSeasons = season
     ? seasons.filter((s) => s.number === season)
     : seasons
+  pushLog(`開始: 対象シーズン=${targetSeasons.map((s) => s.number).join(',') || 'なし'}`)
 
   const ytVideos = await fetchYouTubeVideos(targetSeasons)
+  pushLog(`YouTube検索結果: ${ytVideos.length}件`)
   const ytIds = ytVideos
     .map((v) => v.id?.videoId)
     .filter((v): v is string => Boolean(v))
   const ytSnippets = await fetchYouTubeSnippets(ytIds)
+  pushLog(`YouTube詳細スニペット取得: ${Object.keys(ytSnippets).length}件`)
 
   const biliVideos = await fetchBilibiliVideos(targetSeasons)
+  pushLog(`Bilibili検索結果: ${biliVideos.length}件`)
 
   const allVideoIds = [
     ...ytIds.map((id) => toStoredVideoId('youtube', id)),
@@ -377,6 +385,7 @@ export async function upsertTimelines(params: {
     for (const f of (flags || []) as Array<{ videoid: string; skip_update: boolean }>) {
       if (f?.videoid && f.skip_update) lockedVideoIds.add(f.videoid)
     }
+    pushLog(`更新保護: ${lockedVideoIds.size}件`)
   }
 
   for (const info of ytVideos) {
@@ -396,7 +405,10 @@ export async function upsertTimelines(params: {
       .eq('videoid', storedId)
       .maybeSingle()
 
-    if (exist && lockedVideoIds.has(storedId)) continue
+    if (exist && lockedVideoIds.has(storedId)) {
+      pushLog(`YouTube ${vid}: 更新保護のためスキップ`)
+      continue
+    }
 
     const text = `${snippet.title || ''}\n${snippet.description || ''}`
     const armor = extractArmor(text)
@@ -421,7 +433,10 @@ export async function upsertTimelines(params: {
 
     if (!exist) {
       const { error } = await supabase.from(table).insert(entry)
-      if (!error) updated++
+      if (!error) {
+        updated++
+        pushLog(`YouTube ${vid}: 追加 (season=${seasonNum ?? 'unknown'})`)
+      }
     } else {
       const update: Record<string, unknown> = {}
       if (exist.difficulty !== difficulty) update.difficulty = difficulty
@@ -444,14 +459,22 @@ export async function upsertTimelines(params: {
           .from(table)
           .update(update)
           .eq('id', exist.id)
-        if (!error) updated++
+        if (!error) {
+          updated++
+          pushLog(`YouTube ${vid}: 更新 (season=${seasonNum ?? 'unknown'})`)
+        }
+      } else {
+        pushLog(`YouTube ${vid}: 更新なし`)
       }
     }
   }
 
   for (const info of biliVideos) {
     const storedId = toStoredVideoId('bilibili', info.bvid)
-    if (lockedVideoIds.has(storedId)) continue
+    if (lockedVideoIds.has(storedId)) {
+      pushLog(`Bilibili ${info.bvid}: 更新保護のためスキップ`)
+      continue
+    }
 
     const snippet: Snippet = {
       title: info.title,
@@ -490,7 +513,10 @@ export async function upsertTimelines(params: {
 
     if (!exist) {
       const { error } = await supabase.from(table).insert(entry)
-      if (!error) updated++
+      if (!error) {
+        updated++
+        pushLog(`Bilibili ${info.bvid}: 追加 (season=${seasonNum ?? 'unknown'})`)
+      }
     } else {
       const update: Record<string, unknown> = {}
       if (exist.difficulty !== difficulty) update.difficulty = difficulty
@@ -513,10 +539,16 @@ export async function upsertTimelines(params: {
           .from(table)
           .update(update)
           .eq('id', exist.id)
-        if (!error) updated++
+        if (!error) {
+          updated++
+          pushLog(`Bilibili ${info.bvid}: 更新 (season=${seasonNum ?? 'unknown'})`)
+        }
+      } else {
+        pushLog(`Bilibili ${info.bvid}: 更新なし`)
       }
     }
   }
 
+  pushLog(`完了: 更新件数=${updated}`)
   return { fullUsed, fallbackUsed, updated }
 }

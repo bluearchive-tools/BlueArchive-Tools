@@ -146,13 +146,15 @@ try {
 
     await ensureTables(seasons)
 
+    const logs: string[] = []
     const result = await upsertTimelines({
       supabase,
       seasons,
       season,
+      log: (message) => logs.push(message),
     })
 
-    return NextResponse.json({ success: true, debug: result })
+    return NextResponse.json({ success: true, debug: result, logs })
   } catch {
     return NextResponse.json({ success: false }, { status: 500 })
   }
