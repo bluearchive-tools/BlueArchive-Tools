@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseRouteClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import fs from 'fs/promises'
 import path from 'path'
 import { Timeline } from '../../../types/timeline'
@@ -23,15 +24,15 @@ interface Season {
   defenseArmors?: string[]
 }
 
-async function ensureTables(seasons: Season[]) {
+async function ensureTables(client: SupabaseClient, seasons: Season[]) {
   // テーブルは事前に手動で作成する想定
   // 存在しない場合はエラーとせずスキップ
   for (const s of seasons) {
     const table = `tl_${s.number.toLowerCase()}`
-    const { error } = await supabase.from(table).select('id').limit(1)
+    const { error } = await client.from(table).select('id').limit(1)
     if (error) continue
   }
-  await supabase.from('tl_unknown').select('id').limit(1)
+  await client.from('tl_unknown').select('id').limit(1)
 }
 
 export async function GET(request: Request) {
@@ -46,7 +47,7 @@ export async function GET(request: Request) {
         ? seasons.filter((s) => selected.includes(s.number))
         : seasons
 
-    await ensureTables(targets)
+    await ensureTables(supabase, targets)
     const timelines: Record<string, unknown>[] = []
 
     for (const s of targets) {
@@ -148,14 +149,12 @@ try {
     const raid = JSON.parse(await fs.readFile(raidPath, 'utf-8'))
     const seasons: Season[] = raid.seasons
 
-    if (!supabaseAdmin) {
-      return NextResponse.json({ error: 'missing_service_role_key' }, { status: 500 })
-    }
-    await ensureTables(seasons)
+    const writer = supabaseAdmin ?? auth
+    await ensureTables(writer, seasons)
 
     const logs: string[] = []
     const result = await upsertTimelines({
-      supabase: supabaseAdmin,
+      supabase: writer,
       seasons,
       season,
       log: (message) => logs.push(message),
