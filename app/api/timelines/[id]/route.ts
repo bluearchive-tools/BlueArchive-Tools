@@ -14,6 +14,7 @@ export async function PUT(request: NextRequest) {
       guide,
       formationStatus,
       armor,
+      difficulty,
       formation,
     } = (await request.json()) as {
       season?: string
@@ -21,6 +22,7 @@ export async function PUT(request: NextRequest) {
       guide?: boolean
       formationStatus?: string
       armor?: string
+      difficulty?: string
       formation?: string
     }
     if (!season) {
@@ -34,6 +36,7 @@ export async function PUT(request: NextRequest) {
     if (formationStatus !== undefined)
       update.formation_status = formationStatus
     if (armor !== undefined) update.armor = armor
+    if (difficulty !== undefined) update.difficulty = difficulty
     if (formation !== undefined) update.formation = formation
     const { error } = await supabase
       .from(table)
