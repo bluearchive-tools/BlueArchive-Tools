@@ -279,6 +279,7 @@ export async function fetchYouTubeVideos(seasons: TLSeason[]): Promise<YouTubeVi
 
 type BilibiliKeywordConfig = {
   replacements: Record<string, string | string[]>
+  baseKeywords?: string[]
 }
 
 function normalizeReplacement(value: string | string[]): string[] {
@@ -287,9 +288,13 @@ function normalizeReplacement(value: string | string[]): string[] {
 
 function buildBilibiliQueries(
   terms: Array<string | undefined>,
-  replacements: Record<string, string | string[]>
+  replacements: Record<string, string | string[]>,
+  baseKeywords: string[]
 ): string[] {
   let queries = ['']
+  if (baseKeywords.length > 0) {
+    queries = baseKeywords.map((keyword) => keyword.trim()).filter((q) => q.length > 0)
+  }
   for (const term of terms) {
     if (!term) continue
     const mapped = replacements[term]
@@ -343,18 +348,21 @@ export async function fetchBilibiliVideos(seasons: TLSeason[]) {
   }> = []
   const seen = new Set<string>()
   let replacements: Record<string, string | string[]> = {}
+  let baseKeywords: string[] = []
   try {
     const configPath = path.join(process.cwd(), 'data', 'bilibili-keywords.json')
     const raw = await fs.readFile(configPath, 'utf-8')
     const parsed = JSON.parse(raw) as BilibiliKeywordConfig
     replacements = parsed?.replacements ?? {}
+    baseKeywords = parsed?.baseKeywords ?? []
   } catch {
     replacements = {}
+    baseKeywords = []
   }
   for (const s of seasons) {
     const armors = s.defenseArmors && s.defenseArmors.length > 0 ? s.defenseArmors : ['']
     for (const armor of armors) {
-      const queries = buildBilibiliQueries([s.boss, s.terrain, armor], replacements)
+      const queries = buildBilibiliQueries([s.boss, s.terrain, armor], replacements, baseKeywords)
       for (const query of queries) {
         const params = new URLSearchParams({
           search_type: 'video',
