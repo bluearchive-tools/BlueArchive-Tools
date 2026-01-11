@@ -210,7 +210,7 @@ export async function GET(request: Request) {
     biliAvatar: avatar,
   }
 
-  let nextLinks = [...currentLinks]
+  const nextLinks = [...currentLinks]
   if (typeof index === 'number' && nextLinks[index]) {
     nextLinks[index] = { ...nextLinks[index], ...nextLink }
   } else {
