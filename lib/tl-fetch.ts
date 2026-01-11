@@ -111,26 +111,6 @@ const getBossTerrainMap = async () => {
 const shouldIncludeArmor = (seasonNumber: string) =>
   !seasonNumber.toUpperCase().startsWith('S')
 
-type PendingStatus = 'pending' | 'approved' | 'rejected'
-
-type PendingVideoInput = {
-  videoid: string
-  platform: 'youtube' | 'bilibili'
-  title: string
-  description: string
-  publishedAt?: string
-  armor: string
-  difficulty: string
-  score: string
-  formation: string
-  guide: boolean
-  formationStatus: string
-  seasonGuess: string | null
-  seasonTarget?: string | null
-  reason: 'season_unknown' | 'season_mismatch'
-  raw?: Record<string, unknown>
-}
-
 export function guessSeason(snippet: Snippet, seasons: TLSeason[]): string | null {
   const { title = '', description = '', publishedAt } = snippet
   for (const s of seasons) {
@@ -486,36 +466,6 @@ export async function fetchBilibiliVideos(seasons: TLSeason[]) {
 
 export const toStoredVideoId = (platform: 'youtube' | 'bilibili', id: string) =>
   platform === 'bilibili' ? `bili:${id}` : id
-
-async function upsertPendingVideo(
-  supabase: SupabaseClient,
-  pending: PendingVideoInput
-) {
-  const payload = {
-    videoid: pending.videoid,
-    platform: pending.platform,
-    title: pending.title,
-    description: pending.description,
-    published_at: pending.publishedAt ?? null,
-    armor: pending.armor,
-    difficulty: pending.difficulty,
-    score: pending.score,
-    formation: pending.formation,
-    guide: pending.guide,
-    formation_status: pending.formationStatus,
-    season_guess: pending.seasonGuess,
-    season_target: pending.seasonTarget ?? null,
-    status: 'pending' satisfies PendingStatus,
-    reason: pending.reason,
-    raw: pending.raw ?? null,
-    updated_at: new Date().toISOString(),
-  }
-
-  const { error } = await supabase
-    .from('tl_pending_videos')
-    .upsert(payload, { onConflict: 'videoid' })
-  return error ?? null
-}
 
 export async function upsertTimelines(params: {
   supabase: SupabaseClient
