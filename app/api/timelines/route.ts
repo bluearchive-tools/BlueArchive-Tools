@@ -8,7 +8,11 @@ import { upsertTimelines } from '../../../lib/tl-fetch'
 
 const supabaseUrl = process.env.SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_ANON_KEY!
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 const supabase = createClient(supabaseUrl, supabaseKey)
+const supabaseAdmin = serviceRoleKey
+  ? createClient(supabaseUrl, serviceRoleKey)
+  : null
 
 interface Season {
   number: string
@@ -144,11 +148,14 @@ try {
     const raid = JSON.parse(await fs.readFile(raidPath, 'utf-8'))
     const seasons: Season[] = raid.seasons
 
+    if (!supabaseAdmin) {
+      return NextResponse.json({ error: 'missing_service_role_key' }, { status: 500 })
+    }
     await ensureTables(seasons)
 
     const logs: string[] = []
     const result = await upsertTimelines({
-      supabase,
+      supabase: supabaseAdmin,
       seasons,
       season,
       log: (message) => logs.push(message),
