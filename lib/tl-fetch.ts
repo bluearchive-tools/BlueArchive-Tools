@@ -124,16 +124,22 @@ export function guessSeason(snippet: Snippet, seasons: TLSeason[]): string | nul
 
 export function extractArmor(text: string): string {
   const matched: string[] = []
-  if (/爆発|軽装備/.test(text)) matched.push('軽装備')
+  if (/爆発|軽装備|轻装甲/.test(text)) matched.push('軽装備')
   if (/貫通|重装甲/.test(text)) matched.push('重装甲')
   if (/神秘|特殊装甲/.test(text)) matched.push('特殊装甲')
-  if (/振動|弾力装甲|弾力/.test(text)) matched.push('弾力装甲')
+  if (/振動|弾力装甲|弾力|弹力装甲/.test(text)) matched.push('弾力装甲')
   if (matched.length > 1) return '不明'
   return matched[0] || ''
 }
 
 export function extractDifficulty(text: string): string {
+  const upper = text.toUpperCase()
   const mapping: Record<string, string> = {
+    LUNA: 'Lunatic',
+    LU: 'Lunatic',
+    TMT: 'Torment',
+    TM: 'Torment',
+    INS: 'Insane',
     Lunatic: 'Lunatic',
     Torment: 'Torment',
     Insane: 'Insane',
@@ -146,7 +152,7 @@ export function extractDifficulty(text: string): string {
     ハードコア: 'Hardcore',
   }
   for (const [k, v] of Object.entries(mapping)) {
-    if (text.includes(k)) return v
+    if (upper.includes(k.toUpperCase())) return v
   }
   return ''
 }
@@ -249,26 +255,34 @@ export async function fetchYouTubeVideos(seasons: TLSeason[]): Promise<YouTubeVi
     'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&type=video&order=date'
   const results: YouTubeVideoItem[] = []
   const seen = new Set<string>()
-  const difficulties = ['Hardcore', 'Extreme', 'Insane', 'Torment', 'Lunatic']
+  const difficultyQueries = [
+    ['Hardcore'],
+    ['Extreme'],
+    ['Insane', 'INS'],
+    ['Torment', 'TMT', 'TM'],
+    ['Lunatic', 'LUNA', 'LU'],
+  ]
   for (const s of seasons) {
     const armors = s.defenseArmors && s.defenseArmors.length > 0 ? s.defenseArmors : ['']
     for (const armor of armors) {
-      for (const difficulty of difficulties) {
-        const query = `${s.boss} ${s.terrain} ${armor} ${difficulty}`.trim()
-        if (!query) continue
-        for (const key of apiKeys) {
-          const res = await fetch(`${base}&q=${encodeURIComponent(query)}&key=${key}`)
-          if (res.ok) {
-            const data = await res.json()
-            for (const item of data.items as YouTubeVideoItem[]) {
-              const vid = item?.id?.videoId
-              if (!vid) continue
-              if (!seen.has(vid)) {
-                seen.add(vid)
-                results.push(item)
+      for (const variants of difficultyQueries) {
+        for (const difficulty of variants) {
+          const query = `${s.boss} ${s.terrain} ${armor} ${difficulty}`.trim()
+          if (!query) continue
+          for (const key of apiKeys) {
+            const res = await fetch(`${base}&q=${encodeURIComponent(query)}&key=${key}`)
+            if (res.ok) {
+              const data = await res.json()
+              for (const item of data.items as YouTubeVideoItem[]) {
+                const vid = item?.id?.videoId
+                if (!vid) continue
+                if (!seen.has(vid)) {
+                  seen.add(vid)
+                  results.push(item)
+                }
               }
+              break
             }
-            break
           }
         }
       }
