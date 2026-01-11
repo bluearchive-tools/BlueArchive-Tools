@@ -622,10 +622,12 @@ export async function upsertTimelines(params: {
     }
     if (full) fullUsed++
     else fallbackUsed++
-    const seasonNum = guessSeason(snippet, seasons)
-    if (season && seasonNum !== season) {
-      pushLog(`YouTube ${vid}: シーズン不一致のためスキップ (detected=${seasonNum ?? 'unknown'})`)
-      continue
+    const guessedSeason = guessSeason(snippet, seasons)
+    const seasonNum = season ?? guessedSeason
+    if (season && guessedSeason !== season) {
+      pushLog(
+        `YouTube ${vid}: シーズン不一致のため対象シーズンに登録 (detected=${guessedSeason ?? 'unknown'})`
+      )
     }
     if (!seasonNum) {
       pushLog(`YouTube ${vid}: シーズン判定不能のためスキップ`)
@@ -714,10 +716,12 @@ export async function upsertTimelines(params: {
       pushLog(`Bilibili ${info.bvid}: シーズン開始日より古いため除外`)
       continue
     }
-    const seasonNum = guessSeason(snippet, seasons)
-    if (season && seasonNum !== season) {
-      pushLog(`Bilibili ${info.bvid}: シーズン不一致のためスキップ (detected=${seasonNum ?? 'unknown'})`)
-      continue
+    const guessedSeason = guessSeason(snippet, seasons)
+    const seasonNum = season ?? guessedSeason
+    if (season && guessedSeason !== season) {
+      pushLog(
+        `Bilibili ${info.bvid}: シーズン不一致のため対象シーズンに登録 (detected=${guessedSeason ?? 'unknown'})`
+      )
     }
     if (!seasonNum) {
       pushLog(`Bilibili ${info.bvid}: シーズン判定不能のためスキップ`)
