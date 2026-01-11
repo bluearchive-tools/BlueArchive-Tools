@@ -68,6 +68,15 @@ const socialValueToUrl = (service: string, value: string) => {
     const handle = trimmed.startsWith('@') ? trimmed.slice(1) : trimmed
     return `https://x.com/${handle}`
   }
+  if (service === 'bilibili') {
+    if (/^(\d{4,})$/.test(trimmed)) {
+      return `https://space.bilibili.com/${trimmed}`
+    }
+    if (trimmed.includes('bilibili.com') || trimmed.includes('b23.tv')) {
+      return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+    }
+    return null
+  }
   if (/\.[a-z]{2,}/i.test(trimmed)) {
     return `https://${trimmed}`
   }

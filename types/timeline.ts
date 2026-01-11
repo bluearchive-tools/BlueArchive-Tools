@@ -3,6 +3,7 @@ export interface Timeline {
   armor: string
   difficulty: string
   videoid: string
+  platform?: 'youtube' | 'bilibili'
   score: string
   formation: string
   guide?: boolean
@@ -11,4 +12,5 @@ export interface Timeline {
   description: string
   publishedAt?: string
   season?: string
+  thumbnail?: string
 }

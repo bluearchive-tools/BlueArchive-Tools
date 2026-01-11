@@ -3,7 +3,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse } from 'next/server'
 
 // Type definitions for logic reproduction
-type SocialService = 'x' | 'youtube' | 'other'
+type SocialService = 'x' | 'youtube' | 'bilibili' | 'other'
 type SocialLink = {
   service: SocialService
   label: string
@@ -17,11 +17,15 @@ type SocialLink = {
   xUserId?: string | null
   xUsername?: string | null
   xName?: string | null
+  biliUid?: string | null
+  biliName?: string | null
+  biliAvatar?: string | null
 }
 
 const socialLabel = (service: SocialService, customLabel: string) => {
   if (service === 'x') return 'X'
   if (service === 'youtube') return 'YouTube'
+  if (service === 'bilibili') return 'Bilibili'
   return customLabel.trim() || 'その他'
 }
 
@@ -48,6 +52,9 @@ const serializeSocialLinksForSave = (links: SocialLink[]) => {
       xUserId: link.xUserId ?? null,
       xUsername: link.xUsername ?? null,
       xName: link.xName ?? null,
+      biliUid: link.biliUid ?? null,
+      biliName: link.biliName ?? null,
+      biliAvatar: link.biliAvatar ?? null,
     }
   })
   return mapped.filter((x) => x !== null)
