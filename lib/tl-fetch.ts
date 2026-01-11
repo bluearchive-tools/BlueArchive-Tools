@@ -606,6 +606,8 @@ export async function upsertTimelines(params: {
       if (!error) {
         updated++
         pushLog(`YouTube ${vid}: 追加 (season=${seasonNum ?? 'unknown'})`)
+      } else {
+        pushLog(`YouTube ${vid}: 追加失敗 (${error.message ?? 'unknown'})`)
       }
     } else {
       const update: Record<string, unknown> = {}
@@ -634,6 +636,8 @@ export async function upsertTimelines(params: {
         if (!error) {
           updated++
           pushLog(`YouTube ${vid}: 更新 (season=${seasonNum ?? 'unknown'})`)
+        } else {
+          pushLog(`YouTube ${vid}: 更新失敗 (${error.message ?? 'unknown'})`)
         }
       } else {
         pushLog(`YouTube ${vid}: 更新なし`)
@@ -706,6 +710,8 @@ export async function upsertTimelines(params: {
       if (!error) {
         updated++
         pushLog(`Bilibili ${info.bvid}: 追加 (season=${seasonNum ?? 'unknown'})`)
+      } else {
+        pushLog(`Bilibili ${info.bvid}: 追加失敗 (${error.message ?? 'unknown'})`)
       }
     } else {
       const update: Record<string, unknown> = {}
@@ -734,6 +740,8 @@ export async function upsertTimelines(params: {
         if (!error) {
           updated++
           pushLog(`Bilibili ${info.bvid}: 更新 (season=${seasonNum ?? 'unknown'})`)
+        } else {
+          pushLog(`Bilibili ${info.bvid}: 更新失敗 (${error.message ?? 'unknown'})`)
         }
       } else {
         pushLog(`Bilibili ${info.bvid}: 更新なし`)
