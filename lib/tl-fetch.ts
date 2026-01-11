@@ -527,45 +527,10 @@ export async function upsertTimelines(params: {
   const pushLog = (message: string) => {
     if (log) log(message)
   }
-  const upsertPendingFromSnippet = async (
-    platform: 'youtube' | 'bilibili',
-    storedId: string,
-    snippet: Snippet,
-    seasonNum: string | null,
-    reason: 'season_unknown' | 'season_mismatch',
-    raw?: Record<string, unknown>,
-    seasonTarget?: string | null
-  ) => {
-    const text = `${snippet.title || ''}\n${snippet.description || ''}`
-    const formation = await extractFormation(supabase, text)
-    const score = extractScore(text)
-    const error = await upsertPendingVideo(supabase, {
-      videoid: storedId,
-      platform,
-      title: snippet.title || '',
-      description: snippet.description || '',
-      publishedAt: snippet.publishedAt,
-      armor: extractArmor(text),
-      difficulty: normalizeDifficulty(text, score),
-      score,
-      formation,
-      guide: extractGuide(text),
-      formationStatus: formation && formation !== '[]' ? 'auto' : 'none',
-      seasonGuess: seasonNum,
-      seasonTarget,
-      reason,
-      raw,
-    })
-    if (error) {
-      pushLog(
-        `保留登録に失敗: ${platform} ${storedId} (${reason}) ${error.message ?? 'unknown'}`
-      )
-    }
-  }
   let fullUsed = 0
   let fallbackUsed = 0
   let updated = 0
-  let pending = 0
+  const pending = 0
 
   const targetSeasons = season
     ? seasons.filter((s) => s.number === season)
