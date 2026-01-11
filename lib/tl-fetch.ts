@@ -134,27 +134,48 @@ export function extractArmor(text: string): string {
 
 export function extractDifficulty(text: string): string {
   const upper = text.toUpperCase()
-  const mapping: Record<string, string> = {
-    LUNA: 'Lunatic',
-    LU: 'Lunatic',
-    TMT: 'Torment',
-    TM: 'Torment',
-    INS: 'Insane',
-    Lunatic: 'Lunatic',
-    Torment: 'Torment',
-    Insane: 'Insane',
-    Extreme: 'Extreme',
-    Hardcore: 'Hardcore',
-    ルナティック: 'Lunatic',
-    トーメント: 'Torment',
-    インセイン: 'Insane',
-    エクストリーム: 'Extreme',
-    ハードコア: 'Hardcore',
-  }
-  for (const [k, v] of Object.entries(mapping)) {
-    if (upper.includes(k.toUpperCase())) return v
+  const mapping: Array<[RegExp, string]> = [
+    [/\bLUNA\b|\bLU\b/, 'Lunatic'],
+    [/\bTMT\b|\bTM\b/, 'Torment'],
+    [/\bINS\b/, 'Insane'],
+    [/\bLUNATIC\b/, 'Lunatic'],
+    [/\bTORMENT\b/, 'Torment'],
+    [/\bINSANE\b/, 'Insane'],
+    [/\bEXTREME\b/, 'Extreme'],
+    [/\bHARDCORE\b/, 'Hardcore'],
+    [/ルナティック/, 'Lunatic'],
+    [/トーメント/, 'Torment'],
+    [/インセイン/, 'Insane'],
+    [/エクストリーム/, 'Extreme'],
+    [/ハードコア/, 'Hardcore'],
+  ]
+  for (const [pattern, value] of mapping) {
+    if (pattern.test(upper)) return value
   }
   return ''
+}
+
+const MIN_LUNATIC_SCORE = 40400000
+
+function normalizeDifficulty(text: string, score: string): string {
+  const detected = extractDifficulty(text)
+  if (detected === 'Lunatic') {
+    const num = parseInt(score || '0')
+    if (!Number.isNaN(num) && num > 0 && num < MIN_LUNATIC_SCORE) {
+      return ''
+    }
+  }
+  return detected
+}
+
+function isTooEarlyForSeason(snippet: Snippet, seasonStart?: string): boolean {
+  if (!seasonStart || !snippet.publishedAt) return false
+  const publishedAt = new Date(snippet.publishedAt)
+  if (Number.isNaN(publishedAt.getTime())) return false
+  const startDate = new Date(seasonStart)
+  if (Number.isNaN(startDate.getTime())) return false
+  const cutoff = new Date(startDate.getTime() - 24 * 60 * 60 * 1000)
+  return publishedAt < cutoff
 }
 
 export function extractScore(text: string): string {
@@ -471,6 +492,7 @@ export async function upsertTimelines(params: {
   ) => {
     const text = `${snippet.title || ''}\n${snippet.description || ''}`
     const formation = await extractFormation(supabase, text)
+    const score = extractScore(text)
     const error = await upsertPendingVideo(supabase, {
       videoid: storedId,
       platform,
@@ -478,8 +500,8 @@ export async function upsertTimelines(params: {
       description: snippet.description || '',
       publishedAt: snippet.publishedAt,
       armor: extractArmor(text),
-      difficulty: extractDifficulty(text),
-      score: extractScore(text),
+      difficulty: normalizeDifficulty(text, score),
+      score,
       formation,
       guide: extractGuide(text),
       formationStatus: formation && formation !== '[]' ? 'auto' : 'none',
@@ -503,6 +525,10 @@ export async function upsertTimelines(params: {
     ? seasons.filter((s) => s.number === season)
     : seasons
   pushLog(`開始: 対象シーズン=${targetSeasons.map((s) => s.number).join(',') || 'なし'}`)
+  const seasonStartMap = new Map<string, string>()
+  for (const s of seasons) {
+    seasonStartMap.set(s.number, s.startDate)
+  }
 
   const ytVideos = await fetchYouTubeVideos(targetSeasons)
   pushLog(`YouTube検索結果: ${ytVideos.length}件`)
@@ -539,6 +565,11 @@ export async function upsertTimelines(params: {
     const storedId = toStoredVideoId('youtube', vid)
     const full = ytSnippets[vid]
     const snippet = full || info.snippet
+    const targetSeasonStart = season ? seasonStartMap.get(season) : undefined
+    if (isTooEarlyForSeason(snippet, targetSeasonStart)) {
+      pushLog(`YouTube ${vid}: シーズン開始日より古いため除外`)
+      continue
+    }
     if (full) fullUsed++
     else fallbackUsed++
     const seasonNum = guessSeason(snippet, seasons)
@@ -584,8 +615,8 @@ export async function upsertTimelines(params: {
 
     const text = `${snippet.title || ''}\n${snippet.description || ''}`
     const armor = extractArmor(text)
-    const difficulty = extractDifficulty(text)
     const score = extractScore(text)
+    const difficulty = normalizeDifficulty(text, score)
     const formation = await extractFormation(supabase, text)
     const guide = extractGuide(text)
     const formationStatus =
@@ -648,6 +679,11 @@ export async function upsertTimelines(params: {
       description: info.description,
       publishedAt: info.publishedAt,
     }
+    const targetSeasonStart = season ? seasonStartMap.get(season) : undefined
+    if (isTooEarlyForSeason(snippet, targetSeasonStart)) {
+      pushLog(`Bilibili ${info.bvid}: シーズン開始日より古いため除外`)
+      continue
+    }
     const seasonNum = guessSeason(snippet, seasons)
     if (season && seasonNum !== season) {
       const reason = seasonNum ? 'season_mismatch' : 'season_unknown'
@@ -691,8 +727,8 @@ export async function upsertTimelines(params: {
 
     const text = `${snippet.title || ''}\n${snippet.description || ''}`
     const armor = extractArmor(text)
-    const difficulty = extractDifficulty(text)
     const score = extractScore(text)
+    const difficulty = normalizeDifficulty(text, score)
     const formation = await extractFormation(supabase, text)
     const guide = extractGuide(text)
     const formationStatus =
