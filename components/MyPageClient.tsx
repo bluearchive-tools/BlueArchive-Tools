@@ -54,6 +54,9 @@ type SocialLink = {
   xUserId?: string | null
   xUsername?: string | null
   xName?: string | null
+  biliUid?: string | null
+  biliName?: string | null
+  biliAvatar?: string | null
 }
 
 type TlDefaultSettings = {
@@ -148,6 +151,9 @@ type SerializedSocialLink = {
   xUserId: string | null
   xUsername: string | null
   xName: string | null
+  biliUid: string | null
+  biliName: string | null
+  biliAvatar: string | null
 }
 
 /**
@@ -181,6 +187,9 @@ const serializeSocialLinksForSave = (links: SocialLink[]): SerializedSocialLink[
       xUserId: link.xUserId ?? null,
       xUsername: link.xUsername ?? null,
       xName: link.xName ?? null,
+      biliUid: link.biliUid ?? null,
+      biliName: link.biliName ?? null,
+      biliAvatar: link.biliAvatar ?? null,
     } satisfies SerializedSocialLink
   })
 
@@ -208,7 +217,10 @@ const mergeVerifiedSocialLinks = (
 ): SerializedSocialLink[] => {
   const hasService = new Set(current.map((link) => link.service))
   const missingVerified = existing.filter(
-    (link) => link.verified && (link.service === 'youtube' || link.service === 'x') && !hasService.has(link.service)
+    (link) =>
+      link.verified &&
+      (link.service === 'youtube' || link.service === 'x' || link.service === 'bilibili') &&
+      !hasService.has(link.service)
   )
   if (missingVerified.length === 0) return current
   return [...current, ...missingVerified]
@@ -278,6 +290,9 @@ export default function MyPageClient({
               const xUserId = typeof r?.xUserId === 'string' ? (r.xUserId as string) : null
               const xUsername = typeof r?.xUsername === 'string' ? (r.xUsername as string) : null
               const xName = typeof r?.xName === 'string' ? (r.xName as string) : null
+              const biliUid = typeof r?.biliUid === 'string' ? (r.biliUid as string) : null
+              const biliName = typeof r?.biliName === 'string' ? (r.biliName as string) : null
+              const biliAvatar = typeof r?.biliAvatar === 'string' ? (r.biliAvatar as string) : null
 
               return {
                 service,
@@ -292,6 +307,9 @@ export default function MyPageClient({
                 xUserId,
                 xUsername,
                 xName,
+                biliUid,
+                biliName,
+                biliAvatar,
               } satisfies SocialLink
             })
             .filter((item) =>
@@ -643,6 +661,16 @@ export default function MyPageClient({
     }
   }
 
+  const startBilibiliVerify = (index: number) => {
+    const link = socialLinks[index]
+    if (!link || link.service !== 'bilibili') return
+    setMessage(null)
+    setBusy(true)
+    if (typeof window !== 'undefined') {
+      window.location.assign(`/auth/bilibili/start?index=${index}`)
+    }
+  }
+
   const extractYouTubeTarget = (
 
     raw: string
@@ -908,6 +936,44 @@ export default function MyPageClient({
       return
     }
     setMessage('X 認証を解除しました')
+  }
+
+  const clearBilibiliVerification = async (index: number) => {
+    const link = socialLinks[index]
+    if (!link || link.service !== 'bilibili') return
+
+    const nextLinks: SocialLink[] = socialLinks.map((l, i) =>
+      i === index
+        ? {
+          ...l,
+          verified: false,
+          verifiedAt: null,
+          biliUid: null,
+          biliName: null,
+          biliAvatar: null,
+        }
+        : l
+    )
+
+    setSocialLinks(nextLinks)
+
+    const userId = await resolveUserId()
+    if (!userId) {
+      setMessage('ユーザー情報を取得できませんでした。再ログインしてお試しください。')
+      return
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ social_links: serializeSocialLinksForSave(nextLinks) })
+      .eq('id', userId)
+
+    if (error) {
+      console.error(error.message)
+      setMessage(`解除に失敗しました: ${error.message}`)
+      return
+    }
+    setMessage('Bilibili 認証を解除しました')
   }
 
   useEffect(() => {
@@ -1415,7 +1481,7 @@ export default function MyPageClient({
                     </button>
                   </div>
 
-                  {(link.service === 'youtube' || link.service === 'x') && (
+                  {(link.service === 'youtube' || link.service === 'x' || link.service === 'bilibili') && (
                     <div className="rounded border border-gray-200 bg-gray-50 p-2 text-sm">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="text-gray-700">
@@ -1425,9 +1491,11 @@ export default function MyPageClient({
                               <span>認証済み:</span>{' '}
                               {link.service === 'youtube'
                                 ? link.channelTitle || link.channelHandle || link.channelId || 'YouTube'
-                                : link.xUsername
-                                  ? `@${link.xUsername}`
-                                  : link.value || 'X'}
+                                : link.service === 'x'
+                                  ? link.xUsername
+                                    ? `@${link.xUsername}`
+                                    : link.value || 'X'
+                                  : link.biliName || link.biliUid || link.value || 'Bilibili'}
                             </span>
                           ) : (
                             <span>未認証（このアカウントの所有者確認）</span>
@@ -1440,7 +1508,11 @@ export default function MyPageClient({
                           <button
                             type="button"
                             onClick={() =>
-                              link.service === 'youtube' ? verifyYouTubeAtIndex(idx) : startXVerify(idx)
+                              link.service === 'youtube'
+                                ? verifyYouTubeAtIndex(idx)
+                                : link.service === 'x'
+                                  ? startXVerify(idx)
+                                  : startBilibiliVerify(idx)
                             }
                             disabled={link.service === 'x' || busy}
                             className="rounded border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-gray-100 disabled:opacity-60"
@@ -1450,7 +1522,11 @@ export default function MyPageClient({
                           <button
                             type="button"
                             onClick={() =>
-                              link.service === 'youtube' ? startYouTubeVerify(idx) : startXVerify(idx)
+                              link.service === 'youtube'
+                                ? startYouTubeVerify(idx)
+                                : link.service === 'x'
+                                  ? startXVerify(idx)
+                                  : startBilibiliVerify(idx)
                             }
                             disabled={link.service === 'x' || busy}
                             className="rounded border border-blue-300 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
@@ -1459,7 +1535,9 @@ export default function MyPageClient({
                               ? `${isXLinked ? '接続先を変更する' : '接続する'}（開発中）`
                               : isGoogleLinked
                                 ? '接続先を変更する'
-                                : '接続する'}
+                                : link.service === 'bilibili'
+                                  ? '接続する'
+                                  : '接続する'}
                           </button>
                           {link.verified && (
                             <button
@@ -1467,7 +1545,9 @@ export default function MyPageClient({
                               onClick={() =>
                                 link.service === 'youtube'
                                   ? clearYouTubeVerification(idx)
-                                  : clearXVerification(idx)
+                                  : link.service === 'x'
+                                    ? clearXVerification(idx)
+                                    : clearBilibiliVerification(idx)
                               }
                               disabled={link.service === 'x' || busy}
                               className="rounded border border-red-300 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
@@ -1481,9 +1561,13 @@ export default function MyPageClient({
                         <p className="mt-1 text-xs text-gray-500">
                           ブランドアカウントでもOKです。確認時は「このYouTubeチャンネル」として許可してください。
                         </p>
-                      ) : (
+                      ) : link.service === 'x' ? (
                         <p className="mt-1 text-xs text-gray-500">
                           X OAuth 画面で承認したアカウントと、入力したハンドルが一致していることを確認します。
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-xs text-gray-500">
+                          Bilibili OAuth で認証したアカウント情報を保存します。
                         </p>
                       )}
                     </div>

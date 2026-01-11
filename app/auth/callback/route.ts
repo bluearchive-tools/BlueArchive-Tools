@@ -17,6 +17,9 @@ type SocialLink = {
   xUserId?: string | null
   xUsername?: string | null
   xName?: string | null
+  biliUid?: string | null
+  biliName?: string | null
+  biliAvatar?: string | null
 }
 
 const socialLabel = (service: SocialService, customLabel: string) => {
@@ -49,6 +52,9 @@ const serializeSocialLinksForSave = (links: SocialLink[]) => {
       xUserId: link.xUserId ?? null,
       xUsername: link.xUsername ?? null,
       xName: link.xName ?? null,
+      biliUid: link.biliUid ?? null,
+      biliName: link.biliName ?? null,
+      biliAvatar: link.biliAvatar ?? null,
     }
   })
   return mapped.filter((x) => x !== null)
