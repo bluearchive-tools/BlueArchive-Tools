@@ -249,28 +249,56 @@ export async function fetchYouTubeVideos(seasons: TLSeason[]): Promise<YouTubeVi
     'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&type=video&order=date'
   const results: YouTubeVideoItem[] = []
   const seen = new Set<string>()
+  const difficulties = ['Hardcore', 'Extreme', 'Insane', 'Torment', 'Lunatic']
   for (const s of seasons) {
     const armors = s.defenseArmors && s.defenseArmors.length > 0 ? s.defenseArmors : ['']
     for (const armor of armors) {
-      const query = `${s.boss} ${s.terrain} ${armor}`.trim()
-      for (const key of apiKeys) {
-        const res = await fetch(`${base}&q=${encodeURIComponent(query)}&key=${key}`)
-        if (res.ok) {
-          const data = await res.json()
-          for (const item of data.items as YouTubeVideoItem[]) {
-            const vid = item?.id?.videoId
-            if (!vid) continue
-            if (!seen.has(vid)) {
-              seen.add(vid)
-              results.push(item)
+      for (const difficulty of difficulties) {
+        const query = `${s.boss} ${s.terrain} ${armor} ${difficulty}`.trim()
+        if (!query) continue
+        for (const key of apiKeys) {
+          const res = await fetch(`${base}&q=${encodeURIComponent(query)}&key=${key}`)
+          if (res.ok) {
+            const data = await res.json()
+            for (const item of data.items as YouTubeVideoItem[]) {
+              const vid = item?.id?.videoId
+              if (!vid) continue
+              if (!seen.has(vid)) {
+                seen.add(vid)
+                results.push(item)
+              }
             }
+            break
           }
-          break
         }
       }
     }
   }
   return results
+}
+
+type BilibiliKeywordConfig = {
+  replacements: Record<string, string | string[]>
+}
+
+function normalizeReplacement(value: string | string[]): string[] {
+  return Array.isArray(value) ? value.filter((item) => item.trim().length > 0) : [value]
+}
+
+function buildBilibiliQueries(
+  terms: Array<string | undefined>,
+  replacements: Record<string, string | string[]>
+): string[] {
+  let queries = ['']
+  for (const term of terms) {
+    if (!term) continue
+    const mapped = replacements[term]
+    const variants = mapped ? normalizeReplacement(mapped) : [term]
+    queries = queries.flatMap((prefix) =>
+      variants.map((variant) => (prefix ? `${prefix} ${variant}` : variant).trim())
+    )
+  }
+  return queries.filter((q) => q.length > 0)
 }
 
 export async function fetchYouTubeSnippets(videoIds: string[]): Promise<Record<string, Snippet>> {
@@ -314,43 +342,53 @@ export async function fetchBilibiliVideos(seasons: TLSeason[]) {
     thumbnail?: string
   }> = []
   const seen = new Set<string>()
+  let replacements: Record<string, string | string[]> = {}
+  try {
+    const configPath = path.join(process.cwd(), 'data', 'bilibili-keywords.json')
+    const raw = await fs.readFile(configPath, 'utf-8')
+    const parsed = JSON.parse(raw) as BilibiliKeywordConfig
+    replacements = parsed?.replacements ?? {}
+  } catch {
+    replacements = {}
+  }
   for (const s of seasons) {
     const armors = s.defenseArmors && s.defenseArmors.length > 0 ? s.defenseArmors : ['']
     for (const armor of armors) {
-      const query = `${s.boss} ${s.terrain} ${armor}`.trim()
-      if (!query) continue
-      const params = new URLSearchParams({
-        search_type: 'video',
-        keyword: query,
-        order: 'pubdate',
-        page: '1',
-        page_size: '50',
-      })
-      const res = await fetch(`https://api.bilibili.com/x/web-interface/search/type?${params}`)
-      if (!res.ok) continue
-      const json = (await res.json()) as {
-        data?: {
-          result?: Array<{
-            bvid?: string
-            title?: string
-            description?: string
-            pubdate?: number
-            pic?: string
-          }>
-        }
-      }
-      const items = json.data?.result ?? []
-      for (const item of items) {
-        if (!item?.bvid) continue
-        if (seen.has(item.bvid)) continue
-        seen.add(item.bvid)
-        results.push({
-          bvid: item.bvid,
-          title: stripHtml(item.title ?? ''),
-          description: stripHtml(item.description ?? ''),
-          publishedAt: item.pubdate ? new Date(item.pubdate * 1000).toISOString() : undefined,
-          thumbnail: item.pic ? (item.pic.startsWith('//') ? `https:${item.pic}` : item.pic) : undefined,
+      const queries = buildBilibiliQueries([s.boss, s.terrain, armor], replacements)
+      for (const query of queries) {
+        const params = new URLSearchParams({
+          search_type: 'video',
+          keyword: query,
+          order: 'pubdate',
+          page: '1',
+          page_size: '50',
         })
+        const res = await fetch(`https://api.bilibili.com/x/web-interface/search/type?${params}`)
+        if (!res.ok) continue
+        const json = (await res.json()) as {
+          data?: {
+            result?: Array<{
+              bvid?: string
+              title?: string
+              description?: string
+              pubdate?: number
+              pic?: string
+            }>
+          }
+        }
+        const items = json.data?.result ?? []
+        for (const item of items) {
+          if (!item?.bvid) continue
+          if (seen.has(item.bvid)) continue
+          seen.add(item.bvid)
+          results.push({
+            bvid: item.bvid,
+            title: stripHtml(item.title ?? ''),
+            description: stripHtml(item.description ?? ''),
+            publishedAt: item.pubdate ? new Date(item.pubdate * 1000).toISOString() : undefined,
+            thumbnail: item.pic ? (item.pic.startsWith('//') ? `https:${item.pic}` : item.pic) : undefined,
+          })
+        }
       }
     }
   }
