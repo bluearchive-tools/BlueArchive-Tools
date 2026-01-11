@@ -94,6 +94,7 @@ export async function GET(request: Request) {
         description?: string
         publishedAt?: string
         season?: string
+        thumbnail?: string | null
       }
       const formationVal = raw.formation || '[]'
       const isBilibili = raw.videoid.startsWith('bili:')
@@ -113,6 +114,7 @@ export async function GET(request: Request) {
         description: raw.description || '',
         publishedAt: raw.publishedAt,
         season: raw.season,
+        thumbnail: raw.thumbnail || undefined,
       }
     })
 

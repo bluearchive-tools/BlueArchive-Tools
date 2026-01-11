@@ -1145,6 +1145,7 @@ export default function TLSearchPage() {
   })
 
   const openTlMeta = openTl ? getVideoMeta(openTl.videoid, openTl.thumbnail) : null
+  const editTlMeta = editTl ? getVideoMeta(editTl.videoid, editTl.thumbnail) : null
   const openTlThumbnail =
     openTlMeta?.platform === 'youtube'
       ? `https://i.ytimg.com/vi/${openTlMeta.id}/hqdefault.jpg`
@@ -2109,6 +2110,29 @@ export default function TLSearchPage() {
             className="bg-white p-4 rounded w-full max-w-lg space-y-3 text-sm"
             onClick={(e) => e.stopPropagation()}
           >
+            {editTlMeta && (
+              <div className="flex items-center gap-3">
+                {editTlMeta.thumbnail ? (
+                  <img
+                    src={editTlMeta.thumbnail}
+                    alt={`${editTlMeta.label} thumbnail`}
+                    className="h-20 w-36 rounded object-cover"
+                  />
+                ) : (
+                  <div className="h-20 w-36 rounded bg-gray-100 text-xs text-gray-500 flex items-center justify-center text-center px-2">
+                    {editTlMeta.label} thumbnail unavailable
+                  </div>
+                )}
+                <a
+                  href={editTlMeta.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-blue-600 underline text-xs"
+                >
+                  {editTlMeta.label}で開く
+                </a>
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <label className="block">
                 スコア

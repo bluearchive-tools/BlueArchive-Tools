@@ -15,6 +15,10 @@ interface Snippet {
   title?: string
   description?: string
   publishedAt?: string
+  thumbnails?: {
+    medium?: { url?: string }
+    default?: { url?: string }
+  }
 }
 
 interface YouTubeVideoItem {
@@ -563,6 +567,7 @@ export async function upsertTimelines(params: {
     const armor =
       seasonNum.startsWith('S') ? seasonArmorMap.get(seasonNum) ?? '' : extractArmor(text)
     const score = extractScore(text)
+    const thumbnail = snippet.thumbnails?.medium?.url ?? snippet.thumbnails?.default?.url ?? null
     const difficulty = normalizeDifficulty(text, score)
     const formation = await extractFormation(supabase, text)
     const guide = extractGuide(text)
@@ -579,6 +584,7 @@ export async function upsertTimelines(params: {
       title: snippet.title || '',
       description: snippet.description || '',
       publishedAt: snippet.publishedAt,
+      thumbnail,
     }
 
     if (!exist) {
@@ -597,6 +603,8 @@ export async function upsertTimelines(params: {
         update.description = entry.description
       if (exist.publishedAt !== entry.publishedAt)
         update.publishedAt = entry.publishedAt
+      if (exist.thumbnail !== entry.thumbnail)
+        update.thumbnail = entry.thumbnail
       if (
         exist.formation_status !== 'manual' &&
         exist.formation !== formation
@@ -657,6 +665,7 @@ export async function upsertTimelines(params: {
     const armor =
       seasonNum.startsWith('S') ? seasonArmorMap.get(seasonNum) ?? '' : extractArmor(text)
     const score = extractScore(text)
+    const thumbnail = info.thumbnail ?? null
     const difficulty = normalizeDifficulty(text, score)
     const formation = await extractFormation(supabase, text)
     const guide = extractGuide(text)
@@ -673,6 +682,7 @@ export async function upsertTimelines(params: {
       title: snippet.title || '',
       description: snippet.description || '',
       publishedAt: snippet.publishedAt,
+      thumbnail,
     }
 
     if (!exist) {
@@ -691,6 +701,8 @@ export async function upsertTimelines(params: {
         update.description = entry.description
       if (exist.publishedAt !== entry.publishedAt)
         update.publishedAt = entry.publishedAt
+      if (exist.thumbnail !== entry.thumbnail)
+        update.thumbnail = entry.thumbnail
       if (
         exist.formation_status !== 'manual' &&
         exist.formation !== formation
