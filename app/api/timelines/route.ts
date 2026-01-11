@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseRouteClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import fs from 'fs/promises'
 import path from 'path'
 import { Timeline } from '../../../types/timeline'
@@ -8,7 +9,11 @@ import { upsertTimelines } from '../../../lib/tl-fetch'
 
 const supabaseUrl = process.env.SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_ANON_KEY!
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 const supabase = createClient(supabaseUrl, supabaseKey)
+const supabaseAdmin = serviceRoleKey
+  ? createClient(supabaseUrl, serviceRoleKey)
+  : null
 
 interface Season {
   number: string
@@ -19,15 +24,15 @@ interface Season {
   defenseArmors?: string[]
 }
 
-async function ensureTables(seasons: Season[]) {
+async function ensureTables(client: SupabaseClient, seasons: Season[]) {
   // テーブルは事前に手動で作成する想定
   // 存在しない場合はエラーとせずスキップ
   for (const s of seasons) {
     const table = `tl_${s.number.toLowerCase()}`
-    const { error } = await supabase.from(table).select('id').limit(1)
+    const { error } = await client.from(table).select('id').limit(1)
     if (error) continue
   }
-  await supabase.from('tl_unknown').select('id').limit(1)
+  await client.from('tl_unknown').select('id').limit(1)
 }
 
 export async function GET(request: Request) {
@@ -42,7 +47,7 @@ export async function GET(request: Request) {
         ? seasons.filter((s) => selected.includes(s.number))
         : seasons
 
-    await ensureTables(targets)
+    await ensureTables(supabase, targets)
     const timelines: Record<string, unknown>[] = []
 
     for (const s of targets) {
@@ -139,16 +144,47 @@ if (pErr || !profile?.admin) {
 }
 
 try {
+    const url = new URL(request.url)
+    const shouldStream = url.searchParams.get('stream') === '1'
     const { season } = await request.json()
     const raidPath = path.join(process.cwd(), 'data', 'raid.json')
     const raid = JSON.parse(await fs.readFile(raidPath, 'utf-8'))
     const seasons: Season[] = raid.seasons
 
-    await ensureTables(seasons)
+    const writer = supabaseAdmin ?? auth
+    await ensureTables(writer, seasons)
+
+    if (shouldStream) {
+      const encoder = new TextEncoder()
+      const stream = new ReadableStream({
+        async start(controller) {
+          const push = (payload: unknown) => {
+            controller.enqueue(encoder.encode(`${JSON.stringify(payload)}\n`))
+          }
+          try {
+            const result = await upsertTimelines({
+              supabase: writer,
+              seasons,
+              season,
+              log: (message) => push({ type: 'log', message }),
+            })
+            push({ type: 'done', success: true, debug: result })
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'unknown'
+            push({ type: 'done', success: false, error: message })
+          } finally {
+            controller.close()
+          }
+        },
+      })
+      return new Response(stream, {
+        headers: { 'Content-Type': 'application/x-ndjson; charset=utf-8' },
+      })
+    }
 
     const logs: string[] = []
     const result = await upsertTimelines({
-      supabase,
+      supabase: writer,
       seasons,
       season,
       log: (message) => logs.push(message),

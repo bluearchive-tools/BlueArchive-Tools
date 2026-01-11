@@ -93,6 +93,7 @@ type PendingVideoInput = {
   guide: boolean
   formationStatus: string
   seasonGuess: string | null
+  seasonTarget?: string | null
   reason: 'season_unknown' | 'season_mismatch'
   raw?: Record<string, unknown>
 }
@@ -123,31 +124,58 @@ export function guessSeason(snippet: Snippet, seasons: TLSeason[]): string | nul
 
 export function extractArmor(text: string): string {
   const matched: string[] = []
-  if (/爆発|軽装備/.test(text)) matched.push('軽装備')
+  if (/爆発|軽装備|轻装甲/.test(text)) matched.push('軽装備')
   if (/貫通|重装甲/.test(text)) matched.push('重装甲')
   if (/神秘|特殊装甲/.test(text)) matched.push('特殊装甲')
-  if (/振動|弾力装甲|弾力/.test(text)) matched.push('弾力装甲')
+  if (/振動|弾力装甲|弾力|弹力装甲/.test(text)) matched.push('弾力装甲')
   if (matched.length > 1) return '不明'
   return matched[0] || ''
 }
 
 export function extractDifficulty(text: string): string {
-  const mapping: Record<string, string> = {
-    Lunatic: 'Lunatic',
-    Torment: 'Torment',
-    Insane: 'Insane',
-    Extreme: 'Extreme',
-    Hardcore: 'Hardcore',
-    ルナティック: 'Lunatic',
-    トーメント: 'Torment',
-    インセイン: 'Insane',
-    エクストリーム: 'Extreme',
-    ハードコア: 'Hardcore',
-  }
-  for (const [k, v] of Object.entries(mapping)) {
-    if (text.includes(k)) return v
+  const upper = text.toUpperCase()
+  const mapping: Array<[RegExp, string]> = [
+    [/\bLUNA\b|\bLU\b/, 'Lunatic'],
+    [/\bTMT\b|\bTM\b/, 'Torment'],
+    [/\bINS\b/, 'Insane'],
+    [/\bLUNATIC\b/, 'Lunatic'],
+    [/\bTORMENT\b/, 'Torment'],
+    [/\bINSANE\b/, 'Insane'],
+    [/\bEXTREME\b/, 'Extreme'],
+    [/\bHARDCORE\b/, 'Hardcore'],
+    [/ルナティック/, 'Lunatic'],
+    [/トーメント/, 'Torment'],
+    [/インセイン/, 'Insane'],
+    [/エクストリーム/, 'Extreme'],
+    [/ハードコア/, 'Hardcore'],
+  ]
+  for (const [pattern, value] of mapping) {
+    if (pattern.test(upper)) return value
   }
   return ''
+}
+
+const MIN_LUNATIC_SCORE = 40400000
+
+function normalizeDifficulty(text: string, score: string): string {
+  const detected = extractDifficulty(text)
+  if (detected === 'Lunatic') {
+    const num = parseInt(score || '0')
+    if (!Number.isNaN(num) && num > 0 && num < MIN_LUNATIC_SCORE) {
+      return ''
+    }
+  }
+  return detected
+}
+
+function isTooEarlyForSeason(snippet: Snippet, seasonStart?: string): boolean {
+  if (!seasonStart || !snippet.publishedAt) return false
+  const publishedAt = new Date(snippet.publishedAt)
+  if (Number.isNaN(publishedAt.getTime())) return false
+  const startDate = new Date(seasonStart)
+  if (Number.isNaN(startDate.getTime())) return false
+  const cutoff = new Date(startDate.getTime() - 24 * 60 * 60 * 1000)
+  return publishedAt < cutoff
 }
 
 export function extractScore(text: string): string {
@@ -248,28 +276,69 @@ export async function fetchYouTubeVideos(seasons: TLSeason[]): Promise<YouTubeVi
     'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&type=video&order=date'
   const results: YouTubeVideoItem[] = []
   const seen = new Set<string>()
+  const difficultyQueries = [
+    ['Hardcore'],
+    ['Extreme'],
+    ['Insane', 'INS'],
+    ['Torment', 'TMT', 'TM'],
+    ['Lunatic', 'LUNA', 'LU'],
+  ]
   for (const s of seasons) {
     const armors = s.defenseArmors && s.defenseArmors.length > 0 ? s.defenseArmors : ['']
     for (const armor of armors) {
-      const query = `${s.boss} ${s.terrain} ${armor}`.trim()
-      for (const key of apiKeys) {
-        const res = await fetch(`${base}&q=${encodeURIComponent(query)}&key=${key}`)
-        if (res.ok) {
-          const data = await res.json()
-          for (const item of data.items as YouTubeVideoItem[]) {
-            const vid = item?.id?.videoId
-            if (!vid) continue
-            if (!seen.has(vid)) {
-              seen.add(vid)
-              results.push(item)
+      for (const variants of difficultyQueries) {
+        for (const difficulty of variants) {
+          const query = `${s.boss} ${s.terrain} ${armor} ${difficulty}`.trim()
+          if (!query) continue
+          for (const key of apiKeys) {
+            const res = await fetch(`${base}&q=${encodeURIComponent(query)}&key=${key}`)
+            if (res.ok) {
+              const data = await res.json()
+              for (const item of data.items as YouTubeVideoItem[]) {
+                const vid = item?.id?.videoId
+                if (!vid) continue
+                if (!seen.has(vid)) {
+                  seen.add(vid)
+                  results.push(item)
+                }
+              }
+              break
             }
           }
-          break
         }
       }
     }
   }
   return results
+}
+
+type BilibiliKeywordConfig = {
+  replacements: Record<string, string | string[]>
+  baseKeywords?: string[]
+}
+
+function normalizeReplacement(value: string | string[]): string[] {
+  return Array.isArray(value) ? value.filter((item) => item.trim().length > 0) : [value]
+}
+
+function buildBilibiliQueries(
+  terms: Array<string | undefined>,
+  replacements: Record<string, string | string[]>,
+  baseKeywords: string[]
+): string[] {
+  let queries = ['']
+  if (baseKeywords.length > 0) {
+    queries = baseKeywords.map((keyword) => keyword.trim()).filter((q) => q.length > 0)
+  }
+  for (const term of terms) {
+    if (!term) continue
+    const mapped = replacements[term]
+    const variants = mapped ? normalizeReplacement(mapped) : [term]
+    queries = queries.flatMap((prefix) =>
+      variants.map((variant) => (prefix ? `${prefix} ${variant}` : variant).trim())
+    )
+  }
+  return queries.filter((q) => q.length > 0)
 }
 
 export async function fetchYouTubeSnippets(videoIds: string[]): Promise<Record<string, Snippet>> {
@@ -313,43 +382,56 @@ export async function fetchBilibiliVideos(seasons: TLSeason[]) {
     thumbnail?: string
   }> = []
   const seen = new Set<string>()
+  let replacements: Record<string, string | string[]> = {}
+  let baseKeywords: string[] = []
+  try {
+    const configPath = path.join(process.cwd(), 'data', 'bilibili-keywords.json')
+    const raw = await fs.readFile(configPath, 'utf-8')
+    const parsed = JSON.parse(raw) as BilibiliKeywordConfig
+    replacements = parsed?.replacements ?? {}
+    baseKeywords = parsed?.baseKeywords ?? []
+  } catch {
+    replacements = {}
+    baseKeywords = []
+  }
   for (const s of seasons) {
     const armors = s.defenseArmors && s.defenseArmors.length > 0 ? s.defenseArmors : ['']
     for (const armor of armors) {
-      const query = `${s.boss} ${s.terrain} ${armor}`.trim()
-      if (!query) continue
-      const params = new URLSearchParams({
-        search_type: 'video',
-        keyword: query,
-        order: 'pubdate',
-        page: '1',
-        page_size: '50',
-      })
-      const res = await fetch(`https://api.bilibili.com/x/web-interface/search/type?${params}`)
-      if (!res.ok) continue
-      const json = (await res.json()) as {
-        data?: {
-          result?: Array<{
-            bvid?: string
-            title?: string
-            description?: string
-            pubdate?: number
-            pic?: string
-          }>
-        }
-      }
-      const items = json.data?.result ?? []
-      for (const item of items) {
-        if (!item?.bvid) continue
-        if (seen.has(item.bvid)) continue
-        seen.add(item.bvid)
-        results.push({
-          bvid: item.bvid,
-          title: stripHtml(item.title ?? ''),
-          description: stripHtml(item.description ?? ''),
-          publishedAt: item.pubdate ? new Date(item.pubdate * 1000).toISOString() : undefined,
-          thumbnail: item.pic ? (item.pic.startsWith('//') ? `https:${item.pic}` : item.pic) : undefined,
+      const queries = buildBilibiliQueries([s.boss, s.terrain, armor], replacements, baseKeywords)
+      for (const query of queries) {
+        const params = new URLSearchParams({
+          search_type: 'video',
+          keyword: query,
+          order: 'pubdate',
+          page: '1',
+          page_size: '50',
         })
+        const res = await fetch(`https://api.bilibili.com/x/web-interface/search/type?${params}`)
+        if (!res.ok) continue
+        const json = (await res.json()) as {
+          data?: {
+            result?: Array<{
+              bvid?: string
+              title?: string
+              description?: string
+              pubdate?: number
+              pic?: string
+            }>
+          }
+        }
+        const items = json.data?.result ?? []
+        for (const item of items) {
+          if (!item?.bvid) continue
+          if (seen.has(item.bvid)) continue
+          seen.add(item.bvid)
+          results.push({
+            bvid: item.bvid,
+            title: stripHtml(item.title ?? ''),
+            description: stripHtml(item.description ?? ''),
+            publishedAt: item.pubdate ? new Date(item.pubdate * 1000).toISOString() : undefined,
+            thumbnail: item.pic ? (item.pic.startsWith('//') ? `https:${item.pic}` : item.pic) : undefined,
+          })
+        }
       }
     }
   }
@@ -376,13 +458,17 @@ async function upsertPendingVideo(
     guide: pending.guide,
     formation_status: pending.formationStatus,
     season_guess: pending.seasonGuess,
+    season_target: pending.seasonTarget ?? null,
     status: 'pending' satisfies PendingStatus,
     reason: pending.reason,
     raw: pending.raw ?? null,
     updated_at: new Date().toISOString(),
   }
 
-  await supabase.from('tl_pending_videos').upsert(payload, { onConflict: 'videoid' })
+  const { error } = await supabase
+    .from('tl_pending_videos')
+    .upsert(payload, { onConflict: 'videoid' })
+  return error ?? null
 }
 
 export async function upsertTimelines(params: {
@@ -395,54 +481,40 @@ export async function upsertTimelines(params: {
   const pushLog = (message: string) => {
     if (log) log(message)
   }
-  let pending = 0
-    const storedId = toStoredVideoId('youtube', vid)
-    if (!seasonNum || (season && seasonNum !== season)) {
-      const reason = seasonNum ? 'season_mismatch' : 'season_unknown'
-      const text = `${snippet.title || ''}\n${snippet.description || ''}`
-      const formation = await extractFormation(supabase, text)
-      await upsertPendingVideo(supabase, {
-        videoid: storedId,
-        platform: 'youtube',
-        title: snippet.title || '',
-        description: snippet.description || '',
-        publishedAt: snippet.publishedAt,
-        armor: extractArmor(text),
-        difficulty: extractDifficulty(text),
-        score: extractScore(text),
-        formation,
-        guide: extractGuide(text),
-        formationStatus: formation !== '[]' ? 'auto' : 'none',
-        seasonGuess: seasonNum,
-        reason,
-        raw: { snippet },
-      })
-      pending++
-      pushLog(`YouTube ${vid}: 保留(${reason})`)
-      continue
-    }
-    const table = `tl_${seasonNum.toLowerCase()}`
-    title: string
-    description: string
-    published_at?: string
-    suggested_season?: string | null
-    reason: string
-  }) => {
-    await supabase
-      .from('tl_pending_videos')
-      .upsert(
-        {
-          videoid: entry.videoid,
-          platform: entry.platform,
-          title: entry.title,
-          description: entry.description,
-          published_at: entry.published_at ?? null,
-          suggested_season: entry.suggested_season ?? null,
-          reason: entry.reason,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'videoid' }
+  const upsertPendingFromSnippet = async (
+    platform: 'youtube' | 'bilibili',
+    storedId: string,
+    snippet: Snippet,
+    seasonNum: string | null,
+    reason: 'season_unknown' | 'season_mismatch',
+    raw?: Record<string, unknown>,
+    seasonTarget?: string | null
+  ) => {
+    const text = `${snippet.title || ''}\n${snippet.description || ''}`
+    const formation = await extractFormation(supabase, text)
+    const score = extractScore(text)
+    const error = await upsertPendingVideo(supabase, {
+      videoid: storedId,
+      platform,
+      title: snippet.title || '',
+      description: snippet.description || '',
+      publishedAt: snippet.publishedAt,
+      armor: extractArmor(text),
+      difficulty: normalizeDifficulty(text, score),
+      score,
+      formation,
+      guide: extractGuide(text),
+      formationStatus: formation && formation !== '[]' ? 'auto' : 'none',
+      seasonGuess: seasonNum,
+      seasonTarget,
+      reason,
+      raw,
+    })
+    if (error) {
+      pushLog(
+        `保留登録に失敗: ${platform} ${storedId} (${reason}) ${error.message ?? 'unknown'}`
       )
+    }
   }
   let fullUsed = 0
   let fallbackUsed = 0
@@ -453,6 +525,10 @@ export async function upsertTimelines(params: {
     ? seasons.filter((s) => s.number === season)
     : seasons
   pushLog(`開始: 対象シーズン=${targetSeasons.map((s) => s.number).join(',') || 'なし'}`)
+  const seasonStartMap = new Map<string, string>()
+  for (const s of seasons) {
+    seasonStartMap.set(s.number, s.startDate)
+  }
 
   const ytVideos = await fetchYouTubeVideos(targetSeasons)
   pushLog(`YouTube検索結果: ${ytVideos.length}件`)
@@ -486,79 +562,61 @@ export async function upsertTimelines(params: {
   for (const info of ytVideos) {
     const vid = info?.id?.videoId
     if (!vid) continue
+    const storedId = toStoredVideoId('youtube', vid)
     const full = ytSnippets[vid]
     const snippet = full || info.snippet
+    const targetSeasonStart = season ? seasonStartMap.get(season) : undefined
+    if (isTooEarlyForSeason(snippet, targetSeasonStart)) {
+      pushLog(`YouTube ${vid}: シーズン開始日より古いため除外`)
+      continue
+    }
     if (full) fullUsed++
     else fallbackUsed++
     const seasonNum = guessSeason(snippet, seasons)
     if (season && seasonNum !== season) {
-      await upsertPending({
-        videoid: storedId,
-        platform: 'youtube',
-        title: snippet.title || '',
-        description: snippet.description || '',
-        published_at: snippet.publishedAt,
-        suggested_season: seasonNum,
-        reason: seasonNum ? 'season_mismatch' : 'season_unknown',
-      })
+      const reason = seasonNum ? 'season_mismatch' : 'season_unknown'
+      await upsertPendingFromSnippet(
+        'youtube',
+        storedId,
+        snippet,
+        seasonNum,
+        reason,
+        { snippet },
+        season
+      )
       pending++
       pushLog(`YouTube ${vid}: シーズン不一致のため保留 (detected=${seasonNum ?? 'unknown'})`)
       continue
     }
     if (!seasonNum) {
-      await upsertPending({
-        videoid: storedId,
-        platform: 'youtube',
-        title: snippet.title || '',
-        description: snippet.description || '',
-        published_at: snippet.publishedAt,
-        suggested_season: seasonNum,
-        reason: 'season_unknown',
-      })
+      await upsertPendingFromSnippet(
+        'youtube',
+        storedId,
+        snippet,
+        seasonNum,
+        'season_unknown',
+        { snippet },
+        season ?? null
+      )
       pending++
       pushLog(`YouTube ${vid}: シーズン判定不能のため保留`)
       continue
     }
+    if (lockedVideoIds.has(storedId)) {
+      pushLog(`YouTube ${vid}: 更新保護のためスキップ`)
+      continue
+    }
     const table = seasonNum ? `tl_${seasonNum.toLowerCase()}` : 'tl_unknown'
-    const storedId = toStoredVideoId('youtube', vid)
     const { data: exist } = await supabase
       .from(table)
       .select('*')
       .eq('videoid', storedId)
       .maybeSingle()
 
-    if (!seasonNum || (season && seasonNum !== season)) {
-      const reason = seasonNum ? 'season_mismatch' : 'season_unknown'
-      const text = `${snippet.title || ''}\n${snippet.description || ''}`
-      const formation = await extractFormation(supabase, text)
-      await upsertPendingVideo(supabase, {
-        videoid: storedId,
-        platform: 'bilibili',
-        title: snippet.title || '',
-        description: snippet.description || '',
-        publishedAt: snippet.publishedAt,
-        armor: extractArmor(text),
-        difficulty: extractDifficulty(text),
-        score: extractScore(text),
-        formation,
-        guide: extractGuide(text),
-        formationStatus: formation && formation !== '[]' ? 'auto' : 'none',
-        seasonGuess: seasonNum,
-        reason,
-        raw: { snippet },
-      })
-      pending++
-      pushLog(`Bilibili ${info.bvid}: 保留(${reason})`)
-      continue
-    }
-    const table = `tl_${seasonNum.toLowerCase()}`
-      continue
-    }
-
     const text = `${snippet.title || ''}\n${snippet.description || ''}`
     const armor = extractArmor(text)
-    const difficulty = extractDifficulty(text)
     const score = extractScore(text)
+    const difficulty = normalizeDifficulty(text, score)
     const formation = await extractFormation(supabase, text)
     const guide = extractGuide(text)
     const formationStatus =
@@ -616,44 +674,48 @@ export async function upsertTimelines(params: {
 
   for (const info of biliVideos) {
     const storedId = toStoredVideoId('bilibili', info.bvid)
-    if (lockedVideoIds.has(storedId)) {
-  pushLog(`保留件数=${pending}`)
-  return { fullUsed, fallbackUsed, updated, pending }
-      continue
-    }
-
     const snippet: Snippet = {
       title: info.title,
       description: info.description,
       publishedAt: info.publishedAt,
     }
+    const targetSeasonStart = season ? seasonStartMap.get(season) : undefined
+    if (isTooEarlyForSeason(snippet, targetSeasonStart)) {
+      pushLog(`Bilibili ${info.bvid}: シーズン開始日より古いため除外`)
+      continue
+    }
     const seasonNum = guessSeason(snippet, seasons)
     if (season && seasonNum !== season) {
-      await upsertPending({
-        videoid: storedId,
-        platform: 'bilibili',
-        title: snippet.title || '',
-        description: snippet.description || '',
-        published_at: snippet.publishedAt,
-        suggested_season: seasonNum,
-        reason: seasonNum ? 'season_mismatch' : 'season_unknown',
-      })
+      const reason = seasonNum ? 'season_mismatch' : 'season_unknown'
+      await upsertPendingFromSnippet(
+        'bilibili',
+        storedId,
+        snippet,
+        seasonNum,
+        reason,
+        { snippet },
+        season
+      )
       pending++
       pushLog(`Bilibili ${info.bvid}: シーズン不一致のため保留 (detected=${seasonNum ?? 'unknown'})`)
       continue
     }
     if (!seasonNum) {
-      await upsertPending({
-        videoid: storedId,
-        platform: 'bilibili',
-        title: snippet.title || '',
-        description: snippet.description || '',
-        published_at: snippet.publishedAt,
-        suggested_season: seasonNum,
-        reason: 'season_unknown',
-      })
+      await upsertPendingFromSnippet(
+        'bilibili',
+        storedId,
+        snippet,
+        seasonNum,
+        'season_unknown',
+        { snippet },
+        season ?? null
+      )
       pending++
       pushLog(`Bilibili ${info.bvid}: シーズン判定不能のため保留`)
+      continue
+    }
+    if (lockedVideoIds.has(storedId)) {
+      pushLog(`Bilibili ${info.bvid}: 更新保護のためスキップ`)
       continue
     }
     const table = seasonNum ? `tl_${seasonNum.toLowerCase()}` : 'tl_unknown'
@@ -665,8 +727,8 @@ export async function upsertTimelines(params: {
 
     const text = `${snippet.title || ''}\n${snippet.description || ''}`
     const armor = extractArmor(text)
-    const difficulty = extractDifficulty(text)
     const score = extractScore(text)
+    const difficulty = normalizeDifficulty(text, score)
     const formation = await extractFormation(supabase, text)
     const guide = extractGuide(text)
     const formationStatus =

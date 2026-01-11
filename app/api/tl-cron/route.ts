@@ -19,6 +19,12 @@ const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_ANON_KEY!
 )
+const supabaseAdmin = process.env.SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    )
+  : null
 async function ensureTables(seasons: Season[]) {
   for (const s of seasons) {
     const table = `tl_${s.number.toLowerCase()}`
@@ -42,9 +48,12 @@ export async function GET() {
         new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
     )
     const latest = targets[0]
+    if (!supabaseAdmin) {
+      return NextResponse.json({ updated: 0, error: 'missing_service_role_key' }, { status: 500 })
+    }
     await ensureTables(seasons)
     const result = await upsertTimelines({
-      supabase,
+      supabase: supabaseAdmin,
       seasons,
       season: latest.number,
     })

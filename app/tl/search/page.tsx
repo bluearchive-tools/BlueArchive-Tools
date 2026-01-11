@@ -133,6 +133,7 @@ export default function TLSearchPage() {
   const [editGuide, setEditGuide] = useState(false)
   const [editFormationStatus, setEditFormationStatus] = useState('none')
   const [editArmor, setEditArmor] = useState('')
+  const [editDifficulty, setEditDifficulty] = useState('')
   const [editFormation, setEditFormation] = useState('')
   const [filterGuide, setFilterGuide] = useState(false)
   const [filterFormationAdded, setFilterFormationAdded] = useState(false)
@@ -1019,6 +1020,7 @@ export default function TLSearchPage() {
           guide: editGuide,
           formationStatus: editFormationStatus,
           armor: editArmor,
+          difficulty: editDifficulty,
           formation: editFormation,
         }),
       })
@@ -1032,6 +1034,7 @@ export default function TLSearchPage() {
                   guide: editGuide,
                   formationStatus: editFormationStatus,
                   armor: editArmor,
+                  difficulty: editDifficulty,
                   formation: editFormation,
                 }
               : t
@@ -1045,6 +1048,7 @@ export default function TLSearchPage() {
     setEditGuide(false)
     setEditFormationStatus('none')
     setEditArmor('')
+    setEditDifficulty('')
     setEditFormation('')
   }
 }
@@ -1067,6 +1071,7 @@ export default function TLSearchPage() {
               setEditGuide(Boolean(t.guide))
               setEditFormationStatus(t.formationStatus || 'none')
               setEditArmor(t.armor)
+              setEditDifficulty(t.difficulty)
               setEditFormation(t.formation)
             }}
           >
@@ -1169,6 +1174,7 @@ export default function TLSearchPage() {
   const filtered = visibleTimelines.filter((t) => {
     const armorOk = armor ? t.armor === armor : true
     const difficultyOk = difficulty ? t.difficulty === difficulty : true
+    const difficultyVisible = t.difficulty ? true : isAdmin
     const guideOk = filterGuide ? Boolean(t.guide) : true
     const formationAddedOk = filterFormationAdded
       ? t.formation && t.formation !== '[]'
@@ -1179,6 +1185,7 @@ export default function TLSearchPage() {
     return (
       armorOk &&
       difficultyOk &&
+      difficultyVisible &&
       guideOk &&
       formationAddedOk &&
       formationConfirmedOk
@@ -2093,22 +2100,70 @@ export default function TLSearchPage() {
             setEditTl(null)
             setEditGuide(false)
             setEditFormationStatus('none')
+            setEditArmor('')
+            setEditDifficulty('')
+            setEditFormation('')
           }}
         >
           <div
-            className="bg-white p-4 rounded space-y-2 w-64"
+            className="bg-white p-4 rounded w-full max-w-lg space-y-3 text-sm"
             onClick={(e) => e.stopPropagation()}
           >
-            <label className="flex items-center gap-2">
-              <span>スコア:</span>
-              <input
-                type="number"
-                value={editScore}
-                onChange={(e) => setEditScore(e.target.value)}
-                className="border rounded p-1 flex-1"
-              />
-            </label>
-            <label className="flex items-center gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="block">
+                スコア
+                <input
+                  type="number"
+                  value={editScore}
+                  onChange={(e) => setEditScore(e.target.value)}
+                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
+                />
+              </label>
+              <label className="block">
+                難易度
+                <select
+                  value={editDifficulty}
+                  onChange={(e) => setEditDifficulty(e.target.value)}
+                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
+                >
+                  <option value="">未設定</option>
+                  {difficulties.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                装甲
+                <select
+                  value={editArmor}
+                  onChange={(e) => setEditArmor(e.target.value)}
+                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
+                >
+                  <option value="">未設定</option>
+                  {armors.map((a) => (
+                    <option key={a} value={a}>
+                      {a}
+                    </option>
+                  ))}
+                  <option value="不明">不明</option>
+                </select>
+              </label>
+              <label className="block">
+                編成状態
+                <select
+                  value={editFormationStatus}
+                  onChange={(e) => setEditFormationStatus(e.target.value)}
+                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
+                >
+                  <option value="none">none</option>
+                  <option value="auto">auto</option>
+                  <option value="manual">manual</option>
+                </select>
+              </label>
+            </div>
+            <label className="inline-flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={editGuide}
@@ -2116,40 +2171,12 @@ export default function TLSearchPage() {
               />
               <span>解説付き</span>
             </label>
-            <label className="flex items-center gap-2">
-              <span>編成状態:</span>
-              <select
-                value={editFormationStatus}
-                onChange={(e) => setEditFormationStatus(e.target.value)}
-                className="border rounded p-1 flex-1"
-              >
-                <option value="none">none</option>
-                <option value="auto">auto</option>
-                <option value="manual">manual</option>
-              </select>
-            </label>
-            <label className="flex items-center gap-2">
-              <span>装甲:</span>
-              <select
-                value={editArmor}
-                onChange={(e) => setEditArmor(e.target.value)}
-                className="border rounded p-1 flex-1"
-              >
-                <option value="">未設定</option>
-                {armors.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-                <option value="不明">不明</option>
-              </select>
-            </label>
-            <label className="flex flex-col gap-1">
-              <span>編成(JSON):</span>
+            <label className="block">
+              編成(JSON)
               <textarea
                 value={editFormation}
                 onChange={(e) => setEditFormation(e.target.value)}
-                className="border rounded p-1 text-sm h-24"
+                className="mt-1 w-full rounded border border-gray-300 px-2 py-1 font-mono text-xs h-24"
               />
             </label>
             <div className="flex gap-2 justify-end">
@@ -2159,6 +2186,7 @@ export default function TLSearchPage() {
                   setEditGuide(false)
                   setEditFormationStatus('none')
                   setEditArmor('')
+                  setEditDifficulty('')
                   setEditFormation('')
                 }}
                 className="border px-2 py-1"

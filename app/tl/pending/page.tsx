@@ -22,10 +22,16 @@ type PendingVideo = {
   status: string
 }
 
+type RaidData = {
+  armors: string[]
+  difficulties: string[]
+}
+
 export default function PendingTLPage() {
   const [items, setItems] = useState<PendingVideo[]>([])
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
+  const [raidData, setRaidData] = useState<RaidData | null>(null)
 
   const loadItems = async () => {
     setLoading(true)
@@ -47,6 +53,21 @@ export default function PendingTLPage() {
 
   useEffect(() => {
     void loadItems()
+  }, [])
+
+  useEffect(() => {
+    const loadRaid = async () => {
+      try {
+        const res = await fetch('/api/raids')
+        if (res.ok) {
+          const data = (await res.json()) as RaidData
+          setRaidData(data)
+        }
+      } catch {
+        // ignore
+      }
+    }
+    void loadRaid()
   }, [])
 
   const updateItem = async (id: number, data: Partial<PendingVideo>) => {
@@ -170,19 +191,34 @@ export default function PendingTLPage() {
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
                 <label className="block">
                   装甲
-                  <input
+                  <select
                     className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
                     value={item.armor ?? ''}
                     onChange={(e) => updateField(item.id, 'armor', e.target.value)}
-                  />
+                  >
+                    <option value="">未設定</option>
+                    {(raidData?.armors ?? []).map((a) => (
+                      <option key={a} value={a}>
+                        {a}
+                      </option>
+                    ))}
+                    <option value="不明">不明</option>
+                  </select>
                 </label>
                 <label className="block">
                   難易度
-                  <input
+                  <select
                     className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
                     value={item.difficulty ?? ''}
                     onChange={(e) => updateField(item.id, 'difficulty', e.target.value)}
-                  />
+                  >
+                    <option value="">未設定</option>
+                    {(raidData?.difficulties ?? []).map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <label className="block">
                   スコア

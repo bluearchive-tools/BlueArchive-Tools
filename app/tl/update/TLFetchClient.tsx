@@ -34,18 +34,47 @@ export default function TLFetchClient() {
     setMessage('取得中...')
     setLogs([])
     try {
-      const res = await fetch('/api/timelines', {
+      const res = await fetch('/api/timelines?stream=1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ season }),
       })
-      const json = (await res.json()) as { logs?: string[] }
-      if (res.ok) {
-        setMessage('保存しました')
-        setLogs(Array.isArray(json.logs) ? json.logs : [])
-      } else {
+      if (!res.body) {
         setMessage('エラーが発生しました')
-        setLogs(Array.isArray(json.logs) ? json.logs : [])
+        return
+      }
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let doneReceived = false
+      while (!doneReceived) {
+        const { value, done } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+        for (const line of lines) {
+          if (!line.trim()) continue
+          try {
+            const payload = JSON.parse(line) as {
+              type?: string
+              message?: string
+              success?: boolean
+            }
+            if (payload.type === 'log' && payload.message) {
+              setLogs((prev) => [...prev, payload.message as string])
+            }
+            if (payload.type === 'done') {
+              doneReceived = true
+              setMessage(payload.success ? '保存しました' : 'エラーが発生しました')
+            }
+          } catch {
+            // ignore invalid lines
+          }
+        }
+      }
+      if (!doneReceived) {
+        setMessage(res.ok ? '保存しました' : 'エラーが発生しました')
       }
     } catch {
       setMessage('エラーが発生しました')
