@@ -384,7 +384,10 @@ async function upsertPendingVideo(
     updated_at: new Date().toISOString(),
   }
 
-  await supabase.from('tl_pending_videos').upsert(payload, { onConflict: 'videoid' })
+  const { error } = await supabase
+    .from('tl_pending_videos')
+    .upsert(payload, { onConflict: 'videoid' })
+  return error ?? null
 }
 
 export async function upsertTimelines(params: {
@@ -408,7 +411,7 @@ export async function upsertTimelines(params: {
   ) => {
     const text = `${snippet.title || ''}\n${snippet.description || ''}`
     const formation = await extractFormation(supabase, text)
-    await upsertPendingVideo(supabase, {
+    const error = await upsertPendingVideo(supabase, {
       videoid: storedId,
       platform,
       title: snippet.title || '',
@@ -425,6 +428,11 @@ export async function upsertTimelines(params: {
       reason,
       raw,
     })
+    if (error) {
+      pushLog(
+        `保留登録に失敗: ${platform} ${storedId} (${reason}) ${error.message ?? 'unknown'}`
+      )
+    }
   }
   let fullUsed = 0
   let fallbackUsed = 0
