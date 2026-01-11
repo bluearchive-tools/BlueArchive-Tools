@@ -286,7 +286,10 @@ export async function extractFormation(
   }
 }
 
-export async function fetchYouTubeVideos(seasons: TLSeason[]): Promise<YouTubeVideoItem[]> {
+export async function fetchYouTubeVideos(
+  seasons: TLSeason[],
+  log?: (message: string) => void
+): Promise<YouTubeVideoItem[]> {
   const apiKeys = getYouTubeApiKeys()
   if (apiKeys.length === 0 || seasons.length === 0) return []
   const base =
@@ -318,6 +321,7 @@ export async function fetchYouTubeVideos(seasons: TLSeason[]): Promise<YouTubeVi
           for (const difficulty of variants) {
             const query = [boss, terrain, armor, difficulty].filter(Boolean).join(' ')
             if (!query) continue
+            log?.(`YouTube検索クエリ: ${query}`)
             for (const key of apiKeys) {
               const res = await fetch(`${base}&q=${encodeURIComponent(query)}&key=${key}`)
               if (res.ok) {
@@ -402,7 +406,10 @@ export async function fetchYouTubeSnippets(videoIds: string[]): Promise<Record<s
   return out
 }
 
-export async function fetchBilibiliVideos(seasons: TLSeason[]) {
+export async function fetchBilibiliVideos(
+  seasons: TLSeason[],
+  log?: (message: string) => void
+) {
   if (seasons.length === 0) return []
   const results: Array<{
     bvid: string
@@ -429,6 +436,7 @@ export async function fetchBilibiliVideos(seasons: TLSeason[]) {
     for (const armor of armors) {
       const queries = buildBilibiliQueries([s.boss, s.terrain, armor], replacements, baseKeywords)
       for (const query of queries) {
+        log?.(`Bilibili検索クエリ: ${query}`)
         const params = new URLSearchParams({
           search_type: 'video',
           keyword: query,
@@ -501,7 +509,7 @@ export async function upsertTimelines(params: {
   }
 
   const ytVideos =
-    platform === 'bilibili' ? [] : await fetchYouTubeVideos(targetSeasons)
+    platform === 'bilibili' ? [] : await fetchYouTubeVideos(targetSeasons, log)
   pushLog(`YouTube検索結果: ${ytVideos.length}件`)
   const ytIds = ytVideos
     .map((v) => v.id?.videoId)
@@ -511,7 +519,7 @@ export async function upsertTimelines(params: {
   pushLog(`YouTube詳細スニペット取得: ${Object.keys(ytSnippets).length}件`)
 
   const biliVideos =
-    platform === 'youtube' ? [] : await fetchBilibiliVideos(targetSeasons)
+    platform === 'youtube' ? [] : await fetchBilibiliVideos(targetSeasons, log)
   pushLog(`Bilibili検索結果: ${biliVideos.length}件`)
 
   const allVideoIds = [
@@ -540,7 +548,9 @@ export async function upsertTimelines(params: {
     const snippet = full || info.snippet
     const targetSeasonStart = season ? seasonStartMap.get(season) : undefined
     if (isTooEarlyForSeason(snippet, targetSeasonStart)) {
-      pushLog(`YouTube ${vid}: シーズン開始日より古いため除外`)
+      pushLog(
+        `YouTube ${vid}: シーズン開始日より古いため除外 (publishedAt=${snippet.publishedAt ?? 'unknown'}, seasonStart=${targetSeasonStart ?? 'unknown'})`
+      )
       continue
     }
     if (full) fullUsed++
@@ -640,7 +650,9 @@ export async function upsertTimelines(params: {
     }
     const targetSeasonStart = season ? seasonStartMap.get(season) : undefined
     if (isTooEarlyForSeason(snippet, targetSeasonStart)) {
-      pushLog(`Bilibili ${info.bvid}: シーズン開始日より古いため除外`)
+      pushLog(
+        `Bilibili ${info.bvid}: シーズン開始日より古いため除外 (publishedAt=${snippet.publishedAt ?? 'unknown'}, seasonStart=${targetSeasonStart ?? 'unknown'})`
+      )
       continue
     }
     const guessedSeason = guessSeason(snippet, seasons)
