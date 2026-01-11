@@ -204,7 +204,23 @@ export default function TLSearchPage() {
     const resolvedThumbnail =
       thumbnail ||
       (platform === 'youtube' ? `https://i.ytimg.com/vi/${id}/mqdefault.jpg` : null)
-    return { platform, id, url, label, thumbnail: resolvedThumbnail }
+    const proxiedThumbnail =
+      platform === 'bilibili' && resolvedThumbnail
+        ? `/api/bilibili-thumbnail?url=${encodeURIComponent(resolvedThumbnail)}`
+        : resolvedThumbnail
+    return { platform, id, url, label, thumbnail: proxiedThumbnail }
+  }
+
+  const resolveInlineThumbnail = (
+    platform: 'youtube' | 'bilibili',
+    thumbnail?: string,
+    id?: string
+  ) => {
+    if (platform === 'youtube') {
+      return thumbnail ?? (id ? `https://i.ytimg.com/vi/${id}/mqdefault.jpg` : null)
+    }
+    if (!thumbnail) return null
+    return `/api/bilibili-thumbnail?url=${encodeURIComponent(thumbnail)}`
   }
 
   const getDayText = (t: Timeline) => {
@@ -689,22 +705,12 @@ export default function TLSearchPage() {
     setPolicyError('')
     setOpenTlSkipUpdateSaving(true)
     try {
-      if (next) {
-        const { error } = await supabase
-          .from('tl_video_update_policy')
-          .upsert(
-            { videoid, skip_update: true, updated_at: new Date().toISOString() },
-            { onConflict: 'videoid' }
-          )
-        if (error) throw error
-      } else {
-        // OFF の場合はレコードを消して「更新する」状態に戻す
-        const { error } = await supabase
-          .from('tl_video_update_policy')
-          .delete()
-          .eq('videoid', videoid)
-        if (error) throw error
-      }
+      const res = await fetch('/api/tl-video-update-policy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoid, skipUpdate: next }),
+      })
+      if (!res.ok) throw new Error('update_failed')
       setOpenTlSkipUpdate(next)
     } catch {
       setPolicyError('保存に失敗しました（権限/RLS設定を確認してください）')
@@ -1500,13 +1506,14 @@ export default function TLSearchPage() {
                     key={video.videoid}
                     className="flex flex-col sm:flex-row gap-3 border rounded p-3"
                   >
-                    {video.thumbnail || video.platform === 'youtube' ? (
+                    {resolveInlineThumbnail(video.platform, video.thumbnail, video.videoid) ? (
                       <img
                         src={
-                          video.thumbnail ??
-                          (video.platform === 'youtube'
-                            ? `https://i.ytimg.com/vi/${video.videoid}/mqdefault.jpg`
-                            : '')
+                          resolveInlineThumbnail(
+                            video.platform,
+                            video.thumbnail,
+                            video.videoid
+                          ) ?? ''
                         }
                         alt="thumbnail"
                         className="w-full sm:w-40 h-auto rounded"
