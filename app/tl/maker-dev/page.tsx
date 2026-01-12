@@ -979,6 +979,7 @@ const startResizePluginWindow = useCallback(
     },
   })
   const prevSnapshot = useRef<ProjectSnapshot | null>(null)
+  const snapshotJsonRef = useRef<string | null>(null)
   const undoStack = useRef<ProjectSnapshot[]>([])
   const redoStack = useRef<ProjectSnapshot[]>([])
   const isRestoring = useRef(false)
@@ -1187,19 +1188,16 @@ useEffect(() => {
   }), [projectName, rowStudents, skills, markers, selectedGroup, squadIndex])
 
   useEffect(() => {
-    if (initialized) {
-      prevSnapshot.current = getSnapshot()
-    }
-  }, [initialized, getSnapshot])
-
-  useEffect(() => {
     if (!initialized || isRestoring.current) return
     const snap = getSnapshot()
-    if (
-      prevSnapshot.current &&
-      JSON.stringify(prevSnapshot.current) !== JSON.stringify(snap)
-    ) {
-      const prev = prevSnapshot.current
+    const nextJson = JSON.stringify(snap)
+    if (snapshotJsonRef.current === null) {
+      prevSnapshot.current = snap
+      snapshotJsonRef.current = nextJson
+      return
+    }
+    if (snapshotJsonRef.current !== nextJson) {
+      const prev = prevSnapshot.current ?? snap
       undoStack.current.push(prev)
       if (undoStack.current.length > 200) undoStack.current.shift()
       redoStack.current = []
@@ -1220,8 +1218,9 @@ useEffect(() => {
           [...list, { id: Date.now(), at: new Date().toLocaleTimeString(), summary }].slice(-200)
         )
       }
+      prevSnapshot.current = snap
+      snapshotJsonRef.current = nextJson
     }
-    prevSnapshot.current = snap
   }, [projectName, rowStudents, skills, markers, selectedGroup, squadIndex, initialized, getSnapshot, proMode])
 
   const hidePopups = () => {
@@ -1460,8 +1459,11 @@ useEffect(() => {
     setSelectedGroup(g)
     setSquadIndex(snap.squadIndex)
     prevSnapshot.current = snap
+    snapshotJsonRef.current = JSON.stringify(snap)
     setTimeout(() => {
-      prevSnapshot.current = getSnapshot()
+      const nextSnap = getSnapshot()
+      prevSnapshot.current = nextSnap
+      snapshotJsonRef.current = JSON.stringify(nextSnap)
       isRestoring.current = false
     })
   }
