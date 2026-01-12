@@ -1607,7 +1607,7 @@ useEffect(() => {
   const INITIAL_COST = 0
   const MAX_COST = 10
 
-  function calcCost(t: number) {
+  function calcCost(t: number, options?: { excludeSkillId?: number }) {
   // 🔒 初期化ガード
   if (!initialized || students.length === 0 || rowStudents.length === 0) {
     return 0
@@ -1638,7 +1638,12 @@ useEffect(() => {
 
   let spent = 0
   skills
-    .filter((ev) => ev.type === 'ex' && ev.start <= t)
+    .filter(
+      (ev) =>
+        ev.type === 'ex' &&
+        ev.start <= t &&
+        (options?.excludeSkillId === undefined || ev.id !== options.excludeSkillId)
+    )
     .forEach((ev) => {
       const rowId = rowStudents[ev.row]
       if (!rowId || rowId.startsWith('enemy:')) return
@@ -1771,7 +1776,8 @@ useEffect(() => {
         const st = students.find((s) => s.id === rowId)
         const need = st?.cost ?? 0
         if (need <= 0) return
-        if (calcCost(ev.start) < need) set.add(ev.id)
+        const availableCost = calcCost(ev.start, { excludeSkillId: ev.id })
+        if (availableCost < need) set.add(ev.id)
       })
 
     return set
@@ -3681,7 +3687,10 @@ function resolveBuffText(
         <button type="button" className="px-1">再生</button>
         <button
           type="button"
-          onClick={undo}
+          onClick={(e) => {
+            e.stopPropagation()
+            undo()
+          }}
           className="border rounded p-1 ml-2"
           aria-label="元に戻す"
         >
@@ -3689,7 +3698,10 @@ function resolveBuffText(
         </button>
         <button
           type="button"
-          onClick={redo}
+          onClick={(e) => {
+            e.stopPropagation()
+            redo()
+          }}
           className="border rounded p-1 ml-1"
           aria-label="やり直す"
         >
