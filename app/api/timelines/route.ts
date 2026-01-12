@@ -6,6 +6,7 @@ import fs from 'fs/promises'
 import path from 'path'
 import { Timeline } from '../../../types/timeline'
 import { upsertTimelines } from '../../../lib/tl-fetch'
+import { isValidSeasonNumber } from '@/lib/raid-data'
 
 const supabaseUrl = process.env.SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_ANON_KEY!
@@ -38,13 +39,16 @@ async function ensureTables(client: SupabaseClient, seasons: Season[]) {
 export async function GET(request: Request) {
   try {
     const reqUrl = new URL(request.url)
-    const selected = reqUrl.searchParams.getAll('season')
+    const selectedRaw = reqUrl.searchParams.getAll('season')
+    const selected = selectedRaw
+      .map((season) => season.trim().toUpperCase())
+      .filter((season) => season.length > 0)
     const raidPath = path.join(process.cwd(), 'data', 'raid.json')
     const raid = JSON.parse(await fs.readFile(raidPath, 'utf-8'))
     const seasons: Season[] = raid.seasons
     const targets =
       selected.length > 0
-        ? seasons.filter((s) => selected.includes(s.number))
+        ? seasons.filter((s) => selected.includes(s.number.toUpperCase()))
         : seasons
 
     await ensureTables(supabase, targets)
@@ -90,6 +94,7 @@ export async function GET(request: Request) {
         description?: string
         publishedAt?: string
         season?: string
+        thumbnail?: string | null
       }
       const formationVal = raw.formation || '[]'
       const isBilibili = raw.videoid.startsWith('bili:')
@@ -109,6 +114,7 @@ export async function GET(request: Request) {
         description: raw.description || '',
         publishedAt: raw.publishedAt,
         season: raw.season,
+        thumbnail: raw.thumbnail || undefined,
       }
     })
 
@@ -125,28 +131,40 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  
-const auth = createSupabaseRouteClient()
+  const auth = createSupabaseRouteClient()
 
-const { data: { user } } = await auth.auth.getUser()
-if (!user) {
-  return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-}
+  const { data: { user } } = await auth.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  }
 
-const { data: profile, error: pErr } = await auth
-  .from('profiles')
-  .select('admin')
-  .eq('id', user.id)
-  .single()
+  const { data: profile, error: pErr } = await auth
+    .from('profiles')
+    .select('admin')
+    .eq('id', user.id)
+    .single()
 
-if (pErr || !profile?.admin) {
-  return NextResponse.json({ error: 'forbidden' }, { status: 403 })
-}
+  if (pErr || !profile?.admin) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  }
 
-try {
+  try {
     const url = new URL(request.url)
     const shouldStream = url.searchParams.get('stream') === '1'
-    const { season } = await request.json()
+    const { season, platform } = await request.json()
+    const normalizedPlatform =
+      platform === 'youtube' || platform === 'bilibili'
+        ? platform
+        : platform === 'all' || platform == null
+          ? null
+          : 'invalid'
+    if (normalizedPlatform === 'invalid') {
+      return NextResponse.json({ error: 'invalid_platform' }, { status: 400 })
+    }
+    const normalizedSeason = season ? season.trim().toUpperCase() : null
+    if (normalizedSeason && !(await isValidSeasonNumber(normalizedSeason))) {
+      return NextResponse.json({ error: 'invalid_season' }, { status: 400 })
+    }
     const raidPath = path.join(process.cwd(), 'data', 'raid.json')
     const raid = JSON.parse(await fs.readFile(raidPath, 'utf-8'))
     const seasons: Season[] = raid.seasons
@@ -165,8 +183,9 @@ try {
             const result = await upsertTimelines({
               supabase: writer,
               seasons,
-              season,
+              season: normalizedSeason,
               log: (message) => push({ type: 'log', message }),
+              platform: normalizedPlatform,
             })
             push({ type: 'done', success: true, debug: result })
           } catch (error) {
@@ -186,8 +205,9 @@ try {
     const result = await upsertTimelines({
       supabase: writer,
       seasons,
-      season,
+      season: normalizedSeason,
       log: (message) => logs.push(message),
+      platform: normalizedPlatform,
     })
 
     return NextResponse.json({ success: true, debug: result, logs })
