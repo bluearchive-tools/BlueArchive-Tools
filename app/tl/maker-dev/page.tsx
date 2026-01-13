@@ -670,6 +670,32 @@ const startResizePluginWindow = useCallback(
       .join('\n\n')
   }, [enabledPlugins])
 
+  const toastCss = useMemo(
+    () => `
+      @keyframes toast-in-out {
+        0% { opacity: 0; transform: translateY(-8px); }
+        10% { opacity: 1; transform: translateY(0); }
+        90% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(-6px); }
+      }
+      .toast-item {
+        animation: toast-in-out 2s ease-in-out forwards;
+      }
+      @keyframes toast-progress {
+        0% { width: 100%; }
+        100% { width: 0%; }
+      }
+      .toast-progress {
+        animation: toast-progress 2s linear forwards;
+      }
+    `,
+    []
+  )
+
+  const globalCss = useMemo(() => {
+    return [pluginCss, toastCss].filter((v) => v && v.trim().length > 0).join('\n\n')
+  }, [pluginCss, toastCss])
+
   const pluginVars = useMemo(() => {
     const vars: Record<string, string> = {}
     enabledPlugins.forEach((p) => {
@@ -2986,7 +3012,7 @@ function resolveBuffText(
         <h1 className="text-xl font-bold">TLメーカー（dev）</h1>
         <PageHelpButton pageKey="tl-maker-dev" />
       </div>
-      {pluginCss && <style jsx global>{pluginCss}</style>}
+      {globalCss && <style jsx global>{globalCss}</style>}
       {toasts.length > 0 && (
         <div className="fixed top-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2">
           {toasts.map((toast) => (
@@ -3002,43 +3028,6 @@ function resolveBuffText(
           ))}
         </div>
       )}
-      <style
-        jsx
-        global
-      >{`
-        @keyframes toast-in-out {
-          0% {
-            opacity: 0;
-            transform: translateY(-8px);
-          }
-          10% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-          90% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-          100% {
-            opacity: 0;
-            transform: translateY(-6px);
-          }
-        }
-        .toast-item {
-          animation: toast-in-out 2s ease-in-out forwards;
-        }
-        @keyframes toast-progress {
-          0% {
-            width: 100%;
-          }
-          100% {
-            width: 0%;
-          }
-        }
-        .toast-progress {
-          animation: toast-progress 2s linear forwards;
-        }
-      `}</style>
       {pageLayoutMode === 'free' && (
         <div aria-hidden className="pointer-events-none flex-none" style={freeCanvasStyle} />
       )}
