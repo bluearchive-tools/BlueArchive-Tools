@@ -1165,7 +1165,6 @@ useEffect(() => {
     } catch {
       /* ignore */
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -1282,8 +1281,8 @@ useEffect(() => {
 
   const buildHistorySnapshot = useCallback((snap: ProjectSnapshot) => ({
     ...snap,
-    skills: snap.skills.map(({ show, ...rest }) => rest),
-    markers: snap.markers.map(({ show, ...rest }) => rest),
+    skills: snap.skills.map((s) => ({ ...s, show: undefined })),
+    markers: snap.markers.map((m) => ({ ...m, show: undefined })),
   }), [])
 
   const historyKey = useCallback((gid: string | null, idx: number) => {
