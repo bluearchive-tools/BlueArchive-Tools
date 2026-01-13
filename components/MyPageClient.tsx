@@ -89,6 +89,10 @@ const defaultShortcuts = (preferMeta: boolean) => ({
   redo: preferMeta ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z',
 })
 
+const defaultSearchShortcut = (preferMeta: boolean) => (preferMeta ? 'Cmd+K' : 'Ctrl+K')
+
+const SEARCH_SHORTCUT_STORAGE_KEY = 'app:searchShortcut'
+
 const formatShortcutFromEvent = (event: ReactKeyboardEvent<HTMLInputElement>) => {
   const key = event.key
   if (key === 'Backspace' || key === 'Delete') return ''
@@ -382,6 +386,9 @@ export default function MyPageClient({
   >('profile')
   const [makerShortcuts, setMakerShortcuts] = useState<{ undo: string; redo: string }>(() =>
     defaultShortcuts(detectIsMacPlatform())
+  )
+  const [searchShortcut, setSearchShortcut] = useState(() =>
+    defaultSearchShortcut(detectIsMacPlatform())
   )
   const profileRef = useRef<HTMLElement | null>(null)
   const socialRef = useRef<HTMLElement | null>(null)
@@ -1230,11 +1237,36 @@ export default function MyPageClient({
 
   useEffect(() => {
     try {
+      const raw = localStorage.getItem(SEARCH_SHORTCUT_STORAGE_KEY)
+      if (!raw) {
+        setSearchShortcut(defaultSearchShortcut(isMacPlatform))
+        return
+      }
+      if (raw.trim()) {
+        setSearchShortcut(raw)
+      } else {
+        setSearchShortcut(defaultSearchShortcut(isMacPlatform))
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [isMacPlatform])
+
+  useEffect(() => {
+    try {
       localStorage.setItem('tlMaker:shortcuts', JSON.stringify(makerShortcuts))
     } catch {
       /* ignore */
     }
   }, [makerShortcuts])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SEARCH_SHORTCUT_STORAGE_KEY, searchShortcut)
+    } catch {
+      /* ignore */
+    }
+  }, [searchShortcut])
 
   const pathWithSearch = useMemo(() => {
     const normalizedPath = pathname?.startsWith('/') ? pathname : `/${pathname ?? ''}`
@@ -2088,8 +2120,19 @@ export default function MyPageClient({
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold">ショートカットキー</h3>
-                <p className="text-sm text-gray-500">TLメーカーのショートカットキーを設定します</p>
+                <p className="text-sm text-gray-500">TLメーカーと検索バーのショートカットキーを設定します</p>
               </div>
+              <button
+                type="button"
+                className="rounded border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-white dark:border-gray-600 dark:hover:bg-gray-800"
+                onClick={() => {
+                  setMakerShortcuts(defaultShortcuts(isMacPlatform))
+                  setSearchShortcut(defaultSearchShortcut(isMacPlatform))
+                  setMessage('ショートカットキーをデフォルトに戻しました')
+                }}
+              >
+                デフォルトに戻す
+              </button>
             </div>
             <div className="space-y-3 text-sm">
               <label className="flex items-center gap-3">
@@ -2120,6 +2163,21 @@ export default function MyPageClient({
                   readOnly
                   className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
                   placeholder={isMacPlatform ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z'}
+                />
+              </label>
+              <label className="flex items-center gap-3">
+                <span className="w-32 text-gray-700">検索バー</span>
+                <input
+                  value={searchShortcut}
+                  onKeyDown={(e) => {
+                    e.preventDefault()
+                    const next = formatShortcutFromEvent(e)
+                    if (next === null) return
+                    setSearchShortcut(next)
+                  }}
+                  readOnly
+                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder={isMacPlatform ? 'Cmd+K' : 'Ctrl+K'}
                 />
               </label>
               <p className="text-xs text-gray-500">

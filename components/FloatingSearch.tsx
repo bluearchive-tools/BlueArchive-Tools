@@ -9,6 +9,8 @@ type SearchEntry = {
   keywords?: string[]
 }
 
+const SEARCH_SHORTCUT_STORAGE_KEY = 'app:searchShortcut'
+
 const detectIsMacPlatform = () => {
   if (typeof navigator === 'undefined') return false
   return /Mac|iPhone|iPad|iPod/i.test(navigator.platform)
@@ -34,11 +36,79 @@ const SEARCH_PAGES: SearchEntry[] = [
 export default function FloatingSearch() {
   const router = useRouter()
   const isMacPlatform = useMemo(() => detectIsMacPlatform(), [])
-  const shortcutLabel = isMacPlatform ? 'Cmd+K' : 'Ctrl+K'
+  const defaultShortcut = isMacPlatform ? 'Cmd+K' : 'Ctrl+K'
+  const [searchShortcut, setSearchShortcut] = useState(defaultShortcut)
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement | null>(null)
+
+  const shortcutLabel = searchShortcut || defaultShortcut
+
+  const normalizeKeyLabel = (value: string) => {
+    const trimmed = value.trim()
+    if (!trimmed) return ''
+    if (trimmed === ' ') return 'space'
+    return trimmed.toLowerCase()
+  }
+
+  const parseShortcut = (value: string) => {
+    const parts = value
+      .split('+')
+      .map((part) => part.trim())
+      .filter(Boolean)
+    const modifiers = new Set<string>()
+    let key = ''
+    parts.forEach((part) => {
+      const lower = part.toLowerCase()
+      if (lower === 'ctrl' || lower === 'control') {
+        modifiers.add('ctrl')
+      } else if (lower === 'cmd' || lower === 'meta' || lower === 'command') {
+        modifiers.add('meta')
+      } else if (lower === 'alt' || lower === 'option') {
+        modifiers.add('alt')
+      } else if (lower === 'shift') {
+        modifiers.add('shift')
+      } else {
+        key = part
+      }
+    })
+    return { modifiers, key }
+  }
+
+  const matchesShortcut = (event: KeyboardEvent, shortcut: string) => {
+    const parsed = parseShortcut(shortcut)
+    const key = normalizeKeyLabel(parsed.key)
+    if (!key) return false
+    if (parsed.modifiers.has('ctrl') !== event.ctrlKey) return false
+    if (parsed.modifiers.has('meta') !== event.metaKey) return false
+    if (parsed.modifiers.has('alt') !== event.altKey) return false
+    if (parsed.modifiers.has('shift') !== event.shiftKey) return false
+    return normalizeKeyLabel(event.key) === key
+  }
+
+  useEffect(() => {
+    const loadShortcut = () => {
+      try {
+        const raw = localStorage.getItem(SEARCH_SHORTCUT_STORAGE_KEY)
+        if (raw && raw.trim()) {
+          setSearchShortcut(raw)
+          return
+        }
+      } catch {
+        /* ignore */
+      }
+      setSearchShortcut(defaultShortcut)
+    }
+    loadShortcut()
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === SEARCH_SHORTCUT_STORAGE_KEY) {
+        loadShortcut()
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [defaultShortcut])
 
   const filtered = useMemo(() => {
     const trimmed = query.trim().toLowerCase()
@@ -67,9 +137,7 @@ export default function FloatingSearch() {
           target.isContentEditable)
       if (!open) {
         if (isInput) return
-        const isShortcut =
-          event.key.toLowerCase() === 'k' && (isMacPlatform ? event.metaKey : event.ctrlKey)
-        if (isShortcut) {
+        if (matchesShortcut(event, searchShortcut || defaultShortcut)) {
           event.preventDefault()
           setOpen(true)
         }
@@ -108,7 +176,7 @@ export default function FloatingSearch() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [activeIndex, isMacPlatform, open, router, visible])
+  }, [activeIndex, defaultShortcut, open, router, searchShortcut, visible])
 
   if (!open) return null
 
