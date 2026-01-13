@@ -10,6 +10,11 @@ import students from '../data/students.json'
 import FriendCodeCopy from './FriendCodeCopy'
 import DecorationInfoButton from './DecorationInfoButton'
 import { colord } from 'colord'
+import { useTheme } from './ThemeProvider'
+import { useLocale } from 'next-intl'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { SUPPORTED_LOCALES, parseLocale, type Locale } from '../lib/i18n/config'
+import { stripLeadingLocale } from '../lib/i18n/utils'
 
 interface Props {
   initialUsername: string | null
@@ -340,12 +345,26 @@ export default function MyPageClient({
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewVisible, setPreviewVisible] = useState(false)
   const [showUnowned, setShowUnowned] = useState(false)
-  const [activeSection, setActiveSection] = useState<'profile' | 'social' | 'account' | 'youtube' | 'links'>('profile')
+  const [activeSection, setActiveSection] = useState<
+    'profile' | 'social' | 'account' | 'youtube' | 'links' | 'header' | 'shortcuts'
+  >('profile')
+  const [makerShortcuts, setMakerShortcuts] = useState<{ undo: string; redo: string }>({
+    undo: 'Ctrl+Z',
+    redo: 'Ctrl+Shift+Z',
+  })
   const profileRef = useRef<HTMLElement | null>(null)
   const socialRef = useRef<HTMLElement | null>(null)
   const accountRef = useRef<HTMLElement | null>(null)
   const linksRef = useRef<HTMLElement | null>(null)
   const youtubeRef = useRef<HTMLElement | null>(null)
+  const headerRef = useRef<HTMLElement | null>(null)
+  const shortcutRef = useRef<HTMLElement | null>(null)
+
+  const { dark, toggle } = useTheme()
+  const locale = useLocale() as Locale
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
   const fetchIdentities = async () => {
     const { data, error } = await supabase.auth.getUser()
@@ -1159,6 +1178,68 @@ export default function MyPageClient({
     return () => window.clearTimeout(id)
   }, [message])
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('tlMaker:shortcuts')
+      if (!raw) return
+      const parsed = JSON.parse(raw) as Partial<{ undo: string; redo: string }>
+      setMakerShortcuts((prev) => ({
+        ...prev,
+        undo: typeof parsed.undo === 'string' ? parsed.undo : prev.undo,
+        redo: typeof parsed.redo === 'string' ? parsed.redo : prev.redo,
+      }))
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('tlMaker:shortcuts', JSON.stringify(makerShortcuts))
+    } catch {
+      /* ignore */
+    }
+  }, [makerShortcuts])
+
+  const pathWithSearch = useMemo(() => {
+    const normalizedPath = pathname?.startsWith('/') ? pathname : `/${pathname ?? ''}`
+    const basePath = stripLeadingLocale(normalizedPath)
+    const search = searchParams ? new URLSearchParams(searchParams) : null
+    search?.delete('lang')
+    const searchString = search?.toString()
+    return searchString ? `${basePath}?${searchString}` : basePath
+  }, [pathname, searchParams])
+
+  const changeLocale = (nextLocale: Locale) => {
+    if (!nextLocale || nextLocale === locale) return
+    if (typeof document !== 'undefined') {
+      document.cookie = `locale=${nextLocale}; path=/`
+      try {
+        localStorage.setItem('locale', nextLocale)
+      } catch {
+        /* ignore */
+      }
+    }
+    const target = new URLSearchParams()
+    target.set('lang', nextLocale)
+    router.push(`${pathWithSearch}?${target.toString()}`)
+  }
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const stored = parseLocale(localStorage.getItem('locale'))
+      if (stored && stored !== locale) {
+        document.cookie = `locale=${stored}; path=/`
+        const params = new URLSearchParams()
+        params.set('lang', stored)
+        router.replace(`${pathWithSearch}?${params.toString()}`)
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [locale, pathWithSearch, router])
+
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
       <aside className="w-full lg:w-64 shrink-0 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
@@ -1202,6 +1283,22 @@ export default function MyPageClient({
             onClick={() => setActiveSection('links')}
           >
             連携サービス
+          </button>
+          <button
+            className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
+              activeSection === 'header' ? 'bg-blue-50 text-blue-700' : ''
+            }`}
+            onClick={() => setActiveSection('header')}
+          >
+            ヘッダー設定
+          </button>
+          <button
+            className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
+              activeSection === 'shortcuts' ? 'bg-blue-50 text-blue-700' : ''
+            }`}
+            onClick={() => setActiveSection('shortcuts')}
+          >
+            ショートカットキー
           </button>
         </nav>
       </aside>
@@ -1898,6 +1995,89 @@ export default function MyPageClient({
                   すべて解除することはできません。別の連携を追加してから解除してください。
                 </p>
               )}
+            </div>
+          </section>
+        )}
+
+        {activeSection === 'header' && (
+          <section
+            ref={headerRef as unknown as React.RefObject<HTMLElement>}
+            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">ヘッダー設定</h3>
+                <p className="text-sm text-gray-500">ヘッダーに表示する設定を管理します</p>
+              </div>
+            </div>
+            <div className="space-y-4 text-sm">
+              <div className="flex items-center justify-between rounded border border-gray-200 bg-gray-50 px-3 py-2">
+                <div>
+                  <p className="font-semibold text-gray-700">テーマ</p>
+                  <p className="text-xs text-gray-500">ヘッダーのテーマ切替と連動します</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggle}
+                  className="rounded border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-white"
+                >
+                  {dark ? 'ライトモードに切替' : 'ダークモードに切替'}
+                </button>
+              </div>
+              <div className="flex items-center justify-between rounded border border-gray-200 bg-gray-50 px-3 py-2">
+                <div>
+                  <p className="font-semibold text-gray-700">表示言語</p>
+                  <p className="text-xs text-gray-500">ヘッダーの言語切替と同じ設定です</p>
+                </div>
+                <select
+                  value={locale}
+                  onChange={(e) => changeLocale(e.target.value as Locale)}
+                  className="rounded border border-gray-300 px-2 py-1 text-sm bg-white"
+                >
+                  {SUPPORTED_LOCALES.map((code) => (
+                    <option key={code} value={code}>
+                      {code.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {activeSection === 'shortcuts' && (
+          <section
+            ref={shortcutRef as unknown as React.RefObject<HTMLElement>}
+            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">ショートカットキー</h3>
+                <p className="text-sm text-gray-500">TLメーカーのショートカットキーを設定します</p>
+              </div>
+            </div>
+            <div className="space-y-3 text-sm">
+              <label className="flex items-center gap-3">
+                <span className="w-32 text-gray-700">元に戻す</span>
+                <input
+                  value={makerShortcuts.undo}
+                  onChange={(e) => setMakerShortcuts((prev) => ({ ...prev, undo: e.target.value }))}
+                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="Ctrl+Z"
+                />
+              </label>
+              <label className="flex items-center gap-3">
+                <span className="w-32 text-gray-700">やり直す</span>
+                <input
+                  value={makerShortcuts.redo}
+                  onChange={(e) => setMakerShortcuts((prev) => ({ ...prev, redo: e.target.value }))}
+                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="Ctrl+Shift+Z"
+                />
+              </label>
+              <p className="text-xs text-gray-500">
+                例: Ctrl+Z / Ctrl+Shift+Z / Cmd+Z のように「+」で区切って入力します。
+              </p>
             </div>
           </section>
         )}

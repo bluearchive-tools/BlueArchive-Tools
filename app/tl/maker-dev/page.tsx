@@ -521,6 +521,10 @@ export default function TLMakerPage() {
   const [historyLog, setHistoryLog] = useState<Array<{ id: number; at: string; summary: string }>>([])
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [toasts, setToasts] = useState<Array<{ id: number; text: string }>>([])
+  const [shortcutSettings, setShortcutSettings] = useState<{ undo: string; redo: string }>({
+    undo: 'Ctrl+Z',
+    redo: 'Ctrl+Shift+Z',
+  })
 
   // Plugins
   const [plugins, setPlugins] = useState<UserPlugin[]>([])
@@ -1032,6 +1036,47 @@ useEffect(() => {
     return () => window.clearTimeout(id)
   }, [toastMessage])
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('tlMaker:shortcuts')
+      if (!raw) return
+      const parsed = JSON.parse(raw) as Partial<{ undo: string; redo: string }>
+      setShortcutSettings((prev) => ({
+        ...prev,
+        undo: typeof parsed.undo === 'string' ? parsed.undo : prev.undo,
+        redo: typeof parsed.redo === 'string' ? parsed.redo : prev.redo,
+      }))
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('tlMaker:shortcuts', JSON.stringify(shortcutSettings))
+    } catch {
+      /* ignore */
+    }
+  }, [shortcutSettings])
+
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== 'tlMaker:shortcuts' || !e.newValue) return
+      try {
+        const parsed = JSON.parse(e.newValue) as Partial<{ undo: string; redo: string }>
+        setShortcutSettings((prev) => ({
+          ...prev,
+          undo: typeof parsed.undo === 'string' ? parsed.undo : prev.undo,
+          redo: typeof parsed.redo === 'string' ? parsed.redo : prev.redo,
+        }))
+      } catch {
+        /* ignore */
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
 
   // Pro mode / Snap の保存
   useEffect(() => {
@@ -1230,6 +1275,57 @@ useEffect(() => {
     squadIndex,
   }), [projectName, rowStudents, skills, markers, selectedGroup, squadIndex])
 
+  const getSnapshotRef = useRef(getSnapshot)
+  useEffect(() => {
+    getSnapshotRef.current = getSnapshot
+  }, [getSnapshot])
+
+  const buildHistorySnapshot = useCallback((snap: ProjectSnapshot) => ({
+    ...snap,
+    skills: snap.skills.map(({ show, ...rest }) => rest),
+    markers: snap.markers.map(({ show, ...rest }) => rest),
+  }), [])
+
+  const historyKey = useCallback((gid: string | null, idx: number) => {
+    return gid ? `tlMakerHistory_${gid}_${idx}` : 'tlMakerHistory_default'
+  }, [])
+
+  const saveHistory = useCallback(() => {
+    if (!initialized) return
+    try {
+      const key = historyKey(selectedGroup?.id ?? null, squadIndex)
+      const payload = {
+        undo: undoStack.current.slice(-200),
+        redo: redoStack.current.slice(-200),
+      }
+      localStorage.setItem(key, JSON.stringify(payload))
+    } catch {
+      /* ignore */
+    }
+  }, [initialized, historyKey, selectedGroup, squadIndex])
+
+  useEffect(() => {
+    if (!initialized) return
+    try {
+      const key = historyKey(selectedGroup?.id ?? null, squadIndex)
+      const raw = localStorage.getItem(key)
+      if (raw) {
+        const parsed = JSON.parse(raw) as { undo?: ProjectSnapshot[]; redo?: ProjectSnapshot[] }
+        undoStack.current = Array.isArray(parsed.undo) ? parsed.undo : []
+        redoStack.current = Array.isArray(parsed.redo) ? parsed.redo : []
+      } else {
+        undoStack.current = []
+        redoStack.current = []
+      }
+    } catch {
+      undoStack.current = []
+      redoStack.current = []
+    }
+    const snap = getSnapshotRef.current()
+    prevSnapshot.current = snap
+    snapshotJsonRef.current = JSON.stringify(buildHistorySnapshot(snap))
+  }, [initialized, selectedGroup, squadIndex, historyKey, buildHistorySnapshot])
+
   const buildHistorySummary = useCallback((prev: ProjectSnapshot, next: ProjectSnapshot) => {
     const summaries: string[] = []
     const prevSkillMap = new Map(prev.skills.map((s) => [s.id, s]))
@@ -1319,7 +1415,8 @@ useEffect(() => {
   useEffect(() => {
     if (!initialized || isRestoring.current || movingSkill) return
     const snap = getSnapshot()
-    const nextJson = JSON.stringify(snap)
+    const historySnap = buildHistorySnapshot(snap)
+    const nextJson = JSON.stringify(historySnap)
     if (snapshotJsonRef.current === null) {
       prevSnapshot.current = snap
       snapshotJsonRef.current = nextJson
@@ -1330,6 +1427,7 @@ useEffect(() => {
       undoStack.current.push(prev)
       if (undoStack.current.length > 200) undoStack.current.shift()
       redoStack.current = []
+      saveHistory()
 
       // (3) 履歴ログ（プロモード時のみ）
       if (proMode) {
@@ -1341,7 +1439,7 @@ useEffect(() => {
       prevSnapshot.current = snap
       snapshotJsonRef.current = nextJson
     }
-  }, [projectName, rowStudents, skills, markers, selectedGroup, squadIndex, initialized, getSnapshot, proMode, movingSkill, buildHistorySummary])
+  }, [projectName, rowStudents, skills, markers, selectedGroup, squadIndex, initialized, getSnapshot, proMode, movingSkill, buildHistorySummary, buildHistorySnapshot, saveHistory])
 
   const hidePopups = () => {
     if (menuInfo) setMenuInfo(null)
@@ -1563,6 +1661,7 @@ useEffect(() => {
     }
     redoStack.current.push(getSnapshot())
     restoreSnapshot(snap)
+    saveHistory()
     pushToast('元に戻しました')
   }
 
@@ -1574,6 +1673,7 @@ useEffect(() => {
     }
     undoStack.current.push(getSnapshot())
     restoreSnapshot(snap)
+    saveHistory()
     pushToast('やり直しました')
   }
 
@@ -1587,14 +1687,40 @@ useEffect(() => {
     setSelectedGroup(g)
     setSquadIndex(snap.squadIndex)
     prevSnapshot.current = snap
-    snapshotJsonRef.current = JSON.stringify(snap)
+    snapshotJsonRef.current = JSON.stringify(buildHistorySnapshot(snap))
     setTimeout(() => {
       const nextSnap = getSnapshot()
       prevSnapshot.current = nextSnap
-      snapshotJsonRef.current = JSON.stringify(nextSnap)
+      snapshotJsonRef.current = JSON.stringify(buildHistorySnapshot(nextSnap))
       isRestoring.current = false
     })
   }
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return
+      const target = e.target as HTMLElement | null
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.undo)) {
+        e.preventDefault()
+        undo()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.redo)) {
+        e.preventDefault()
+        redo()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [shortcutSettings, undo, redo])
 
   const switchSquad = (index: number) => {
   if (!selectedGroup) return
@@ -1921,6 +2047,38 @@ useEffect(() => {
     const s = clamped - m * 60
     const str = s.toFixed(3).padStart(6, '0')
     return `${m}:${str}`
+  }
+
+  const normalizeShortcut = (raw: string) => raw.replace(/\s+/g, '').toLowerCase()
+
+  const parseShortcut = (raw: string) => {
+    const tokens = normalizeShortcut(raw)
+      .split('+')
+      .map((t) => t.trim())
+      .filter(Boolean)
+    const mods = { ctrl: false, shift: false, alt: false, meta: false }
+    let key = ''
+    tokens.forEach((token) => {
+      if (token === 'ctrl' || token === 'control') mods.ctrl = true
+      else if (token === 'shift') mods.shift = true
+      else if (token === 'alt' || token === 'option') mods.alt = true
+      else if (token === 'meta' || token === 'cmd' || token === 'command') mods.meta = true
+      else key = token
+    })
+    return { key, mods }
+  }
+
+  const matchShortcut = (e: KeyboardEvent, raw: string) => {
+    if (!raw) return false
+    const { key, mods } = parseShortcut(raw)
+    if (!key) return false
+    const pressedKey = e.key.toLowerCase()
+    if (pressedKey !== key) return false
+    if (e.ctrlKey !== mods.ctrl) return false
+    if (e.shiftKey !== mods.shift) return false
+    if (e.altKey !== mods.alt) return false
+    if (e.metaKey !== mods.meta) return false
+    return true
   }
 
   
@@ -4200,6 +4358,35 @@ function resolveBuffText(
                 <option value="0.033">0.033s</option>
               </select>
             </label>
+
+            <div className="text-sm font-bold mt-2">ショートカットキー</div>
+            <label className="flex items-center gap-2 text-sm">
+              <span className="w-24">元に戻す</span>
+              <input
+                type="text"
+                value={shortcutSettings.undo}
+                onChange={(e) =>
+                  setShortcutSettings((prev) => ({ ...prev, undo: e.target.value }))
+                }
+                className="border rounded p-1 flex-1"
+                placeholder="Ctrl+Z"
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <span className="w-24">やり直す</span>
+              <input
+                type="text"
+                value={shortcutSettings.redo}
+                onChange={(e) =>
+                  setShortcutSettings((prev) => ({ ...prev, redo: e.target.value }))
+                }
+                className="border rounded p-1 flex-1"
+                placeholder="Ctrl+Shift+Z"
+              />
+            </label>
+            <p className="text-xs text-gray-500">
+              例: Ctrl+Z / Ctrl+Shift+Z / Cmd+Z のように「+」で区切って入力します。
+            </p>
 
             <div className="border-t my-2" />
 
