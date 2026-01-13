@@ -519,6 +519,8 @@ export default function TLMakerPage() {
   const [showHistoryModal, setShowHistoryModal] = useState(false)
   const [showExTemplateModal, setShowExTemplateModal] = useState(false)
   const [historyLog, setHistoryLog] = useState<Array<{ id: number; at: string; summary: string }>>([])
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [toasts, setToasts] = useState<Array<{ id: number; text: string }>>([])
 
   // Plugins
   const [plugins, setPlugins] = useState<UserPlugin[]>([])
@@ -617,6 +619,10 @@ const startResizePluginWindow = useCallback(
       }))
     )
   }, [enabledPlugins])
+
+  const pushToast = useCallback((text: string) => {
+    setToastMessage(text)
+  }, [])
 
   const allEventTemplates = useMemo<EventTemplate[]>(() => {
     return [...eventTemplates, ...pluginTemplates]
@@ -989,6 +995,17 @@ useEffect(() => {
   setUserStats((prev) => ({ ...loaded, ...prev }))
 }, [])
 
+  useEffect(() => {
+    if (!toastMessage) return
+    const toastId = Date.now() + Math.random()
+    setToasts((prev) => [{ id: toastId, text: toastMessage }, ...prev])
+    setToastMessage(null)
+    const id = window.setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== toastId))
+    }, 2000)
+    return () => window.clearTimeout(id)
+  }, [toastMessage])
+
 
   // Pro mode / Snap の保存
   useEffect(() => {
@@ -1187,8 +1204,94 @@ useEffect(() => {
     squadIndex,
   }), [projectName, rowStudents, skills, markers, selectedGroup, squadIndex])
 
+  const buildHistorySummary = useCallback((prev: ProjectSnapshot, next: ProjectSnapshot) => {
+    const summaries: string[] = []
+    const prevSkillMap = new Map(prev.skills.map((s) => [s.id, s]))
+    const nextSkillMap = new Map(next.skills.map((s) => [s.id, s]))
+    const prevMarkerMap = new Map(prev.markers.map((m) => [m.id, m]))
+    const nextMarkerMap = new Map(next.markers.map((m) => [m.id, m]))
+
+    const addedSkills = next.skills.filter((s) => !prevSkillMap.has(s.id))
+    const removedSkills = prev.skills.filter((s) => !nextSkillMap.has(s.id))
+    const changedSkills = next.skills.filter((s) => {
+      const before = prevSkillMap.get(s.id)
+      if (!before) return false
+      return (
+        before.start !== s.start ||
+        before.end !== s.end ||
+        before.row !== s.row ||
+        before.label !== s.label ||
+        before.type !== s.type ||
+        before.travel !== s.travel ||
+        before.motion !== s.motion ||
+        before.target !== s.target
+      )
+    })
+
+    const addedMarkers = next.markers.filter((m) => !prevMarkerMap.has(m.id))
+    const removedMarkers = prev.markers.filter((m) => !nextMarkerMap.has(m.id))
+    const changedMarkers = next.markers.filter((m) => {
+      const before = prevMarkerMap.get(m.id)
+      if (!before) return false
+      return (
+        before.time !== m.time ||
+        before.duration !== m.duration ||
+        before.label !== m.label ||
+        before.skillable !== m.skillable
+      )
+    })
+
+    const formatList = <T,>(items: T[], formatter: (item: T) => string) => {
+      const labels = items.map(formatter).filter((label) => label.trim().length > 0)
+      const shown = labels.slice(0, 3)
+      const extra = items.length - shown.length
+      if (shown.length === 0) return `${items.length}件`
+      return `${shown.join(' / ')}${extra > 0 ? ` +${extra}` : ''}`
+    }
+
+    const formatSkill = (ev: SkillEvent) => {
+      const base = ev.label?.trim() || (ev.type === 'ex' ? 'EX' : 'NS')
+      return `${base}@${ev.row + 1}`
+    }
+
+    const formatMarker = (ev: MarkerEvent) => ev.label?.trim() || 'イベント'
+
+    if (addedSkills.length) {
+      summaries.push(`スキル追加: ${formatList(addedSkills, formatSkill)}`)
+    }
+    if (removedSkills.length) {
+      summaries.push(`スキル削除: ${formatList(removedSkills, formatSkill)}`)
+    }
+    if (changedSkills.length) {
+      summaries.push(`スキル編集: ${formatList(changedSkills, formatSkill)}`)
+    }
+    if (addedMarkers.length) {
+      summaries.push(`イベント追加: ${formatList(addedMarkers, formatMarker)}`)
+    }
+    if (removedMarkers.length) {
+      summaries.push(`イベント削除: ${formatList(removedMarkers, formatMarker)}`)
+    }
+    if (changedMarkers.length) {
+      summaries.push(`イベント編集: ${formatList(changedMarkers, formatMarker)}`)
+    }
+
+    if (prev.projectName !== next.projectName) {
+      const before = prev.projectName || '未設定'
+      const after = next.projectName || '未設定'
+      summaries.push(`TL名変更: ${before} → ${after}`)
+    }
+    if (JSON.stringify(prev.rowStudents) !== JSON.stringify(next.rowStudents)) {
+      summaries.push('編成変更')
+    }
+    if (prev.groupId !== next.groupId || prev.squadIndex !== next.squadIndex) {
+      summaries.push('部隊切替')
+    }
+
+    return summaries.length > 0 ? summaries.join(' / ') : '編集'
+  }, [])
+
   useEffect(() => {
-    if (!initialized || isRestoring.current) return
+    if (!initialized || isRestoring.current || movingSkill) return
     const snap = getSnapshot()
     const nextJson = JSON.stringify(snap)
     if (snapshotJsonRef.current === null) {
@@ -1204,16 +1307,7 @@ useEffect(() => {
 
       // (3) 履歴ログ（プロモード時のみ）
       if (proMode) {
-        const summary =
-          prev.skills.length !== snap.skills.length
-            ? snap.skills.length > prev.skills.length
-              ? 'スキル追加'
-              : 'スキル削除'
-            : prev.markers.length !== snap.markers.length
-              ? snap.markers.length > prev.markers.length
-                ? 'イベント追加'
-                : 'イベント削除'
-              : '編集'
+        const summary = buildHistorySummary(prev, snap)
         setHistoryLog((list) =>
           [...list, { id: Date.now(), at: new Date().toLocaleTimeString(), summary }].slice(-200)
         )
@@ -1221,7 +1315,7 @@ useEffect(() => {
       prevSnapshot.current = snap
       snapshotJsonRef.current = nextJson
     }
-  }, [projectName, rowStudents, skills, markers, selectedGroup, squadIndex, initialized, getSnapshot, proMode])
+  }, [projectName, rowStudents, skills, markers, selectedGroup, squadIndex, initialized, getSnapshot, proMode, movingSkill, buildHistorySummary])
 
   const hidePopups = () => {
     if (menuInfo) setMenuInfo(null)
@@ -1437,16 +1531,24 @@ useEffect(() => {
 
   const undo = () => {
     const snap = undoStack.current.pop()
-    if (!snap) return
+    if (!snap) {
+      pushToast('これ以上戻せません')
+      return
+    }
     redoStack.current.push(getSnapshot())
     restoreSnapshot(snap)
+    pushToast('元に戻しました')
   }
 
   const redo = () => {
     const snap = redoStack.current.pop()
-    if (!snap) return
+    if (!snap) {
+      pushToast('これ以上進めません')
+      return
+    }
     undoStack.current.push(getSnapshot())
     restoreSnapshot(snap)
+    pushToast('やり直しました')
   }
 
   const restoreSnapshot = (snap: ProjectSnapshot) => {
@@ -2136,14 +2238,16 @@ useEffect(() => {
         const macro = pluginMacros.find((m) => m.pluginId === btn.pluginId && m.id === btn.macroId)
         if (macro) {
           runPluginMacro(macro)
+          pushToast(`ツール実行: ${btn.label} (${btn.pluginName})`)
           return
         }
       }
       if (btn.actions && Array.isArray(btn.actions)) {
         runPluginActions(btn.actions, btn.pluginId)
+        pushToast(`ツール実行: ${btn.label} (${btn.pluginName})`)
       }
     },
-    [pluginMacros, proMode, runPluginActions, runPluginMacro]
+    [pluginMacros, proMode, runPluginActions, runPluginMacro, pushToast]
   )
 
 
@@ -2883,6 +2987,58 @@ function resolveBuffText(
         <PageHelpButton pageKey="tl-maker-dev" />
       </div>
       {pluginCss && <style jsx global>{pluginCss}</style>}
+      {toasts.length > 0 && (
+        <div className="fixed top-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2">
+          {toasts.map((toast) => (
+            <div
+              key={toast.id}
+              className="toast-item relative overflow-hidden rounded border border-blue-200 bg-blue-50 px-4 py-3 pb-4 text-sm text-blue-800 shadow-lg"
+            >
+              <div>{toast.text}</div>
+              <div className="toast-bar absolute bottom-0 left-0 right-0 h-1 bg-blue-100">
+                <div className="toast-progress h-full bg-blue-400" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <style
+        jsx
+        global
+      >{`
+        @keyframes toast-in-out {
+          0% {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+          10% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+          90% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+          100% {
+            opacity: 0;
+            transform: translateY(-6px);
+          }
+        }
+        .toast-item {
+          animation: toast-in-out 2s ease-in-out forwards;
+        }
+        @keyframes toast-progress {
+          0% {
+            width: 100%;
+          }
+          100% {
+            width: 0%;
+          }
+        }
+        .toast-progress {
+          animation: toast-progress 2s linear forwards;
+        }
+      `}</style>
       {pageLayoutMode === 'free' && (
         <div aria-hidden className="pointer-events-none flex-none" style={freeCanvasStyle} />
       )}
@@ -3711,7 +3867,10 @@ function resolveBuffText(
         </button>
         <button
           type="button"
-          onClick={() => setShowImport(true)}
+          onClick={() => {
+            setShowImport(true)
+            pushToast('部隊インポートを開きました')
+          }}
           className="border rounded p-1 ml-2"
           aria-label="部隊インポート"
         >
