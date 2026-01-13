@@ -1,6 +1,13 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import type { UserIdentity } from '@supabase/supabase-js'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -70,6 +77,31 @@ type TlDefaultSettings = {
   visibility: 'public' | 'restricted' | 'private'
   allowedUserIds: string[]
   hideTlUntilYoutube: boolean
+}
+
+const detectIsMacPlatform = () => {
+  if (typeof navigator === 'undefined') return false
+  return /Mac|iPhone|iPad|iPod/i.test(navigator.platform)
+}
+
+const defaultShortcuts = (preferMeta: boolean) => ({
+  undo: preferMeta ? 'Cmd+Z' : 'Ctrl+Z',
+  redo: preferMeta ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z',
+})
+
+const formatShortcutFromEvent = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+  const key = event.key
+  if (key === 'Backspace' || key === 'Delete') return ''
+  if (['Shift', 'Control', 'Alt', 'Meta'].includes(key)) return null
+  const parts: string[] = []
+  if (event.ctrlKey) parts.push('Ctrl')
+  if (event.metaKey) parts.push('Cmd')
+  if (event.altKey) parts.push('Alt')
+  if (event.shiftKey) parts.push('Shift')
+  const label =
+    key.length === 1 ? key.toUpperCase() : `${key.slice(0, 1).toUpperCase()}${key.slice(1)}`
+  parts.push(label)
+  return parts.join('+')
 }
 
 const detectSocialService = (label: string): SocialService => {
@@ -348,10 +380,9 @@ export default function MyPageClient({
   const [activeSection, setActiveSection] = useState<
     'profile' | 'social' | 'account' | 'youtube' | 'links' | 'header' | 'shortcuts'
   >('profile')
-  const [makerShortcuts, setMakerShortcuts] = useState<{ undo: string; redo: string }>({
-    undo: 'Ctrl+Z',
-    redo: 'Ctrl+Shift+Z',
-  })
+  const [makerShortcuts, setMakerShortcuts] = useState<{ undo: string; redo: string }>(() =>
+    defaultShortcuts(detectIsMacPlatform())
+  )
   const profileRef = useRef<HTMLElement | null>(null)
   const socialRef = useRef<HTMLElement | null>(null)
   const accountRef = useRef<HTMLElement | null>(null)
@@ -361,6 +392,7 @@ export default function MyPageClient({
   const shortcutRef = useRef<HTMLElement | null>(null)
 
   const { dark, toggle } = useTheme()
+  const isMacPlatform = useMemo(() => detectIsMacPlatform(), [])
   const locale = useLocale() as Locale
   const router = useRouter()
   const pathname = usePathname()
@@ -1181,7 +1213,10 @@ export default function MyPageClient({
   useEffect(() => {
     try {
       const raw = localStorage.getItem('tlMaker:shortcuts')
-      if (!raw) return
+      if (!raw) {
+        setMakerShortcuts(defaultShortcuts(isMacPlatform))
+        return
+      }
       const parsed = JSON.parse(raw) as Partial<{ undo: string; redo: string }>
       setMakerShortcuts((prev) => ({
         ...prev,
@@ -1191,7 +1226,7 @@ export default function MyPageClient({
     } catch {
       /* ignore */
     }
-  }, [])
+  }, [isMacPlatform])
 
   useEffect(() => {
     try {
@@ -2061,22 +2096,34 @@ export default function MyPageClient({
                 <span className="w-32 text-gray-700">元に戻す</span>
                 <input
                   value={makerShortcuts.undo}
-                  onChange={(e) => setMakerShortcuts((prev) => ({ ...prev, undo: e.target.value }))}
+                  onKeyDown={(e) => {
+                    e.preventDefault()
+                    const next = formatShortcutFromEvent(e)
+                    if (next === null) return
+                    setMakerShortcuts((prev) => ({ ...prev, undo: next }))
+                  }}
+                  readOnly
                   className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
-                  placeholder="Ctrl+Z"
+                  placeholder={isMacPlatform ? 'Cmd+Z' : 'Ctrl+Z'}
                 />
               </label>
               <label className="flex items-center gap-3">
                 <span className="w-32 text-gray-700">やり直す</span>
                 <input
                   value={makerShortcuts.redo}
-                  onChange={(e) => setMakerShortcuts((prev) => ({ ...prev, redo: e.target.value }))}
+                  onKeyDown={(e) => {
+                    e.preventDefault()
+                    const next = formatShortcutFromEvent(e)
+                    if (next === null) return
+                    setMakerShortcuts((prev) => ({ ...prev, redo: next }))
+                  }}
+                  readOnly
                   className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
-                  placeholder="Ctrl+Shift+Z"
+                  placeholder={isMacPlatform ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z'}
                 />
               </label>
               <p className="text-xs text-gray-500">
-                例: Ctrl+Z / Ctrl+Shift+Z / Cmd+Z のように「+」で区切って入力します。
+                入力欄をクリックしてキーを押してください（例: {isMacPlatform ? 'Cmd+Z' : 'Ctrl+Z'}）。
               </p>
             </div>
           </section>

@@ -28,6 +28,17 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+:root.dark .bg-white:not([class*="dark:bg-"]),
+:root.dark .bg-gray-50:not([class*="dark:bg-"]),
+:root.dark .bg-slate-50:not([class*="dark:bg-"]) {
+  background-color: #0f172a;
+}
+
+:root.dark .bg-gray-100:not([class*="dark:bg-"]),
+:root.dark .bg-slate-100:not([class*="dark:bg-"]) {
+  background-color: #111827;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }

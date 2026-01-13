@@ -1,6 +1,15 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback, useMemo, Fragment, type CSSProperties } from 'react'
+import {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+  Fragment,
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -245,6 +254,31 @@ interface UserPlugin {
   // ページに埋め込むブロック
   blocks?: PluginPageBlock[]
   style?: PluginStyle
+}
+
+const detectIsMacPlatform = () => {
+  if (typeof navigator === 'undefined') return false
+  return /Mac|iPhone|iPad|iPod/i.test(navigator.platform)
+}
+
+const defaultShortcuts = (preferMeta: boolean) => ({
+  undo: preferMeta ? 'Cmd+Z' : 'Ctrl+Z',
+  redo: preferMeta ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z',
+})
+
+const formatShortcutFromEvent = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+  const key = event.key
+  if (key === 'Backspace' || key === 'Delete') return ''
+  if (['Shift', 'Control', 'Alt', 'Meta'].includes(key)) return null
+  const parts: string[] = []
+  if (event.ctrlKey) parts.push('Ctrl')
+  if (event.metaKey) parts.push('Cmd')
+  if (event.altKey) parts.push('Alt')
+  if (event.shiftKey) parts.push('Shift')
+  const label =
+    key.length === 1 ? key.toUpperCase() : `${key.slice(0, 1).toUpperCase()}${key.slice(1)}`
+  parts.push(label)
+  return parts.join('+')
 }
 
 
@@ -521,10 +555,10 @@ export default function TLMakerPage() {
   const [historyLog, setHistoryLog] = useState<Array<{ id: number; at: string; summary: string }>>([])
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [toasts, setToasts] = useState<Array<{ id: number; text: string }>>([])
-  const [shortcutSettings, setShortcutSettings] = useState<{ undo: string; redo: string }>({
-    undo: 'Ctrl+Z',
-    redo: 'Ctrl+Shift+Z',
-  })
+  const [shortcutSettings, setShortcutSettings] = useState<{ undo: string; redo: string }>(() =>
+    defaultShortcuts(detectIsMacPlatform())
+  )
+  const isMacPlatform = useMemo(() => detectIsMacPlatform(), [])
 
   // Plugins
   const [plugins, setPlugins] = useState<UserPlugin[]>([])
@@ -1039,7 +1073,10 @@ useEffect(() => {
   useEffect(() => {
     try {
       const raw = localStorage.getItem('tlMaker:shortcuts')
-      if (!raw) return
+      if (!raw) {
+        setShortcutSettings(defaultShortcuts(isMacPlatform))
+        return
+      }
       const parsed = JSON.parse(raw) as Partial<{ undo: string; redo: string }>
       setShortcutSettings((prev) => ({
         ...prev,
@@ -1049,7 +1086,7 @@ useEffect(() => {
     } catch {
       /* ignore */
     }
-  }, [])
+  }, [isMacPlatform])
 
   useEffect(() => {
     try {
@@ -4364,11 +4401,15 @@ function resolveBuffText(
               <input
                 type="text"
                 value={shortcutSettings.undo}
-                onChange={(e) =>
-                  setShortcutSettings((prev) => ({ ...prev, undo: e.target.value }))
-                }
+                onKeyDown={(e) => {
+                  e.preventDefault()
+                  const next = formatShortcutFromEvent(e)
+                  if (next === null) return
+                  setShortcutSettings((prev) => ({ ...prev, undo: next }))
+                }}
+                readOnly
                 className="border rounded p-1 flex-1"
-                placeholder="Ctrl+Z"
+                placeholder={isMacPlatform ? 'Cmd+Z' : 'Ctrl+Z'}
               />
             </label>
             <label className="flex items-center gap-2 text-sm">
@@ -4376,15 +4417,19 @@ function resolveBuffText(
               <input
                 type="text"
                 value={shortcutSettings.redo}
-                onChange={(e) =>
-                  setShortcutSettings((prev) => ({ ...prev, redo: e.target.value }))
-                }
+                onKeyDown={(e) => {
+                  e.preventDefault()
+                  const next = formatShortcutFromEvent(e)
+                  if (next === null) return
+                  setShortcutSettings((prev) => ({ ...prev, redo: next }))
+                }}
+                readOnly
                 className="border rounded p-1 flex-1"
-                placeholder="Ctrl+Shift+Z"
+                placeholder={isMacPlatform ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z'}
               />
             </label>
             <p className="text-xs text-gray-500">
-              例: Ctrl+Z / Ctrl+Shift+Z / Cmd+Z のように「+」で区切って入力します。
+              入力欄をクリックしてキーを押してください（例: {isMacPlatform ? 'Cmd+Z' : 'Ctrl+Z'}）。
             </p>
 
             <div className="border-t my-2" />
