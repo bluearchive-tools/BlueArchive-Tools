@@ -1925,7 +1925,7 @@ useEffect(() => {
     }
     if (!costRecoveryApplyBonusTouched) {
       const stats = getStats(st.id)
-      const uniqueStar = stats?.unique_star ?? 0
+      const uniqueStar = Number(stats?.unique_star ?? 0)
       setCostRecoveryApplyBonus(uniqueStar >= 2)
     }
   }, [
@@ -3817,7 +3817,7 @@ function resolveBuffText(
                   setCostRecoveryDuration(0)
                   setCostRecoveryTrigger(snapTime(startTime + travel))
                   setCostRecoveryTriggerTouched(false)
-                  setCostRecoveryApplyBonus((stats?.unique_star ?? 0) >= 2)
+                  setCostRecoveryApplyBonus(Number(stats?.unique_star ?? 0) >= 2)
                   setCostRecoveryApplyBonusTouched(false)
                   setShowForm(true)
                   setShowMenu(false)
