@@ -738,7 +738,7 @@ useEffect(() => {
     }
     if (!costRecoveryApplyBonusTouched) {
       const stats = getStats(st.id)
-      const uniqueStar = stats?.unique_star ?? 0
+      const uniqueStar = Number(stats?.unique_star ?? 0)
       setCostRecoveryApplyBonus(uniqueStar >= 2)
     }
   }, [
