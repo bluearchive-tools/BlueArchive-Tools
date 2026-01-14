@@ -84,6 +84,13 @@ interface SkillEvent {
   travel?: number
   motion?: number
   target?: number
+  cost?: number
+  costRecovery?: {
+    amount: number
+    duration: number
+    trigger: number
+    applyDurationBonus: boolean
+  }
   show?: boolean
 }
 
@@ -152,6 +159,16 @@ export default function TLMakerPage() {
   const [start, setStart] = useState(0)
   const [end, setEnd] = useState(1)
   const [label, setLabel] = useState('')
+  const [skillCost, setSkillCost] = useState(0)
+  const [skillCostTouched, setSkillCostTouched] = useState(false)
+  const [showCostDetails, setShowCostDetails] = useState(false)
+  const [costRecoveryEnabled, setCostRecoveryEnabled] = useState(false)
+  const [costRecoveryAmount, setCostRecoveryAmount] = useState(0)
+  const [costRecoveryDuration, setCostRecoveryDuration] = useState(0)
+  const [costRecoveryTrigger, setCostRecoveryTrigger] = useState(0)
+  const [costRecoveryTriggerTouched, setCostRecoveryTriggerTouched] = useState(false)
+  const [costRecoveryApplyBonus, setCostRecoveryApplyBonus] = useState(false)
+  const [costRecoveryApplyBonusTouched, setCostRecoveryApplyBonusTouched] = useState(false)
   const [templateId, setTemplateId] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [showImport, setShowImport] = useState(false)
@@ -190,6 +207,7 @@ export default function TLMakerPage() {
   const [showSettings, setShowSettings] = useState(false)
   const [showTextTL, setShowTextTL] = useState(false)
   const [textTL, setTextTL] = useState('')
+  const [showCostLines, setShowCostLines] = useState(false)
   const [showDamageCalc, setShowDamageCalc] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showEnemyModal, setShowEnemyModal] = useState(false)
@@ -704,6 +722,38 @@ useEffect(() => {
   }, [row, start, selectedType, rowStudents, students, applyTravel, skillKind])
 
   useEffect(() => {
+    if (selectedType !== 'skill') return
+    const st = students.find((s) => s.id === rowStudents[row])
+    if (!st) return
+    if (!skillCostTouched) {
+      setSkillCost(st.cost ?? 0)
+    }
+    const travel =
+      skillKind === 'ex'
+        ? st.exHitDelay || 0
+        : st.normalHitDelay || 0
+    const defaultTrigger = snapTime(start + travel)
+    if (!costRecoveryTriggerTouched) {
+      setCostRecoveryTrigger(defaultTrigger)
+    }
+    if (!costRecoveryApplyBonusTouched) {
+      const stats = getStats(st.id)
+      const uniqueStar = stats?.unique_star ?? 0
+      setCostRecoveryApplyBonus(uniqueStar >= 2)
+    }
+  }, [
+    selectedType,
+    row,
+    start,
+    rowStudents,
+    students,
+    skillKind,
+    skillCostTouched,
+    costRecoveryTriggerTouched,
+    costRecoveryApplyBonusTouched,
+  ])
+
+  useEffect(() => {
   if (!initialized || isRestoring.current) return
   saveProject()
 }, [initialized, projectName, selectedGroup, squadIndex, rowStudents, skills, markers])
@@ -722,9 +772,11 @@ useEffect(() => {
     (id) => id && !id.startsWith('enemy:')
   ).length
 
-  const recoveryTime = Math.max(0, t - 2)
-  let recovery = 0.07 * members * recoveryTime
+  const recoveryStart = 2
+  const baseRate = 0.07 * members
+  let recovery = 0
 
+  let specialMultiplier = 1
   rowStudents.forEach((id) => {
     if (!id || id.startsWith('enemy:')) return
     const st = students.find((s) => s.id === id)
@@ -736,10 +788,34 @@ useEffect(() => {
         const stats = getStats(id)
         const level = stats?.sub_skill ?? defaultLevels.sub
         const buff = val[level - 1]
-        if (buff !== undefined) recovery *= 1 + buff / 100
+        if (buff !== undefined) specialMultiplier *= 1 + buff / 100
       }
     }
   })
+
+  const getRecoveryBonusAt = (time: number) => {
+    let bonus = 0
+    skills.forEach((ev) => {
+      if (!ev.costRecovery) return
+      const { amount, duration, trigger, applyDurationBonus } = ev.costRecovery
+      if (amount === 0 || duration <= 0) return
+      const adjustedDuration = applyDurationBonus ? duration * 1.19 : duration
+      if (time >= trigger && time <= trigger + adjustedDuration) {
+        bonus += amount
+      }
+    })
+    return bonus
+  }
+
+  if (t > recoveryStart) {
+    const step = 0.1
+    for (let time = recoveryStart; time < t; time = parseFloat((time + step).toFixed(3))) {
+      const delta = Math.min(step, t - time)
+      const bonus = getRecoveryBonusAt(time)
+      const multiplier = specialMultiplier * (1 + bonus / 100)
+      recovery += baseRate * delta * multiplier
+    }
+  }
 
   let spent = 0
   skills
@@ -749,7 +825,8 @@ useEffect(() => {
       if (!rowId || rowId.startsWith('enemy:')) return
       const st = students.find((s) => s.id === rowId)
       if (!st) return
-      spent += st.cost || 0
+      const costValue = ev.cost ?? st.cost ?? 0
+      spent += costValue
     })
 
   return Math.min(MAX_COST, INITIAL_COST + recovery - spent)
@@ -772,11 +849,12 @@ useEffect(() => {
         skillKind === 'ex'
           ? Math.max(0, (st?.exMotionDuration || 0) - travel)
           : Math.max(0, (st?.normalMotionDuration || 0) - travel)
-      if (skillKind === 'ex' && waitCost && st?.cost) {
+      const costValue = skillCost
+      if (skillKind === 'ex' && waitCost && costValue > 0) {
         let t = s
-        if (calcCost(t) < st.cost) {
+        if (calcCost(t) < costValue) {
           while (t <= totalSeconds) {
-            if (calcCost(t) >= st.cost) break
+            if (calcCost(t) >= costValue) break
             t = snapTime(t + 0.1)
           }
           if (t !== s) {
@@ -787,7 +865,7 @@ useEffect(() => {
         } else {
           while (t >= 0) {
             const prev = snapTime(t - 0.1)
-            if (prev < 0 || calcCost(prev) < st.cost) break
+            if (prev < 0 || calcCost(prev) < costValue) break
             t = prev
           }
           if (t !== s) {
@@ -834,6 +912,17 @@ useEffect(() => {
           travel,
           motion,
           type: skillKind,
+          cost: skillCost,
+          ...(costRecoveryEnabled && costRecoveryDuration > 0 && costRecoveryAmount !== 0
+            ? {
+                costRecovery: {
+                  amount: costRecoveryAmount,
+                  duration: costRecoveryDuration,
+                  trigger: costRecoveryTrigger,
+                  applyDurationBonus: costRecoveryApplyBonus,
+                },
+              }
+            : {}),
           ...(target !== undefined ? { target } : {}),
         },
       ])
@@ -898,11 +987,46 @@ useEffect(() => {
       const st = students.find((s) => s.id === rowId)
       if (!st) return ''
 
-      const baseCost = st.cost ?? 0
+      const baseCost = ev.cost ?? st.cost ?? 0
       const before = Math.min(MAX_COST, calcCost(ev.start) + baseCost)
       return `${formatRemain(ev.start)}(${before.toFixed(2)}cost) ${st.name}`
     })
-}, [initialized, skills, students, rowStudents, calcCost])
+}, [initialized, skills, students, rowStudents])
+
+  const costDetailLines = useMemo(() => {
+  if (!initialized) return []
+  const entries: Array<{ time: number; text: string }> = []
+
+  skills
+    .filter((ev) => ev.type === 'ex')
+    .forEach((ev) => {
+      const rowId = rowStudents[ev.row]
+      if (!rowId) return
+      const st = students.find((s) => s.id === rowId)
+      if (!st) return
+      const costValue = ev.cost ?? st.cost ?? 0
+      entries.push({
+        time: ev.start,
+        text: `${formatRemain(ev.start)} 消費-${costValue.toFixed(1)} (${st.name})`,
+      })
+    })
+
+  skills.forEach((ev) => {
+    if (!ev.costRecovery) return
+    const { amount, duration, trigger, applyDurationBonus } = ev.costRecovery
+    if (amount === 0 || duration <= 0) return
+    const adjustedDuration = applyDurationBonus ? duration * 1.19 : duration
+    const durationLabel = applyDurationBonus
+      ? `${duration.toFixed(2)}s → ${adjustedDuration.toFixed(2)}s`
+      : `${duration.toFixed(2)}s`
+    entries.push({
+      time: trigger,
+      text: `${formatRemain(trigger)} コスト回復+${amount.toFixed(1)}% (${durationLabel})`,
+    })
+  })
+
+  return entries.sort((a, b) => a.time - b.time).map((e) => e.text)
+}, [initialized, skills, students, rowStudents])
 
 
   useEffect(() => {
@@ -1631,9 +1755,22 @@ setShowCreateModal(false)
                   setRow(0)
                   const st = students.find((s) => s.id === rowStudents[0])
                   const dur = st?.exDuration ?? 1
+                  const startTime = snapTime(playhead)
+                  const travel = st?.exHitDelay || 0
+                  const stats = st ? getStats(st.id) : undefined
                   setApplyTravel(false)
-                  setStart(snapTime(playhead))
-                  setEnd(snapTime(playhead + dur))
+                  setStart(startTime)
+                  setEnd(snapTime(startTime + dur))
+                  setSkillCost(st?.cost ?? 0)
+                  setSkillCostTouched(false)
+                  setShowCostDetails(false)
+                  setCostRecoveryEnabled(false)
+                  setCostRecoveryAmount(0)
+                  setCostRecoveryDuration(0)
+                  setCostRecoveryTrigger(snapTime(startTime + travel))
+                  setCostRecoveryTriggerTouched(false)
+                  setCostRecoveryApplyBonus((stats?.unique_star ?? 0) >= 2)
+                  setCostRecoveryApplyBonusTouched(false)
                   setShowForm(true)
                   setShowMenu(false)
                 }}
@@ -2028,6 +2165,18 @@ setShowCreateModal(false)
                 </select>
               </label>
               <label className="flex items-center gap-2">
+                <span>コスト:</span>
+                <input
+                  type="number"
+                  value={skillCost}
+                  onChange={(e) => {
+                    setSkillCostTouched(true)
+                    setSkillCost(parseFloat(e.target.value) || 0)
+                  }}
+                  className="border rounded p-1 w-24"
+                />
+              </label>
+              <label className="flex items-center gap-2">
                 <span>開始:</span>
                 <input
                   type="number"
@@ -2062,6 +2211,70 @@ setShowCreateModal(false)
                   />
                   <span>コストが貯まったら</span>
                 </label>
+              )}
+              <button
+                type="button"
+                className="text-xs text-blue-600 underline"
+                onClick={() => setShowCostDetails((prev) => !prev)}
+              >
+                詳細設定{showCostDetails ? '（閉じる）' : '（開く）'}
+              </button>
+              {showCostDetails && (
+                <div className="space-y-2 rounded border border-gray-200 bg-gray-50 p-2 text-xs">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={costRecoveryEnabled}
+                      onChange={(e) => setCostRecoveryEnabled(e.target.checked)}
+                    />
+                    <span>コスト回復力増加</span>
+                  </label>
+                  {costRecoveryEnabled && (
+                    <>
+                      <label className="flex items-center gap-2">
+                        <span className="w-24">増加量(%)</span>
+                        <input
+                          type="number"
+                          value={costRecoveryAmount}
+                          onChange={(e) => setCostRecoveryAmount(parseFloat(e.target.value) || 0)}
+                          className="border rounded p-1 w-24"
+                        />
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <span className="w-24">効果時間</span>
+                        <input
+                          type="number"
+                          value={costRecoveryDuration}
+                          onChange={(e) => setCostRecoveryDuration(parseFloat(e.target.value) || 0)}
+                          className="border rounded p-1 w-24"
+                        />
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <span className="w-24">発動タイミング</span>
+                        <input
+                          type="number"
+                          value={costRecoveryTrigger}
+                          onChange={(e) => {
+                            setCostRecoveryTriggerTouched(true)
+                            setCostRecoveryTrigger(parseFloat(e.target.value) || 0)
+                          }}
+                          className="border rounded p-1 w-24"
+                        />
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={costRecoveryApplyBonus}
+                          onChange={(e) => {
+                            setCostRecoveryApplyBonusTouched(true)
+                            setCostRecoveryApplyBonus(e.target.checked)
+                          }}
+                        />
+                        <span>バフ効果持続力を反映(×1.19)</span>
+                      </label>
+                    </>
+                  )}
+                </div>
               )}
             </>
           )}
@@ -2336,13 +2549,36 @@ setShowCreateModal(false)
 
 
       <div className="flex">
-        {showTextTL && (
-          <textarea
-            className="mr-2 text-xs font-mono flex-shrink-0 border rounded p-1"
-            rows={rows}
-            value={textTL}
-            onChange={(e) => setTextTL(e.target.value)}
-          />
+        {(showTextTL || costDetailLines.length > 0) && (
+          <div className="mr-2 flex flex-col gap-1">
+            {showTextTL && (
+              <textarea
+                className="text-xs font-mono flex-shrink-0 border rounded p-1"
+                rows={rows}
+                value={textTL}
+                onChange={(e) => setTextTL(e.target.value)}
+              />
+            )}
+            {costDetailLines.length > 0 && (
+              <>
+                <button
+                  type="button"
+                  className="text-xs text-blue-600 underline text-left"
+                  onClick={() => setShowCostLines((prev) => !prev)}
+                >
+                  {showCostLines ? 'コスト詳細を隠す' : 'コスト詳細を表示'}
+                </button>
+                {showCostLines && (
+                  <textarea
+                    className="text-xs font-mono border rounded p-1"
+                    rows={Math.min(costDetailLines.length + 1, 8)}
+                    value={costDetailLines.join('\n')}
+                    readOnly
+                  />
+                )}
+              </>
+            )}
+          </div>
         )}
         <div className="flex gap-0 max-h-96 overflow-y-hidden touch-pan-x overscroll-none select-none">
           <div className="flex flex-col">

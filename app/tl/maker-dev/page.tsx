@@ -1,6 +1,15 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback, useMemo, Fragment, type CSSProperties } from 'react'
+import {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+  Fragment,
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -86,6 +95,13 @@ interface SkillEvent {
   travel?: number
   motion?: number
   target?: number
+  cost?: number
+  costRecovery?: {
+    amount: number
+    duration: number
+    trigger: number
+    applyDurationBonus: boolean
+  }
   show?: boolean
 }
 
@@ -245,6 +261,31 @@ interface UserPlugin {
   // ページに埋め込むブロック
   blocks?: PluginPageBlock[]
   style?: PluginStyle
+}
+
+const detectIsMacPlatform = () => {
+  if (typeof navigator === 'undefined') return false
+  return /Mac|iPhone|iPad|iPod/i.test(navigator.platform)
+}
+
+const defaultShortcuts = (preferMeta: boolean) => ({
+  undo: preferMeta ? 'Cmd+Z' : 'Ctrl+Z',
+  redo: preferMeta ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z',
+})
+
+const formatShortcutFromEvent = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+  const key = event.key
+  if (key === 'Backspace' || key === 'Delete') return ''
+  if (['Shift', 'Control', 'Alt', 'Meta'].includes(key)) return null
+  const parts: string[] = []
+  if (event.ctrlKey) parts.push('Ctrl')
+  if (event.metaKey) parts.push('Cmd')
+  if (event.altKey) parts.push('Alt')
+  if (event.shiftKey) parts.push('Shift')
+  const label =
+    key.length === 1 ? key.toUpperCase() : `${key.slice(0, 1).toUpperCase()}${key.slice(1)}`
+  parts.push(label)
+  return parts.join('+')
 }
 
 
@@ -476,6 +517,16 @@ export default function TLMakerPage() {
   const [start, setStart] = useState(0)
   const [end, setEnd] = useState(1)
   const [label, setLabel] = useState('')
+  const [skillCost, setSkillCost] = useState(0)
+  const [skillCostTouched, setSkillCostTouched] = useState(false)
+  const [showCostDetails, setShowCostDetails] = useState(false)
+  const [costRecoveryEnabled, setCostRecoveryEnabled] = useState(false)
+  const [costRecoveryAmount, setCostRecoveryAmount] = useState(0)
+  const [costRecoveryDuration, setCostRecoveryDuration] = useState(0)
+  const [costRecoveryTrigger, setCostRecoveryTrigger] = useState(0)
+  const [costRecoveryTriggerTouched, setCostRecoveryTriggerTouched] = useState(false)
+  const [costRecoveryApplyBonus, setCostRecoveryApplyBonus] = useState(false)
+  const [costRecoveryApplyBonusTouched, setCostRecoveryApplyBonusTouched] = useState(false)
   const [templateId, setTemplateId] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [showImport, setShowImport] = useState(false)
@@ -519,6 +570,12 @@ export default function TLMakerPage() {
   const [showHistoryModal, setShowHistoryModal] = useState(false)
   const [showExTemplateModal, setShowExTemplateModal] = useState(false)
   const [historyLog, setHistoryLog] = useState<Array<{ id: number; at: string; summary: string }>>([])
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [toasts, setToasts] = useState<Array<{ id: number; text: string }>>([])
+  const [shortcutSettings, setShortcutSettings] = useState<{ undo: string; redo: string }>(() =>
+    defaultShortcuts(detectIsMacPlatform())
+  )
+  const isMacPlatform = useMemo(() => detectIsMacPlatform(), [])
 
   // Plugins
   const [plugins, setPlugins] = useState<UserPlugin[]>([])
@@ -618,6 +675,10 @@ const startResizePluginWindow = useCallback(
     )
   }, [enabledPlugins])
 
+  const pushToast = useCallback((text: string) => {
+    setToastMessage(text)
+  }, [])
+
   const allEventTemplates = useMemo<EventTemplate[]>(() => {
     return [...eventTemplates, ...pluginTemplates]
   }, [eventTemplates, pluginTemplates])
@@ -663,6 +724,32 @@ const startResizePluginWindow = useCallback(
       .filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
       .join('\n\n')
   }, [enabledPlugins])
+
+  const toastCss = useMemo(
+    () => `
+      @keyframes toast-in-out {
+        0% { opacity: 0; transform: translateY(-8px); }
+        10% { opacity: 1; transform: translateY(0); }
+        90% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(-6px); }
+      }
+      .toast-item {
+        animation: toast-in-out 2s ease-in-out forwards;
+      }
+      @keyframes toast-progress {
+        0% { width: 100%; }
+        100% { width: 0%; }
+      }
+      .toast-progress {
+        animation: toast-progress 2s linear forwards;
+      }
+    `,
+    []
+  )
+
+  const globalCss = useMemo(() => {
+    return [pluginCss, toastCss].filter((v) => v && v.trim().length > 0).join('\n\n')
+  }, [pluginCss, toastCss])
 
   const pluginVars = useMemo(() => {
     const vars: Record<string, string> = {}
@@ -957,6 +1044,7 @@ const startResizePluginWindow = useCallback(
   const [showSettings, setShowSettings] = useState(false)
   const [showTextTL, setShowTextTL] = useState(false)
   const [textTL, setTextTL] = useState('')
+  const [showCostLines, setShowCostLines] = useState(false)
   const [showDamageCalc, setShowDamageCalc] = useState(false)
   const [hideHeader, setHideHeader] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
@@ -979,6 +1067,7 @@ const startResizePluginWindow = useCallback(
     },
   })
   const prevSnapshot = useRef<ProjectSnapshot | null>(null)
+  const snapshotJsonRef = useRef<string | null>(null)
   const undoStack = useRef<ProjectSnapshot[]>([])
   const redoStack = useRef<ProjectSnapshot[]>([])
   const isRestoring = useRef(false)
@@ -987,6 +1076,61 @@ useEffect(() => {
   const loaded = loadUserStatsFromLocalStorage()
   setUserStats((prev) => ({ ...loaded, ...prev }))
 }, [])
+
+  useEffect(() => {
+    if (!toastMessage) return
+    const toastId = Date.now() + Math.random()
+    setToasts((prev) => [{ id: toastId, text: toastMessage }, ...prev])
+    setToastMessage(null)
+    const id = window.setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== toastId))
+    }, 2000)
+    return () => window.clearTimeout(id)
+  }, [toastMessage])
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('tlMaker:shortcuts')
+      if (!raw) {
+        setShortcutSettings(defaultShortcuts(isMacPlatform))
+        return
+      }
+      const parsed = JSON.parse(raw) as Partial<{ undo: string; redo: string }>
+      setShortcutSettings((prev) => ({
+        ...prev,
+        undo: typeof parsed.undo === 'string' ? parsed.undo : prev.undo,
+        redo: typeof parsed.redo === 'string' ? parsed.redo : prev.redo,
+      }))
+    } catch {
+      /* ignore */
+    }
+  }, [isMacPlatform])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('tlMaker:shortcuts', JSON.stringify(shortcutSettings))
+    } catch {
+      /* ignore */
+    }
+  }, [shortcutSettings])
+
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== 'tlMaker:shortcuts' || !e.newValue) return
+      try {
+        const parsed = JSON.parse(e.newValue) as Partial<{ undo: string; redo: string }>
+        setShortcutSettings((prev) => ({
+          ...prev,
+          undo: typeof parsed.undo === 'string' ? parsed.undo : prev.undo,
+          redo: typeof parsed.redo === 'string' ? parsed.redo : prev.redo,
+        }))
+      } catch {
+        /* ignore */
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
 
 
   // Pro mode / Snap の保存
@@ -1076,7 +1220,6 @@ useEffect(() => {
     } catch {
       /* ignore */
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -1186,43 +1329,171 @@ useEffect(() => {
     squadIndex,
   }), [projectName, rowStudents, skills, markers, selectedGroup, squadIndex])
 
+  const getSnapshotRef = useRef(getSnapshot)
   useEffect(() => {
-    if (initialized) {
-      prevSnapshot.current = getSnapshot()
+    getSnapshotRef.current = getSnapshot
+  }, [getSnapshot])
+
+  const buildHistorySnapshot = useCallback((snap: ProjectSnapshot) => ({
+    ...snap,
+    skills: snap.skills.map((s) => ({ ...s, show: undefined })),
+    markers: snap.markers.map((m) => ({ ...m, show: undefined })),
+  }), [])
+
+  const historyKey = useCallback((gid: string | null, idx: number) => {
+    return gid ? `tlMakerHistory_${gid}_${idx}` : 'tlMakerHistory_default'
+  }, [])
+
+  const saveHistory = useCallback(() => {
+    if (!initialized) return
+    try {
+      const key = historyKey(selectedGroup?.id ?? null, squadIndex)
+      const payload = {
+        undo: undoStack.current.slice(-200),
+        redo: redoStack.current.slice(-200),
+      }
+      localStorage.setItem(key, JSON.stringify(payload))
+    } catch {
+      /* ignore */
     }
-  }, [initialized, getSnapshot])
+  }, [initialized, historyKey, selectedGroup, squadIndex])
 
   useEffect(() => {
-    if (!initialized || isRestoring.current) return
+    if (!initialized) return
+    try {
+      const key = historyKey(selectedGroup?.id ?? null, squadIndex)
+      const raw = localStorage.getItem(key)
+      if (raw) {
+        const parsed = JSON.parse(raw) as { undo?: ProjectSnapshot[]; redo?: ProjectSnapshot[] }
+        undoStack.current = Array.isArray(parsed.undo) ? parsed.undo : []
+        redoStack.current = Array.isArray(parsed.redo) ? parsed.redo : []
+      } else {
+        undoStack.current = []
+        redoStack.current = []
+      }
+    } catch {
+      undoStack.current = []
+      redoStack.current = []
+    }
+    const snap = getSnapshotRef.current()
+    prevSnapshot.current = snap
+    snapshotJsonRef.current = JSON.stringify(buildHistorySnapshot(snap))
+  }, [initialized, selectedGroup, squadIndex, historyKey, buildHistorySnapshot])
+
+  const buildHistorySummary = useCallback((prev: ProjectSnapshot, next: ProjectSnapshot) => {
+    const summaries: string[] = []
+    const prevSkillMap = new Map(prev.skills.map((s) => [s.id, s]))
+    const nextSkillMap = new Map(next.skills.map((s) => [s.id, s]))
+    const prevMarkerMap = new Map(prev.markers.map((m) => [m.id, m]))
+    const nextMarkerMap = new Map(next.markers.map((m) => [m.id, m]))
+
+    const addedSkills = next.skills.filter((s) => !prevSkillMap.has(s.id))
+    const removedSkills = prev.skills.filter((s) => !nextSkillMap.has(s.id))
+    const changedSkills = next.skills.filter((s) => {
+      const before = prevSkillMap.get(s.id)
+      if (!before) return false
+      return (
+        before.start !== s.start ||
+        before.end !== s.end ||
+        before.row !== s.row ||
+        before.label !== s.label ||
+        before.type !== s.type ||
+        before.travel !== s.travel ||
+        before.motion !== s.motion ||
+        before.target !== s.target
+      )
+    })
+
+    const addedMarkers = next.markers.filter((m) => !prevMarkerMap.has(m.id))
+    const removedMarkers = prev.markers.filter((m) => !nextMarkerMap.has(m.id))
+    const changedMarkers = next.markers.filter((m) => {
+      const before = prevMarkerMap.get(m.id)
+      if (!before) return false
+      return (
+        before.time !== m.time ||
+        before.duration !== m.duration ||
+        before.label !== m.label ||
+        before.skillable !== m.skillable
+      )
+    })
+
+    const formatList = <T,>(items: T[], formatter: (item: T) => string) => {
+      const labels = items.map(formatter).filter((label) => label.trim().length > 0)
+      const shown = labels.slice(0, 3)
+      const extra = items.length - shown.length
+      if (shown.length === 0) return `${items.length}件`
+      return `${shown.join(' / ')}${extra > 0 ? ` +${extra}` : ''}`
+    }
+
+    const formatSkill = (ev: SkillEvent) => {
+      const base = ev.label?.trim() || (ev.type === 'ex' ? 'EX' : 'NS')
+      return `${base}@${ev.row + 1}`
+    }
+
+    const formatMarker = (ev: MarkerEvent) => ev.label?.trim() || 'イベント'
+
+    if (addedSkills.length) {
+      summaries.push(`スキル追加: ${formatList(addedSkills, formatSkill)}`)
+    }
+    if (removedSkills.length) {
+      summaries.push(`スキル削除: ${formatList(removedSkills, formatSkill)}`)
+    }
+    if (changedSkills.length) {
+      summaries.push(`スキル編集: ${formatList(changedSkills, formatSkill)}`)
+    }
+    if (addedMarkers.length) {
+      summaries.push(`イベント追加: ${formatList(addedMarkers, formatMarker)}`)
+    }
+    if (removedMarkers.length) {
+      summaries.push(`イベント削除: ${formatList(removedMarkers, formatMarker)}`)
+    }
+    if (changedMarkers.length) {
+      summaries.push(`イベント編集: ${formatList(changedMarkers, formatMarker)}`)
+    }
+
+    if (prev.projectName !== next.projectName) {
+      const before = prev.projectName || '未設定'
+      const after = next.projectName || '未設定'
+      summaries.push(`TL名変更: ${before} → ${after}`)
+    }
+    if (JSON.stringify(prev.rowStudents) !== JSON.stringify(next.rowStudents)) {
+      summaries.push('編成変更')
+    }
+    if (prev.groupId !== next.groupId || prev.squadIndex !== next.squadIndex) {
+      summaries.push('部隊切替')
+    }
+
+    return summaries.length > 0 ? summaries.join(' / ') : '編集'
+  }, [])
+
+  useEffect(() => {
+    if (!initialized || isRestoring.current || movingSkill) return
     const snap = getSnapshot()
-    if (
-      prevSnapshot.current &&
-      JSON.stringify(prevSnapshot.current) !== JSON.stringify(snap)
-    ) {
-      const prev = prevSnapshot.current
+    const historySnap = buildHistorySnapshot(snap)
+    const nextJson = JSON.stringify(historySnap)
+    if (snapshotJsonRef.current === null) {
+      prevSnapshot.current = snap
+      snapshotJsonRef.current = nextJson
+      return
+    }
+    if (snapshotJsonRef.current !== nextJson) {
+      const prev = prevSnapshot.current ?? snap
       undoStack.current.push(prev)
       if (undoStack.current.length > 200) undoStack.current.shift()
       redoStack.current = []
+      saveHistory()
 
       // (3) 履歴ログ（プロモード時のみ）
       if (proMode) {
-        const summary =
-          prev.skills.length !== snap.skills.length
-            ? snap.skills.length > prev.skills.length
-              ? 'スキル追加'
-              : 'スキル削除'
-            : prev.markers.length !== snap.markers.length
-              ? snap.markers.length > prev.markers.length
-                ? 'イベント追加'
-                : 'イベント削除'
-              : '編集'
+        const summary = buildHistorySummary(prev, snap)
         setHistoryLog((list) =>
           [...list, { id: Date.now(), at: new Date().toLocaleTimeString(), summary }].slice(-200)
         )
       }
+      prevSnapshot.current = snap
+      snapshotJsonRef.current = nextJson
     }
-    prevSnapshot.current = snap
-  }, [projectName, rowStudents, skills, markers, selectedGroup, squadIndex, initialized, getSnapshot, proMode])
+  }, [projectName, rowStudents, skills, markers, selectedGroup, squadIndex, initialized, getSnapshot, proMode, movingSkill, buildHistorySummary, buildHistorySnapshot, saveHistory])
 
   const hidePopups = () => {
     if (menuInfo) setMenuInfo(null)
@@ -1438,16 +1709,26 @@ useEffect(() => {
 
   const undo = () => {
     const snap = undoStack.current.pop()
-    if (!snap) return
+    if (!snap) {
+      pushToast('これ以上戻せません')
+      return
+    }
     redoStack.current.push(getSnapshot())
     restoreSnapshot(snap)
+    saveHistory()
+    pushToast('元に戻しました')
   }
 
   const redo = () => {
     const snap = redoStack.current.pop()
-    if (!snap) return
+    if (!snap) {
+      pushToast('これ以上進めません')
+      return
+    }
     undoStack.current.push(getSnapshot())
     restoreSnapshot(snap)
+    saveHistory()
+    pushToast('やり直しました')
   }
 
   const restoreSnapshot = (snap: ProjectSnapshot) => {
@@ -1460,11 +1741,40 @@ useEffect(() => {
     setSelectedGroup(g)
     setSquadIndex(snap.squadIndex)
     prevSnapshot.current = snap
+    snapshotJsonRef.current = JSON.stringify(buildHistorySnapshot(snap))
     setTimeout(() => {
-      prevSnapshot.current = getSnapshot()
+      const nextSnap = getSnapshot()
+      prevSnapshot.current = nextSnap
+      snapshotJsonRef.current = JSON.stringify(buildHistorySnapshot(nextSnap))
       isRestoring.current = false
     })
   }
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return
+      const target = e.target as HTMLElement | null
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.undo)) {
+        e.preventDefault()
+        undo()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.redo)) {
+        e.preventDefault()
+        redo()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [shortcutSettings, undo, redo])
 
   const switchSquad = (index: number) => {
   if (!selectedGroup) return
@@ -1599,6 +1909,38 @@ useEffect(() => {
   }, [row, start, selectedType, rowStudents, students, applyTravel, skillKind])
 
   useEffect(() => {
+    if (selectedType !== 'skill') return
+    const st = students.find((s) => s.id === rowStudents[row])
+    if (!st) return
+    if (!skillCostTouched) {
+      setSkillCost(st.cost ?? 0)
+    }
+    const travel =
+      skillKind === 'ex'
+        ? st.exHitDelay || 0
+        : st.normalHitDelay || 0
+    const defaultTrigger = snapTime(start + travel)
+    if (!costRecoveryTriggerTouched) {
+      setCostRecoveryTrigger(defaultTrigger)
+    }
+    if (!costRecoveryApplyBonusTouched) {
+      const stats = getStats(st.id)
+      const uniqueStar = stats?.unique_star ?? 0
+      setCostRecoveryApplyBonus(uniqueStar >= 2)
+    }
+  }, [
+    selectedType,
+    row,
+    start,
+    rowStudents,
+    students,
+    skillKind,
+    skillCostTouched,
+    costRecoveryTriggerTouched,
+    costRecoveryApplyBonusTouched,
+  ])
+
+  useEffect(() => {
   if (!initialized || isRestoring.current) return
   saveProject()
 }, [initialized, projectName, selectedGroup, squadIndex, rowStudents, skills, markers])
@@ -1607,7 +1949,7 @@ useEffect(() => {
   const INITIAL_COST = 0
   const MAX_COST = 10
 
-  function calcCost(t: number) {
+  function calcCost(t: number, options?: { excludeSkillId?: number }) {
   // 🔒 初期化ガード
   if (!initialized || students.length === 0 || rowStudents.length === 0) {
     return 0
@@ -1617,9 +1959,11 @@ useEffect(() => {
     (id) => id && !id.startsWith('enemy:')
   ).length
 
-  const recoveryTime = Math.max(0, t - 2)
-  let recovery = 0.07 * members * recoveryTime
+  const recoveryStart = 2
+  const baseRate = 0.07 * members
+  let recovery = 0
 
+  let specialMultiplier = 1
   rowStudents.forEach((id) => {
     if (!id || id.startsWith('enemy:')) return
     const st = students.find((s) => s.id === id)
@@ -1631,20 +1975,51 @@ useEffect(() => {
         const stats = getStats(id)
         const level = stats?.sub_skill ?? defaultLevels.sub
         const buff = val[level - 1]
-        if (buff !== undefined) recovery *= 1 + buff / 100
+        if (buff !== undefined) specialMultiplier *= 1 + buff / 100
       }
     }
   })
 
+  const getRecoveryBonusAt = (time: number) => {
+    let bonus = 0
+    skills.forEach((ev) => {
+      if (!ev.costRecovery) return
+      if (options?.excludeSkillId !== undefined && ev.id === options.excludeSkillId) return
+      const { amount, duration, trigger, applyDurationBonus } = ev.costRecovery
+      if (amount === 0 || duration <= 0) return
+      const adjustedDuration = applyDurationBonus ? duration * 1.19 : duration
+      if (time >= trigger && time <= trigger + adjustedDuration) {
+        bonus += amount
+      }
+    })
+    return bonus
+  }
+
+  if (t > recoveryStart) {
+    const step = 0.1
+    for (let time = recoveryStart; time < t; time = parseFloat((time + step).toFixed(3))) {
+      const delta = Math.min(step, t - time)
+      const bonus = getRecoveryBonusAt(time)
+      const multiplier = specialMultiplier * (1 + bonus / 100)
+      recovery += baseRate * delta * multiplier
+    }
+  }
+
   let spent = 0
   skills
-    .filter((ev) => ev.type === 'ex' && ev.start <= t)
+    .filter(
+      (ev) =>
+        ev.type === 'ex' &&
+        ev.start <= t &&
+        (options?.excludeSkillId === undefined || ev.id !== options.excludeSkillId)
+    )
     .forEach((ev) => {
       const rowId = rowStudents[ev.row]
       if (!rowId || rowId.startsWith('enemy:')) return
       const st = students.find((s) => s.id === rowId)
       if (!st) return
-      spent += st.cost || 0
+      const costValue = ev.cost ?? st.cost ?? 0
+      spent += costValue
     })
 
   return Math.min(MAX_COST, INITIAL_COST + recovery - spent)
@@ -1667,11 +2042,12 @@ useEffect(() => {
         skillKind === 'ex'
           ? Math.max(0, (st?.exMotionDuration || 0) - travel)
           : Math.max(0, (st?.normalMotionDuration || 0) - travel)
-      if (skillKind === 'ex' && waitCost && st?.cost) {
+      const costValue = skillCost
+      if (skillKind === 'ex' && waitCost && costValue > 0) {
         let t = s
-        if (calcCost(t) < st.cost) {
+        if (calcCost(t) < costValue) {
           while (t <= totalSeconds) {
-            if (calcCost(t) >= st.cost) break
+            if (calcCost(t) >= costValue) break
             t = snapTime(t + 0.1)
           }
           if (t !== s) {
@@ -1682,7 +2058,7 @@ useEffect(() => {
         } else {
           while (t >= 0) {
             const prev = snapTime(t - 0.1)
-            if (prev < 0 || calcCost(prev) < st.cost) break
+            if (prev < 0 || calcCost(prev) < costValue) break
             t = prev
           }
           if (t !== s) {
@@ -1729,6 +2105,17 @@ useEffect(() => {
           travel,
           motion,
           type: skillKind,
+          cost: skillCost,
+          ...(costRecoveryEnabled && costRecoveryDuration > 0 && costRecoveryAmount !== 0
+            ? {
+                costRecovery: {
+                  amount: costRecoveryAmount,
+                  duration: costRecoveryDuration,
+                  trigger: costRecoveryTrigger,
+                  applyDurationBonus: costRecoveryApplyBonus,
+                },
+              }
+            : {}),
           ...(target !== undefined ? { target } : {}),
         },
       ])
@@ -1771,7 +2158,8 @@ useEffect(() => {
         const st = students.find((s) => s.id === rowId)
         const need = st?.cost ?? 0
         if (need <= 0) return
-        if (calcCost(ev.start) < need) set.add(ev.id)
+        const availableCost = calcCost(ev.start, { excludeSkillId: ev.id })
+        if (availableCost < need) set.add(ev.id)
       })
 
     return set
@@ -1785,6 +2173,38 @@ useEffect(() => {
     const s = clamped - m * 60
     const str = s.toFixed(3).padStart(6, '0')
     return `${m}:${str}`
+  }
+
+  const normalizeShortcut = (raw: string) => raw.replace(/\s+/g, '').toLowerCase()
+
+  const parseShortcut = (raw: string) => {
+    const tokens = normalizeShortcut(raw)
+      .split('+')
+      .map((t) => t.trim())
+      .filter(Boolean)
+    const mods = { ctrl: false, shift: false, alt: false, meta: false }
+    let key = ''
+    tokens.forEach((token) => {
+      if (token === 'ctrl' || token === 'control') mods.ctrl = true
+      else if (token === 'shift') mods.shift = true
+      else if (token === 'alt' || token === 'option') mods.alt = true
+      else if (token === 'meta' || token === 'cmd' || token === 'command') mods.meta = true
+      else key = token
+    })
+    return { key, mods }
+  }
+
+  const matchShortcut = (e: KeyboardEvent, raw: string) => {
+    if (!raw) return false
+    const { key, mods } = parseShortcut(raw)
+    if (!key) return false
+    const pressedKey = e.key.toLowerCase()
+    if (pressedKey !== key) return false
+    if (e.ctrlKey !== mods.ctrl) return false
+    if (e.shiftKey !== mods.shift) return false
+    if (e.altKey !== mods.alt) return false
+    if (e.metaKey !== mods.meta) return false
+    return true
   }
 
   
@@ -2128,14 +2548,16 @@ useEffect(() => {
         const macro = pluginMacros.find((m) => m.pluginId === btn.pluginId && m.id === btn.macroId)
         if (macro) {
           runPluginMacro(macro)
+          pushToast(`ツール実行: ${btn.label} (${btn.pluginName})`)
           return
         }
       }
       if (btn.actions && Array.isArray(btn.actions)) {
         runPluginActions(btn.actions, btn.pluginId)
+        pushToast(`ツール実行: ${btn.label} (${btn.pluginName})`)
       }
     },
-    [pluginMacros, proMode, runPluginActions, runPluginMacro]
+    [pluginMacros, proMode, runPluginActions, runPluginMacro, pushToast]
   )
 
 
@@ -2153,11 +2575,46 @@ useEffect(() => {
       const st = students.find((s) => s.id === rowId)
       if (!st) return ''
 
-      const baseCost = st.cost ?? 0
+      const baseCost = ev.cost ?? st.cost ?? 0
       const before = Math.min(MAX_COST, calcCost(ev.start) + baseCost)
       return `${formatRemain(ev.start)}(${before.toFixed(2)}cost) ${st.name}`
     })
-}, [initialized, skills, students, rowStudents, calcCost])
+}, [initialized, skills, students, rowStudents])
+
+  const costDetailLines = useMemo(() => {
+  if (!initialized) return []
+  const entries: Array<{ time: number; text: string }> = []
+
+  skills
+    .filter((ev) => ev.type === 'ex')
+    .forEach((ev) => {
+      const rowId = rowStudents[ev.row]
+      if (!rowId) return
+      const st = students.find((s) => s.id === rowId)
+      if (!st) return
+      const costValue = ev.cost ?? st.cost ?? 0
+      entries.push({
+        time: ev.start,
+        text: `${formatRemain(ev.start)} 消費-${costValue.toFixed(1)} (${st.name})`,
+      })
+    })
+
+  skills.forEach((ev) => {
+    if (!ev.costRecovery) return
+    const { amount, duration, trigger, applyDurationBonus } = ev.costRecovery
+    if (amount === 0 || duration <= 0) return
+    const adjustedDuration = applyDurationBonus ? duration * 1.19 : duration
+    const durationLabel = applyDurationBonus
+      ? `${duration.toFixed(2)}s → ${adjustedDuration.toFixed(2)}s`
+      : `${duration.toFixed(2)}s`
+    entries.push({
+      time: trigger,
+      text: `${formatRemain(trigger)} コスト回復+${amount.toFixed(1)}% (${durationLabel})`,
+    })
+  })
+
+  return entries.sort((a, b) => a.time - b.time).map((e) => e.text)
+}, [initialized, skills, students, rowStudents])
 
 
   useEffect(() => {
@@ -2874,7 +3331,22 @@ function resolveBuffText(
         <h1 className="text-xl font-bold">TLメーカー（dev）</h1>
         <PageHelpButton pageKey="tl-maker-dev" />
       </div>
-      {pluginCss && <style jsx global>{pluginCss}</style>}
+      {globalCss && <style jsx global>{globalCss}</style>}
+      {toasts.length > 0 && (
+        <div className="fixed top-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2">
+          {toasts.map((toast) => (
+            <div
+              key={toast.id}
+              className="toast-item relative overflow-hidden rounded border border-blue-200 bg-blue-50 px-4 py-3 pb-4 text-sm text-blue-800 shadow-lg"
+            >
+              <div>{toast.text}</div>
+              <div className="toast-bar absolute bottom-0 left-0 right-0 h-1 bg-blue-100">
+                <div className="toast-progress h-full bg-blue-400" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {pageLayoutMode === 'free' && (
         <div aria-hidden className="pointer-events-none flex-none" style={freeCanvasStyle} />
       )}
@@ -3331,9 +3803,22 @@ function resolveBuffText(
                   setRow(0)
                   const st = students.find((s) => s.id === rowStudents[0])
                   const dur = st?.exDuration ?? 1
+                  const startTime = snapTime(playhead)
+                  const travel = st?.exHitDelay || 0
+                  const stats = st ? getStats(st.id) : undefined
                   setApplyTravel(false)
-                  setStart(snapTime(playhead))
-                  setEnd(snapTime(playhead + dur))
+                  setStart(startTime)
+                  setEnd(snapTime(startTime + dur))
+                  setSkillCost(st?.cost ?? 0)
+                  setSkillCostTouched(false)
+                  setShowCostDetails(false)
+                  setCostRecoveryEnabled(false)
+                  setCostRecoveryAmount(0)
+                  setCostRecoveryDuration(0)
+                  setCostRecoveryTrigger(snapTime(startTime + travel))
+                  setCostRecoveryTriggerTouched(false)
+                  setCostRecoveryApplyBonus((stats?.unique_star ?? 0) >= 2)
+                  setCostRecoveryApplyBonusTouched(false)
                   setShowForm(true)
                   setShowMenu(false)
                 }}
@@ -3681,7 +4166,10 @@ function resolveBuffText(
         <button type="button" className="px-1">再生</button>
         <button
           type="button"
-          onClick={undo}
+          onClick={(e) => {
+            e.stopPropagation()
+            undo()
+          }}
           className="border rounded p-1 ml-2"
           aria-label="元に戻す"
         >
@@ -3689,7 +4177,10 @@ function resolveBuffText(
         </button>
         <button
           type="button"
-          onClick={redo}
+          onClick={(e) => {
+            e.stopPropagation()
+            redo()
+          }}
           className="border rounded p-1 ml-1"
           aria-label="やり直す"
         >
@@ -3697,7 +4188,10 @@ function resolveBuffText(
         </button>
         <button
           type="button"
-          onClick={() => setShowImport(true)}
+          onClick={() => {
+            setShowImport(true)
+            pushToast('部隊インポートを開きました')
+          }}
           className="border rounded p-1 ml-2"
           aria-label="部隊インポート"
         >
@@ -3819,6 +4313,18 @@ function resolveBuffText(
                 </select>
               </label>
               <label className="flex items-center gap-2">
+                <span>コスト:</span>
+                <input
+                  type="number"
+                  value={skillCost}
+                  onChange={(e) => {
+                    setSkillCostTouched(true)
+                    setSkillCost(parseFloat(e.target.value) || 0)
+                  }}
+                  className="border rounded p-1 w-24"
+                />
+              </label>
+              <label className="flex items-center gap-2">
                 <span>開始:</span>
                 <input
                   type="number"
@@ -3853,6 +4359,70 @@ function resolveBuffText(
                   />
                   <span>コストが貯まったら</span>
                 </label>
+              )}
+              <button
+                type="button"
+                className="text-xs text-blue-600 underline"
+                onClick={() => setShowCostDetails((prev) => !prev)}
+              >
+                詳細設定{showCostDetails ? '（閉じる）' : '（開く）'}
+              </button>
+              {showCostDetails && (
+                <div className="space-y-2 rounded border border-gray-200 bg-gray-50 p-2 text-xs">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={costRecoveryEnabled}
+                      onChange={(e) => setCostRecoveryEnabled(e.target.checked)}
+                    />
+                    <span>コスト回復力増加</span>
+                  </label>
+                  {costRecoveryEnabled && (
+                    <>
+                      <label className="flex items-center gap-2">
+                        <span className="w-24">増加量(%)</span>
+                        <input
+                          type="number"
+                          value={costRecoveryAmount}
+                          onChange={(e) => setCostRecoveryAmount(parseFloat(e.target.value) || 0)}
+                          className="border rounded p-1 w-24"
+                        />
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <span className="w-24">効果時間</span>
+                        <input
+                          type="number"
+                          value={costRecoveryDuration}
+                          onChange={(e) => setCostRecoveryDuration(parseFloat(e.target.value) || 0)}
+                          className="border rounded p-1 w-24"
+                        />
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <span className="w-24">発動タイミング</span>
+                        <input
+                          type="number"
+                          value={costRecoveryTrigger}
+                          onChange={(e) => {
+                            setCostRecoveryTriggerTouched(true)
+                            setCostRecoveryTrigger(parseFloat(e.target.value) || 0)
+                          }}
+                          className="border rounded p-1 w-24"
+                        />
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={costRecoveryApplyBonus}
+                          onChange={(e) => {
+                            setCostRecoveryApplyBonusTouched(true)
+                            setCostRecoveryApplyBonus(e.target.checked)
+                          }}
+                        />
+                        <span>バフ効果持続力を反映(×1.19)</span>
+                      </label>
+                    </>
+                  )}
+                </div>
               )}
             </>
           )}
@@ -4038,6 +4608,43 @@ function resolveBuffText(
                 <option value="0.033">0.033s</option>
               </select>
             </label>
+
+            <div className="text-sm font-bold mt-2">ショートカットキー</div>
+            <label className="flex items-center gap-2 text-sm">
+              <span className="w-24">元に戻す</span>
+              <input
+                type="text"
+                value={shortcutSettings.undo}
+                onKeyDown={(e) => {
+                  e.preventDefault()
+                  const next = formatShortcutFromEvent(e)
+                  if (next === null) return
+                  setShortcutSettings((prev) => ({ ...prev, undo: next }))
+                }}
+                readOnly
+                className="border rounded p-1 flex-1"
+                placeholder={isMacPlatform ? 'Cmd+Z' : 'Ctrl+Z'}
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <span className="w-24">やり直す</span>
+              <input
+                type="text"
+                value={shortcutSettings.redo}
+                onKeyDown={(e) => {
+                  e.preventDefault()
+                  const next = formatShortcutFromEvent(e)
+                  if (next === null) return
+                  setShortcutSettings((prev) => ({ ...prev, redo: next }))
+                }}
+                readOnly
+                className="border rounded p-1 flex-1"
+                placeholder={isMacPlatform ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z'}
+              />
+            </label>
+            <p className="text-xs text-gray-500">
+              入力欄をクリックしてキーを押してください（例: {isMacPlatform ? 'Cmd+Z' : 'Ctrl+Z'}）。
+            </p>
 
             <div className="border-t my-2" />
 
@@ -4813,13 +5420,36 @@ return (
       <div className="flex relative" ref={registerBlockRef('default:main')} style={getBlockStyle('default:main', 10, 1200)}>
         {renderBlockHandle('default:main', 1200)}
         {renderBlockResizeHandle('default:main', 1200, 520)}
-        {showTextTL && (
-          <textarea
-            className="mr-2 text-xs font-mono flex-shrink-0 border rounded p-1"
-            rows={rows}
-            value={textTL}
-            onChange={(e) => setTextTL(e.target.value)}
-          />
+        {(showTextTL || costDetailLines.length > 0) && (
+          <div className="mr-2 flex flex-col gap-1">
+            {showTextTL && (
+              <textarea
+                className="text-xs font-mono flex-shrink-0 border rounded p-1"
+                rows={rows}
+                value={textTL}
+                onChange={(e) => setTextTL(e.target.value)}
+              />
+            )}
+            {costDetailLines.length > 0 && (
+              <>
+                <button
+                  type="button"
+                  className="text-xs text-blue-600 underline text-left"
+                  onClick={() => setShowCostLines((prev) => !prev)}
+                >
+                  {showCostLines ? 'コスト詳細を隠す' : 'コスト詳細を表示'}
+                </button>
+                {showCostLines && (
+                  <textarea
+                    className="text-xs font-mono border rounded p-1"
+                    rows={Math.min(costDetailLines.length + 1, 8)}
+                    value={costDetailLines.join('\n')}
+                    readOnly
+                  />
+                )}
+              </>
+            )}
+          </div>
         )}
         <div className="flex gap-0 max-h-96 overflow-y-hidden touch-pan-x overscroll-none select-none">
           <div className="flex flex-col">

@@ -219,7 +219,7 @@ export default function Header() {
         <Link href="/decorations" aria-label="デコレーションショップ" className="text-lg">
           <FontAwesomeIcon icon={faShop} />
         </Link>
-        <Link href="/settings" aria-label={t('actions.settings')}>
+        <Link href="/mypage" aria-label={t('actions.settings')}>
           <FontAwesomeIcon icon={faCog} />
         </Link>
         <button onClick={toggleTheme} aria-label={t('actions.toggleTheme')}>

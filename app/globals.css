@@ -28,6 +28,77 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+:root.dark .bg-white:not([class*="dark:bg-"]),
+:root.dark .bg-gray-50:not([class*="dark:bg-"]),
+:root.dark .bg-slate-50:not([class*="dark:bg-"]) {
+  background-color: #0f172a;
+}
+
+:root.dark .bg-white\/80:not([class*="dark:bg-"]),
+:root.dark .bg-white\/70:not([class*="dark:bg-"]),
+:root.dark .bg-white\/60:not([class*="dark:bg-"]),
+:root.dark .bg-white\/50:not([class*="dark:bg-"]),
+:root.dark .bg-gray-50\/80:not([class*="dark:bg-"]),
+:root.dark .bg-slate-50\/80:not([class*="dark:bg-"]) {
+  background-color: rgba(15, 23, 42, 0.85);
+}
+
+:root.dark .bg-gray-100:not([class*="dark:bg-"]),
+:root.dark .bg-slate-100:not([class*="dark:bg-"]) {
+  background-color: #111827;
+}
+
+:root.dark .bg-gray-100\/80:not([class*="dark:bg-"]),
+:root.dark .bg-gray-100\/60:not([class*="dark:bg-"]),
+:root.dark .bg-slate-100\/80:not([class*="dark:bg-"]) {
+  background-color: rgba(17, 24, 39, 0.9);
+}
+
+:root.dark .bg-gray-200:not([class*="dark:bg-"]),
+:root.dark .bg-slate-200:not([class*="dark:bg-"]) {
+  background-color: #1f2937;
+}
+
+:root.dark .bg-gray-300:not([class*="dark:bg-"]),
+:root.dark .bg-slate-300:not([class*="dark:bg-"]) {
+  background-color: #334155;
+}
+
+:root.dark .border-gray-200:not([class*="dark:border-"]) {
+  border-color: #334155;
+}
+
+:root.dark .border-gray-300:not([class*="dark:border-"]) {
+  border-color: #475569;
+}
+
+:root.dark .text-gray-900:not([class*="dark:text-"]),
+:root.dark .text-gray-800:not([class*="dark:text-"]),
+:root.dark .text-gray-700:not([class*="dark:text-"]) {
+  color: #e2e8f0;
+}
+
+:root.dark .text-gray-600:not([class*="dark:text-"]) {
+  color: #cbd5e1;
+}
+
+:root.dark .text-gray-500:not([class*="dark:text-"]) {
+  color: #94a3b8;
+}
+
+:root.dark .text-black:not([class*="dark:text-"]) {
+  color: #f8fafc;
+}
+
+:root.dark .hover\:bg-gray-50:hover,
+:root.dark .hover\:bg-gray-100:hover {
+  background-color: #1f2937;
+}
+
+:root.dark .hover\:bg-gray-200:hover {
+  background-color: #334155;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
