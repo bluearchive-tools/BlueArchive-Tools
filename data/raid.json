@@ -1228,6 +1228,17 @@
       "maxDifficulty": "Torment",
       "startDate": "2025-12-10",
       "endDate": "2025-12-17"
+    },
+    {
+      "number": "D30",
+      "boss": "シロ&クロ",
+      "terrain": "市街地",
+      "type": "大決戦",
+      "defenseArmors": ["重装甲", "特殊装甲", "弾力装甲"],
+      "maxDifficultyArmors": ["特殊装甲", "弾力装甲"],
+      "maxDifficulty": "Torment",
+      "startDate": "2026-01-14",
+      "endDate": "2026-01-20"
     }
   ]
 }
