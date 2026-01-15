@@ -38,7 +38,7 @@ export default async function MyPage() {
     <main className="max-w-none mx-auto px-4 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-bold">ユーザー設定</h2>
+          <h2 className="text-2xl font-bold">設定</h2>
           <PageHelpButton pageKey="mypage" />
         </div>
       </div>
