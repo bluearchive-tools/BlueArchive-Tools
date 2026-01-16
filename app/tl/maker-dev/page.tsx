@@ -2588,7 +2588,7 @@ useEffect(() => {
   const entries: Array<{
     time: number
     kind: '消費' | '回復'
-    detail: Record<string, string | number>
+    detail: Record<string, string | number | boolean>
   }> = []
 
   skills
