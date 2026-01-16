@@ -185,6 +185,17 @@ function normalizeDifficulty(text: string, score: string): string {
   return detected
 }
 
+function normalizeScore(text: string, score: string): string {
+  const num = parseInt(score || '0')
+  if (Number.isNaN(num) || num <= 0) return score
+  if (num >= 60000000) return '0'
+  const difficulty = extractDifficulty(text)
+  if (difficulty === 'Insane' && num >= 28500000) return '0'
+  if (difficulty === 'Torment' && num >= 40350000) return '0'
+  if (difficulty === 'Lunatic' && num >= 60000000) return '0'
+  return score
+}
+
 function isTooEarlyForSeason(snippet: Snippet, seasonStart?: string): boolean {
   if (!seasonStart || !snippet.publishedAt) return false
   const publishedAt = new Date(snippet.publishedAt)
@@ -457,6 +468,12 @@ export async function fetchBilibiliVideos(
   const config = await loadBilibiliKeywordConfig()
   const replacements = config?.replacements ?? {}
   const baseKeywords = config?.baseKeywords ?? []
+  const normalizeBilibiliThumbnail = (value?: string) => {
+    if (!value) return undefined
+    if (value.startsWith('//')) return `https:${value}`
+    if (value.startsWith('http://')) return value.replace(/^http:\/\//, 'https://')
+    return value
+  }
   for (const s of seasons) {
     const armors = s.defenseArmors && s.defenseArmors.length > 0 ? s.defenseArmors : ['']
     for (const armor of armors) {
@@ -493,7 +510,7 @@ export async function fetchBilibiliVideos(
             title: stripHtml(item.title ?? ''),
             description: stripHtml(item.description ?? ''),
             publishedAt: item.pubdate ? new Date(item.pubdate * 1000).toISOString() : undefined,
-            thumbnail: item.pic ? (item.pic.startsWith('//') ? `https:${item.pic}` : item.pic) : undefined,
+            thumbnail: normalizeBilibiliThumbnail(item.pic),
           })
         }
       }
@@ -530,17 +547,19 @@ async function fetchBilibiliDetails(
         }
       }
       if (!json.data) continue
+      const normalizeBilibiliThumbnail = (value?: string) => {
+        if (!value) return undefined
+        if (value.startsWith('//')) return `https:${value}`
+        if (value.startsWith('http://')) return value.replace(/^http:\/\//, 'https://')
+        return value
+      }
       out[bvid] = {
         title: json.data.title ?? undefined,
         description: json.data.desc ?? undefined,
         publishedAt: json.data.pubdate
           ? new Date(json.data.pubdate * 1000).toISOString()
           : undefined,
-        thumbnail: json.data.pic
-          ? json.data.pic.startsWith('//')
-            ? `https:${json.data.pic}`
-            : json.data.pic
-          : undefined,
+        thumbnail: normalizeBilibiliThumbnail(json.data.pic),
       }
     } catch {
       log?.(`Bilibili ${bvid}: 詳細取得に失敗`)
@@ -662,9 +681,10 @@ export async function upsertTimelines(params: {
     const text = `${snippet.title || ''}\n${snippet.description || ''}`
     const armor =
       seasonNum.startsWith('S') ? seasonArmorMap.get(seasonNum) ?? '' : extractArmor(text)
-    const score = extractScore(text)
+    const rawScore = extractScore(text)
+    const score = normalizeScore(text, rawScore)
     const thumbnail = snippet.thumbnails?.medium?.url ?? snippet.thumbnails?.default?.url ?? null
-    const difficulty = normalizeDifficulty(text, score)
+    const difficulty = normalizeDifficulty(text, rawScore)
     const formation = await extractFormation(supabase, text)
     const guide = extractGuide(text)
     const formationStatus =
@@ -769,9 +789,10 @@ export async function upsertTimelines(params: {
       seasonNum.startsWith('S')
         ? seasonArmorMap.get(seasonNum) ?? ''
         : extractArmorFromBilibili(text, bilibiliArmorMap)
-    const score = extractScore(text)
+    const rawScore = extractScore(text)
+    const score = normalizeScore(text, rawScore)
     const thumbnail = detail?.thumbnail ?? info.thumbnail ?? null
-    const difficulty = normalizeDifficulty(text, score)
+    const difficulty = normalizeDifficulty(text, rawScore)
     const formation = await extractFormation(supabase, text)
     const guide = extractGuide(text)
     const formationStatus =

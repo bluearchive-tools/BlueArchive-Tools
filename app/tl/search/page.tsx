@@ -1763,7 +1763,7 @@ export default function TLSearchPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col md:flex-row h-full">
-              <div className="md:w-5/12 border-b md:border-b-0 md:border-r p-4 space-y-3 overflow-y-auto">
+              <div className="flex-1 min-h-0 md:flex-none md:w-5/12 border-b md:border-b-0 md:border-r p-4 space-y-3 overflow-y-auto">
                 <a
                   href={openTlMeta?.url ?? '#'}
                   target="_blank"
@@ -1921,7 +1921,7 @@ export default function TLSearchPage() {
               </div>
 
               {/* 本文（スクロール） */}
-              <div className="md:w-7/12 flex-1 overflow-y-auto p-4 pt-3 space-y-4">
+              <div className="flex-1 min-h-0 md:w-7/12 overflow-y-auto p-4 pt-3 space-y-4">
                 {activeSection === 'overview' && (
                   <div id="section-overview">
                     <h4 className="font-semibold text-sm">概要</h4>
