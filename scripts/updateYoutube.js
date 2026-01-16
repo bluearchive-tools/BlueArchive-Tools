@@ -288,6 +288,8 @@ async function update() {
 
 async function main() {
   await update()
+  const runOnce = process.env.RUN_ONCE === 'true' || process.env.RUN_ONCE === '1'
+  if (runOnce) return
   setInterval(update, 5 * 60 * 1000)
 }
 
