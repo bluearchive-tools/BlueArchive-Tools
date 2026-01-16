@@ -457,6 +457,12 @@ export async function fetchBilibiliVideos(
   const config = await loadBilibiliKeywordConfig()
   const replacements = config?.replacements ?? {}
   const baseKeywords = config?.baseKeywords ?? []
+  const normalizeBilibiliThumbnail = (value?: string) => {
+    if (!value) return undefined
+    if (value.startsWith('//')) return `https:${value}`
+    if (value.startsWith('http://')) return value.replace(/^http:\/\//, 'https://')
+    return value
+  }
   for (const s of seasons) {
     const armors = s.defenseArmors && s.defenseArmors.length > 0 ? s.defenseArmors : ['']
     for (const armor of armors) {
@@ -493,7 +499,7 @@ export async function fetchBilibiliVideos(
             title: stripHtml(item.title ?? ''),
             description: stripHtml(item.description ?? ''),
             publishedAt: item.pubdate ? new Date(item.pubdate * 1000).toISOString() : undefined,
-            thumbnail: item.pic ? (item.pic.startsWith('//') ? `https:${item.pic}` : item.pic) : undefined,
+            thumbnail: normalizeBilibiliThumbnail(item.pic),
           })
         }
       }
@@ -530,17 +536,19 @@ async function fetchBilibiliDetails(
         }
       }
       if (!json.data) continue
+      const normalizeBilibiliThumbnail = (value?: string) => {
+        if (!value) return undefined
+        if (value.startsWith('//')) return `https:${value}`
+        if (value.startsWith('http://')) return value.replace(/^http:\/\//, 'https://')
+        return value
+      }
       out[bvid] = {
         title: json.data.title ?? undefined,
         description: json.data.desc ?? undefined,
         publishedAt: json.data.pubdate
           ? new Date(json.data.pubdate * 1000).toISOString()
           : undefined,
-        thumbnail: json.data.pic
-          ? json.data.pic.startsWith('//')
-            ? `https:${json.data.pic}`
-            : json.data.pic
-          : undefined,
+        thumbnail: normalizeBilibiliThumbnail(json.data.pic),
       }
     } catch {
       log?.(`Bilibili ${bvid}: 詳細取得に失敗`)

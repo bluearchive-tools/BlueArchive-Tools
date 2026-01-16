@@ -11,7 +11,11 @@ export async function GET(request: Request) {
 
   let target: URL
   try {
-    target = new URL(rawUrl)
+    const normalizedUrl =
+      rawUrl.startsWith('//')
+        ? `https:${rawUrl}`
+        : rawUrl.replace(/^http:\/\//, 'https://')
+    target = new URL(normalizedUrl)
   } catch {
     return NextResponse.json({ error: 'invalid_url' }, { status: 400 })
   }
