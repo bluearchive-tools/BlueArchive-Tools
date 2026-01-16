@@ -2138,38 +2138,6 @@ useEffect(() => {
     setSelectedType(null)
   }
 
-  const rowHeight = 42 // px
-  const rows = rowStudents.length
-  const showCostRow = showCostLines && costDetailItems.length > 0
-  const displayRows = rows + (showCostRow ? 1 : 0)
-
-  const currentCost = useMemo(() => {
-  if (!initialized) return 0
-  return calcCost(playhead)
-}, [initialized, calcCost, playhead])
-
-  const dangerSkills = useMemo(() => {
-    if (!initialized) return new Set<number>()
-
-    const set = new Set<number>()
-    skills
-      .filter((ev) => ev.type === 'ex')
-      .forEach((ev) => {
-        const rowId = rowStudents[ev.row]
-        if (!rowId) return
-        if (rowId.startsWith('enemy:')) return
-        const st = students.find((s) => s.id === rowId)
-        const need = st?.cost ?? 0
-        if (need <= 0) return
-        const availableCost = calcCost(ev.start, { excludeSkillId: ev.id })
-        if (availableCost < need) set.add(ev.id)
-      })
-
-    return set
-  }, [initialized, skills, calcCost, rowStudents, students])
-
-
-
   const formatRemain = (t: number) => {
     const clamped = Math.max(0, t)
     const m = Math.floor(clamped / 60)
@@ -2629,6 +2597,36 @@ useEffect(() => {
 
   return entries.sort((a, b) => a.time - b.time)
 }, [initialized, skills, students, rowStudents])
+
+  const rowHeight = 42 // px
+  const rows = rowStudents.length
+  const showCostRow = showCostLines && costDetailItems.length > 0
+  const displayRows = rows + (showCostRow ? 1 : 0)
+
+  const currentCost = useMemo(() => {
+  if (!initialized) return 0
+  return calcCost(playhead)
+}, [initialized, calcCost, playhead])
+
+  const dangerSkills = useMemo(() => {
+    if (!initialized) return new Set<number>()
+
+    const set = new Set<number>()
+    skills
+      .filter((ev) => ev.type === 'ex')
+      .forEach((ev) => {
+        const rowId = rowStudents[ev.row]
+        if (!rowId) return
+        if (rowId.startsWith('enemy:')) return
+        const st = students.find((s) => s.id === rowId)
+        const need = st?.cost ?? 0
+        if (need <= 0) return
+        const availableCost = calcCost(ev.start, { excludeSkillId: ev.id })
+        if (availableCost < need) set.add(ev.id)
+      })
+
+    return set
+  }, [initialized, skills, calcCost, rowStudents, students])
 
 
   useEffect(() => {
