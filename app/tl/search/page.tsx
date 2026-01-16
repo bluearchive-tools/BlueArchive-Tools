@@ -2273,264 +2273,266 @@ export default function TLSearchPage() {
           }}
         >
           <div
-            className="bg-white p-4 rounded w-full max-w-lg space-y-3 text-sm"
+            className="bg-white rounded w-full max-w-lg h-[80vh] max-h-[80vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {editTlMeta && (
-              <div className="flex items-center gap-3">
-                {editTlMeta.thumbnail ? (
-                  <img
-                    src={editTlMeta.thumbnail}
-                    alt={`${editTlMeta.label} thumbnail`}
-                    className="h-20 w-36 rounded object-cover"
-                  />
-                ) : (
-                  <div className="h-20 w-36 rounded bg-gray-100 text-xs text-gray-500 flex items-center justify-center text-center px-2">
-                    {editTlMeta.label} thumbnail unavailable
-                  </div>
-                )}
-                <a
-                  href={editTlMeta.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-blue-600 underline text-xs"
-                >
-                  {editTlMeta.label}で開く
-                </a>
-              </div>
-            )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label className="block">
-                スコア
-                <input
-                  type="number"
-                  value={editScore}
-                  onChange={(e) => setEditScore(e.target.value)}
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
-                />
-              </label>
-              <label className="block">
-                難易度
-                <select
-                  value={editDifficulty}
-                  onChange={(e) => setEditDifficulty(e.target.value)}
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
-                >
-                  <option value="">未設定</option>
-                  {difficulties.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                装甲
-                <select
-                  value={editArmor}
-                  onChange={(e) => setEditArmor(e.target.value)}
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
-                >
-                  <option value="">未設定</option>
-                  {armors.map((a) => (
-                    <option key={a} value={a}>
-                      {a}
-                    </option>
-                  ))}
-                  <option value="不明">不明</option>
-                </select>
-              </label>
-              <label className="block">
-                編成状態
-                <select
-                  value={editFormationStatus}
-                  onChange={(e) => setEditFormationStatus(e.target.value)}
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
-                >
-                  <option value="none">none</option>
-                  <option value="auto">auto</option>
-                  <option value="manual">manual</option>
-                </select>
-              </label>
-            </div>
-            <label className="inline-flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={editGuide}
-                onChange={(e) => setEditGuide(e.target.checked)}
-              />
-              <span>解説付き</span>
-            </label>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold">編成</span>
-                <button
-                  type="button"
-                  className="text-xs text-blue-600 underline"
-                  onClick={() => {
-                    setEditSquads((prev) => [...prev, emptySquad()])
-                    setEditSquadsDirty(true)
-                  }}
-                >
-                  部隊を追加
-                </button>
-              </div>
-              {editSquads.length === 0 ? (
-                <p className="text-xs text-gray-500">編成がありません。</p>
-              ) : (
-                <div className="space-y-3">
-                  {editSquads.map((squad, squadIndex) => (
-                    <div key={squadIndex} className="rounded border border-gray-200 p-2 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-600">部隊{squadIndex + 1}</span>
-                        <button
-                          type="button"
-                          className="text-xs text-red-600 underline"
-                          onClick={() => {
-                            setEditSquads((prev) => prev.filter((_, i) => i !== squadIndex))
-                            setEditSquadsDirty(true)
-                          }}
-                        >
-                          削除
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {squad.strikers.map((member, idx) => (
-                          <div key={`striker-${idx}`} className="space-y-1">
-                            <span className="text-xs text-gray-500">ストライカー{idx + 1}</span>
-                            <StudentSelect
-                              students={students}
-                              value={member}
-                              onChange={(value) => {
-                                setEditSquads((prev) =>
-                                  prev.map((s, i) =>
-                                    i !== squadIndex
-                                      ? s
-                                      : {
-                                          ...s,
-                                          strikers: s.strikers.map((m, mi) =>
-                                            mi === idx ? value : m
-                                          ),
-                                        }
-                                  )
-                                )
-                                setEditSquadsDirty(true)
-                              }}
-                            />
-                          </div>
-                        ))}
-                        {squad.specials.map((member, idx) => (
-                          <div key={`special-${idx}`} className="space-y-1">
-                            <span className="text-xs text-gray-500">スペシャル{idx + 1}</span>
-                            <StudentSelect
-                              students={students}
-                              value={member}
-                              onChange={(value) => {
-                                setEditSquads((prev) =>
-                                  prev.map((s, i) =>
-                                    i !== squadIndex
-                                      ? s
-                                      : {
-                                          ...s,
-                                          specials: s.specials.map((m, mi) =>
-                                            mi === idx ? value : m
-                                          ),
-                                        }
-                                  )
-                                )
-                                setEditSquadsDirty(true)
-                              }}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {[...squad.strikers, ...squad.specials]
-                          .filter(Boolean)
-                          .map((id) => {
-                            const student = students.find((s) => s.id === id)
-                            return (
-                              <div
-                                key={`${squadIndex}-${id}`}
-                                className="flex items-center gap-2 rounded border px-2 py-1"
-                              >
-                                {student?.image ? (
-                                  <img
-                                    src={student.image}
-                                    alt={student.name}
-                                    className="h-5 w-5 rounded object-cover"
-                                  />
-                                ) : (
-                                  <div className="h-5 w-5 rounded bg-gray-200" />
-                                )}
-                                <span className="text-xs">{student?.name ?? id}</span>
-                              </div>
-                            )
-                          })}
-                      </div>
+            <div className="p-4 space-y-3 text-sm overflow-y-auto">
+              {editTlMeta && (
+                <div className="flex items-center gap-3">
+                  {editTlMeta.thumbnail ? (
+                    <img
+                      src={editTlMeta.thumbnail}
+                      alt={`${editTlMeta.label} thumbnail`}
+                      className="h-20 w-36 rounded object-cover"
+                    />
+                  ) : (
+                    <div className="h-20 w-36 rounded bg-gray-100 text-xs text-gray-500 flex items-center justify-center text-center px-2">
+                      {editTlMeta.label} thumbnail unavailable
                     </div>
-                  ))}
+                  )}
+                  <a
+                    href={editTlMeta.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 underline text-xs"
+                  >
+                    {editTlMeta.label}で開く
+                  </a>
                 </div>
               )}
-              <details className="rounded border border-gray-200 p-2">
-                <summary className="cursor-pointer text-xs text-gray-600">
-                  JSONプレビュー
-                </summary>
-                <textarea
-                  value={editFormation}
-                  readOnly
-                  className="mt-2 w-full rounded border border-gray-300 px-2 py-1 font-mono text-xs h-24"
-                />
-              </details>
-            </div>
-            {isAdmin && editTl && (
-              <div className="space-y-1">
-                <label className="inline-flex items-center gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className="block">
+                  スコア
                   <input
-                    type="checkbox"
-                    checked={editTlSkipUpdate}
-                    disabled={!editTlSkipUpdateLoaded || editTlSkipUpdateSaving}
-                    onChange={(e) =>
-                      setEditVideoSkipUpdate(editTl.videoid, e.target.checked)
-                    }
+                    type="number"
+                    value={editScore}
+                    onChange={(e) => setEditScore(e.target.value)}
+                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
                   />
-                  <span>同期時にこの動画を更新しない</span>
                 </label>
-                <p className="text-xs text-gray-600">
-                  ONにすると、既にDBにあるこのvideoidは同期処理で上書きされません。
-                </p>
-                {editPolicyError && (
-                  <p className="text-xs text-red-600">{editPolicyError}</p>
-                )}
+                <label className="block">
+                  難易度
+                  <select
+                    value={editDifficulty}
+                    onChange={(e) => setEditDifficulty(e.target.value)}
+                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
+                  >
+                    <option value="">未設定</option>
+                    {difficulties.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  装甲
+                  <select
+                    value={editArmor}
+                    onChange={(e) => setEditArmor(e.target.value)}
+                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
+                  >
+                    <option value="">未設定</option>
+                    {armors.map((a) => (
+                      <option key={a} value={a}>
+                        {a}
+                      </option>
+                    ))}
+                    <option value="不明">不明</option>
+                  </select>
+                </label>
+                <label className="block">
+                  編成状態
+                  <select
+                    value={editFormationStatus}
+                    onChange={(e) => setEditFormationStatus(e.target.value)}
+                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
+                  >
+                    <option value="none">none</option>
+                    <option value="auto">auto</option>
+                    <option value="manual">manual</option>
+                  </select>
+                </label>
               </div>
-            )}
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => {
-                  setEditTl(null)
-                  setEditGuide(false)
-                  setEditFormationStatus('none')
-                  setEditArmor('')
-                  setEditDifficulty('')
-                  setEditFormation('')
-                  setEditSquads([])
-                  setEditSquadsDirty(false)
-                  setEditFormationMemberMap({})
-                  setEditTlSkipUpdate(false)
-                  setEditTlSkipUpdateLoaded(false)
-                  setEditTlSkipUpdateSaving(false)
-                  setEditPolicyError('')
-                }}
-                className="border px-2 py-1"
-              >
-                キャンセル
-              </button>
-              <button
-                onClick={handleSaveEdit}
-                className="border px-2 py-1 bg-blue-500 text-white"
-              >
-                保存
-              </button>
+              <label className="inline-flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={editGuide}
+                  onChange={(e) => setEditGuide(e.target.checked)}
+                />
+                <span>解説付き</span>
+              </label>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold">編成</span>
+                  <button
+                    type="button"
+                    className="text-xs text-blue-600 underline"
+                    onClick={() => {
+                      setEditSquads((prev) => [...prev, emptySquad()])
+                      setEditSquadsDirty(true)
+                    }}
+                  >
+                    部隊を追加
+                  </button>
+                </div>
+                {editSquads.length === 0 ? (
+                  <p className="text-xs text-gray-500">編成がありません。</p>
+                ) : (
+                  <div className="space-y-3">
+                    {editSquads.map((squad, squadIndex) => (
+                      <div key={squadIndex} className="rounded border border-gray-200 p-2 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-600">部隊{squadIndex + 1}</span>
+                          <button
+                            type="button"
+                            className="text-xs text-red-600 underline"
+                            onClick={() => {
+                              setEditSquads((prev) => prev.filter((_, i) => i !== squadIndex))
+                              setEditSquadsDirty(true)
+                            }}
+                          >
+                            削除
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {squad.strikers.map((member, idx) => (
+                            <div key={`striker-${idx}`} className="space-y-1">
+                              <span className="text-xs text-gray-500">ストライカー{idx + 1}</span>
+                              <StudentSelect
+                                students={students}
+                                value={member}
+                                onChange={(value) => {
+                                  setEditSquads((prev) =>
+                                    prev.map((s, i) =>
+                                      i !== squadIndex
+                                        ? s
+                                        : {
+                                            ...s,
+                                            strikers: s.strikers.map((m, mi) =>
+                                              mi === idx ? value : m
+                                            ),
+                                          }
+                                    )
+                                  )
+                                  setEditSquadsDirty(true)
+                                }}
+                              />
+                            </div>
+                          ))}
+                          {squad.specials.map((member, idx) => (
+                            <div key={`special-${idx}`} className="space-y-1">
+                              <span className="text-xs text-gray-500">スペシャル{idx + 1}</span>
+                              <StudentSelect
+                                students={students}
+                                value={member}
+                                onChange={(value) => {
+                                  setEditSquads((prev) =>
+                                    prev.map((s, i) =>
+                                      i !== squadIndex
+                                        ? s
+                                        : {
+                                            ...s,
+                                            specials: s.specials.map((m, mi) =>
+                                              mi === idx ? value : m
+                                            ),
+                                          }
+                                    )
+                                  )
+                                  setEditSquadsDirty(true)
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {[...squad.strikers, ...squad.specials]
+                            .filter(Boolean)
+                            .map((id) => {
+                              const student = students.find((s) => s.id === id)
+                              return (
+                                <div
+                                  key={`${squadIndex}-${id}`}
+                                  className="flex items-center gap-2 rounded border px-2 py-1"
+                                >
+                                  {student?.image ? (
+                                    <img
+                                      src={student.image}
+                                      alt={student.name}
+                                      className="h-5 w-5 rounded object-cover"
+                                    />
+                                  ) : (
+                                    <div className="h-5 w-5 rounded bg-gray-200" />
+                                  )}
+                                  <span className="text-xs">{student?.name ?? id}</span>
+                                </div>
+                              )
+                            })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <details className="rounded border border-gray-200 p-2">
+                  <summary className="cursor-pointer text-xs text-gray-600">
+                    JSONプレビュー
+                  </summary>
+                  <textarea
+                    value={editFormation}
+                    readOnly
+                    className="mt-2 w-full rounded border border-gray-300 px-2 py-1 font-mono text-xs h-24"
+                  />
+                </details>
+              </div>
+              {isAdmin && editTl && (
+                <div className="space-y-1">
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={editTlSkipUpdate}
+                      disabled={!editTlSkipUpdateLoaded || editTlSkipUpdateSaving}
+                      onChange={(e) =>
+                        setEditVideoSkipUpdate(editTl.videoid, e.target.checked)
+                      }
+                    />
+                    <span>同期時にこの動画を更新しない</span>
+                  </label>
+                  <p className="text-xs text-gray-600">
+                    ONにすると、既にDBにあるこのvideoidは同期処理で上書きされません。
+                  </p>
+                  {editPolicyError && (
+                    <p className="text-xs text-red-600">{editPolicyError}</p>
+                  )}
+                </div>
+              )}
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => {
+                    setEditTl(null)
+                    setEditGuide(false)
+                    setEditFormationStatus('none')
+                    setEditArmor('')
+                    setEditDifficulty('')
+                    setEditFormation('')
+                    setEditSquads([])
+                    setEditSquadsDirty(false)
+                    setEditFormationMemberMap({})
+                    setEditTlSkipUpdate(false)
+                    setEditTlSkipUpdateLoaded(false)
+                    setEditTlSkipUpdateSaving(false)
+                    setEditPolicyError('')
+                  }}
+                  className="border px-2 py-1"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="border px-2 py-1 bg-blue-500 text-white"
+                >
+                  保存
+                </button>
+              </div>
             </div>
           </div>
         </div>

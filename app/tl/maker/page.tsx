@@ -947,6 +947,8 @@ useEffect(() => {
 
   const rowHeight = 42 // px
   const rows = rowStudents.length
+  const showCostRow = showCostLines && costDetailItems.length > 0
+  const displayRows = rows + (showCostRow ? 1 : 0)
 
   const currentCost = useMemo(() => {
   if (!initialized) return 0
@@ -2562,14 +2564,60 @@ setShowCreateModal(false)
 
 
       <div className="flex">
-        {showTextTL && (
-          <div className="mr-2 flex flex-col gap-1">
-            <textarea
-              className="text-xs font-mono flex-shrink-0 border rounded p-1"
-              rows={rows}
-              value={textTL}
-              onChange={(e) => setTextTL(e.target.value)}
-            />
+        {(showTextTL || costDetailItems.length > 0) && (
+          <div className="mr-2 flex flex-col gap-2">
+            {showTextTL && (
+              <textarea
+                className="text-xs font-mono flex-shrink-0 border rounded p-1"
+                rows={rows}
+                value={textTL}
+                onChange={(e) => setTextTL(e.target.value)}
+              />
+            )}
+            {costDetailItems.length > 0 && (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  className="text-xs text-blue-600 underline text-left"
+                  onClick={() => setShowCostLines((prev) => !prev)}
+                >
+                  {showCostLines ? 'コスト詳細を隠す' : 'コスト詳細を表示'}
+                </button>
+                {showCostLines && (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full border border-gray-200 text-xs">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="border border-gray-200 px-2 py-1 text-left">時間</th>
+                          <th className="border border-gray-200 px-2 py-1 text-left">種類</th>
+                          <th className="border border-gray-200 px-2 py-1 text-left">詳細</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {costDetailItems.map((item, index) => (
+                          <tr key={`${item.kind}-${item.time}-${index}`}>
+                            <td className="border border-gray-200 px-2 py-1">
+                              {formatRemain(item.time)}
+                            </td>
+                            <td className="border border-gray-200 px-2 py-1">{item.kind}</td>
+                            <td className="border border-gray-200 px-2 py-1">
+                              <div className="grid grid-cols-[auto,1fr] gap-x-2 gap-y-1">
+                                {Object.entries(item.detail).map(([key, value]) => (
+                                  <Fragment key={key}>
+                                    <div className="text-gray-500">{key}</div>
+                                    <div className="break-all">{String(value)}</div>
+                                  </Fragment>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
         <div className="flex gap-0 max-h-96 overflow-y-hidden touch-pan-x overscroll-none select-none">
@@ -2641,6 +2689,14 @@ setBuffPopup({
               </div>
             )
           })}
+          {showCostRow && (
+            <div
+              className="border border-gray-500 flex items-center justify-center text-[10px] text-gray-600"
+              style={{ width: rowHeight, height: rowHeight }}
+            >
+              コスト
+            </div>
+          )}
         </div>
         <div
           ref={containerRef}
@@ -2685,7 +2741,7 @@ setBuffPopup({
               className="relative border bg-gray-900"
               style={{
                 width: '100%',
-                height: rows * rowHeight,
+                height: displayRows * rowHeight,
                 backgroundImage:
                   `repeating-linear-gradient(to right, #555 0, #555 1px, transparent 1px, transparent ${timeScale}px)` +
                   (timeScale >= 40
@@ -2836,7 +2892,7 @@ setBuffPopup({
                       left: m.time * timeScale,
                       top: 0,
                       width: Math.max(m.duration * timeScale, 4),
-                      height: rows * rowHeight,
+                      height: displayRows * rowHeight,
                       touchAction: 'pan-x',
                     }}
                     onClick={(e) => {
@@ -3142,54 +3198,34 @@ setBuffPopup({
                   </div>
                 )
               })}
+              {showCostRow &&
+                costDetailItems.map((item, index) => {
+                  const detail =
+                    item.kind === '消費'
+                      ? `-${Number(item.detail.cost ?? 0).toFixed(1)}`
+                      : `+${Number(item.detail.amount ?? 0).toFixed(1)}`
+                  return (
+                    <div
+                      key={`cost-${item.kind}-${item.time}-${index}`}
+                      className={`absolute text-white text-[10px] px-1 overflow-hidden z-10 ${
+                        item.kind === '消費' ? 'bg-red-500' : 'bg-green-500'
+                      }`}
+                      style={{
+                        left: item.time * timeScale,
+                        top: rows * rowHeight,
+                        width: Math.max(timeScale * 0.4, 6),
+                        height: rowHeight - 2,
+                        touchAction: 'pan-x',
+                      }}
+                    >
+                      <span className="relative z-10 pointer-events-none">{detail}</span>
+                    </div>
+                  )
+                })}
             </div>
           </div>
         </div>
       </div>
-      {costDetailItems.length > 0 && (
-        <div className="mt-2">
-          <button
-            type="button"
-            className="text-xs text-blue-600 underline text-left"
-            onClick={() => setShowCostLines((prev) => !prev)}
-          >
-            {showCostLines ? 'コスト詳細を隠す' : 'コスト詳細を表示'}
-          </button>
-          {showCostLines && (
-            <div className="mt-2 overflow-x-auto">
-              <table className="min-w-full border border-gray-200 text-xs">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="border border-gray-200 px-2 py-1 text-left">時間</th>
-                    <th className="border border-gray-200 px-2 py-1 text-left">種類</th>
-                    <th className="border border-gray-200 px-2 py-1 text-left">詳細</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {costDetailItems.map((item, index) => (
-                    <tr key={`${item.kind}-${item.time}-${index}`}>
-                      <td className="border border-gray-200 px-2 py-1">
-                        {formatRemain(item.time)}
-                      </td>
-                      <td className="border border-gray-200 px-2 py-1">{item.kind}</td>
-                      <td className="border border-gray-200 px-2 py-1">
-                        <div className="grid grid-cols-[auto,1fr] gap-x-2 gap-y-1">
-                          {Object.entries(item.detail).map(([key, value]) => (
-                            <Fragment key={key}>
-                              <div className="text-gray-500">{key}</div>
-                              <div className="break-all">{String(value)}</div>
-                            </Fragment>
-                          ))}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
       {menuInfo && (
         <div
           className="fixed bg-white border rounded shadow text-sm z-50"
