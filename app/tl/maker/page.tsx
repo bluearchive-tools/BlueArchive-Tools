@@ -761,6 +761,7 @@ useEffect(() => {
 
   const INITIAL_COST = 0
   const MAX_COST = 10
+  const COST_RECOVERY_BASE = 700 * 6
 
   function calcCost(t: number) {
   // 🔒 初期化ガード
@@ -801,7 +802,7 @@ useEffect(() => {
       if (amount === 0 || duration <= 0) return
       const adjustedDuration = applyDurationBonus ? duration * 1.19 : duration
       if (time >= trigger && time <= trigger + adjustedDuration) {
-        bonus += amount
+        bonus += (amount / COST_RECOVERY_BASE) * 100
       }
     })
     return bonus
@@ -944,28 +945,6 @@ useEffect(() => {
     setSelectedType(null)
   }
 
-  const rowHeight = 42 // px
-  const rows = rowStudents.length
-
-  const currentCost = useMemo(() => {
-  if (!initialized) return 0
-  return calcCost(playhead)
-}, [initialized, calcCost, playhead])
-
-
-  const dangerSkills = useMemo(() => {
-  if (!initialized) return new Set<number>()
-
-  const set = new Set<number>()
-  skills
-    .filter((ev) => ev.type === 'ex')
-    .forEach((ev) => {
-      if (calcCost(ev.start) < 0) set.add(ev.id)
-    })
-  return set
-}, [initialized, skills, calcCost])
-
-
   const formatRemain = (t: number) => {
     const clamped = Math.max(0, t)
     const m = Math.floor(clamped / 60)
@@ -993,9 +972,13 @@ useEffect(() => {
     })
 }, [initialized, skills, students, rowStudents])
 
-  const costDetailLines = useMemo(() => {
+  const costDetailItems = useMemo(() => {
   if (!initialized) return []
-  const entries: Array<{ time: number; text: string }> = []
+  const entries: Array<{
+    time: number
+    kind: '消費' | '回復'
+    detail: Record<string, string | number | boolean>
+  }> = []
 
   skills
     .filter((ev) => ev.type === 'ex')
@@ -1007,7 +990,11 @@ useEffect(() => {
       const costValue = ev.cost ?? st.cost ?? 0
       entries.push({
         time: ev.start,
-        text: `${formatRemain(ev.start)} 消費-${costValue.toFixed(1)} (${st.name})`,
+        kind: '消費',
+        detail: {
+          name: st.name,
+          cost: parseFloat(costValue.toFixed(1)),
+        },
       })
     })
 
@@ -1016,17 +1003,43 @@ useEffect(() => {
     const { amount, duration, trigger, applyDurationBonus } = ev.costRecovery
     if (amount === 0 || duration <= 0) return
     const adjustedDuration = applyDurationBonus ? duration * 1.19 : duration
-    const durationLabel = applyDurationBonus
-      ? `${duration.toFixed(2)}s → ${adjustedDuration.toFixed(2)}s`
-      : `${duration.toFixed(2)}s`
     entries.push({
       time: trigger,
-      text: `${formatRemain(trigger)} コスト回復+${amount.toFixed(1)}% (${durationLabel})`,
+      kind: '回復',
+      detail: {
+        amount: parseFloat(amount.toFixed(1)),
+        duration: parseFloat(duration.toFixed(2)),
+        adjustedDuration: parseFloat(adjustedDuration.toFixed(2)),
+        applyDurationBonus,
+      },
     })
   })
 
-  return entries.sort((a, b) => a.time - b.time).map((e) => e.text)
+  return entries.sort((a, b) => a.time - b.time)
 }, [initialized, skills, students, rowStudents])
+
+  const rowHeight = 42 // px
+  const rows = rowStudents.length
+  const showCostRow = showCostLines && costDetailItems.length > 0
+  const displayRows = rows + (showCostRow ? 1 : 0)
+
+  const currentCost = useMemo(() => {
+  if (!initialized) return 0
+  return calcCost(playhead)
+}, [initialized, calcCost, playhead])
+
+
+  const dangerSkills = useMemo(() => {
+  if (!initialized) return new Set<number>()
+
+  const set = new Set<number>()
+  skills
+    .filter((ev) => ev.type === 'ex')
+    .forEach((ev) => {
+      if (calcCost(ev.start) < 0) set.add(ev.id)
+    })
+  return set
+}, [initialized, skills, calcCost])
 
 
   useEffect(() => {
@@ -2232,13 +2245,14 @@ setShowCreateModal(false)
                   {costRecoveryEnabled && (
                     <>
                       <label className="flex items-center gap-2">
-                        <span className="w-24">増加量(%)</span>
+                        <span className="w-24">増加量(実数)</span>
                         <input
                           type="number"
                           value={costRecoveryAmount}
                           onChange={(e) => setCostRecoveryAmount(parseFloat(e.target.value) || 0)}
                           className="border rounded p-1 w-24"
                         />
+                        <span className="text-[10px] text-gray-500">基礎値(700×6)に加算</span>
                       </label>
                       <label className="flex items-center gap-2">
                         <span className="w-24">効果時間</span>
@@ -2549,8 +2563,8 @@ setShowCreateModal(false)
 
 
       <div className="flex">
-        {(showTextTL || costDetailLines.length > 0) && (
-          <div className="mr-2 flex flex-col gap-1">
+        {(showTextTL || costDetailItems.length > 0) && (
+          <div className="mr-2 flex flex-col gap-2">
             {showTextTL && (
               <textarea
                 className="text-xs font-mono flex-shrink-0 border rounded p-1"
@@ -2559,8 +2573,8 @@ setShowCreateModal(false)
                 onChange={(e) => setTextTL(e.target.value)}
               />
             )}
-            {costDetailLines.length > 0 && (
-              <>
+            {costDetailItems.length > 0 && (
+              <div className="space-y-2">
                 <button
                   type="button"
                   className="text-xs text-blue-600 underline text-left"
@@ -2569,14 +2583,39 @@ setShowCreateModal(false)
                   {showCostLines ? 'コスト詳細を隠す' : 'コスト詳細を表示'}
                 </button>
                 {showCostLines && (
-                  <textarea
-                    className="text-xs font-mono border rounded p-1"
-                    rows={Math.min(costDetailLines.length + 1, 8)}
-                    value={costDetailLines.join('\n')}
-                    readOnly
-                  />
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full border border-gray-200 text-xs">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="border border-gray-200 px-2 py-1 text-left">時間</th>
+                          <th className="border border-gray-200 px-2 py-1 text-left">種類</th>
+                          <th className="border border-gray-200 px-2 py-1 text-left">詳細</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {costDetailItems.map((item, index) => (
+                          <tr key={`${item.kind}-${item.time}-${index}`}>
+                            <td className="border border-gray-200 px-2 py-1">
+                              {formatRemain(item.time)}
+                            </td>
+                            <td className="border border-gray-200 px-2 py-1">{item.kind}</td>
+                            <td className="border border-gray-200 px-2 py-1">
+                              <div className="grid grid-cols-[auto,1fr] gap-x-2 gap-y-1">
+                                {Object.entries(item.detail).map(([key, value]) => (
+                                  <Fragment key={key}>
+                                    <div className="text-gray-500">{key}</div>
+                                    <div className="break-all">{String(value)}</div>
+                                  </Fragment>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
-              </>
+              </div>
             )}
           </div>
         )}
@@ -2649,6 +2688,14 @@ setBuffPopup({
               </div>
             )
           })}
+          {showCostRow && (
+            <div
+              className="border border-gray-500 flex items-center justify-center text-[10px] text-gray-600"
+              style={{ width: rowHeight, height: rowHeight }}
+            >
+              コスト
+            </div>
+          )}
         </div>
         <div
           ref={containerRef}
@@ -2693,7 +2740,7 @@ setBuffPopup({
               className="relative border bg-gray-900"
               style={{
                 width: '100%',
-                height: rows * rowHeight,
+                height: displayRows * rowHeight,
                 backgroundImage:
                   `repeating-linear-gradient(to right, #555 0, #555 1px, transparent 1px, transparent ${timeScale}px)` +
                   (timeScale >= 40
@@ -2844,7 +2891,7 @@ setBuffPopup({
                       left: m.time * timeScale,
                       top: 0,
                       width: Math.max(m.duration * timeScale, 4),
-                      height: rows * rowHeight,
+                      height: displayRows * rowHeight,
                       touchAction: 'pan-x',
                     }}
                     onClick={(e) => {
@@ -3150,6 +3197,30 @@ setBuffPopup({
                   </div>
                 )
               })}
+              {showCostRow &&
+                costDetailItems.map((item, index) => {
+                  const detail =
+                    item.kind === '消費'
+                      ? `-${Number(item.detail.cost ?? 0).toFixed(1)}`
+                      : `+${Number(item.detail.amount ?? 0).toFixed(1)}`
+                  return (
+                    <div
+                      key={`cost-${item.kind}-${item.time}-${index}`}
+                      className={`absolute text-white text-[10px] px-1 overflow-hidden z-10 ${
+                        item.kind === '消費' ? 'bg-red-500' : 'bg-green-500'
+                      }`}
+                      style={{
+                        left: item.time * timeScale,
+                        top: rows * rowHeight,
+                        width: Math.max(timeScale * 0.4, 6),
+                        height: rowHeight - 2,
+                        touchAction: 'pan-x',
+                      }}
+                    >
+                      <span className="relative z-10 pointer-events-none">{detail}</span>
+                    </div>
+                  )
+                })}
             </div>
           </div>
         </div>

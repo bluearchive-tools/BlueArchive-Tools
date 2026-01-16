@@ -354,6 +354,41 @@ function normalizeReplacement(value: string | string[]): string[] {
   return Array.isArray(value) ? value.filter((item) => item.trim().length > 0) : [value]
 }
 
+let cachedBilibiliConfig: BilibiliKeywordConfig | null = null
+
+async function loadBilibiliKeywordConfig(): Promise<BilibiliKeywordConfig> {
+  if (cachedBilibiliConfig) return cachedBilibiliConfig
+  try {
+    const configPath = path.join(process.cwd(), 'data', 'bilibili-keywords.json')
+    const raw = await fs.readFile(configPath, 'utf-8')
+    const parsed = JSON.parse(raw) as BilibiliKeywordConfig
+    cachedBilibiliConfig = {
+      replacements: parsed?.replacements ?? {},
+      baseKeywords: parsed?.baseKeywords ?? [],
+    }
+  } catch {
+    cachedBilibiliConfig = { replacements: {}, baseKeywords: [] }
+  }
+  return cachedBilibiliConfig
+}
+
+const armorKeys = ['軽装備', '重装甲', '特殊装甲', '弾力装甲', 'その他']
+
+function extractArmorFromBilibili(
+  text: string,
+  replacements: Record<string, string | string[]>
+): string {
+  const matched: string[] = []
+  for (const key of armorKeys) {
+    const variants = [key, ...normalizeReplacement(replacements[key] ?? [])]
+    if (variants.some((variant) => variant && text.includes(variant))) {
+      matched.push(key)
+    }
+  }
+  if (matched.length !== 1) return '不明'
+  return matched[0] === 'その他' ? '不明' : matched[0]
+}
+
 function buildBilibiliQueries(
   terms: Array<string | undefined>,
   replacements: Record<string, string | string[]>,
@@ -419,18 +454,9 @@ export async function fetchBilibiliVideos(
     thumbnail?: string
   }> = []
   const seen = new Set<string>()
-  let replacements: Record<string, string | string[]> = {}
-  let baseKeywords: string[] = []
-  try {
-    const configPath = path.join(process.cwd(), 'data', 'bilibili-keywords.json')
-    const raw = await fs.readFile(configPath, 'utf-8')
-    const parsed = JSON.parse(raw) as BilibiliKeywordConfig
-    replacements = parsed?.replacements ?? {}
-    baseKeywords = parsed?.baseKeywords ?? []
-  } catch {
-    replacements = {}
-    baseKeywords = []
-  }
+  const config = await loadBilibiliKeywordConfig()
+  const replacements = config?.replacements ?? {}
+  const baseKeywords = config?.baseKeywords ?? []
   for (const s of seasons) {
     const armors = s.defenseArmors && s.defenseArmors.length > 0 ? s.defenseArmors : ['']
     for (const armor of armors) {
@@ -498,6 +524,8 @@ export async function upsertTimelines(params: {
   const targetSeasons = season
     ? seasons.filter((s) => s.number === season)
     : seasons
+  const bilibiliConfig = await loadBilibiliKeywordConfig()
+  const bilibiliArmorMap = bilibiliConfig?.replacements ?? {}
   pushLog(`開始: 対象シーズン=${targetSeasons.map((s) => s.number).join(',') || 'なし'}`)
   const seasonStartMap = new Map<string, string>()
   const seasonArmorMap = new Map<string, string>()
@@ -683,7 +711,9 @@ export async function upsertTimelines(params: {
 
     const text = `${snippet.title || ''}\n${snippet.description || ''}`
     const armor =
-      seasonNum.startsWith('S') ? seasonArmorMap.get(seasonNum) ?? '' : extractArmor(text)
+      seasonNum.startsWith('S')
+        ? seasonArmorMap.get(seasonNum) ?? ''
+        : extractArmorFromBilibili(text, bilibiliArmorMap)
     const score = extractScore(text)
     const thumbnail = info.thumbnail ?? null
     const difficulty = normalizeDifficulty(text, score)
