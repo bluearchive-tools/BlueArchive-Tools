@@ -354,6 +354,41 @@ function normalizeReplacement(value: string | string[]): string[] {
   return Array.isArray(value) ? value.filter((item) => item.trim().length > 0) : [value]
 }
 
+let cachedBilibiliConfig: BilibiliKeywordConfig | null = null
+
+async function loadBilibiliKeywordConfig(): Promise<BilibiliKeywordConfig> {
+  if (cachedBilibiliConfig) return cachedBilibiliConfig
+  try {
+    const configPath = path.join(process.cwd(), 'data', 'bilibili-keywords.json')
+    const raw = await fs.readFile(configPath, 'utf-8')
+    const parsed = JSON.parse(raw) as BilibiliKeywordConfig
+    cachedBilibiliConfig = {
+      replacements: parsed?.replacements ?? {},
+      baseKeywords: parsed?.baseKeywords ?? [],
+    }
+  } catch {
+    cachedBilibiliConfig = { replacements: {}, baseKeywords: [] }
+  }
+  return cachedBilibiliConfig
+}
+
+const armorKeys = ['軽装備', '重装甲', '特殊装甲', '弾力装甲', 'その他']
+
+function extractArmorFromBilibili(
+  text: string,
+  replacements: Record<string, string | string[]>
+): string {
+  const matched: string[] = []
+  for (const key of armorKeys) {
+    const variants = [key, ...normalizeReplacement(replacements[key] ?? [])]
+    if (variants.some((variant) => variant && text.includes(variant))) {
+      matched.push(key)
+    }
+  }
+  if (matched.length !== 1) return '不明'
+  return matched[0] === 'その他' ? '不明' : matched[0]
+}
+
 function buildBilibiliQueries(
   terms: Array<string | undefined>,
   replacements: Record<string, string | string[]>,
@@ -419,18 +454,9 @@ export async function fetchBilibiliVideos(
     thumbnail?: string
   }> = []
   const seen = new Set<string>()
-  let replacements: Record<string, string | string[]> = {}
-  let baseKeywords: string[] = []
-  try {
-    const configPath = path.join(process.cwd(), 'data', 'bilibili-keywords.json')
-    const raw = await fs.readFile(configPath, 'utf-8')
-    const parsed = JSON.parse(raw) as BilibiliKeywordConfig
-    replacements = parsed?.replacements ?? {}
-    baseKeywords = parsed?.baseKeywords ?? []
-  } catch {
-    replacements = {}
-    baseKeywords = []
-  }
+  const config = await loadBilibiliKeywordConfig()
+  const replacements = config?.replacements ?? {}
+  const baseKeywords = config?.baseKeywords ?? []
   for (const s of seasons) {
     const armors = s.defenseArmors && s.defenseArmors.length > 0 ? s.defenseArmors : ['']
     for (const armor of armors) {
@@ -476,6 +502,53 @@ export async function fetchBilibiliVideos(
   return results
 }
 
+async function fetchBilibiliDetails(
+  bvids: string[],
+  log?: (message: string) => void
+): Promise<
+  Record<
+    string,
+    { title?: string; description?: string; publishedAt?: string; thumbnail?: string }
+  >
+> {
+  const out: Record<
+    string,
+    { title?: string; description?: string; publishedAt?: string; thumbnail?: string }
+  > = {}
+  for (const bvid of bvids) {
+    try {
+      const res = await fetch(
+        `https://api.bilibili.com/x/web-interface/view?bvid=${encodeURIComponent(bvid)}`
+      )
+      if (!res.ok) continue
+      const json = (await res.json()) as {
+        data?: {
+          title?: string
+          desc?: string
+          pubdate?: number
+          pic?: string
+        }
+      }
+      if (!json.data) continue
+      out[bvid] = {
+        title: json.data.title ?? undefined,
+        description: json.data.desc ?? undefined,
+        publishedAt: json.data.pubdate
+          ? new Date(json.data.pubdate * 1000).toISOString()
+          : undefined,
+        thumbnail: json.data.pic
+          ? json.data.pic.startsWith('//')
+            ? `https:${json.data.pic}`
+            : json.data.pic
+          : undefined,
+      }
+    } catch {
+      log?.(`Bilibili ${bvid}: 詳細取得に失敗`)
+    }
+  }
+  return out
+}
+
 export const toStoredVideoId = (platform: 'youtube' | 'bilibili', id: string) =>
   platform === 'bilibili' ? `bili:${id}` : id
 
@@ -498,6 +571,8 @@ export async function upsertTimelines(params: {
   const targetSeasons = season
     ? seasons.filter((s) => s.number === season)
     : seasons
+  const bilibiliConfig = await loadBilibiliKeywordConfig()
+  const bilibiliArmorMap = bilibiliConfig?.replacements ?? {}
   pushLog(`開始: 対象シーズン=${targetSeasons.map((s) => s.number).join(',') || 'なし'}`)
   const seasonStartMap = new Map<string, string>()
   const seasonArmorMap = new Map<string, string>()
@@ -521,6 +596,13 @@ export async function upsertTimelines(params: {
   const biliVideos =
     platform === 'youtube' ? [] : await fetchBilibiliVideos(targetSeasons, log)
   pushLog(`Bilibili検索結果: ${biliVideos.length}件`)
+  const biliDetails =
+    platform === 'youtube'
+      ? {}
+      : await fetchBilibiliDetails(
+          biliVideos.map((video) => video.bvid),
+          log
+        )
 
   const allVideoIds = [
     ...ytIds.map((id) => toStoredVideoId('youtube', id)),
@@ -647,10 +729,11 @@ export async function upsertTimelines(params: {
 
   for (const info of biliVideos) {
     const storedId = toStoredVideoId('bilibili', info.bvid)
+    const detail = biliDetails[info.bvid]
     const snippet: Snippet = {
-      title: info.title,
-      description: info.description,
-      publishedAt: info.publishedAt,
+      title: detail?.title ?? info.title,
+      description: detail?.description ?? info.description,
+      publishedAt: detail?.publishedAt ?? info.publishedAt,
     }
     const targetSeasonStart = season ? seasonStartMap.get(season) : undefined
     if (isTooEarlyForSeason(snippet, targetSeasonStart)) {
@@ -683,9 +766,11 @@ export async function upsertTimelines(params: {
 
     const text = `${snippet.title || ''}\n${snippet.description || ''}`
     const armor =
-      seasonNum.startsWith('S') ? seasonArmorMap.get(seasonNum) ?? '' : extractArmor(text)
+      seasonNum.startsWith('S')
+        ? seasonArmorMap.get(seasonNum) ?? ''
+        : extractArmorFromBilibili(text, bilibiliArmorMap)
     const score = extractScore(text)
-    const thumbnail = info.thumbnail ?? null
+    const thumbnail = detail?.thumbnail ?? info.thumbnail ?? null
     const difficulty = normalizeDifficulty(text, score)
     const formation = await extractFormation(supabase, text)
     const guide = extractGuide(text)

@@ -4,13 +4,28 @@ import { useEffect, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faLink, faUser, faUserSlash } from '@fortawesome/free-solid-svg-icons'
-import { faYoutube } from '@fortawesome/free-brands-svg-icons'
+import { faBilibili, faYoutube } from '@fortawesome/free-brands-svg-icons'
 import { Timeline } from '../../../types/timeline'
 import PageHelpButton from '../../../components/PageHelpButton'
+import StudentSelect from '../../../components/StudentSelect'
 
 interface Student {
   id: string
   name: string
+  image: string
+  attackType: string
+  defenseType: string
+  hasAccessory?: boolean
+  styleIds?: string[]
+  styleOf?: string
+  altIds?: string[]
+  altOf?: string
+  initialStars: number
+  role: string
+  characterType: string
+  position: string
+  exHitDelay?: number
+  normalHitDelay?: number
 }
 
 interface Season {
@@ -43,6 +58,11 @@ type VideoSettings = {
   allowedUserIds?: string[]
   ownerUserId?: string | null
   hideTlUntilYoutube?: boolean
+}
+
+type EditSquad = {
+  strikers: string[]
+  specials: string[]
 }
 
 type VideoSettingsRow = {
@@ -135,6 +155,16 @@ export default function TLSearchPage() {
   const [editArmor, setEditArmor] = useState('')
   const [editDifficulty, setEditDifficulty] = useState('')
   const [editFormation, setEditFormation] = useState('')
+  const [editSquads, setEditSquads] = useState<EditSquad[]>([])
+  const [editSquadsDirty, setEditSquadsDirty] = useState(false)
+  const [editFormationMemberMap, setEditFormationMemberMap] = useState<
+    Record<string, Record<string, unknown>>
+  >({})
+  const [editStatsOpen, setEditStatsOpen] = useState(false)
+  const [editTlSkipUpdate, setEditTlSkipUpdate] = useState(false)
+  const [editTlSkipUpdateLoaded, setEditTlSkipUpdateLoaded] = useState(false)
+  const [editTlSkipUpdateSaving, setEditTlSkipUpdateSaving] = useState(false)
+  const [editPolicyError, setEditPolicyError] = useState('')
   const [filterGuide, setFilterGuide] = useState(false)
   const [filterFormationAdded, setFilterFormationAdded] = useState(false)
   const [filterFormationConfirmed, setFilterFormationConfirmed] = useState(false)
@@ -194,6 +224,58 @@ export default function TLSearchPage() {
     return num.toLocaleString()
   }
 
+  const emptySquad = (): EditSquad => ({
+    strikers: ['', '', '', ''],
+    specials: ['', ''],
+  })
+
+  const parseFormationData = (value: string): {
+    squads: EditSquad[]
+    memberMap: Record<string, Record<string, unknown>>
+  } => {
+    if (!value) return { squads: [], memberMap: {} }
+    try {
+      const parsed = JSON.parse(value)
+      if (!Array.isArray(parsed)) return { squads: [], memberMap: {} }
+      const memberMap: Record<string, Record<string, unknown>> = {}
+      const squads = parsed.map((team) => {
+        const members = Array.isArray(team) ? team : []
+        const ids = members
+          .map((m) => {
+            if (typeof m === 'string') return m
+            if (m && typeof m === 'object' && 'id' in m && typeof m.id === 'string') {
+              memberMap[m.id] = m as Record<string, unknown>
+              return m.id
+            }
+            return ''
+          })
+          .filter(Boolean)
+        return {
+          strikers: [...ids.slice(0, 4), '', '', '', ''].slice(0, 4),
+          specials: [...ids.slice(4, 6), '', ''].slice(0, 2),
+        }
+      })
+      return { squads, memberMap }
+    } catch {
+      return { squads: [], memberMap: {} }
+    }
+  }
+
+  const buildFormationJson = (squads: EditSquad[]) => {
+    const teams = squads
+      .map((squad) => [...squad.strikers, ...squad.specials].filter(Boolean))
+      .filter((team) => team.length > 0)
+      .map((team) =>
+        team.map((id) => {
+          const existing = editFormationMemberMap[id]
+          if (existing) return existing
+          const student = students.find((s) => s.id === id)
+          return student ? { id: student.id, name: student.name } : { id }
+        })
+      )
+    return JSON.stringify(teams)
+  }
+
   const getVideoMeta = (videoid: string, thumbnail?: string) => {
     const { platform, id } = parseVideoRef(videoid)
     const url =
@@ -210,6 +292,9 @@ export default function TLSearchPage() {
         : resolvedThumbnail
     return { platform, id, url, label, thumbnail: proxiedThumbnail }
   }
+
+  const getPlatformIcon = (platform: 'youtube' | 'bilibili') =>
+    platform === 'youtube' ? faYoutube : faBilibili
 
   const resolveInlineThumbnail = (
     platform: 'youtube' | 'bilibili',
@@ -234,6 +319,40 @@ export default function TLSearchPage() {
     if (pub >= cutoff) return '終了後'
     const diff = Math.floor((pub.getTime() - start.getTime()) / 86400000) + 1
     return `${diff}日目`
+  }
+
+  const editStatFields: Array<{ key: string; label: string }> = [
+    { key: 'level', label: 'Lv' },
+    { key: 'star', label: '星' },
+    { key: 'unique_star', label: '固有' },
+    { key: 'unique_level', label: '固有Lv' },
+    { key: 'bond', label: '絆' },
+    { key: 'ex_skill', label: 'EX' },
+    { key: 'normal_skill', label: 'NS' },
+    { key: 'passive_skill', label: 'PS' },
+    { key: 'sub_skill', label: 'SS' },
+    { key: 'equip1', label: '装備1' },
+    { key: 'equip2', label: '装備2' },
+    { key: 'equip3', label: '装備3' },
+    { key: 'item_tier', label: '装備Tier' },
+  ]
+
+  const updateFormationMemberStat = (id: string, key: string, rawValue: string) => {
+    const value = rawValue === '' ? null : Number(rawValue)
+    const student = students.find((s) => s.id === id)
+    setEditFormationMemberMap((prev) => {
+      const base = prev[id] ?? { id, name: student?.name }
+      return {
+        ...prev,
+        [id]: {
+          ...base,
+          id,
+          name: base.name ?? student?.name,
+          [key]: value,
+        },
+      }
+    })
+    setEditSquadsDirty(true)
   }
 
   // 簡易的な難易度順
@@ -460,6 +579,33 @@ export default function TLSearchPage() {
     }
     loadPolicy()
   }, [openTl, isAdmin, supabase])
+
+  useEffect(() => {
+    const loadEditPolicy = async () => {
+      if (!editTl || !isAdmin) return
+      setEditPolicyError('')
+      setEditTlSkipUpdateLoaded(false)
+      try {
+        const { data, error } = await supabase
+          .from('tl_video_update_policy')
+          .select('skip_update')
+          .eq('videoid', editTl.videoid)
+          .maybeSingle()
+        if (error) throw error
+        setEditTlSkipUpdate(Boolean(data?.skip_update))
+      } catch {
+        setEditTlSkipUpdate(false)
+      } finally {
+        setEditTlSkipUpdateLoaded(true)
+      }
+    }
+    loadEditPolicy()
+  }, [editTl, isAdmin, supabase])
+
+  useEffect(() => {
+    if (!editTl || !editSquadsDirty) return
+    setEditFormation(buildFormationJson(editSquads))
+  }, [editSquads, editTl, editFormationMemberMap, editSquadsDirty, students])
 
   useEffect(() => {
     const loadTlJsonLinks = async () => {
@@ -716,6 +862,25 @@ export default function TLSearchPage() {
       setPolicyError('保存に失敗しました（権限/RLS設定を確認してください）')
     } finally {
       setOpenTlSkipUpdateSaving(false)
+    }
+  }
+
+  const setEditVideoSkipUpdate = async (videoid: string, next: boolean) => {
+    if (!isAdmin) return
+    setEditPolicyError('')
+    setEditTlSkipUpdateSaving(true)
+    try {
+      const res = await fetch('/api/tl-video-update-policy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoid, skipUpdate: next }),
+      })
+      if (!res.ok) throw new Error('update_failed')
+      setEditTlSkipUpdate(next)
+    } catch {
+      setEditPolicyError('保存に失敗しました（権限/RLS設定を確認してください）')
+    } finally {
+      setEditTlSkipUpdateSaving(false)
     }
   }
 
@@ -1051,11 +1216,19 @@ export default function TLSearchPage() {
     // ignore
   } finally {
     setEditTl(null)
+    setEditStatsOpen(false)
     setEditGuide(false)
     setEditFormationStatus('none')
     setEditArmor('')
     setEditDifficulty('')
     setEditFormation('')
+    setEditSquads([])
+    setEditSquadsDirty(false)
+    setEditFormationMemberMap({})
+    setEditTlSkipUpdate(false)
+    setEditTlSkipUpdateLoaded(false)
+    setEditTlSkipUpdateSaving(false)
+    setEditPolicyError('')
   }
 }
 
@@ -1073,12 +1246,17 @@ export default function TLSearchPage() {
             onClick={(e) => {
               e.stopPropagation()
               setEditTl(t)
+              setEditStatsOpen(false)
               setEditScore(t.score)
               setEditGuide(Boolean(t.guide))
               setEditFormationStatus(t.formationStatus || 'none')
               setEditArmor(t.armor)
               setEditDifficulty(t.difficulty)
               setEditFormation(t.formation)
+              const { squads, memberMap } = parseFormationData(t.formation)
+              setEditSquads(squads)
+              setEditFormationMemberMap(memberMap)
+              setEditSquadsDirty(false)
             }}
           >
             編集
@@ -1096,6 +1274,9 @@ export default function TLSearchPage() {
               {meta.label} thumbnail unavailable
             </div>
           )}
+          <span className="absolute top-1 left-1 bg-black/60 text-white text-xs px-1 rounded">
+            <FontAwesomeIcon icon={getPlatformIcon(meta.platform)} />
+          </span>
           <span className="absolute top-1 right-1 bg-black/50 text-white text-xs px-1">
             {getDayText(t)}
           </span>
@@ -1156,6 +1337,13 @@ export default function TLSearchPage() {
     openTlMeta?.platform === 'youtube'
       ? `https://i.ytimg.com/vi/${openTlMeta.id}/hqdefault.jpg`
       : openTlMeta?.thumbnail ?? null
+  const editMemberIds = Array.from(
+    new Set(
+      editSquads
+        .flatMap((squad) => [...squad.strikers, ...squad.specials])
+        .filter(Boolean)
+    )
+  )
 
   const visibleTimelines = timelines.filter((t) => {
     const settings = videoSettingsMap[t.videoid]
@@ -1228,7 +1416,7 @@ export default function TLSearchPage() {
   const grouped: Record<string, Timeline[]> = {}
   if (selectedSeason?.type === '大決戦' && armor === '') {
     for (const t of filteredSorted) {
-      const key = t.armor || 'その他'
+      const key = t.armor || '不明'
       if (!grouped[key]) grouped[key] = []
       grouped[key].push(t)
     }
@@ -1506,23 +1694,28 @@ export default function TLSearchPage() {
                     key={video.videoid}
                     className="flex flex-col sm:flex-row gap-3 border rounded p-3"
                   >
-                    {resolveInlineThumbnail(video.platform, video.thumbnail, video.videoid) ? (
-                      <img
-                        src={
-                          resolveInlineThumbnail(
-                            video.platform,
-                            video.thumbnail,
-                            video.videoid
-                          ) ?? ''
-                        }
-                        alt="thumbnail"
-                        className="w-full sm:w-40 h-auto rounded"
-                      />
-                    ) : (
-                      <div className="flex w-full sm:w-40 items-center justify-center rounded bg-gray-100 text-xs text-gray-500">
-                        Bilibili thumbnail unavailable
-                      </div>
-                    )}
+                    <div className="relative w-full sm:w-40">
+                      {resolveInlineThumbnail(video.platform, video.thumbnail, video.videoid) ? (
+                        <img
+                          src={
+                            resolveInlineThumbnail(
+                              video.platform,
+                              video.thumbnail,
+                              video.videoid
+                            ) ?? ''
+                          }
+                          alt="thumbnail"
+                          className="w-full h-auto rounded"
+                        />
+                      ) : (
+                        <div className="flex w-full items-center justify-center rounded bg-gray-100 text-xs text-gray-500">
+                          Bilibili thumbnail unavailable
+                        </div>
+                      )}
+                      <span className="absolute top-1 left-1 bg-black/60 text-white text-xs px-1 rounded">
+                        <FontAwesomeIcon icon={getPlatformIcon(video.platform)} />
+                      </span>
+                    </div>
                     <div className="flex-1 space-y-1">
                       <p className="text-sm font-semibold">{video.title}</p>
                       <p className="text-xs text-gray-500 line-clamp-2">{video.description}</p>
@@ -1575,7 +1768,7 @@ export default function TLSearchPage() {
                   href={openTlMeta?.url ?? '#'}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block"
+                  className="block relative"
                   aria-label={`${openTlMeta?.label ?? '動画'}で動画を開く`}
                 >
                   {openTlThumbnail ? (
@@ -1588,6 +1781,11 @@ export default function TLSearchPage() {
                     <div className="flex h-48 w-full items-center justify-center rounded bg-gray-100 text-sm text-gray-500">
                       {openTlMeta?.label ?? '動画'} thumbnail unavailable
                     </div>
+                  )}
+                  {openTlMeta?.platform && (
+                    <span className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                      <FontAwesomeIcon icon={getPlatformIcon(openTlMeta.platform)} />
+                    </span>
                   )}
                 </a>
                 <div>
@@ -1604,8 +1802,8 @@ export default function TLSearchPage() {
                     className="inline-flex items-center gap-1 rounded border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-gray-50"
                     aria-label={`${openTlMeta?.label ?? '動画'}で動画を開く`}
                   >
-                    {openTlMeta?.platform === 'youtube' ? (
-                      <FontAwesomeIcon icon={faYoutube} />
+                    {openTlMeta?.platform ? (
+                      <FontAwesomeIcon icon={getPlatformIcon(openTlMeta.platform)} />
                     ) : (
                       <FontAwesomeIcon icon={faLink} />
                     )}
@@ -1727,7 +1925,6 @@ export default function TLSearchPage() {
                 {activeSection === 'overview' && (
                   <div id="section-overview">
                     <h4 className="font-semibold text-sm">概要</h4>
-                    <p className="whitespace-pre-wrap text-sm">{openTl.description}</p>
                     {openTl.formation &&
                       openTl.formation !== '[]' &&
                       students.length > 0 && (
@@ -1735,7 +1932,9 @@ export default function TLSearchPage() {
                           <h5 className="font-semibold text-xs text-gray-600">編成</h5>
                           {JSON.parse(openTl.formation).map(
                             (team: unknown[], idx: number) => (
-                              <div key={idx}>
+                              <div key={idx} className="space-y-1">
+                                <p className="text-xs text-gray-500">部隊{idx + 1}</p>
+                                <div className="flex flex-wrap gap-2">
                                 {team.map((member: unknown, i: number) => {
                                   const obj =
                                     member as
@@ -1755,17 +1954,30 @@ export default function TLSearchPage() {
                                       : ''
                                   const student = students.find((s) => s.id === id)
                                   return (
-                                    <p key={i}>
-                                      {student ? student.name : name || id}
-                                      {lv}
-                                    </p>
+                                    <div key={i} className="flex items-center gap-2 rounded border px-2 py-1">
+                                      {student?.image ? (
+                                        <img
+                                          src={student.image}
+                                          alt={student.name}
+                                          className="h-6 w-6 rounded object-cover"
+                                        />
+                                      ) : (
+                                        <div className="h-6 w-6 rounded bg-gray-200" />
+                                      )}
+                                      <span className="text-xs">
+                                        {student ? student.name : name || id}
+                                        {lv}
+                                      </span>
+                                    </div>
                                   )
                                 })}
+                                </div>
                               </div>
                             )
                           )}
                         </div>
                       )}
+                    <p className="whitespace-pre-wrap text-sm">{openTl.description}</p>
                   </div>
                 )}
 
@@ -2106,130 +2318,358 @@ export default function TLSearchPage() {
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={() => {
             setEditTl(null)
+            setEditStatsOpen(false)
             setEditGuide(false)
             setEditFormationStatus('none')
             setEditArmor('')
             setEditDifficulty('')
             setEditFormation('')
+            setEditSquads([])
+            setEditSquadsDirty(false)
+            setEditFormationMemberMap({})
+            setEditTlSkipUpdate(false)
+            setEditTlSkipUpdateLoaded(false)
+            setEditTlSkipUpdateSaving(false)
+            setEditPolicyError('')
           }}
         >
           <div
-            className="bg-white p-4 rounded w-full max-w-lg space-y-3 text-sm"
+            className={`bg-white rounded w-full ${
+              editStatsOpen ? 'max-w-4xl' : 'max-w-lg'
+            } h-[80vh] max-h-[80vh] overflow-hidden flex flex-col`}
             onClick={(e) => e.stopPropagation()}
           >
-            {editTlMeta && (
-              <div className="flex items-center gap-3">
-                {editTlMeta.thumbnail ? (
-                  <img
-                    src={editTlMeta.thumbnail}
-                    alt={`${editTlMeta.label} thumbnail`}
-                    className="h-20 w-36 rounded object-cover"
+            <div className="p-4 space-y-3 text-sm overflow-y-auto">
+              {editTlMeta && (
+                <div className="flex items-center gap-3">
+                  {editTlMeta.thumbnail ? (
+                    <img
+                      src={editTlMeta.thumbnail}
+                      alt={`${editTlMeta.label} thumbnail`}
+                      className="h-20 w-36 rounded object-cover"
+                    />
+                  ) : (
+                    <div className="h-20 w-36 rounded bg-gray-100 text-xs text-gray-500 flex items-center justify-center text-center px-2">
+                      {editTlMeta.label} thumbnail unavailable
+                    </div>
+                  )}
+                  <a
+                    href={editTlMeta.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 underline text-xs"
+                  >
+                    {editTlMeta.label}で開く
+                  </a>
+                </div>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className="block">
+                  スコア
+                  <input
+                    type="number"
+                    value={editScore}
+                    onChange={(e) => setEditScore(e.target.value)}
+                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
                   />
+                </label>
+                <label className="block">
+                  難易度
+                  <select
+                    value={editDifficulty}
+                    onChange={(e) => setEditDifficulty(e.target.value)}
+                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
+                  >
+                    <option value="">未設定</option>
+                    {difficulties.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  装甲
+                  <select
+                    value={editArmor}
+                    onChange={(e) => setEditArmor(e.target.value)}
+                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
+                  >
+                    <option value="">未設定</option>
+                    {armors.map((a) => (
+                      <option key={a} value={a}>
+                        {a}
+                      </option>
+                    ))}
+                    <option value="不明">不明</option>
+                  </select>
+                </label>
+                <label className="block">
+                  編成状態
+                  <select
+                    value={editFormationStatus}
+                    onChange={(e) => setEditFormationStatus(e.target.value)}
+                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
+                  >
+                    <option value="none">none</option>
+                    <option value="auto">auto</option>
+                    <option value="manual">manual</option>
+                  </select>
+                </label>
+              </div>
+              <label className="inline-flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={editGuide}
+                  onChange={(e) => setEditGuide(e.target.checked)}
+                />
+                <span>解説付き</span>
+              </label>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold">編成</span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      className="text-xs text-blue-600 underline"
+                      onClick={() => {
+                        setEditSquads((prev) => [...prev, emptySquad()])
+                        setEditSquadsDirty(true)
+                      }}
+                    >
+                      部隊を追加
+                    </button>
+                    <button
+                      type="button"
+                      className="text-xs text-blue-600 underline"
+                      onClick={() => setEditStatsOpen((prev) => !prev)}
+                    >
+                      {editStatsOpen ? 'ステータス編集を閉じる' : 'ステータス編集を開く'}
+                    </button>
+                  </div>
+                </div>
+                {editSquads.length === 0 ? (
+                  <p className="text-xs text-gray-500">編成がありません。</p>
                 ) : (
-                  <div className="h-20 w-36 rounded bg-gray-100 text-xs text-gray-500 flex items-center justify-center text-center px-2">
-                    {editTlMeta.label} thumbnail unavailable
+                  <div className="space-y-3">
+                    {editSquads.map((squad, squadIndex) => (
+                      <div key={squadIndex} className="rounded border border-gray-200 p-2 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-600">部隊{squadIndex + 1}</span>
+                          <button
+                            type="button"
+                            className="text-xs text-red-600 underline"
+                            onClick={() => {
+                              setEditSquads((prev) => prev.filter((_, i) => i !== squadIndex))
+                              setEditSquadsDirty(true)
+                            }}
+                          >
+                            削除
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {squad.strikers.map((member, idx) => (
+                            <div key={`striker-${idx}`} className="space-y-1">
+                              <span className="text-xs text-gray-500">ストライカー{idx + 1}</span>
+                              <StudentSelect
+                                students={students}
+                                value={member}
+                                onChange={(value) => {
+                                  setEditSquads((prev) =>
+                                    prev.map((s, i) =>
+                                      i !== squadIndex
+                                        ? s
+                                        : {
+                                            ...s,
+                                            strikers: s.strikers.map((m, mi) =>
+                                              mi === idx ? value : m
+                                            ),
+                                          }
+                                    )
+                                  )
+                                  setEditSquadsDirty(true)
+                                }}
+                              />
+                            </div>
+                          ))}
+                          {squad.specials.map((member, idx) => (
+                            <div key={`special-${idx}`} className="space-y-1">
+                              <span className="text-xs text-gray-500">スペシャル{idx + 1}</span>
+                              <StudentSelect
+                                students={students}
+                                value={member}
+                                onChange={(value) => {
+                                  setEditSquads((prev) =>
+                                    prev.map((s, i) =>
+                                      i !== squadIndex
+                                        ? s
+                                        : {
+                                            ...s,
+                                            specials: s.specials.map((m, mi) =>
+                                              mi === idx ? value : m
+                                            ),
+                                          }
+                                    )
+                                  )
+                                  setEditSquadsDirty(true)
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {[...squad.strikers, ...squad.specials]
+                            .filter(Boolean)
+                            .map((id) => {
+                              const student = students.find((s) => s.id === id)
+                              return (
+                                <div
+                                  key={`${squadIndex}-${id}`}
+                                  className="flex items-center gap-2 rounded border px-2 py-1"
+                                >
+                                  {student?.image ? (
+                                    <img
+                                      src={student.image}
+                                      alt={student.name}
+                                      className="h-5 w-5 rounded object-cover"
+                                    />
+                                  ) : (
+                                    <div className="h-5 w-5 rounded bg-gray-200" />
+                                  )}
+                                  <span className="text-xs">{student?.name ?? id}</span>
+                                </div>
+                              )
+                            })}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
-                <a
-                  href={editTlMeta.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-blue-600 underline text-xs"
-                >
-                  {editTlMeta.label}で開く
-                </a>
+                <details className="rounded border border-gray-200 p-2">
+                  <summary className="cursor-pointer text-xs text-gray-600">
+                    JSONプレビュー
+                  </summary>
+                  <textarea
+                    value={editFormation}
+                    readOnly
+                    className="mt-2 w-full rounded border border-gray-300 px-2 py-1 font-mono text-xs h-24"
+                  />
+                </details>
               </div>
-            )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label className="block">
-                スコア
-                <input
-                  type="number"
-                  value={editScore}
-                  onChange={(e) => setEditScore(e.target.value)}
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
-                />
-              </label>
-              <label className="block">
-                難易度
-                <select
-                  value={editDifficulty}
-                  onChange={(e) => setEditDifficulty(e.target.value)}
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
+              {editStatsOpen && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-sm">生徒ステータス</h4>
+                  {editMemberIds.length === 0 ? (
+                    <p className="text-xs text-gray-500">
+                      編成に生徒が設定されていません。
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {editMemberIds.map((id) => {
+                        const student = students.find((s) => s.id === id)
+                        const member = editFormationMemberMap[id] ?? {}
+                        const memberRecord = member as Record<string, unknown>
+                        const memberName =
+                          typeof memberRecord.name === 'string'
+                            ? memberRecord.name
+                            : student?.name ?? id
+                        return (
+                          <div key={id} className="rounded border border-gray-200 p-3 space-y-2">
+                            <div className="flex items-center gap-2">
+                              {student?.image ? (
+                                <img
+                                  src={student.image}
+                                  alt={memberName}
+                                  className="h-8 w-8 rounded object-cover"
+                                />
+                              ) : (
+                                <div className="h-8 w-8 rounded bg-gray-200" />
+                              )}
+                              <div>
+                                <p className="text-xs font-semibold">{memberName}</p>
+                                <p className="text-xs text-gray-500">{id}</p>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              {editStatFields.map((field) => {
+                                const rawValue = memberRecord[field.key]
+                                const value = typeof rawValue === 'number' ? rawValue : ''
+                                return (
+                                  <label key={field.key} className="text-xs">
+                                    <span>{field.label}</span>
+                                    <input
+                                      type="number"
+                                      value={value}
+                                      onChange={(e) =>
+                                        updateFormationMemberStat(
+                                          id,
+                                          field.key,
+                                          e.target.value
+                                        )
+                                      }
+                                      className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
+                                    />
+                                  </label>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+              {isAdmin && editTl && (
+                <div className="space-y-1">
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={editTlSkipUpdate}
+                      disabled={!editTlSkipUpdateLoaded || editTlSkipUpdateSaving}
+                      onChange={(e) =>
+                        setEditVideoSkipUpdate(editTl.videoid, e.target.checked)
+                      }
+                    />
+                    <span>同期時にこの動画を更新しない</span>
+                  </label>
+                  <p className="text-xs text-gray-600">
+                    ONにすると、既にDBにあるこのvideoidは同期処理で上書きされません。
+                  </p>
+                  {editPolicyError && (
+                    <p className="text-xs text-red-600">{editPolicyError}</p>
+                  )}
+                </div>
+              )}
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => {
+                    setEditTl(null)
+                    setEditStatsOpen(false)
+                    setEditGuide(false)
+                    setEditFormationStatus('none')
+                    setEditArmor('')
+                    setEditDifficulty('')
+                    setEditFormation('')
+                    setEditSquads([])
+                    setEditSquadsDirty(false)
+                    setEditFormationMemberMap({})
+                    setEditTlSkipUpdate(false)
+                    setEditTlSkipUpdateLoaded(false)
+                    setEditTlSkipUpdateSaving(false)
+                    setEditPolicyError('')
+                  }}
+                  className="border px-2 py-1"
                 >
-                  <option value="">未設定</option>
-                  {difficulties.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                装甲
-                <select
-                  value={editArmor}
-                  onChange={(e) => setEditArmor(e.target.value)}
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
+                  キャンセル
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="border px-2 py-1 bg-blue-500 text-white"
                 >
-                  <option value="">未設定</option>
-                  {armors.map((a) => (
-                    <option key={a} value={a}>
-                      {a}
-                    </option>
-                  ))}
-                  <option value="不明">不明</option>
-                </select>
-              </label>
-              <label className="block">
-                編成状態
-                <select
-                  value={editFormationStatus}
-                  onChange={(e) => setEditFormationStatus(e.target.value)}
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
-                >
-                  <option value="none">none</option>
-                  <option value="auto">auto</option>
-                  <option value="manual">manual</option>
-                </select>
-              </label>
-            </div>
-            <label className="inline-flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={editGuide}
-                onChange={(e) => setEditGuide(e.target.checked)}
-              />
-              <span>解説付き</span>
-            </label>
-            <label className="block">
-              編成(JSON)
-              <textarea
-                value={editFormation}
-                onChange={(e) => setEditFormation(e.target.value)}
-                className="mt-1 w-full rounded border border-gray-300 px-2 py-1 font-mono text-xs h-24"
-              />
-            </label>
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => {
-                  setEditTl(null)
-                  setEditGuide(false)
-                  setEditFormationStatus('none')
-                  setEditArmor('')
-                  setEditDifficulty('')
-                  setEditFormation('')
-                }}
-                className="border px-2 py-1"
-              >
-                キャンセル
-              </button>
-              <button
-                onClick={handleSaveEdit}
-                className="border px-2 py-1 bg-blue-500 text-white"
-              >
-                保存
-              </button>
+                  保存
+                </button>
+              </div>
             </div>
           </div>
         </div>
