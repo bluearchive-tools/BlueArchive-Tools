@@ -7,10 +7,25 @@ import { faLink, faUser, faUserSlash } from '@fortawesome/free-solid-svg-icons'
 import { faYoutube } from '@fortawesome/free-brands-svg-icons'
 import { Timeline } from '../../../types/timeline'
 import PageHelpButton from '../../../components/PageHelpButton'
+import StudentSelect from '../../../components/StudentSelect'
 
 interface Student {
   id: string
   name: string
+  image: string
+  attackType: string
+  defenseType: string
+  hasAccessory?: boolean
+  styleIds?: string[]
+  styleOf?: string
+  altIds?: string[]
+  altOf?: string
+  initialStars: number
+  role: string
+  characterType: string
+  position: string
+  exHitDelay?: number
+  normalHitDelay?: number
 }
 
 interface Season {
@@ -43,6 +58,11 @@ type VideoSettings = {
   allowedUserIds?: string[]
   ownerUserId?: string | null
   hideTlUntilYoutube?: boolean
+}
+
+type EditSquad = {
+  strikers: string[]
+  specials: string[]
 }
 
 type VideoSettingsRow = {
@@ -135,6 +155,15 @@ export default function TLSearchPage() {
   const [editArmor, setEditArmor] = useState('')
   const [editDifficulty, setEditDifficulty] = useState('')
   const [editFormation, setEditFormation] = useState('')
+  const [editSquads, setEditSquads] = useState<EditSquad[]>([])
+  const [editSquadsDirty, setEditSquadsDirty] = useState(false)
+  const [editFormationMemberMap, setEditFormationMemberMap] = useState<
+    Record<string, Record<string, unknown>>
+  >({})
+  const [editTlSkipUpdate, setEditTlSkipUpdate] = useState(false)
+  const [editTlSkipUpdateLoaded, setEditTlSkipUpdateLoaded] = useState(false)
+  const [editTlSkipUpdateSaving, setEditTlSkipUpdateSaving] = useState(false)
+  const [editPolicyError, setEditPolicyError] = useState('')
   const [filterGuide, setFilterGuide] = useState(false)
   const [filterFormationAdded, setFilterFormationAdded] = useState(false)
   const [filterFormationConfirmed, setFilterFormationConfirmed] = useState(false)
@@ -192,6 +221,58 @@ export default function TLSearchPage() {
   const formatScore = (value: string) => {
     const num = parseInt(value || '0')
     return num.toLocaleString()
+  }
+
+  const emptySquad = (): EditSquad => ({
+    strikers: ['', '', '', ''],
+    specials: ['', ''],
+  })
+
+  const parseFormationData = (value: string): {
+    squads: EditSquad[]
+    memberMap: Record<string, Record<string, unknown>>
+  } => {
+    if (!value) return { squads: [], memberMap: {} }
+    try {
+      const parsed = JSON.parse(value)
+      if (!Array.isArray(parsed)) return { squads: [], memberMap: {} }
+      const memberMap: Record<string, Record<string, unknown>> = {}
+      const squads = parsed.map((team) => {
+        const members = Array.isArray(team) ? team : []
+        const ids = members
+          .map((m) => {
+            if (typeof m === 'string') return m
+            if (m && typeof m === 'object' && 'id' in m && typeof m.id === 'string') {
+              memberMap[m.id] = m as Record<string, unknown>
+              return m.id
+            }
+            return ''
+          })
+          .filter(Boolean)
+        return {
+          strikers: [...ids.slice(0, 4), '', '', '', ''].slice(0, 4),
+          specials: [...ids.slice(4, 6), '', ''].slice(0, 2),
+        }
+      })
+      return { squads, memberMap }
+    } catch {
+      return { squads: [], memberMap: {} }
+    }
+  }
+
+  const buildFormationJson = (squads: EditSquad[]) => {
+    const teams = squads
+      .map((squad) => [...squad.strikers, ...squad.specials].filter(Boolean))
+      .filter((team) => team.length > 0)
+      .map((team) =>
+        team.map((id) => {
+          const existing = editFormationMemberMap[id]
+          if (existing) return existing
+          const student = students.find((s) => s.id === id)
+          return student ? { id: student.id, name: student.name } : { id }
+        })
+      )
+    return JSON.stringify(teams)
   }
 
   const getVideoMeta = (videoid: string, thumbnail?: string) => {
@@ -462,6 +543,33 @@ export default function TLSearchPage() {
   }, [openTl, isAdmin, supabase])
 
   useEffect(() => {
+    const loadEditPolicy = async () => {
+      if (!editTl || !isAdmin) return
+      setEditPolicyError('')
+      setEditTlSkipUpdateLoaded(false)
+      try {
+        const { data, error } = await supabase
+          .from('tl_video_update_policy')
+          .select('skip_update')
+          .eq('videoid', editTl.videoid)
+          .maybeSingle()
+        if (error) throw error
+        setEditTlSkipUpdate(Boolean(data?.skip_update))
+      } catch {
+        setEditTlSkipUpdate(false)
+      } finally {
+        setEditTlSkipUpdateLoaded(true)
+      }
+    }
+    loadEditPolicy()
+  }, [editTl, isAdmin, supabase])
+
+  useEffect(() => {
+    if (!editTl || !editSquadsDirty) return
+    setEditFormation(buildFormationJson(editSquads))
+  }, [editSquads, editTl, editFormationMemberMap, editSquadsDirty, students])
+
+  useEffect(() => {
     const loadTlJsonLinks = async () => {
       if (!openTl) {
         setTlJsonValue('')
@@ -716,6 +824,25 @@ export default function TLSearchPage() {
       setPolicyError('保存に失敗しました（権限/RLS設定を確認してください）')
     } finally {
       setOpenTlSkipUpdateSaving(false)
+    }
+  }
+
+  const setEditVideoSkipUpdate = async (videoid: string, next: boolean) => {
+    if (!isAdmin) return
+    setEditPolicyError('')
+    setEditTlSkipUpdateSaving(true)
+    try {
+      const res = await fetch('/api/tl-video-update-policy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoid, skipUpdate: next }),
+      })
+      if (!res.ok) throw new Error('update_failed')
+      setEditTlSkipUpdate(next)
+    } catch {
+      setEditPolicyError('保存に失敗しました（権限/RLS設定を確認してください）')
+    } finally {
+      setEditTlSkipUpdateSaving(false)
     }
   }
 
@@ -1056,6 +1183,13 @@ export default function TLSearchPage() {
     setEditArmor('')
     setEditDifficulty('')
     setEditFormation('')
+    setEditSquads([])
+    setEditSquadsDirty(false)
+    setEditFormationMemberMap({})
+    setEditTlSkipUpdate(false)
+    setEditTlSkipUpdateLoaded(false)
+    setEditTlSkipUpdateSaving(false)
+    setEditPolicyError('')
   }
 }
 
@@ -1079,6 +1213,10 @@ export default function TLSearchPage() {
               setEditArmor(t.armor)
               setEditDifficulty(t.difficulty)
               setEditFormation(t.formation)
+              const { squads, memberMap } = parseFormationData(t.formation)
+              setEditSquads(squads)
+              setEditFormationMemberMap(memberMap)
+              setEditSquadsDirty(false)
             }}
           >
             編集
@@ -1228,7 +1366,7 @@ export default function TLSearchPage() {
   const grouped: Record<string, Timeline[]> = {}
   if (selectedSeason?.type === '大決戦' && armor === '') {
     for (const t of filteredSorted) {
-      const key = t.armor || 'その他'
+      const key = t.armor || '不明'
       if (!grouped[key]) grouped[key] = []
       grouped[key].push(t)
     }
@@ -1735,7 +1873,9 @@ export default function TLSearchPage() {
                           <h5 className="font-semibold text-xs text-gray-600">編成</h5>
                           {JSON.parse(openTl.formation).map(
                             (team: unknown[], idx: number) => (
-                              <div key={idx}>
+                              <div key={idx} className="space-y-1">
+                                <p className="text-xs text-gray-500">部隊{idx + 1}</p>
+                                <div className="flex flex-wrap gap-2">
                                 {team.map((member: unknown, i: number) => {
                                   const obj =
                                     member as
@@ -1755,12 +1895,24 @@ export default function TLSearchPage() {
                                       : ''
                                   const student = students.find((s) => s.id === id)
                                   return (
-                                    <p key={i}>
-                                      {student ? student.name : name || id}
-                                      {lv}
-                                    </p>
+                                    <div key={i} className="flex items-center gap-2 rounded border px-2 py-1">
+                                      {student?.image ? (
+                                        <img
+                                          src={student.image}
+                                          alt={student.name}
+                                          className="h-6 w-6 rounded object-cover"
+                                        />
+                                      ) : (
+                                        <div className="h-6 w-6 rounded bg-gray-200" />
+                                      )}
+                                      <span className="text-xs">
+                                        {student ? student.name : name || id}
+                                        {lv}
+                                      </span>
+                                    </div>
                                   )
                                 })}
+                                </div>
                               </div>
                             )
                           )}
@@ -2111,6 +2263,13 @@ export default function TLSearchPage() {
             setEditArmor('')
             setEditDifficulty('')
             setEditFormation('')
+            setEditSquads([])
+            setEditSquadsDirty(false)
+            setEditFormationMemberMap({})
+            setEditTlSkipUpdate(false)
+            setEditTlSkipUpdateLoaded(false)
+            setEditTlSkipUpdateSaving(false)
+            setEditPolicyError('')
           }}
         >
           <div
@@ -2202,14 +2361,149 @@ export default function TLSearchPage() {
               />
               <span>解説付き</span>
             </label>
-            <label className="block">
-              編成(JSON)
-              <textarea
-                value={editFormation}
-                onChange={(e) => setEditFormation(e.target.value)}
-                className="mt-1 w-full rounded border border-gray-300 px-2 py-1 font-mono text-xs h-24"
-              />
-            </label>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold">編成</span>
+                <button
+                  type="button"
+                  className="text-xs text-blue-600 underline"
+                  onClick={() => {
+                    setEditSquads((prev) => [...prev, emptySquad()])
+                    setEditSquadsDirty(true)
+                  }}
+                >
+                  部隊を追加
+                </button>
+              </div>
+              {editSquads.length === 0 ? (
+                <p className="text-xs text-gray-500">編成がありません。</p>
+              ) : (
+                <div className="space-y-3">
+                  {editSquads.map((squad, squadIndex) => (
+                    <div key={squadIndex} className="rounded border border-gray-200 p-2 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-600">部隊{squadIndex + 1}</span>
+                        <button
+                          type="button"
+                          className="text-xs text-red-600 underline"
+                          onClick={() => {
+                            setEditSquads((prev) => prev.filter((_, i) => i !== squadIndex))
+                            setEditSquadsDirty(true)
+                          }}
+                        >
+                          削除
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {squad.strikers.map((member, idx) => (
+                          <div key={`striker-${idx}`} className="space-y-1">
+                            <span className="text-xs text-gray-500">ストライカー{idx + 1}</span>
+                            <StudentSelect
+                              students={students}
+                              value={member}
+                              onChange={(value) => {
+                                setEditSquads((prev) =>
+                                  prev.map((s, i) =>
+                                    i !== squadIndex
+                                      ? s
+                                      : {
+                                          ...s,
+                                          strikers: s.strikers.map((m, mi) =>
+                                            mi === idx ? value : m
+                                          ),
+                                        }
+                                  )
+                                )
+                                setEditSquadsDirty(true)
+                              }}
+                            />
+                          </div>
+                        ))}
+                        {squad.specials.map((member, idx) => (
+                          <div key={`special-${idx}`} className="space-y-1">
+                            <span className="text-xs text-gray-500">スペシャル{idx + 1}</span>
+                            <StudentSelect
+                              students={students}
+                              value={member}
+                              onChange={(value) => {
+                                setEditSquads((prev) =>
+                                  prev.map((s, i) =>
+                                    i !== squadIndex
+                                      ? s
+                                      : {
+                                          ...s,
+                                          specials: s.specials.map((m, mi) =>
+                                            mi === idx ? value : m
+                                          ),
+                                        }
+                                  )
+                                )
+                                setEditSquadsDirty(true)
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {[...squad.strikers, ...squad.specials]
+                          .filter(Boolean)
+                          .map((id) => {
+                            const student = students.find((s) => s.id === id)
+                            return (
+                              <div
+                                key={`${squadIndex}-${id}`}
+                                className="flex items-center gap-2 rounded border px-2 py-1"
+                              >
+                                {student?.image ? (
+                                  <img
+                                    src={student.image}
+                                    alt={student.name}
+                                    className="h-5 w-5 rounded object-cover"
+                                  />
+                                ) : (
+                                  <div className="h-5 w-5 rounded bg-gray-200" />
+                                )}
+                                <span className="text-xs">{student?.name ?? id}</span>
+                              </div>
+                            )
+                          })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <details className="rounded border border-gray-200 p-2">
+                <summary className="cursor-pointer text-xs text-gray-600">
+                  JSONプレビュー
+                </summary>
+                <textarea
+                  value={editFormation}
+                  readOnly
+                  className="mt-2 w-full rounded border border-gray-300 px-2 py-1 font-mono text-xs h-24"
+                />
+              </details>
+            </div>
+            {isAdmin && editTl && (
+              <div className="space-y-1">
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={editTlSkipUpdate}
+                    disabled={!editTlSkipUpdateLoaded || editTlSkipUpdateSaving}
+                    onChange={(e) =>
+                      setEditVideoSkipUpdate(editTl.videoid, e.target.checked)
+                    }
+                  />
+                  <span>同期時にこの動画を更新しない</span>
+                </label>
+                <p className="text-xs text-gray-600">
+                  ONにすると、既にDBにあるこのvideoidは同期処理で上書きされません。
+                </p>
+                {editPolicyError && (
+                  <p className="text-xs text-red-600">{editPolicyError}</p>
+                )}
+              </div>
+            )}
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => {
@@ -2219,6 +2513,13 @@ export default function TLSearchPage() {
                   setEditArmor('')
                   setEditDifficulty('')
                   setEditFormation('')
+                  setEditSquads([])
+                  setEditSquadsDirty(false)
+                  setEditFormationMemberMap({})
+                  setEditTlSkipUpdate(false)
+                  setEditTlSkipUpdateLoaded(false)
+                  setEditTlSkipUpdateSaving(false)
+                  setEditPolicyError('')
                 }}
                 className="border px-2 py-1"
               >
