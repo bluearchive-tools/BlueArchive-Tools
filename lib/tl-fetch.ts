@@ -81,6 +81,12 @@ const getYouTubeApiKeys = () => {
 }
 
 const stripHtml = (value: string) => value.replace(/<[^>]+>/g, '')
+const normalizeBilibiliThumbnail = (value?: string | null) => {
+  if (!value) return undefined
+  if (value.startsWith('//')) return `https:${value}`
+  if (value.startsWith('http://')) return `https://${value.slice('http://'.length)}`
+  return value
+}
 
 const bossAliases: Record<string, string[]> = {
   'シロ&クロ': ['シロクロ'],
@@ -467,7 +473,7 @@ export async function fetchBilibiliVideos(
             title: stripHtml(item.title ?? ''),
             description: stripHtml(item.description ?? ''),
             publishedAt: item.pubdate ? new Date(item.pubdate * 1000).toISOString() : undefined,
-            thumbnail: item.pic ? (item.pic.startsWith('//') ? `https:${item.pic}` : item.pic) : undefined,
+            thumbnail: normalizeBilibiliThumbnail(item.pic),
           })
         }
       }

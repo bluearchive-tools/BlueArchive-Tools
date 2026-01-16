@@ -101,6 +101,13 @@ const parseVideoRef = (videoid: string) => {
 const toStoredVideoId = (platform: 'youtube' | 'bilibili', id: string) =>
   platform === 'bilibili' ? `bili:${id}` : id
 
+const normalizeBilibiliThumbnail = (value?: string | null) => {
+  if (!value) return null
+  if (value.startsWith('//')) return `https:${value}`
+  if (value.startsWith('http://')) return `https://${value.slice('http://'.length)}`
+  return value
+}
+
 export default function TLSearchPage() {
   const session = useSession()
   const supabase = useSupabaseClient()
@@ -204,10 +211,12 @@ export default function TLSearchPage() {
     const resolvedThumbnail =
       thumbnail ||
       (platform === 'youtube' ? `https://i.ytimg.com/vi/${id}/mqdefault.jpg` : null)
+    const normalizedThumbnail =
+      platform === 'bilibili' ? normalizeBilibiliThumbnail(resolvedThumbnail) : resolvedThumbnail
     const proxiedThumbnail =
-      platform === 'bilibili' && resolvedThumbnail
-        ? `/api/bilibili-thumbnail?url=${encodeURIComponent(resolvedThumbnail)}`
-        : resolvedThumbnail
+      platform === 'bilibili' && normalizedThumbnail
+        ? `/api/bilibili-thumbnail?url=${encodeURIComponent(normalizedThumbnail)}`
+        : normalizedThumbnail
     return { platform, id, url, label, thumbnail: proxiedThumbnail }
   }
 
@@ -219,8 +228,9 @@ export default function TLSearchPage() {
     if (platform === 'youtube') {
       return thumbnail ?? (id ? `https://i.ytimg.com/vi/${id}/mqdefault.jpg` : null)
     }
-    if (!thumbnail) return null
-    return `/api/bilibili-thumbnail?url=${encodeURIComponent(thumbnail)}`
+    const normalized = normalizeBilibiliThumbnail(thumbnail)
+    if (!normalized) return null
+    return `/api/bilibili-thumbnail?url=${encodeURIComponent(normalized)}`
   }
 
   const getDayText = (t: Timeline) => {
@@ -849,7 +859,7 @@ export default function TLSearchPage() {
             title: item.title ?? '',
             description: item.description ?? '',
             publishedAt: item.created ? new Date(item.created * 1000).toISOString() : undefined,
-            thumbnail: item.pic ? (item.pic.startsWith('//') ? `https:${item.pic}` : item.pic) : undefined,
+            thumbnail: normalizeBilibiliThumbnail(item.pic) ?? undefined,
             platform: 'bilibili' as const,
           }
         })
@@ -1569,8 +1579,8 @@ export default function TLSearchPage() {
             className={`bg-white rounded w-full max-w-5xl h-[80vh] max-h-[80vh] flex flex-col overflow-hidden transition-all duration-200 ${modalClosing ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex flex-col md:flex-row h-full">
-              <div className="md:w-5/12 border-b md:border-b-0 md:border-r p-4 space-y-3 overflow-y-auto">
+            <div className="flex flex-col md:flex-row h-full min-h-0">
+              <div className="md:w-5/12 border-b md:border-b-0 md:border-r p-4 space-y-3 overflow-y-auto h-1/2 md:h-full min-h-0">
                 <a
                   href={openTlMeta?.url ?? '#'}
                   target="_blank"
@@ -1723,7 +1733,7 @@ export default function TLSearchPage() {
               </div>
 
               {/* 本文（スクロール） */}
-              <div className="md:w-7/12 flex-1 overflow-y-auto p-4 pt-3 space-y-4">
+              <div className="md:w-7/12 flex-1 overflow-y-auto p-4 pt-3 space-y-4 h-1/2 md:h-full min-h-0">
                 {activeSection === 'overview' && (
                   <div id="section-overview">
                     <h4 className="font-semibold text-sm">概要</h4>
