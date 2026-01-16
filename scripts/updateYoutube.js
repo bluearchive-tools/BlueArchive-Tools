@@ -201,6 +201,30 @@ async function fetchVideos(seasons) {
   return results
 }
 
+async function fetchYouTubeSnippets(videoIds) {
+  const out = {}
+  if (!videoIds.length || API_KEYS.length === 0) return out
+
+  const ids = Array.from(new Set(videoIds.filter((v) => typeof v === 'string' && v.length > 0)))
+  if (ids.length === 0) return out
+
+  const base = 'https://www.googleapis.com/youtube/v3/videos?part=snippet&maxResults=50'
+  for (let i = 0; i < ids.length; i += 50) {
+    const chunk = ids.slice(i, i + 50)
+    if (chunk.length === 0) continue
+    for (const key of API_KEYS) {
+      const res = await fetch(`${base}&id=${chunk.join(',')}&key=${key}`)
+      if (!res.ok) continue
+      const data = await res.json()
+      for (const item of data.items || []) {
+        if (item?.id) out[item.id] = item.snippet || {}
+      }
+      break
+    }
+  }
+  return out
+}
+
 async function ensureTables(seasons) {
   // DB テーブルは手動で作成済みであることを想定
   for (const s of seasons) {
@@ -227,10 +251,13 @@ async function update() {
   const raid = await loadRaidData()
   const timelines = await loadTimelines(raid.seasons)
   const videos = await fetchVideos(raid.seasons)
+  const ytIds = videos.map((info) => info?.id?.videoId).filter(Boolean)
+  const ytSnippets = await fetchYouTubeSnippets(ytIds)
 
   for (const info of videos) {
     const vid = info.id.videoId
-    const seasonNum = guessSeason(info.snippet, raid.seasons)
+    const snippet = ytSnippets[vid] || info.snippet || {}
+    const seasonNum = guessSeason(snippet, raid.seasons)
     const table = seasonNum ? `tl_${seasonNum.toLowerCase()}` : 'tl_unknown'
     const { data: exist } = await supabase
       .from(table)
@@ -240,7 +267,7 @@ async function update() {
 
     const arr = timelines[table] || []
     const maxId = arr.reduce((a, c) => Math.max(a, c.id || 0), 0)
-    const text = `${info.snippet.title || ''}\n${info.snippet.description || ''}`
+    const text = `${snippet.title || ''}\n${snippet.description || ''}`
     const armor = extractArmor(text)
     const difficulty = extractDifficulty(text)
     const score = extractScore(text)
@@ -256,9 +283,9 @@ async function update() {
       formation,
       guide,
       formation_status: formationStatus,
-      title: info.snippet.title || '',
-      description: info.snippet.description || '',
-      publishedAt: info.snippet.publishedAt,
+      title: snippet.title || '',
+      description: snippet.description || '',
+      publishedAt: snippet.publishedAt,
     }
 
     if (!exist) {

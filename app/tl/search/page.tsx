@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faLink, faUser, faUserSlash } from '@fortawesome/free-solid-svg-icons'
-import { faYoutube } from '@fortawesome/free-brands-svg-icons'
+import { faBilibili, faYoutube } from '@fortawesome/free-brands-svg-icons'
 import { Timeline } from '../../../types/timeline'
 import PageHelpButton from '../../../components/PageHelpButton'
 import StudentSelect from '../../../components/StudentSelect'
@@ -160,6 +160,7 @@ export default function TLSearchPage() {
   const [editFormationMemberMap, setEditFormationMemberMap] = useState<
     Record<string, Record<string, unknown>>
   >({})
+  const [editStatsOpen, setEditStatsOpen] = useState(false)
   const [editTlSkipUpdate, setEditTlSkipUpdate] = useState(false)
   const [editTlSkipUpdateLoaded, setEditTlSkipUpdateLoaded] = useState(false)
   const [editTlSkipUpdateSaving, setEditTlSkipUpdateSaving] = useState(false)
@@ -292,6 +293,9 @@ export default function TLSearchPage() {
     return { platform, id, url, label, thumbnail: proxiedThumbnail }
   }
 
+  const getPlatformIcon = (platform: 'youtube' | 'bilibili') =>
+    platform === 'youtube' ? faYoutube : faBilibili
+
   const resolveInlineThumbnail = (
     platform: 'youtube' | 'bilibili',
     thumbnail?: string,
@@ -315,6 +319,40 @@ export default function TLSearchPage() {
     if (pub >= cutoff) return '終了後'
     const diff = Math.floor((pub.getTime() - start.getTime()) / 86400000) + 1
     return `${diff}日目`
+  }
+
+  const editStatFields: Array<{ key: string; label: string }> = [
+    { key: 'level', label: 'Lv' },
+    { key: 'star', label: '星' },
+    { key: 'unique_star', label: '固有' },
+    { key: 'unique_level', label: '固有Lv' },
+    { key: 'bond', label: '絆' },
+    { key: 'ex_skill', label: 'EX' },
+    { key: 'normal_skill', label: 'NS' },
+    { key: 'passive_skill', label: 'PS' },
+    { key: 'sub_skill', label: 'SS' },
+    { key: 'equip1', label: '装備1' },
+    { key: 'equip2', label: '装備2' },
+    { key: 'equip3', label: '装備3' },
+    { key: 'item_tier', label: '装備Tier' },
+  ]
+
+  const updateFormationMemberStat = (id: string, key: string, rawValue: string) => {
+    const value = rawValue === '' ? null : Number(rawValue)
+    const student = students.find((s) => s.id === id)
+    setEditFormationMemberMap((prev) => {
+      const base = prev[id] ?? { id, name: student?.name }
+      return {
+        ...prev,
+        [id]: {
+          ...base,
+          id,
+          name: base.name ?? student?.name,
+          [key]: value,
+        },
+      }
+    })
+    setEditSquadsDirty(true)
   }
 
   // 簡易的な難易度順
@@ -1178,6 +1216,7 @@ export default function TLSearchPage() {
     // ignore
   } finally {
     setEditTl(null)
+    setEditStatsOpen(false)
     setEditGuide(false)
     setEditFormationStatus('none')
     setEditArmor('')
@@ -1207,6 +1246,7 @@ export default function TLSearchPage() {
             onClick={(e) => {
               e.stopPropagation()
               setEditTl(t)
+              setEditStatsOpen(false)
               setEditScore(t.score)
               setEditGuide(Boolean(t.guide))
               setEditFormationStatus(t.formationStatus || 'none')
@@ -1234,6 +1274,9 @@ export default function TLSearchPage() {
               {meta.label} thumbnail unavailable
             </div>
           )}
+          <span className="absolute top-1 left-1 bg-black/60 text-white text-xs px-1 rounded">
+            <FontAwesomeIcon icon={getPlatformIcon(meta.platform)} />
+          </span>
           <span className="absolute top-1 right-1 bg-black/50 text-white text-xs px-1">
             {getDayText(t)}
           </span>
@@ -1294,6 +1337,13 @@ export default function TLSearchPage() {
     openTlMeta?.platform === 'youtube'
       ? `https://i.ytimg.com/vi/${openTlMeta.id}/hqdefault.jpg`
       : openTlMeta?.thumbnail ?? null
+  const editMemberIds = Array.from(
+    new Set(
+      editSquads
+        .flatMap((squad) => [...squad.strikers, ...squad.specials])
+        .filter(Boolean)
+    )
+  )
 
   const visibleTimelines = timelines.filter((t) => {
     const settings = videoSettingsMap[t.videoid]
@@ -1644,23 +1694,28 @@ export default function TLSearchPage() {
                     key={video.videoid}
                     className="flex flex-col sm:flex-row gap-3 border rounded p-3"
                   >
-                    {resolveInlineThumbnail(video.platform, video.thumbnail, video.videoid) ? (
-                      <img
-                        src={
-                          resolveInlineThumbnail(
-                            video.platform,
-                            video.thumbnail,
-                            video.videoid
-                          ) ?? ''
-                        }
-                        alt="thumbnail"
-                        className="w-full sm:w-40 h-auto rounded"
-                      />
-                    ) : (
-                      <div className="flex w-full sm:w-40 items-center justify-center rounded bg-gray-100 text-xs text-gray-500">
-                        Bilibili thumbnail unavailable
-                      </div>
-                    )}
+                    <div className="relative w-full sm:w-40">
+                      {resolveInlineThumbnail(video.platform, video.thumbnail, video.videoid) ? (
+                        <img
+                          src={
+                            resolveInlineThumbnail(
+                              video.platform,
+                              video.thumbnail,
+                              video.videoid
+                            ) ?? ''
+                          }
+                          alt="thumbnail"
+                          className="w-full h-auto rounded"
+                        />
+                      ) : (
+                        <div className="flex w-full items-center justify-center rounded bg-gray-100 text-xs text-gray-500">
+                          Bilibili thumbnail unavailable
+                        </div>
+                      )}
+                      <span className="absolute top-1 left-1 bg-black/60 text-white text-xs px-1 rounded">
+                        <FontAwesomeIcon icon={getPlatformIcon(video.platform)} />
+                      </span>
+                    </div>
                     <div className="flex-1 space-y-1">
                       <p className="text-sm font-semibold">{video.title}</p>
                       <p className="text-xs text-gray-500 line-clamp-2">{video.description}</p>
@@ -1713,7 +1768,7 @@ export default function TLSearchPage() {
                   href={openTlMeta?.url ?? '#'}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block"
+                  className="block relative"
                   aria-label={`${openTlMeta?.label ?? '動画'}で動画を開く`}
                 >
                   {openTlThumbnail ? (
@@ -1726,6 +1781,11 @@ export default function TLSearchPage() {
                     <div className="flex h-48 w-full items-center justify-center rounded bg-gray-100 text-sm text-gray-500">
                       {openTlMeta?.label ?? '動画'} thumbnail unavailable
                     </div>
+                  )}
+                  {openTlMeta?.platform && (
+                    <span className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                      <FontAwesomeIcon icon={getPlatformIcon(openTlMeta.platform)} />
+                    </span>
                   )}
                 </a>
                 <div>
@@ -1742,8 +1802,8 @@ export default function TLSearchPage() {
                     className="inline-flex items-center gap-1 rounded border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-gray-50"
                     aria-label={`${openTlMeta?.label ?? '動画'}で動画を開く`}
                   >
-                    {openTlMeta?.platform === 'youtube' ? (
-                      <FontAwesomeIcon icon={faYoutube} />
+                    {openTlMeta?.platform ? (
+                      <FontAwesomeIcon icon={getPlatformIcon(openTlMeta.platform)} />
                     ) : (
                       <FontAwesomeIcon icon={faLink} />
                     )}
@@ -1865,7 +1925,6 @@ export default function TLSearchPage() {
                 {activeSection === 'overview' && (
                   <div id="section-overview">
                     <h4 className="font-semibold text-sm">概要</h4>
-                    <p className="whitespace-pre-wrap text-sm">{openTl.description}</p>
                     {openTl.formation &&
                       openTl.formation !== '[]' &&
                       students.length > 0 && (
@@ -1918,6 +1977,7 @@ export default function TLSearchPage() {
                           )}
                         </div>
                       )}
+                    <p className="whitespace-pre-wrap text-sm">{openTl.description}</p>
                   </div>
                 )}
 
@@ -2258,6 +2318,7 @@ export default function TLSearchPage() {
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={() => {
             setEditTl(null)
+            setEditStatsOpen(false)
             setEditGuide(false)
             setEditFormationStatus('none')
             setEditArmor('')
@@ -2273,7 +2334,9 @@ export default function TLSearchPage() {
           }}
         >
           <div
-            className="bg-white rounded w-full max-w-lg h-[80vh] max-h-[80vh] overflow-hidden flex flex-col"
+            className={`bg-white rounded w-full ${
+              editStatsOpen ? 'max-w-4xl' : 'max-w-lg'
+            } h-[80vh] max-h-[80vh] overflow-hidden flex flex-col`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4 space-y-3 text-sm overflow-y-auto">
@@ -2365,16 +2428,25 @@ export default function TLSearchPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold">編成</span>
-                  <button
-                    type="button"
-                    className="text-xs text-blue-600 underline"
-                    onClick={() => {
-                      setEditSquads((prev) => [...prev, emptySquad()])
-                      setEditSquadsDirty(true)
-                    }}
-                  >
-                    部隊を追加
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      className="text-xs text-blue-600 underline"
+                      onClick={() => {
+                        setEditSquads((prev) => [...prev, emptySquad()])
+                        setEditSquadsDirty(true)
+                      }}
+                    >
+                      部隊を追加
+                    </button>
+                    <button
+                      type="button"
+                      className="text-xs text-blue-600 underline"
+                      onClick={() => setEditStatsOpen((prev) => !prev)}
+                    >
+                      {editStatsOpen ? 'ステータス編集を閉じる' : 'ステータス編集を開く'}
+                    </button>
+                  </div>
                 </div>
                 {editSquads.length === 0 ? (
                   <p className="text-xs text-gray-500">編成がありません。</p>
@@ -2484,6 +2556,70 @@ export default function TLSearchPage() {
                   />
                 </details>
               </div>
+              {editStatsOpen && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-sm">生徒ステータス</h4>
+                  {editMemberIds.length === 0 ? (
+                    <p className="text-xs text-gray-500">
+                      編成に生徒が設定されていません。
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {editMemberIds.map((id) => {
+                        const student = students.find((s) => s.id === id)
+                        const member = editFormationMemberMap[id] ?? {}
+                        const memberRecord = member as Record<string, unknown>
+                        const memberName =
+                          typeof memberRecord.name === 'string'
+                            ? memberRecord.name
+                            : student?.name ?? id
+                        return (
+                          <div key={id} className="rounded border border-gray-200 p-3 space-y-2">
+                            <div className="flex items-center gap-2">
+                              {student?.image ? (
+                                <img
+                                  src={student.image}
+                                  alt={memberName}
+                                  className="h-8 w-8 rounded object-cover"
+                                />
+                              ) : (
+                                <div className="h-8 w-8 rounded bg-gray-200" />
+                              )}
+                              <div>
+                                <p className="text-xs font-semibold">{memberName}</p>
+                                <p className="text-xs text-gray-500">{id}</p>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              {editStatFields.map((field) => {
+                                const rawValue = memberRecord[field.key]
+                                const value = typeof rawValue === 'number' ? rawValue : ''
+                                return (
+                                  <label key={field.key} className="text-xs">
+                                    <span>{field.label}</span>
+                                    <input
+                                      type="number"
+                                      value={value}
+                                      onChange={(e) =>
+                                        updateFormationMemberStat(
+                                          id,
+                                          field.key,
+                                          e.target.value
+                                        )
+                                      }
+                                      className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
+                                    />
+                                  </label>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
               {isAdmin && editTl && (
                 <div className="space-y-1">
                   <label className="inline-flex items-center gap-2">
@@ -2509,6 +2645,7 @@ export default function TLSearchPage() {
                 <button
                   onClick={() => {
                     setEditTl(null)
+                    setEditStatsOpen(false)
                     setEditGuide(false)
                     setEditFormationStatus('none')
                     setEditArmor('')

@@ -54,3 +54,18 @@ Google 認証後に `profiles` テーブルへユーザー名を登録します�
 各テーブルには以下の列を用意してください。
 `guide` (boolean) は動画に解説が付いているかどうか、
 `formation_status` (text) は編成情報の状態(`none`/`auto`/`manual`)を示します。
+
+## YouTube 更新スクリプト
+
+`npm run update:youtube` で YouTube の動画情報を取得し、Supabase に保存します。
+GitHub Actions のスケジュール実行では Secrets から環境変数を渡しています。
+
+必須の環境変数:
+
+- `YOUTUBE_API_KEYS`: YouTube API キーのカンマ区切りリスト
+- `SUPABASE_URL`: Supabase のプロジェクト URL
+- `SUPABASE_ANON_KEY`: Supabase の anon key
+
+任意の環境変数:
+
+- `YOUTUBE_API_KEY`: 単一の YouTube API キー (補助的に追加)

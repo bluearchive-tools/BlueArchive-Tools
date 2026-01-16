@@ -502,6 +502,53 @@ export async function fetchBilibiliVideos(
   return results
 }
 
+async function fetchBilibiliDetails(
+  bvids: string[],
+  log?: (message: string) => void
+): Promise<
+  Record<
+    string,
+    { title?: string; description?: string; publishedAt?: string; thumbnail?: string }
+  >
+> {
+  const out: Record<
+    string,
+    { title?: string; description?: string; publishedAt?: string; thumbnail?: string }
+  > = {}
+  for (const bvid of bvids) {
+    try {
+      const res = await fetch(
+        `https://api.bilibili.com/x/web-interface/view?bvid=${encodeURIComponent(bvid)}`
+      )
+      if (!res.ok) continue
+      const json = (await res.json()) as {
+        data?: {
+          title?: string
+          desc?: string
+          pubdate?: number
+          pic?: string
+        }
+      }
+      if (!json.data) continue
+      out[bvid] = {
+        title: json.data.title ?? undefined,
+        description: json.data.desc ?? undefined,
+        publishedAt: json.data.pubdate
+          ? new Date(json.data.pubdate * 1000).toISOString()
+          : undefined,
+        thumbnail: json.data.pic
+          ? json.data.pic.startsWith('//')
+            ? `https:${json.data.pic}`
+            : json.data.pic
+          : undefined,
+      }
+    } catch {
+      log?.(`Bilibili ${bvid}: 詳細取得に失敗`)
+    }
+  }
+  return out
+}
+
 export const toStoredVideoId = (platform: 'youtube' | 'bilibili', id: string) =>
   platform === 'bilibili' ? `bili:${id}` : id
 
@@ -549,6 +596,13 @@ export async function upsertTimelines(params: {
   const biliVideos =
     platform === 'youtube' ? [] : await fetchBilibiliVideos(targetSeasons, log)
   pushLog(`Bilibili検索結果: ${biliVideos.length}件`)
+  const biliDetails =
+    platform === 'youtube'
+      ? {}
+      : await fetchBilibiliDetails(
+          biliVideos.map((video) => video.bvid),
+          log
+        )
 
   const allVideoIds = [
     ...ytIds.map((id) => toStoredVideoId('youtube', id)),
@@ -675,10 +729,11 @@ export async function upsertTimelines(params: {
 
   for (const info of biliVideos) {
     const storedId = toStoredVideoId('bilibili', info.bvid)
+    const detail = biliDetails[info.bvid]
     const snippet: Snippet = {
-      title: info.title,
-      description: info.description,
-      publishedAt: info.publishedAt,
+      title: detail?.title ?? info.title,
+      description: detail?.description ?? info.description,
+      publishedAt: detail?.publishedAt ?? info.publishedAt,
     }
     const targetSeasonStart = season ? seasonStartMap.get(season) : undefined
     if (isTooEarlyForSeason(snippet, targetSeasonStart)) {
@@ -715,7 +770,7 @@ export async function upsertTimelines(params: {
         ? seasonArmorMap.get(seasonNum) ?? ''
         : extractArmorFromBilibili(text, bilibiliArmorMap)
     const score = extractScore(text)
-    const thumbnail = info.thumbnail ?? null
+    const thumbnail = detail?.thumbnail ?? info.thumbnail ?? null
     const difficulty = normalizeDifficulty(text, score)
     const formation = await extractFormation(supabase, text)
     const guide = extractGuide(text)
