@@ -271,6 +271,13 @@ const detectIsMacPlatform = () => {
 const defaultShortcuts = (preferMeta: boolean) => ({
   undo: preferMeta ? 'Cmd+Z' : 'Ctrl+Z',
   redo: preferMeta ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z',
+  addSkill: preferMeta ? 'Cmd+Shift+A' : 'Ctrl+Shift+A',
+  movePlayheadLeft: preferMeta ? 'Cmd+ArrowLeft' : 'Ctrl+ArrowLeft',
+  movePlayheadRight: preferMeta ? 'Cmd+ArrowRight' : 'Ctrl+ArrowRight',
+  cut: preferMeta ? 'Cmd+X' : 'Ctrl+X',
+  copy: preferMeta ? 'Cmd+C' : 'Ctrl+C',
+  paste: preferMeta ? 'Cmd+V' : 'Ctrl+V',
+  delete: preferMeta ? 'Backspace' : 'Delete',
 })
 
 const formatShortcutFromEvent = (event: ReactKeyboardEvent<HTMLInputElement>) => {
@@ -550,6 +557,8 @@ export default function TLMakerPage() {
   const [moveModeSkill, setMoveModeSkill] = useState<number | null>(null)
   const scrollLock = useRef(0)
   const [playheadMenu, setPlayheadMenu] = useState<{ x: number; y: number } | null>(null)
+  const timeTapRef = useRef<{ x: number; y: number; moved: boolean } | null>(null)
+  const lastTimelineTapRef = useRef<{ at: number; x: number; y: number } | null>(null)
   const [groups, setGroups] = useState<SquadGroup[]>([])
   const [selectedGroup, setSelectedGroup] = useState<SquadGroup | null>(null)
   const [squadIndex, setSquadIndex] = useState(0)
@@ -572,9 +581,17 @@ export default function TLMakerPage() {
   const [historyLog, setHistoryLog] = useState<Array<{ id: number; at: string; summary: string }>>([])
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [toasts, setToasts] = useState<Array<{ id: number; text: string }>>([])
-  const [shortcutSettings, setShortcutSettings] = useState<{ undo: string; redo: string }>(() =>
-    defaultShortcuts(detectIsMacPlatform())
-  )
+  const [shortcutSettings, setShortcutSettings] = useState<{
+    undo: string
+    redo: string
+    addSkill: string
+    movePlayheadLeft: string
+    movePlayheadRight: string
+    cut: string
+    copy: string
+    paste: string
+    delete: string
+  }>(() => defaultShortcuts(detectIsMacPlatform()))
   const isMacPlatform = useMemo(() => detectIsMacPlatform(), [])
 
   // Plugins
@@ -742,6 +759,28 @@ const startResizePluginWindow = useCallback(
       }
       .toast-progress {
         animation: toast-progress 2s linear forwards;
+      }
+      @keyframes tl-popover-in {
+        0% { opacity: 0; transform: translateY(-4px) scale(0.98); }
+        100% { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      @keyframes tl-modal-in {
+        0% { opacity: 0; transform: scale(0.96); }
+        100% { opacity: 1; transform: scale(1); }
+      }
+      @keyframes tl-backdrop-in {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
+      }
+      .tl-popover {
+        animation: tl-popover-in 0.16s ease-out;
+        transform-origin: top left;
+      }
+      .tl-modal-backdrop {
+        animation: tl-backdrop-in 0.2s ease-out;
+      }
+      .tl-modal-panel {
+        animation: tl-modal-in 0.2s ease-out;
       }
     `,
     []
@@ -1095,11 +1134,20 @@ useEffect(() => {
         setShortcutSettings(defaultShortcuts(isMacPlatform))
         return
       }
-      const parsed = JSON.parse(raw) as Partial<{ undo: string; redo: string }>
+      const parsed = JSON.parse(raw) as Partial<typeof shortcutSettings>
       setShortcutSettings((prev) => ({
         ...prev,
         undo: typeof parsed.undo === 'string' ? parsed.undo : prev.undo,
         redo: typeof parsed.redo === 'string' ? parsed.redo : prev.redo,
+        addSkill: typeof parsed.addSkill === 'string' ? parsed.addSkill : prev.addSkill,
+        movePlayheadLeft:
+          typeof parsed.movePlayheadLeft === 'string' ? parsed.movePlayheadLeft : prev.movePlayheadLeft,
+        movePlayheadRight:
+          typeof parsed.movePlayheadRight === 'string' ? parsed.movePlayheadRight : prev.movePlayheadRight,
+        cut: typeof parsed.cut === 'string' ? parsed.cut : prev.cut,
+        copy: typeof parsed.copy === 'string' ? parsed.copy : prev.copy,
+        paste: typeof parsed.paste === 'string' ? parsed.paste : prev.paste,
+        delete: typeof parsed.delete === 'string' ? parsed.delete : prev.delete,
       }))
     } catch {
       /* ignore */
@@ -1118,11 +1166,20 @@ useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key !== 'tlMaker:shortcuts' || !e.newValue) return
       try {
-        const parsed = JSON.parse(e.newValue) as Partial<{ undo: string; redo: string }>
+        const parsed = JSON.parse(e.newValue) as Partial<typeof shortcutSettings>
         setShortcutSettings((prev) => ({
           ...prev,
           undo: typeof parsed.undo === 'string' ? parsed.undo : prev.undo,
           redo: typeof parsed.redo === 'string' ? parsed.redo : prev.redo,
+          addSkill: typeof parsed.addSkill === 'string' ? parsed.addSkill : prev.addSkill,
+          movePlayheadLeft:
+            typeof parsed.movePlayheadLeft === 'string' ? parsed.movePlayheadLeft : prev.movePlayheadLeft,
+          movePlayheadRight:
+            typeof parsed.movePlayheadRight === 'string' ? parsed.movePlayheadRight : prev.movePlayheadRight,
+          cut: typeof parsed.cut === 'string' ? parsed.cut : prev.cut,
+          copy: typeof parsed.copy === 'string' ? parsed.copy : prev.copy,
+          paste: typeof parsed.paste === 'string' ? parsed.paste : prev.paste,
+          delete: typeof parsed.delete === 'string' ? parsed.delete : prev.delete,
         }))
       } catch {
         /* ignore */
@@ -1750,32 +1807,6 @@ useEffect(() => {
     })
   }
 
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.defaultPrevented) return
-      const target = e.target as HTMLElement | null
-      if (
-        target &&
-        (target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.isContentEditable)
-      ) {
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.undo)) {
-        e.preventDefault()
-        undo()
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.redo)) {
-        e.preventDefault()
-        redo()
-      }
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [shortcutSettings, undo, redo])
-
   const switchSquad = (index: number) => {
   if (!selectedGroup) return
 
@@ -2316,6 +2347,183 @@ useEffect(() => {
     [snapPreset]
   )
 
+  const playheadStep = useMemo(() => {
+    if (snapPreset === 'off') return 0.1
+    if (snapPreset === '0.5') return 0.5
+    if (snapPreset === '0.1') return 0.1
+    if (snapPreset === '0.05') return 0.05
+    return 0.033
+  }, [snapPreset])
+
+  const movePlayheadBy = useCallback(
+    (delta: number) => {
+      setPlayhead((prev) => {
+        const next = snapTime(prev + delta)
+        return Math.max(0, Math.min(totalSeconds, next))
+      })
+    },
+    [snapTime, totalSeconds]
+  )
+
+  const openAddSkillModal = useCallback(() => {
+    setSelectedType('skill')
+    setSkillKind('ex')
+    setRow(0)
+    const st = students.find((s) => s.id === rowStudents[0])
+    const dur = st?.exDuration ?? 1
+    const startTime = snapTime(playhead)
+    const travel = st?.exHitDelay || 0
+    const stats = st ? getStats(st.id) : undefined
+    setApplyTravel(false)
+    setStart(startTime)
+    setEnd(snapTime(startTime + dur))
+    setSkillCost(st?.cost ?? 0)
+    setSkillCostTouched(false)
+    setShowCostDetails(false)
+    setCostRecoveryEnabled(false)
+    setCostRecoveryAmount(0)
+    setCostRecoveryDuration(0)
+    setCostRecoveryTrigger(snapTime(startTime + travel))
+    setCostRecoveryTriggerTouched(false)
+    setCostRecoveryApplyBonus(Number(stats?.unique_star ?? 0) >= 2)
+    setCostRecoveryApplyBonusTouched(false)
+    setShowForm(true)
+  }, [getStats, playhead, rowStudents, snapTime, students])
+
+  const cutSelected = useCallback(() => {
+    if (!selected.length) return
+    const cutSkills = skills.filter((s) => selected.some((sel) => sel.type === 'skill' && sel.id === s.id))
+    const cutMarkers = markers.filter((m) => selected.some((sel) => sel.type === 'marker' && sel.id === m.id))
+    if (!cutSkills.length && !cutMarkers.length) return
+    setCopied({
+      skills: cutSkills.map((s) => ({ ...s })),
+      markers: cutMarkers.map((m) => ({ ...m })),
+    })
+    setSkills((prev) => prev.filter((s) => !cutSkills.some((c) => c.id === s.id)))
+    setMarkers((prev) => prev.filter((m) => !cutMarkers.some((c) => c.id === m.id)))
+    setSelected([])
+  }, [markers, selected, skills])
+
+  const copySelected = useCallback(() => {
+    if (!selected.length) return
+    const cpSkills = skills.filter((s) => selected.some((sel) => sel.type === 'skill' && sel.id === s.id))
+    const cpMarkers = markers.filter((m) => selected.some((sel) => sel.type === 'marker' && sel.id === m.id))
+    if (!cpSkills.length && !cpMarkers.length) return
+    setCopied({
+      skills: cpSkills.map((s) => ({ ...s })),
+      markers: cpMarkers.map((m) => ({ ...m })),
+    })
+  }, [markers, selected, skills])
+
+  const pasteCopied = useCallback(() => {
+    if (!copied) return
+    const base = snapTime(playhead)
+    copied.skills.forEach((ev, idx) => {
+      const id = Date.now() + idx
+      const duration = ev.end - ev.start
+      const travel = ev.travel || 0
+      const motion = ev.motion
+      setSkills((prev) => [
+        ...prev,
+        {
+          ...ev,
+          id,
+          start: base,
+          end: snapTime(base + duration),
+          travel,
+          motion,
+          type: ev.type,
+        },
+      ])
+    })
+    copied.markers.forEach((mk, idx) => {
+      const id = Date.now() + copied.skills.length + idx
+      setMarkers((prev) => [
+        ...prev,
+        { ...mk, id, time: base },
+      ])
+    })
+  }, [copied, playhead, snapTime])
+
+  const deleteSelected = useCallback(() => {
+    if (!selected.length) return
+    setSkills((prev) => prev.filter((s) => !selected.some((sel) => sel.type === 'skill' && sel.id === s.id)))
+    setMarkers((prev) => prev.filter((m) => !selected.some((sel) => sel.type === 'marker' && sel.id === m.id)))
+    setSelected([])
+  }, [selected])
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return
+      const target = e.target as HTMLElement | null
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.undo)) {
+        e.preventDefault()
+        undo()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.redo)) {
+        e.preventDefault()
+        redo()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.addSkill)) {
+        e.preventDefault()
+        openAddSkillModal()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.cut)) {
+        e.preventDefault()
+        cutSelected()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.copy)) {
+        e.preventDefault()
+        copySelected()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.paste)) {
+        e.preventDefault()
+        pasteCopied()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.delete)) {
+        e.preventDefault()
+        deleteSelected()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.movePlayheadLeft)) {
+        e.preventDefault()
+        movePlayheadBy(-playheadStep)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.movePlayheadRight)) {
+        e.preventDefault()
+        movePlayheadBy(playheadStep)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [
+    shortcutSettings,
+    undo,
+    redo,
+    openAddSkillModal,
+    cutSelected,
+    copySelected,
+    pasteCopied,
+    deleteSelected,
+    movePlayheadBy,
+    playheadStep,
+  ])
+
   const runPluginActions = useCallback(
     (actions: unknown, ownerPluginId?: string) => {
       const list: unknown[] = Array.isArray(actions) ? actions : []
@@ -2598,10 +2806,29 @@ useEffect(() => {
   return entries.sort((a, b) => a.time - b.time)
 }, [initialized, skills, students, rowStudents])
 
+  const costRecoverySegments = useMemo(() => {
+    if (!initialized) return []
+    return skills.flatMap((ev) => {
+      if (!ev.costRecovery) return []
+      const { amount, duration, trigger, applyDurationBonus } = ev.costRecovery
+      if (amount === 0 || duration <= 0) return []
+      const adjustedDuration = applyDurationBonus ? duration * 1.19 : duration
+      return [
+        {
+          start: trigger,
+          duration: adjustedDuration,
+        },
+      ]
+    })
+  }, [initialized, skills])
+
   const rowHeight = 42 // px
   const rows = rowStudents.length
   const showCostRow = showCostLines && costDetailItems.length > 0
-  const displayRows = rows + (showCostRow ? 1 : 0)
+  const showCostRecoveryRow = showCostLines && costRecoverySegments.length > 0
+  const displayRows = rows + (showCostRow ? 1 : 0) + (showCostRecoveryRow ? 1 : 0)
+  const costRowIndex = rows
+  const recoveryRowIndex = rows + (showCostRow ? 1 : 0)
 
   const currentCost = useMemo(() => {
   if (!initialized) return 0
@@ -3509,11 +3736,11 @@ function resolveBuffText(
 
       {showSaveModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center tl-modal-backdrop"
           onClick={() => setShowSaveModal(false)}
         >
           <div
-            className="border rounded p-4 bg-white space-y-2 w-72"
+            className="border rounded p-4 bg-white space-y-2 w-72 tl-modal-panel"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -3558,11 +3785,11 @@ function resolveBuffText(
 
       {showCreateModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 tl-modal-backdrop"
           onClick={() => setShowCreateModal(false)}
         >
           <div
-            className={`relative w-full rounded-lg border border-gray-200 bg-white p-6 shadow-lg space-y-4 ${
+            className={`relative w-full rounded-lg border border-gray-200 bg-white p-6 shadow-lg space-y-4 tl-modal-panel ${
               quickCreateOpen ? 'max-w-3xl' : 'max-w-lg'
             }`}
             onClick={(e) => e.stopPropagation()}
@@ -3724,7 +3951,7 @@ function resolveBuffText(
           </button>
           {showFileMenu && (
             <div
-              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-32"
+              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-32 max-h-[60vh] overflow-y-auto tl-popover"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -3804,34 +4031,13 @@ function resolveBuffText(
           </button>
           {showMenu && (
             <div
-              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-32"
+              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-32 max-h-[60vh] overflow-y-auto tl-popover"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 type="button"
                 onClick={() => {
-                  setSelectedType('skill')
-                  setSkillKind('ex')
-                  setRow(0)
-                  const st = students.find((s) => s.id === rowStudents[0])
-                  const dur = st?.exDuration ?? 1
-                  const startTime = snapTime(playhead)
-                  const travel = st?.exHitDelay || 0
-                  const stats = st ? getStats(st.id) : undefined
-                  setApplyTravel(false)
-                  setStart(startTime)
-                  setEnd(snapTime(startTime + dur))
-                  setSkillCost(st?.cost ?? 0)
-                  setSkillCostTouched(false)
-                  setShowCostDetails(false)
-                  setCostRecoveryEnabled(false)
-                  setCostRecoveryAmount(0)
-                  setCostRecoveryDuration(0)
-                  setCostRecoveryTrigger(snapTime(startTime + travel))
-                  setCostRecoveryTriggerTouched(false)
-                  setCostRecoveryApplyBonus(Number(stats?.unique_star ?? 0) >= 2)
-                  setCostRecoveryApplyBonusTouched(false)
-                  setShowForm(true)
+                  openAddSkillModal()
                   setShowMenu(false)
                 }}
                 className="block w-full text-left px-2 py-1 hover:bg-gray-200"
@@ -3887,29 +4093,13 @@ function resolveBuffText(
           </button>
           {showEditMenu && (
             <div
-              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-32"
+              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm w-32 max-h-[60vh] overflow-y-auto tl-popover"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 type="button"
                 onClick={() => {
-                  if (selected.length) {
-                    const cutSkills = skills.filter((s) =>
-                      selected.some((sel) => sel.type === 'skill' && sel.id === s.id)
-                    )
-                    const cutMarkers = markers.filter((m) =>
-                      selected.some((sel) => sel.type === 'marker' && sel.id === m.id)
-                    )
-                    if (cutSkills.length || cutMarkers.length) {
-                      setCopied({
-                        skills: cutSkills.map((s) => ({ ...s })),
-                        markers: cutMarkers.map((m) => ({ ...m })),
-                      })
-                      setSkills((prev) => prev.filter((s) => !cutSkills.some((c) => c.id === s.id)))
-                      setMarkers((prev) => prev.filter((m) => !cutMarkers.some((c) => c.id === m.id)))
-                      setSelected([])
-                    }
-                  }
+                  cutSelected()
                   setShowEditMenu(false)
                 }}
                 className="block w-full text-left px-2 py-1 hover:bg-gray-200"
@@ -3919,20 +4109,7 @@ function resolveBuffText(
               <button
                 type="button"
                 onClick={() => {
-                  if (selected.length) {
-                    const cpSkills = skills.filter((s) =>
-                      selected.some((sel) => sel.type === 'skill' && sel.id === s.id)
-                    )
-                    const cpMarkers = markers.filter((m) =>
-                      selected.some((sel) => sel.type === 'marker' && sel.id === m.id)
-                    )
-                    if (cpSkills.length || cpMarkers.length) {
-                      setCopied({
-                        skills: cpSkills.map((s) => ({ ...s })),
-                        markers: cpMarkers.map((m) => ({ ...m })),
-                      })
-                    }
-                  }
+                  copySelected()
                   setShowEditMenu(false)
                 }}
                 className="block w-full text-left px-2 py-1 hover:bg-gray-200"
@@ -3942,34 +4119,7 @@ function resolveBuffText(
               <button
                 type="button"
                 onClick={() => {
-                  if (copied) {
-                    const base = snapTime(playhead)
-                    copied.skills.forEach((ev, idx) => {
-                      const id = Date.now() + idx
-                      const duration = ev.end - ev.start
-                      const travel = ev.travel || 0
-                      const motion = ev.motion
-                      setSkills((prev) => [
-                        ...prev,
-                        {
-                          ...ev,
-                          id,
-                          start: base,
-                          end: snapTime(base + duration),
-                          travel,
-                          motion,
-                          type: ev.type,
-                        },
-                      ])
-                    })
-                    copied.markers.forEach((mk, idx) => {
-                      const id = Date.now() + copied.skills.length + idx
-                      setMarkers((prev) => [
-                        ...prev,
-                        { ...mk, id, time: base },
-                      ])
-                    })
-                  }
+                  pasteCopied()
                   setShowEditMenu(false)
                 }}
                 className="block w-full text-left px-2 py-1 hover:bg-gray-200"
@@ -3979,15 +4129,7 @@ function resolveBuffText(
               <button
                 type="button"
                 onClick={() => {
-                  if (selected.length) {
-                    setSkills((prev) =>
-                      prev.filter((s) => !selected.some((sel) => sel.type === 'skill' && sel.id === s.id))
-                    )
-                    setMarkers((prev) =>
-                      prev.filter((m) => !selected.some((sel) => sel.type === 'marker' && sel.id === m.id))
-                    )
-                    setSelected([])
-                  }
+                  deleteSelected()
                   setShowEditMenu(false)
                 }}
                 className="block w-full text-left px-2 py-1 hover:bg-gray-200"
@@ -4011,7 +4153,7 @@ function resolveBuffText(
           </button>
           {showTools && (
             <div
-              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm"
+              className="absolute left-0 mt-1 border bg-white rounded shadow z-10 text-sm max-h-[60vh] overflow-y-auto overscroll-contain tl-popover"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -4129,7 +4271,7 @@ function resolveBuffText(
           )}
           {showSquadMenu && selectedGroup && selectedGroup.squads.length > 1 && (
             <div
-              className="absolute left-0 mt-1 border bg-white rounded shadow z-20 text-sm px-2 py-1"
+              className="absolute left-0 mt-1 border bg-white rounded shadow z-20 text-sm px-2 py-1 max-h-[60vh] overflow-y-auto overscroll-contain tl-popover"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex gap-1">
@@ -4152,7 +4294,7 @@ function resolveBuffText(
           )}
           {showGroupMenu && groups.length > 0 && (
             <div
-              className="absolute left-0 mt-1 border bg-white rounded shadow z-20 text-sm px-2 py-1"
+              className="absolute left-0 mt-1 border bg-white rounded shadow z-20 text-sm px-2 py-1 max-h-[60vh] overflow-y-auto overscroll-contain tl-popover"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex gap-1">
@@ -4276,11 +4418,11 @@ function resolveBuffText(
       </div>
       {showForm && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center tl-modal-backdrop"
           onClick={() => setShowForm(false)}
         >
           <div
-            className="space-y-2 border p-4 rounded bg-white select-text relative w-72"
+            className="space-y-2 border p-4 rounded bg-white select-text relative w-72 tl-modal-panel"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -4485,11 +4627,11 @@ function resolveBuffText(
 
       {showImport && squads.length > 0 && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center tl-modal-backdrop"
           onClick={() => setShowImport(false)}
         >
           <div
-            className="border rounded p-2 space-y-1 bg-white relative w-60"
+            className="border rounded p-2 space-y-1 bg-white relative w-60 tl-modal-panel"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -4516,11 +4658,11 @@ function resolveBuffText(
 
       {showSettings && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center tl-modal-backdrop"
           onClick={() => setShowSettings(false)}
         >
           <div
-            className="border rounded p-4 bg-white space-y-2 max-h-[60vh] overflow-y-auto overscroll-contain relative"
+            className="border rounded p-4 bg-white space-y-3 max-h-[70vh] overflow-y-auto overscroll-contain relative w-[860px] max-w-[95vw] tl-modal-panel"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -4531,320 +4673,462 @@ function resolveBuffText(
             >
               <FontAwesomeIcon icon={faTimes} />
             </button>
-                        <div className="text-sm font-bold">プロモード</div>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={proMode}
-                onChange={(e) => setProMode(e.target.checked)}
-              />
-              <span>プロモードを有効化</span>
-            </label>
+            <div className="text-lg font-semibold">設定</div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-4">
+                <section className="rounded border border-gray-200 p-3 space-y-2">
+                  <div className="text-sm font-bold">プロモード</div>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={proMode}
+                      onChange={(e) => setProMode(e.target.checked)}
+                    />
+                    <span>プロモードを有効化</span>
+                  </label>
+                </section>
 
-            <div className="text-sm font-bold mt-2">表示</div>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={showDamageCalc}
-                onChange={(e) => setShowDamageCalc(e.target.checked)}
-              />
-              <span>ダメージ計算を表示</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={showTextTL} onChange={(e) => setShowTextTL(e.target.checked)} />
-              <span>TLをテキスト表示</span>
-            </label>
+                <section className="rounded border border-gray-200 p-3 space-y-2">
+                  <div className="text-sm font-bold">表示</div>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={showDamageCalc}
+                      onChange={(e) => setShowDamageCalc(e.target.checked)}
+                    />
+                    <span>ダメージ計算を表示</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={showTextTL}
+                      onChange={(e) => setShowTextTL(e.target.checked)}
+                    />
+                    <span>TLをテキスト表示</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={hideHeader} onChange={(e) => setHideHeader(e.target.checked)} />
+                    <span>ヘッダーを非表示にする</span>
+                  </label>
+                </section>
 
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={hideHeader} onChange={(e) => setHideHeader(e.target.checked)} />
-              <span>ヘッダーを非表示にする</span>
-            </label>
+                <section className="rounded border border-gray-200 p-3 space-y-2">
+                  <div className="text-sm font-bold">ページレイアウト</div>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="pageLayoutMode"
+                      checked={pageLayoutMode === 'stack'}
+                      onChange={() => setPageLayoutMode('stack')}
+                    />
+                    <span>縦並び（通常）</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="pageLayoutMode"
+                      checked={pageLayoutMode === 'free'}
+                      onChange={() => {
+                        initFreeLayoutFromCurrent()
+                        setPageLayoutMode('free')
+                      }}
+                    />
+                    <span>自由配置</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={pageLayoutEdit}
+                      onChange={(e) => setPageLayoutEdit(e.target.checked)}
+                      disabled={pageLayoutMode !== 'free'}
+                    />
+                    <span>自由配置を編集（ドラッグ）</span>
+                  </label>
+                  <button
+                    type="button"
+                    className="border px-3 py-1 rounded text-xs w-fit"
+                    onClick={() => {
+                      setPageLayoutMode('stack')
+                      setPageLayoutEdit(false)
+                      setPageBlockRects({})
+                    }}
+                    disabled={pageLayoutMode !== 'free'}
+                  >
+                    自由配置をリセット
+                  </button>
+                </section>
 
-            <div className="text-sm font-bold mt-2">ページレイアウト</div>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="pageLayoutMode"
-                checked={pageLayoutMode === 'stack'}
-                onChange={() => setPageLayoutMode('stack')}
-              />
-              <span>縦並び（通常）</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="pageLayoutMode"
-                checked={pageLayoutMode === 'free'}
-                onChange={() => {
-                  initFreeLayoutFromCurrent()
-                  setPageLayoutMode('free')
-                }}
-              />
-              <span>自由配置</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={pageLayoutEdit}
-                onChange={(e) => setPageLayoutEdit(e.target.checked)}
-                disabled={pageLayoutMode !== 'free'}
-              />
-              <span>自由配置を編集（ドラッグ）</span>
-            </label>
-            <button
-              type="button"
-              className="border px-3 py-1 rounded text-xs w-fit"
-              onClick={() => {
-                setPageLayoutMode('stack')
-                setPageLayoutEdit(false)
-                setPageBlockRects({})
-              }}
-              disabled={pageLayoutMode !== 'free'}
-            >
-              自由配置をリセット
-            </button>
+                <section className="rounded border border-gray-200 p-3 space-y-2">
+                  <div className="text-sm font-bold">TL長さ</div>
+                  <select
+                    value={totalSeconds}
+                    onChange={(e) => setTotalSeconds(parseInt(e.target.value))}
+                    className="border rounded p-1"
+                  >
+                    <option value={180}>3:00</option>
+                    <option value={240}>4:00</option>
+                    <option value={270}>4:30</option>
+                  </select>
+                </section>
+              </div>
 
-            <div className="text-sm font-bold mt-2">スナップ</div>
-            <label className="flex items-center gap-2">
-              <span>単位:</span>
-              <select
-                value={snapPreset}
-                onChange={(e) =>
-                  setSnapPreset(e.target.value as 'off' | '0.5' | '0.1' | '0.05' | '0.033')
-                }
-                className="border rounded p-1"
+              <div className="space-y-4">
+                <section className="rounded border border-gray-200 p-3 space-y-2">
+                  <div className="text-sm font-bold">スナップ</div>
+                  <label className="flex items-center gap-2">
+                    <span>単位:</span>
+                    <select
+                      value={snapPreset}
+                      onChange={(e) =>
+                        setSnapPreset(e.target.value as 'off' | '0.5' | '0.1' | '0.05' | '0.033')
+                      }
+                      className="border rounded p-1"
+                    >
+                      <option value="off">OFF</option>
+                      <option value="0.5">0.5s</option>
+                      <option value="0.1">0.1s</option>
+                      <option value="0.05">0.05s</option>
+                      <option value="0.033">0.033s</option>
+                    </select>
+                  </label>
+                </section>
+
+                <section className="rounded border border-gray-200 p-3 space-y-2">
+                  <div className="text-sm font-bold">ショートカットキー</div>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">元に戻す</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.undo}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, undo: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Z' : 'Ctrl+Z'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">やり直す</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.redo}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, redo: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">スキル追加</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.addSkill}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, addSkill: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+A' : 'Ctrl+Shift+A'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">バーを左へ</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.movePlayheadLeft}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, movePlayheadLeft: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+ArrowLeft' : 'Ctrl+ArrowLeft'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">バーを右へ</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.movePlayheadRight}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, movePlayheadRight: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+ArrowRight' : 'Ctrl+ArrowRight'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">カット</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.cut}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, cut: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+X' : 'Ctrl+X'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">コピー</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.copy}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, copy: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+C' : 'Ctrl+C'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">ペースト</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.paste}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, paste: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+V' : 'Ctrl+V'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">削除</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.delete}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, delete: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Backspace' : 'Delete'}
+                    />
+                  </label>
+                  <p className="text-xs text-gray-500">
+                    入力欄をクリックしてキーを押してください（例: {isMacPlatform ? 'Cmd+Z' : 'Ctrl+Z'}）。
+                  </p>
+                </section>
+
+                <section className="rounded border border-gray-200 p-3 space-y-2">
+                  <div className="text-sm font-bold">デフォルトスキルレベル</div>
+                  <label className="flex items-center gap-2">
+                    <span>EX:</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={defaultLevels.ex}
+                      onChange={(e) =>
+                        setDefaultLevels({ ...defaultLevels, ex: parseInt(e.target.value) || 1 })
+                      }
+                      className="border rounded p-1 w-16"
+                    />
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <span>NS:</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={defaultLevels.normal}
+                      onChange={(e) =>
+                        setDefaultLevels({ ...defaultLevels, normal: parseInt(e.target.value) || 1 })
+                      }
+                      className="border rounded p-1 w-16"
+                    />
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <span>PS:</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={defaultLevels.passive}
+                      onChange={(e) =>
+                        setDefaultLevels({ ...defaultLevels, passive: parseInt(e.target.value) || 1 })
+                      }
+                      className="border rounded p-1 w-16"
+                    />
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <span>SS:</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={defaultLevels.sub}
+                      onChange={(e) =>
+                        setDefaultLevels({ ...defaultLevels, sub: parseInt(e.target.value) || 1 })
+                      }
+                      className="border rounded p-1 w-16"
+                    />
+                  </label>
+                </section>
+
+                <section className="rounded border border-gray-200 p-3 space-y-2">
+                  <div className="text-sm font-bold">オブジェクト色</div>
+                  <table className="text-sm border-collapse">
+                    <thead>
+                      <tr>
+                        <th className="text-left"></th>
+                        <th className="px-1">着弾まで</th>
+                        <th className="px-1">モーション終了まで</th>
+                        <th className="px-1">スキル終了まで</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(['ex', 'normal'] as const).map((t) => (
+                        <tr key={t}>
+                          <th className="text-left px-1">{t === 'ex' ? 'EX' : 'NS'}</th>
+                          {(['travel', 'motion', 'rest'] as const).map((p) => (
+                            <td key={p} className="px-1 space-x-1">
+                              <input
+                                type="color"
+                                value={skillColors[t][p].color}
+                                onChange={(e) =>
+                                  setSkillColors({
+                                    ...skillColors,
+                                    [t]: {
+                                      ...skillColors[t],
+                                      [p]: {
+                                        ...skillColors[t][p],
+                                        color: e.target.value,
+                                      },
+                                    },
+                                  })
+                                }
+                              />
+                              <input
+                                type="number"
+                                min="0"
+                                max="1"
+                                step="0.05"
+                                value={skillColors[t][p].alpha}
+                                onChange={(e) =>
+                                  setSkillColors({
+                                    ...skillColors,
+                                    [t]: {
+                                      ...skillColors[t],
+                                      [p]: {
+                                        ...skillColors[t][p],
+                                        alpha: parseFloat(e.target.value) || 0,
+                                      },
+                                    },
+                                  })
+                                }
+                                className="w-16 border rounded p-1"
+                              />
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </section>
+
+                {rowStudents.some((id) => id.startsWith('enemy:')) && (
+                  <section className="rounded border border-gray-200 p-3 space-y-2">
+                    <div className="text-sm font-bold">デフォルトターゲット</div>
+                    <label className="flex items-center gap-2">
+                      <span>攻撃:</span>
+                      <select
+                        value={defaultTargets.attack}
+                        onChange={(e) =>
+                          setDefaultTargets({ ...defaultTargets, attack: parseInt(e.target.value) })
+                        }
+                        className="border rounded p-1 w-24"
+                      >
+                        {rowStudents.map((id, idx) => {
+                          if (!id.startsWith('enemy:')) return null
+                          const en = enemies.find((e) => `enemy:${e.id}` === id)
+                          return (
+                            <option key={idx} value={idx}>
+                              {en ? en.name : `敵${idx + 1}`}
+                            </option>
+                          )
+                        })}
+                      </select>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <span>デバフ:</span>
+                      <select
+                        value={defaultTargets.debuff}
+                        onChange={(e) =>
+                          setDefaultTargets({ ...defaultTargets, debuff: parseInt(e.target.value) })
+                        }
+                        className="border rounded p-1 w-24"
+                      >
+                        {rowStudents.map((id, idx) => {
+                          if (!id.startsWith('enemy:')) return null
+                          const en = enemies.find((e) => `enemy:${e.id}` === id)
+                          return (
+                            <option key={idx} value={idx}>
+                              {en ? en.name : `敵${idx + 1}`}
+                            </option>
+                          )
+                        })}
+                      </select>
+                    </label>
+                  </section>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => setShowSettings(false)}
+                className="border px-3 py-1 bg-blue-500 text-white rounded"
               >
-                <option value="off">OFF</option>
-                <option value="0.5">0.5s</option>
-                <option value="0.1">0.1s</option>
-                <option value="0.05">0.05s</option>
-                <option value="0.033">0.033s</option>
-              </select>
-            </label>
-
-            <div className="text-sm font-bold mt-2">ショートカットキー</div>
-            <label className="flex items-center gap-2 text-sm">
-              <span className="w-24">元に戻す</span>
-              <input
-                type="text"
-                value={shortcutSettings.undo}
-                onKeyDown={(e) => {
-                  e.preventDefault()
-                  const next = formatShortcutFromEvent(e)
-                  if (next === null) return
-                  setShortcutSettings((prev) => ({ ...prev, undo: next }))
-                }}
-                readOnly
-                className="border rounded p-1 flex-1"
-                placeholder={isMacPlatform ? 'Cmd+Z' : 'Ctrl+Z'}
-              />
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <span className="w-24">やり直す</span>
-              <input
-                type="text"
-                value={shortcutSettings.redo}
-                onKeyDown={(e) => {
-                  e.preventDefault()
-                  const next = formatShortcutFromEvent(e)
-                  if (next === null) return
-                  setShortcutSettings((prev) => ({ ...prev, redo: next }))
-                }}
-                readOnly
-                className="border rounded p-1 flex-1"
-                placeholder={isMacPlatform ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z'}
-              />
-            </label>
-            <p className="text-xs text-gray-500">
-              入力欄をクリックしてキーを押してください（例: {isMacPlatform ? 'Cmd+Z' : 'Ctrl+Z'}）。
-            </p>
-
-            <div className="border-t my-2" />
-
-            <div className="text-sm font-bold">デフォルトスキルレベル</div>
-            <label className="flex items-center gap-2">
-              <span>EX:</span>
-              <input
-                type="number"
-                min="1"
-                max="10"
-                value={defaultLevels.ex}
-                onChange={(e) =>
-                  setDefaultLevels({ ...defaultLevels, ex: parseInt(e.target.value) || 1 })
-                }
-                className="border rounded p-1 w-16"
-              />
-            </label>
-            <label className="flex items-center gap-2">
-              <span>NS:</span>
-              <input
-                type="number"
-                min="1"
-                max="10"
-                value={defaultLevels.normal}
-                onChange={(e) =>
-                  setDefaultLevels({ ...defaultLevels, normal: parseInt(e.target.value) || 1 })
-                }
-                className="border rounded p-1 w-16"
-              />
-            </label>
-            <label className="flex items-center gap-2">
-              <span>PS:</span>
-              <input
-                type="number"
-                min="1"
-                max="10"
-                value={defaultLevels.passive}
-                onChange={(e) =>
-                  setDefaultLevels({ ...defaultLevels, passive: parseInt(e.target.value) || 1 })
-                }
-                className="border rounded p-1 w-16"
-              />
-            </label>
-            <label className="flex items-center gap-2">
-              <span>SS:</span>
-              <input
-                type="number"
-                min="1"
-                max="10"
-                value={defaultLevels.sub}
-                onChange={(e) =>
-                  setDefaultLevels({ ...defaultLevels, sub: parseInt(e.target.value) || 1 })
-                }
-                className="border rounded p-1 w-16"
-              />
-            </label>
-            <div className="text-sm font-bold mt-2">TL長さ</div>
-            <select
-              value={totalSeconds}
-              onChange={(e) => setTotalSeconds(parseInt(e.target.value))}
-              className="border rounded p-1"
-            >
-              <option value={180}>3:00</option>
-              <option value={240}>4:00</option>
-              <option value={270}>4:30</option>
-            </select>
-            <div className="text-sm font-bold mt-2">オブジェクト色</div>
-            <table className="text-sm border-collapse">
-              <thead>
-                <tr>
-                  <th className="text-left"></th>
-                  <th className="px-1">着弾まで</th>
-                  <th className="px-1">モーション終了まで</th>
-                  <th className="px-1">スキル終了まで</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(['ex', 'normal'] as const).map((t) => (
-                  <tr key={t}>
-                    <th className="text-left px-1">{t === 'ex' ? 'EX' : 'NS'}</th>
-                    {(['travel', 'motion', 'rest'] as const).map((p) => (
-                      <td key={p} className="px-1 space-x-1">
-                        <input
-                          type="color"
-                          value={skillColors[t][p].color}
-                          onChange={(e) =>
-                            setSkillColors({
-                              ...skillColors,
-                              [t]: {
-                                ...skillColors[t],
-                                [p]: {
-                                  ...skillColors[t][p],
-                                  color: e.target.value,
-                                },
-                              },
-                            })
-                          }
-                        />
-                        <input
-                          type="number"
-                          min="0"
-                          max="1"
-                          step="0.05"
-                          value={skillColors[t][p].alpha}
-                          onChange={(e) =>
-                            setSkillColors({
-                              ...skillColors,
-                              [t]: {
-                                ...skillColors[t],
-                                [p]: {
-                                  ...skillColors[t][p],
-                                  alpha: parseFloat(e.target.value) || 0,
-                                },
-                              },
-                            })
-                          }
-                          className="w-16 border rounded p-1"
-                        />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {rowStudents.some((id) => id.startsWith('enemy:')) && (
-              <>
-                <div className="text-sm font-bold mt-2">デフォルトターゲット</div>
-                <label className="flex items-center gap-2">
-                  <span>攻撃:</span>
-                  <select
-                    value={defaultTargets.attack}
-                    onChange={(e) =>
-                      setDefaultTargets({ ...defaultTargets, attack: parseInt(e.target.value) })
-                    }
-                    className="border rounded p-1 w-24"
-                  >
-                    {rowStudents.map((id, idx) => {
-                      if (!id.startsWith('enemy:')) return null
-                      const en = enemies.find((e) => `enemy:${e.id}` === id)
-                      return (
-                        <option key={idx} value={idx}>
-                          {en ? en.name : `敵${idx + 1}`}
-                        </option>
-                      )
-                    })}
-                  </select>
-                </label>
-                <label className="flex items-center gap-2">
-                  <span>デバフ:</span>
-                  <select
-                    value={defaultTargets.debuff}
-                    onChange={(e) =>
-                      setDefaultTargets({ ...defaultTargets, debuff: parseInt(e.target.value) })
-                    }
-                    className="border rounded p-1 w-24"
-                  >
-                    {rowStudents.map((id, idx) => {
-                      if (!id.startsWith('enemy:')) return null
-                      const en = enemies.find((e) => `enemy:${e.id}` === id)
-                      return (
-                        <option key={idx} value={idx}>
-                          {en ? en.name : `敵${idx + 1}`}
-                        </option>
-                      )
-                    })}
-                  </select>
-                </label>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={() => setShowSettings(false)}
-              className="border px-2 py-1 bg-blue-500 text-white rounded"
-            >
-              OK
-            </button>
+                OK
+              </button>
+            </div>
           </div>
         </div>
           )}
 
       {showAlignModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center tl-modal-backdrop"
           onClick={() => setShowAlignModal(false)}
         >
           <div
-            className="border p-4 rounded bg-white w-80 space-y-2"
+            className="border p-4 rounded bg-white w-80 space-y-2 tl-modal-panel"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="font-bold">整列（選択したスキル）</div>
@@ -4873,11 +5157,11 @@ function resolveBuffText(
 
       {showHistoryModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center tl-modal-backdrop"
           onClick={() => setShowHistoryModal(false)}
         >
           <div
-            className="border p-4 rounded bg-white w-[420px] space-y-2"
+            className="border p-4 rounded bg-white w-[420px] space-y-2 tl-modal-panel"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="font-bold">履歴</div>
@@ -4924,11 +5208,11 @@ function resolveBuffText(
 
       {showExTemplateModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center tl-modal-backdrop"
           onClick={() => setShowExTemplateModal(false)}
         >
           <div
-            className="border p-4 rounded bg-white w-[420px] space-y-2"
+            className="border p-4 rounded bg-white w-[420px] space-y-2 tl-modal-panel"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="font-bold">EXテンプレ生成</div>
@@ -5096,7 +5380,7 @@ function resolveBuffText(
           return (
             <div className="fixed bottom-2 left-2 right-2 z-[55] pointer-events-none">
               <div
-                className="border rounded bg-white shadow pointer-events-auto overflow-hidden mx-auto"
+                className="border rounded bg-white shadow pointer-events-auto overflow-hidden mx-auto tl-popover"
                 style={widthStyle}
               >
                 <div className="flex items-center justify-between gap-2 px-2 py-1 border-b bg-gray-50 flex-none">
@@ -5138,11 +5422,11 @@ const size = pluginWindowSizeMap[key] ?? defaultSize
 const winStyle: React.CSSProperties = { width: `${size.w}px`, height: `${size.h}px` }
 return (
             <div
-              className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center"
+              className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center tl-modal-backdrop"
               onClick={() => setOpenPluginWindow(null)}
             >
               <div
-                className="border rounded bg-white shadow p-2 max-w-[95vw] max-h-[90vh] flex flex-col min-h-[240px] relative"
+                className="border rounded bg-white shadow p-2 max-w-[95vw] max-h-[90vh] flex flex-col min-h-[240px] relative tl-modal-panel"
                 style={winStyle}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -5177,14 +5461,14 @@ return (
 
       {showPluginModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center tl-modal-backdrop"
           onClick={() => {
             setPluginError(null)
             setShowPluginModal(false)
           }}
         >
           <div
-            className="border p-4 rounded bg-white w-[780px] max-w-[95vw] space-y-3"
+            className="border p-4 rounded bg-white w-[780px] max-w-[95vw] space-y-3 tl-modal-panel"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -5566,6 +5850,14 @@ setBuffPopup({
               コスト
             </div>
           )}
+          {showCostRecoveryRow && (
+            <div
+              className="border border-gray-500 flex items-center justify-center text-[10px] text-gray-600"
+              style={{ width: rowHeight, height: rowHeight }}
+            >
+              回復力
+            </div>
+          )}
         </div>
         <div
           ref={containerRef}
@@ -5579,7 +5871,29 @@ setBuffPopup({
           }}
         >
           <div className="relative" style={{ width: totalSeconds * timeScale }}>
-            <div className="flex text-xs h-5 relative">
+            <div
+              className="flex text-xs h-5 relative"
+              onPointerDown={(e) => {
+                if (e.pointerType === 'mouse' && e.button !== 0) return
+                timeTapRef.current = { x: e.clientX, y: e.clientY, moved: false }
+              }}
+              onPointerMove={(e) => {
+                const state = timeTapRef.current
+                if (!state) return
+                if (Math.abs(e.clientX - state.x) > 6 || Math.abs(e.clientY - state.y) > 6) {
+                  state.moved = true
+                }
+              }}
+              onPointerUp={(e) => {
+                const state = timeTapRef.current
+                timeTapRef.current = null
+                if (!state || state.moved || dragging || movingSkill) return
+                setPlayhead(getTimeFromClientX(e.clientX))
+              }}
+              onPointerCancel={() => {
+                timeTapRef.current = null
+              }}
+            >
               {Array.from({ length: totalSeconds / tickStep }, (_, idx) => {
                 const t = +(idx * tickStep).toFixed(1)
                 const ratio = t / labelStep
@@ -5659,10 +5973,26 @@ setBuffPopup({
                   if (containerRef.current) containerRef.current.scrollLeft = scrollLock.current
                 }
               }}
-              onTouchEnd={() => {
+              onTouchEnd={(e) => {
                 if (playheadTimer.current) {
                   clearTimeout(playheadTimer.current)
                   playheadTimer.current = null
+                }
+                const touch = e.changedTouches[0]
+                const canJump = !dragging && !movingSkill && !!touch
+                if (canJump) {
+                  const now = Date.now()
+                  const last = lastTimelineTapRef.current
+                  if (
+                    last &&
+                    now - last.at < 300 &&
+                    Math.hypot(touch.clientX - last.x, touch.clientY - last.y) < 12
+                  ) {
+                    setPlayhead(getTimeFromClientX(touch.clientX))
+                    lastTimelineTapRef.current = null
+                  } else {
+                    lastTimelineTapRef.current = { at: now, x: touch.clientX, y: touch.clientY }
+                  }
                 }
                 setDragging(false)
               }}
@@ -5672,6 +6002,10 @@ setBuffPopup({
                   playheadTimer.current = null
                 }
                 setDragging(false)
+              }}
+              onDoubleClick={(e) => {
+                if (dragging || movingSkill) return
+                setPlayhead(getTimeFromClientX(e.clientX))
               }}
             >
               <div
@@ -6087,7 +6421,7 @@ setBuffPopup({
                       }`}
                       style={{
                         left: item.time * timeScale,
-                        top: rows * rowHeight,
+                        top: costRowIndex * rowHeight,
                         width: Math.max(timeScale * 0.4, 6),
                         height: rowHeight - 2,
                         touchAction: 'pan-x',
@@ -6097,13 +6431,27 @@ setBuffPopup({
                     </div>
                   )
                 })}
+              {showCostRecoveryRow &&
+                costRecoverySegments.map((segment, index) => (
+                  <div
+                    key={`cost-recovery-${segment.start}-${index}`}
+                    className="absolute bg-yellow-400/80 border border-yellow-500 text-[9px] text-black px-1 overflow-hidden z-10"
+                    style={{
+                      left: segment.start * timeScale,
+                      top: recoveryRowIndex * rowHeight,
+                      width: Math.max(segment.duration * timeScale, 6),
+                      height: rowHeight - 2,
+                      touchAction: 'pan-x',
+                    }}
+                  />
+                ))}
             </div>
           </div>
         </div>
       </div>
       {menuInfo && (
         <div
-          className="fixed bg-white border rounded shadow text-sm z-50"
+          className="fixed bg-white border rounded shadow text-sm z-50 tl-popover"
           style={{ left: menuInfo.x, top: menuInfo.y }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -6121,7 +6469,7 @@ setBuffPopup({
       )}
       {eventMenu && (
         <div
-          className="fixed bg-white border rounded shadow text-sm z-50"
+          className="fixed bg-white border rounded shadow text-sm z-50 tl-popover"
           style={{ left: eventMenu.x, top: eventMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -6248,7 +6596,7 @@ setBuffPopup({
       )}
       {playheadMenu && (
         <div
-          className="fixed bg-white border rounded shadow text-sm z-50"
+          className="fixed bg-white border rounded shadow text-sm z-50 tl-popover"
           style={{ left: playheadMenu.x, top: playheadMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -6298,7 +6646,7 @@ setBuffPopup({
       )}
       {buffMenu && (
         <div
-          className="fixed bg-white border rounded shadow text-sm z-50"
+          className="fixed bg-white border rounded shadow text-sm z-50 tl-popover"
           style={{ left: buffMenu.x, top: buffMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -6333,7 +6681,7 @@ setBuffPopup({
       )}
       {buffPopup && (
         <div
-          className="fixed bg-white border rounded shadow text-sm z-50 px-2 py-1"
+          className="fixed bg-white border rounded shadow text-sm z-50 px-2 py-1 tl-popover"
           style={{ left: buffPopup.x, top: buffPopup.y }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -6359,7 +6707,7 @@ setBuffPopup({
       )}
       {skillPopup && (
         <div
-          className="fixed bg-white border rounded shadow text-sm z-50 px-2 py-1"
+          className="fixed bg-white border rounded shadow text-sm z-50 px-2 py-1 tl-popover"
           style={{ left: skillPopup.x, top: skillPopup.y }}
           onClick={(e) => e.stopPropagation()}
         >
