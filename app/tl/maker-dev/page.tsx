@@ -539,6 +539,7 @@ export default function TLMakerPage() {
   const [showImport, setShowImport] = useState(false)
   const [squads, setSquads] = useState<{ name: string; members: string[] }[]>([])
   const [showMenu, setShowMenu] = useState(false)
+  const [showAddRowMenu, setShowAddRowMenu] = useState(false)
   const [selectedType, setSelectedType] = useState<'skill' | 'event' | null>(null)
   const [skillKind, setSkillKind] = useState<'ex' | 'normal'>('ex')
   const [timeScale, setTimeScale] = useState(20) // px per second
@@ -559,6 +560,12 @@ export default function TLMakerPage() {
   const [playheadMenu, setPlayheadMenu] = useState<{ x: number; y: number } | null>(null)
   const timeTapRef = useRef<{ x: number; y: number; moved: boolean } | null>(null)
   const lastTimelineTapRef = useRef<{ at: number; x: number; y: number } | null>(null)
+  const [costDetailPopup, setCostDetailPopup] = useState<{
+    x: number
+    y: number
+    title: string
+    groups: Array<{ title?: string; rows: Array<{ label: string; value: string }> }>
+  } | null>(null)
   const [groups, setGroups] = useState<SquadGroup[]>([])
   const [selectedGroup, setSelectedGroup] = useState<SquadGroup | null>(null)
   const [squadIndex, setSquadIndex] = useState(0)
@@ -1563,8 +1570,10 @@ useEffect(() => {
     if (buffMenu) setBuffMenu(null)
     if (buffPopup) setBuffPopup(null)
     if (skillPopup) setSkillPopup(null)
+    if (costDetailPopup) setCostDetailPopup(null)
     if (moveModeSkill !== null) setMoveModeSkill(null)
     setShowMenu(false)
+    setShowAddRowMenu(false)
     setShowTools(false)
     setShowSquadMenu(false)
     setShowGroupMenu(false)
@@ -1577,12 +1586,14 @@ useEffect(() => {
     setShowEditMenu(false)
     setShowTools(false)
     setShowFileMenu(false)
+    setShowAddRowMenu(false)
     setShowSquadMenu(false)
     setShowGroupMenu(false)
     setShowSettings(false)
     if (buffMenu) setBuffMenu(null)
     if (buffPopup) setBuffPopup(null)
     if (skillPopup) setSkillPopup(null)
+    if (costDetailPopup) setCostDetailPopup(null)
     if (moveModeSkill !== null) setMoveModeSkill(null)
   }
 
@@ -2176,6 +2187,12 @@ useEffect(() => {
     const str = s.toFixed(3).padStart(6, '0')
     return `${m}:${str}`
   }
+
+  const buildDetailRows = (detail: Record<string, string | number | boolean>) =>
+    Object.entries(detail).map(([key, value]) => ({
+      label: key,
+      value: String(value),
+    }))
 
   const normalizeShortcut = (raw: string) => raw.replace(/\s+/g, '').toLowerCase()
 
@@ -2817,6 +2834,9 @@ useEffect(() => {
         {
           start: trigger,
           duration: adjustedDuration,
+          amount,
+          rawDuration: duration,
+          applyDurationBonus,
         },
       ]
     })
@@ -2826,9 +2846,16 @@ useEffect(() => {
   const rows = rowStudents.length
   const showCostRow = showCostLines && costDetailItems.length > 0
   const showCostRecoveryRow = showCostLines && costRecoverySegments.length > 0
-  const displayRows = rows + (showCostRow ? 1 : 0) + (showCostRecoveryRow ? 1 : 0)
-  const costRowIndex = rows
-  const recoveryRowIndex = rows + (showCostRow ? 1 : 0)
+  const FIXED_COST_ROW_INDEX = 6
+  const FIXED_RECOVERY_ROW_INDEX = 7
+  const extraRowMax = showCostRecoveryRow
+    ? FIXED_RECOVERY_ROW_INDEX + 1
+    : showCostRow
+      ? FIXED_COST_ROW_INDEX + 1
+      : rows
+  const displayRows = Math.max(rows, extraRowMax)
+  const costRowIndex = FIXED_COST_ROW_INDEX
+  const recoveryRowIndex = FIXED_RECOVERY_ROW_INDEX
 
   const currentCost = useMemo(() => {
   if (!initialized) return 0
@@ -4267,6 +4294,15 @@ function resolveBuffText(
                 />
                 <span>TLをテキスト表示</span>
               </label>
+              {(costDetailItems.length > 0 || costRecoverySegments.length > 0) && (
+                <button
+                  type="button"
+                  onClick={() => setShowCostLines((prev) => !prev)}
+                  className="block w-full text-left px-2 py-1 hover:bg-gray-200 whitespace-nowrap"
+                >
+                  {showCostLines ? 'コスト詳細を隠す' : 'コスト詳細を表示'}
+                </button>
+              )}
             </div>
           )}
           {showSquadMenu && selectedGroup && selectedGroup.squads.length > 1 && (
@@ -5717,68 +5753,82 @@ return (
       <div className="flex relative" ref={registerBlockRef('default:main')} style={getBlockStyle('default:main', 10, 1200)}>
         {renderBlockHandle('default:main', 1200)}
         {renderBlockResizeHandle('default:main', 1200, 520)}
-        {(showTextTL || costDetailItems.length > 0) && (
+        {showTextTL && (
           <div className="mr-2 flex flex-col gap-2">
-            {showTextTL && (
-              <textarea
-                className="text-xs font-mono flex-shrink-0 border rounded p-1"
-                rows={rows}
-                value={textTL}
-                onChange={(e) => setTextTL(e.target.value)}
-              />
-            )}
-            {costDetailItems.length > 0 && (
-              <div className="space-y-2">
-                <button
-                  type="button"
-                  className="text-xs text-blue-600 underline text-left"
-                  onClick={() => setShowCostLines((prev) => !prev)}
-                >
-                  {showCostLines ? 'コスト詳細を隠す' : 'コスト詳細を表示'}
-                </button>
-                {showCostLines && (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full border border-gray-200 text-xs">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="border border-gray-200 px-2 py-1 text-left">時間</th>
-                          <th className="border border-gray-200 px-2 py-1 text-left">種類</th>
-                          <th className="border border-gray-200 px-2 py-1 text-left">詳細</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {costDetailItems.map((item, index) => (
-                          <tr key={`${item.kind}-${item.time}-${index}`}>
-                            <td className="border border-gray-200 px-2 py-1">
-                              {formatRemain(item.time)}
-                            </td>
-                            <td className="border border-gray-200 px-2 py-1">{item.kind}</td>
-                            <td className="border border-gray-200 px-2 py-1">
-                              <div className="grid grid-cols-[auto,1fr] gap-x-2 gap-y-1">
-                                {Object.entries(item.detail).map(([key, value]) => (
-                                  <Fragment key={key}>
-                                    <div className="text-gray-500">{key}</div>
-                                    <div className="break-all">{String(value)}</div>
-                                  </Fragment>
-                                ))}
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )}
+            <textarea
+              className="text-xs font-mono flex-shrink-0 border rounded p-1"
+              rows={rows}
+              value={textTL}
+              onChange={(e) => setTextTL(e.target.value)}
+            />
           </div>
         )}
         <div className="flex gap-0 max-h-96 overflow-y-hidden touch-pan-x overscroll-none select-none">
           <div className="flex flex-col">
             <div className="h-5" />
-          {rowStudents.map((id, i) => {
+          {Array.from({ length: displayRows }, (_, i) => {
+            if (showCostRow && i === costRowIndex) {
+              return (
+                <div
+                  key={`cost-label-${i}`}
+                  className="border border-gray-500 flex items-center justify-center text-[10px] text-gray-600 cursor-pointer"
+                  style={{ width: rowHeight, height: rowHeight }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setCostDetailPopup({
+                      x: e.clientX,
+                      y: e.clientY,
+                      title: 'コスト詳細',
+                      groups: costDetailItems.map((item) => ({
+                        title: `${formatRemain(item.time)} ${item.kind}`,
+                        rows: buildDetailRows(item.detail),
+                      })),
+                    })
+                  }}
+                >
+                  コスト
+                </div>
+              )
+            }
+            if (showCostRecoveryRow && i === recoveryRowIndex) {
+              return (
+                <div
+                  key={`recovery-label-${i}`}
+                  className="border border-gray-500 flex items-center justify-center text-[10px] text-gray-600 cursor-pointer"
+                  style={{ width: rowHeight, height: rowHeight }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setCostDetailPopup({
+                      x: e.clientX,
+                      y: e.clientY,
+                      title: '回復力詳細',
+                      groups: costRecoverySegments.map((seg) => ({
+                        title: `開始 ${formatRemain(seg.start)}`,
+                        rows: buildDetailRows({
+                          amount: Number(seg.amount.toFixed(1)),
+                          duration: Number(seg.rawDuration.toFixed(2)),
+                          adjustedDuration: Number(seg.duration.toFixed(2)),
+                          applyDurationBonus: seg.applyDurationBonus,
+                        }),
+                      })),
+                    })
+                  }}
+                >
+                  回復力
+                </div>
+              )
+            }
+            if (i >= rowStudents.length) {
+              return (
+                <div
+                  key={`empty-${i}`}
+                  className="border border-gray-500"
+                  style={{ width: rowHeight, height: rowHeight }}
+                />
+              )
+            }
+            const id = rowStudents[i]
             const st = students.find((s) => s.id === rowStudents[i])
-if (!st) return
             const enemy = enemies.find((e) => `enemy:${e.id}` === id)
             const handleContext = (e: React.MouseEvent) => {
               e.preventDefault()
@@ -5786,12 +5836,14 @@ if (!st) return
             }
             let touchTimer: NodeJS.Timeout | null = null
             const handleTouchStart = (e: React.TouchEvent) => {
+              e.stopPropagation()
               touchTimer = setTimeout(() => {
                 const t = e.touches[0]
                 setMenuInfo({ index: i, x: t.clientX, y: t.clientY })
               }, 600)
             }
-            const clearTouch = () => {
+            const clearTouch = (e: React.TouchEvent) => {
+              e.stopPropagation()
               if (touchTimer) clearTimeout(touchTimer)
             }
             return (
@@ -5800,6 +5852,7 @@ if (!st) return
                 onContextMenu={handleContext}
                 onClick={(e) => {
                   e.stopPropagation()
+                  if (!st) return
                   const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
                   const buffs = getActiveBuffs(i, playhead)
                   const stats = st ? getStats(st.id) : undefined
@@ -5842,22 +5895,47 @@ setBuffPopup({
               </div>
             )
           })}
-          {showCostRow && (
-            <div
-              className="border border-gray-500 flex items-center justify-center text-[10px] text-gray-600"
+          <div className="relative mt-2 flex items-center justify-center">
+            <button
+              type="button"
+              className="border border-gray-500 rounded flex items-center justify-center text-sm text-gray-700 bg-white/80"
               style={{ width: rowHeight, height: rowHeight }}
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowAddRowMenu((prev) => !prev)
+              }}
+              aria-label="行を追加"
             >
-              コスト
-            </div>
-          )}
-          {showCostRecoveryRow && (
-            <div
-              className="border border-gray-500 flex items-center justify-center text-[10px] text-gray-600"
-              style={{ width: rowHeight, height: rowHeight }}
-            >
-              回復力
-            </div>
-          )}
+              ＋
+            </button>
+            {showAddRowMenu && (
+              <div
+                className="absolute left-full ml-2 border bg-white rounded shadow z-20 text-sm w-32 tl-popover"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    addRow()
+                    setShowAddRowMenu(false)
+                  }}
+                  className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                >
+                  行追加
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEnemyModal(true)
+                    setShowAddRowMenu(false)
+                  }}
+                  className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                >
+                  敵行追加
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div
           ref={containerRef}
@@ -5887,6 +5965,7 @@ setBuffPopup({
               onPointerUp={(e) => {
                 const state = timeTapRef.current
                 timeTapRef.current = null
+                if (e.target !== e.currentTarget) return
                 if (!state || state.moved || dragging || movingSkill) return
                 setPlayhead(getTimeFromClientX(e.clientX))
               }}
@@ -5974,6 +6053,14 @@ setBuffPopup({
                 }
               }}
               onTouchEnd={(e) => {
+                if (e.target !== e.currentTarget) {
+                  if (playheadTimer.current) {
+                    clearTimeout(playheadTimer.current)
+                    playheadTimer.current = null
+                  }
+                  setDragging(false)
+                  return
+                }
                 if (playheadTimer.current) {
                   clearTimeout(playheadTimer.current)
                   playheadTimer.current = null
@@ -6004,6 +6091,7 @@ setBuffPopup({
                 setDragging(false)
               }}
               onDoubleClick={(e) => {
+                if (e.target !== e.currentTarget) return
                 if (dragging || movingSkill) return
                 setPlayhead(getTimeFromClientX(e.clientX))
               }}
@@ -6069,6 +6157,7 @@ setBuffPopup({
               {markers.map((m) => {
                 let timer: NodeJS.Timeout | null = null
                 const startTouch = (e: React.TouchEvent) => {
+                  e.stopPropagation()
                   timer = setTimeout(() => {
                     const t = e.touches[0]
                     setSelected([{ type: 'marker', id: m.id }])
@@ -6126,9 +6215,18 @@ setBuffPopup({
                       e.preventDefault()
                       setEventMenu({ type: 'marker', id: m.id, x: e.clientX, y: e.clientY })
                     }}
+                    onDoubleClick={(e) => {
+                      e.stopPropagation()
+                    }}
                     onTouchStart={startTouch}
-                    onTouchEnd={clearTouch}
-                    onTouchCancel={clearTouch}
+                    onTouchEnd={(e) => {
+                      e.stopPropagation()
+                      clearTouch()
+                    }}
+                    onTouchCancel={(e) => {
+                      e.stopPropagation()
+                      clearTouch()
+                    }}
                   >
                     {m.show && (
                       <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-yellow-200 border px-1 rounded whitespace-nowrap text-xs">
@@ -6144,6 +6242,7 @@ setBuffPopup({
                 let startY = 0
                 let moved = false
                 const startTouch = (e: React.TouchEvent) => {
+                  e.stopPropagation()
                   startX = e.touches[0].clientX
                   startY = e.touches[0].clientY
                   moved = false
@@ -6159,6 +6258,7 @@ setBuffPopup({
                   }
                 }
                 const moveTouch = (e: React.TouchEvent) => {
+                  e.stopPropagation()
                   const clientX = e.touches[0].clientX
                   if (movingSkill && movingSkill.id === ev.id) {
                     const newStart = snapTime((clientX - movingSkill.offset) / timeScale)
@@ -6333,11 +6433,16 @@ setBuffPopup({
                     }}
                     onTouchStart={startTouch}
                     onTouchMove={moveTouch}
-                    onTouchEnd={() => {
+                    onTouchEnd={(e) => {
+                      e.stopPropagation()
                       clearTouch()
                     }}
-                    onTouchCancel={() => {
+                    onTouchCancel={(e) => {
+                      e.stopPropagation()
                       clearTouch()
+                    }}
+                    onDoubleClick={(e) => {
+                      e.stopPropagation()
                     }}
                   >
                     {(() => {
@@ -6426,6 +6531,20 @@ setBuffPopup({
                         height: rowHeight - 2,
                         touchAction: 'pan-x',
                       }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setCostDetailPopup({
+                          x: e.clientX,
+                          y: e.clientY,
+                          title: `${item.kind} 詳細`,
+                          groups: [
+                            {
+                              title: formatRemain(item.time),
+                              rows: buildDetailRows(item.detail),
+                            },
+                          ],
+                        })
+                      }}
                     >
                       <span className="relative z-10 pointer-events-none">{detail}</span>
                     </div>
@@ -6442,6 +6561,25 @@ setBuffPopup({
                       width: Math.max(segment.duration * timeScale, 6),
                       height: rowHeight - 2,
                       touchAction: 'pan-x',
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setCostDetailPopup({
+                        x: e.clientX,
+                        y: e.clientY,
+                        title: '回復力 詳細',
+                        groups: [
+                          {
+                            title: formatRemain(segment.start),
+                            rows: buildDetailRows({
+                              amount: Number(segment.amount.toFixed(1)),
+                              duration: Number(segment.rawDuration.toFixed(2)),
+                              adjustedDuration: Number(segment.duration.toFixed(2)),
+                              applyDurationBonus: segment.applyDurationBonus,
+                            }),
+                          },
+                        ],
+                      })
                     }}
                   />
                 ))}
@@ -6713,6 +6851,30 @@ setBuffPopup({
         >
           <div className="whitespace-pre-wrap mb-1">{skillPopup.text}</div>
           {skillPopup.target && <div>対象: {skillPopup.target}</div>}
+        </div>
+      )}
+      {costDetailPopup && (
+        <div
+          className="fixed bg-white border rounded shadow text-xs z-50 px-2 py-2 max-w-xs tl-popover"
+          style={{ left: costDetailPopup.x, top: costDetailPopup.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="font-semibold mb-1">{costDetailPopup.title}</div>
+          <div className="space-y-2">
+            {costDetailPopup.groups.map((group, idx) => (
+              <div key={`${group.title ?? 'group'}-${idx}`} className="space-y-1">
+                {group.title && <div className="text-[11px] text-gray-500">{group.title}</div>}
+                <div className="grid grid-cols-[auto,1fr] gap-x-2 gap-y-1">
+                  {group.rows.map((row) => (
+                    <Fragment key={`${row.label}-${row.value}`}>
+                      <div className="text-gray-500">{row.label}</div>
+                      <div className="break-all">{row.value}</div>
+                    </Fragment>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
       </div>
