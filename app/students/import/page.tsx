@@ -48,35 +48,84 @@ const parseNumber = (line: string, patterns: RegExp[]) => {
   return null
 }
 
+const normalizeText = (text: string) =>
+  text.replace(/\s+/g, '').replace(/[^\p{L}\p{N}★]/gu, '')
+
+const extractNearText = (text: string, name: string) => {
+  const index = text.indexOf(name)
+  if (index === -1) return text
+  const start = Math.max(0, index - 40)
+  const end = Math.min(text.length, index + name.length + 80)
+  return text.slice(start, end)
+}
+
+const extractLevel = (text: string) =>
+  parseNumber(text, [/L[Vv]\.?\s*(\d{1,3})/, /レベル\s*(\d{1,3})/])
+
+const extractStar = (text: string) => {
+  const direct = parseNumber(text, [/★\s*([1-5])/, /星\s*([1-5])/])
+  if (direct !== null) return direct
+  const stars = text.match(/★+/)
+  if (stars) return stars[0].length
+  return null
+}
+
 const parseEntries = (text: string, students: Student[]) => {
-  const lines = text
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-  const names = students
-    .map((s) => s.name)
-    .sort((a, b) => b.length - a.length)
+  const normalized = normalizeText(text)
   const results: ExtractedStudent[] = []
   const seen = new Set<string>()
 
-  for (const line of lines) {
-    const matchedName = names.find((name) => line.includes(name))
-    if (!matchedName) continue
-    const student = students.find((s) => s.name === matchedName)
-    if (!student || seen.has(student.id)) continue
-    const level = parseNumber(line, [/Lv\.?\s*(\d+)/i, /レベル\s*(\d+)/])
-    const star = parseNumber(line, [/★\s*(\d+)/, /星\s*(\d+)/])
+  const candidates = students
+    .map((s) => ({
+      ...s,
+      normalizedName: normalizeText(s.name),
+    }))
+    .sort((a, b) => b.normalizedName.length - a.normalizedName.length)
+
+  for (const student of candidates) {
+    if (!student.normalizedName) continue
+    if (!normalized.includes(student.normalizedName)) continue
+    if (seen.has(student.id)) continue
+    const nearText = extractNearText(text, student.name)
+    const level = extractLevel(nearText)
+    const star = extractStar(nearText)
     results.push({
       studentId: student.id,
-      name: matchedName,
+      name: student.name,
       level,
       star,
-      source: line,
+      source: nearText.trim(),
     })
     seen.add(student.id)
   }
 
   return results
+}
+
+const preprocessImage = async (file: File) => {
+  const bitmap = await createImageBitmap(file)
+  const scale = 2
+  const canvas = document.createElement('canvas')
+  canvas.width = bitmap.width * scale
+  canvas.height = bitmap.height * scale
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return file
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+  const data = imageData.data
+  const contrast = 1.25
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i]
+    const g = data[i + 1]
+    const b = data[i + 2]
+    const gray = 0.299 * r + 0.587 * g + 0.114 * b
+    const value = Math.min(255, Math.max(0, (gray - 128) * contrast + 128))
+    data[i] = value
+    data[i + 1] = value
+    data[i + 2] = value
+  }
+  ctx.putImageData(imageData, 0, 0)
+  return canvas
 }
 
 export default function StudentImportPage() {
@@ -121,25 +170,35 @@ export default function StudentImportPage() {
       const fileList = Array.from(files)
 
       try {
-        const { default: Tesseract } = await import('tesseract.js')
+        const { createWorker } = await import('tesseract.js')
         const nextTexts: string[] = []
         const nextEntries: ExtractedStudent[] = []
+        let currentIndex = 0
+        const worker = await createWorker('jpn+eng', 1, {
+          logger: (info: { progress?: number }) => {
+            if (typeof info.progress !== 'number') return
+            const base = currentIndex / fileList.length
+            setProgress(Math.min(1, base + info.progress / fileList.length))
+          },
+        })
+        await worker.setParameters({
+          tessedit_pageseg_mode: '6',
+          preserve_interword_spaces: '1',
+        })
 
-        for (let i = 0; i < fileList.length; i += 1) {
-          const file = fileList[i]
-          const result = await Tesseract.recognize(file, 'jpn+eng', {
-            logger: (info: { progress?: number }) => {
-              if (typeof info.progress === 'number') {
-                const base = i / fileList.length
-                const portion = info.progress / fileList.length
-                setProgress(Math.min(1, base + portion))
-              }
-            },
-          })
-          const text = result.data.text ?? ''
-          nextTexts.push(text)
-          nextEntries.push(...parseEntries(text, students))
-          setProgress((i + 1) / fileList.length)
+        try {
+          for (let i = 0; i < fileList.length; i += 1) {
+            currentIndex = i
+            const file = fileList[i]
+            const image = await preprocessImage(file)
+            const result = await worker.recognize(image)
+            const text = result.data.text ?? ''
+            nextTexts.push(text)
+            nextEntries.push(...parseEntries(text, students))
+            setProgress((i + 1) / fileList.length)
+          }
+        } finally {
+          await worker.terminate()
         }
 
         setRawTexts(nextTexts)
@@ -224,6 +283,9 @@ export default function StudentImportPage() {
         <h2 className="text-xl font-semibold">生徒データインポート</h2>
         <p className="text-sm text-gray-600">
           生徒データの画像をアップロードすると、OCRで生徒名と一部ステータスを抽出します。
+        </p>
+        <p className="text-xs text-gray-500">
+          生徒詳細（基本情報）画面のスクリーンショットを推奨します。
         </p>
       </div>
       <div className="border rounded p-4 space-y-3">
