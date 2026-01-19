@@ -524,13 +524,13 @@ export default function TLMakerPage() {
   const [start, setStart] = useState(0)
   const [end, setEnd] = useState(1)
   const [label, setLabel] = useState('')
-  const [skillCost, setSkillCost] = useState(0)
+  const [skillCost, setSkillCost] = useState<number | ''>(0)
   const [skillCostTouched, setSkillCostTouched] = useState(false)
   const [showCostDetails, setShowCostDetails] = useState(false)
   const [costRecoveryEnabled, setCostRecoveryEnabled] = useState(false)
-  const [costRecoveryAmount, setCostRecoveryAmount] = useState(0)
-  const [costRecoveryDuration, setCostRecoveryDuration] = useState(0)
-  const [costRecoveryTrigger, setCostRecoveryTrigger] = useState(0)
+  const [costRecoveryAmount, setCostRecoveryAmount] = useState<number | ''>(0)
+  const [costRecoveryDuration, setCostRecoveryDuration] = useState<number | ''>(0)
+  const [costRecoveryTrigger, setCostRecoveryTrigger] = useState<number | ''>(0)
   const [costRecoveryTriggerTouched, setCostRecoveryTriggerTouched] = useState(false)
   const [costRecoveryApplyBonus, setCostRecoveryApplyBonus] = useState(false)
   const [costRecoveryApplyBonusTouched, setCostRecoveryApplyBonusTouched] = useState(false)
@@ -2117,7 +2117,7 @@ useEffect(() => {
         skillKind === 'ex'
           ? Math.max(0, (st?.exMotionDuration || 0) - travel)
           : Math.max(0, (st?.normalMotionDuration || 0) - travel)
-      const costValue = skillCost
+      const costValue = skillCost === '' ? 0 : skillCost
       if (skillKind === 'ex' && waitCost && costValue > 0) {
         let t = s
         if (calcCost(t) < costValue) {
@@ -2170,7 +2170,11 @@ useEffect(() => {
       if (skillType === 'attack') target = defaultTargets.attack
       if (skillType === 'debuff') target = defaultTargets.debuff
       const triggerOffset = s - baseStart
-      const costRecoveryTriggerAdjusted = snapTime(costRecoveryTrigger + triggerOffset)
+      const costRecoveryTriggerValue =
+        costRecoveryTrigger === '' ? 0 : costRecoveryTrigger
+      const costRecoveryTriggerAdjusted = snapTime(
+        costRecoveryTriggerValue + triggerOffset
+      )
       setSkills([
         ...skills,
         {
@@ -2182,12 +2186,14 @@ useEffect(() => {
           travel,
           motion,
           type: skillKind,
-          cost: skillCost,
-          ...(costRecoveryEnabled && costRecoveryDuration > 0 && costRecoveryAmount !== 0
+          cost: costValue,
+          ...(costRecoveryEnabled &&
+          (costRecoveryDuration === '' ? 0 : costRecoveryDuration) > 0 &&
+          (costRecoveryAmount === '' ? 0 : costRecoveryAmount) !== 0
             ? {
                 costRecovery: {
-                  amount: costRecoveryAmount,
-                  duration: costRecoveryDuration,
+                  amount: costRecoveryAmount === '' ? 0 : costRecoveryAmount,
+                  duration: costRecoveryDuration === '' ? 0 : costRecoveryDuration,
                   trigger: costRecoveryTriggerAdjusted,
                   applyDurationBonus: costRecoveryApplyBonus,
                 },
@@ -4545,7 +4551,8 @@ function resolveBuffText(
                   value={skillCost}
                   onChange={(e) => {
                     setSkillCostTouched(true)
-                    setSkillCost(parseFloat(e.target.value) || 0)
+                    const value = e.target.value
+                    setSkillCost(value === '' ? '' : parseFloat(value))
                   }}
                   className="border rounded p-1 w-24"
                 />
@@ -4610,7 +4617,10 @@ function resolveBuffText(
                         <input
                           type="number"
                           value={costRecoveryAmount}
-                          onChange={(e) => setCostRecoveryAmount(parseFloat(e.target.value) || 0)}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            setCostRecoveryAmount(value === '' ? '' : parseFloat(value))
+                          }}
                           className="border rounded p-1 w-24"
                         />
                         <span className="text-[10px] text-gray-500">基礎値(700×6)に加算</span>
@@ -4620,7 +4630,10 @@ function resolveBuffText(
                         <input
                           type="number"
                           value={costRecoveryDuration}
-                          onChange={(e) => setCostRecoveryDuration(parseFloat(e.target.value) || 0)}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            setCostRecoveryDuration(value === '' ? '' : parseFloat(value))
+                          }}
                           className="border rounded p-1 w-24"
                         />
                       </label>
@@ -4631,7 +4644,8 @@ function resolveBuffText(
                           value={costRecoveryTrigger}
                           onChange={(e) => {
                             setCostRecoveryTriggerTouched(true)
-                            setCostRecoveryTrigger(parseFloat(e.target.value) || 0)
+                            const value = e.target.value
+                            setCostRecoveryTrigger(value === '' ? '' : parseFloat(value))
                           }}
                           className="border rounded p-1 w-24"
                         />
