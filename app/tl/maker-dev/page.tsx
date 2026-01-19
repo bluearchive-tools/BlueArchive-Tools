@@ -1117,6 +1117,19 @@ const startResizePluginWindow = useCallback(
   const undoStack = useRef<ProjectSnapshot[]>([])
   const redoStack = useRef<ProjectSnapshot[]>([])
   const isRestoring = useRef(false)
+  const isModalOpen =
+    showSaveModal ||
+    showCreateModal ||
+    showForm ||
+    showImport ||
+    showSettings ||
+    showAlignModal ||
+    showHistoryModal ||
+    showExTemplateModal ||
+    showPluginModal ||
+    !!openPluginWindow ||
+    showEnemyModal ||
+    aboutOpen
 
 useEffect(() => {
   const loaded = loadUserStatsFromLocalStorage()
@@ -1596,6 +1609,24 @@ useEffect(() => {
     if (costDetailPopup) setCostDetailPopup(null)
     if (moveModeSkill !== null) setMoveModeSkill(null)
   }
+
+  useEffect(() => {
+    if (!isModalOpen) return
+    setMenuInfo(null)
+    setEventMenu(null)
+    setPlayheadMenu(null)
+    setBuffMenu(null)
+    setBuffPopup(null)
+    setSkillPopup(null)
+    setCostDetailPopup(null)
+    setShowMenu(false)
+    setShowEditMenu(false)
+    setShowTools(false)
+    setShowFileMenu(false)
+    setShowSquadMenu(false)
+    setShowGroupMenu(false)
+    setShowAddRowMenu(false)
+  }, [isModalOpen])
 
   const addRow = () => setRowStudents((prev) => [...prev, ''])
 
@@ -2859,6 +2890,7 @@ useEffect(() => {
       ? FIXED_COST_ROW_INDEX + 1
       : rows
   const displayRows = Math.max(rows, extraRowMax)
+  const displayRowsWithAdd = displayRows + 1
   const costRowIndex = FIXED_COST_ROW_INDEX
   const recoveryRowIndex = FIXED_RECOVERY_ROW_INDEX
 
@@ -3768,7 +3800,7 @@ function resolveBuffText(
 
       {showSaveModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center tl-modal-backdrop"
+          className="fixed inset-0 z-[90] bg-black/50 flex items-center justify-center tl-modal-backdrop"
           onClick={() => setShowSaveModal(false)}
         >
           <div
@@ -3817,7 +3849,7 @@ function resolveBuffText(
 
       {showCreateModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 tl-modal-backdrop"
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 p-4 tl-modal-backdrop"
           onClick={() => setShowCreateModal(false)}
         >
           <div
@@ -4459,7 +4491,7 @@ function resolveBuffText(
       </div>
       {showForm && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center tl-modal-backdrop"
+          className="fixed inset-0 z-[90] bg-black/50 flex items-center justify-center tl-modal-backdrop"
           onClick={() => setShowForm(false)}
         >
           <div
@@ -4668,7 +4700,7 @@ function resolveBuffText(
 
       {showImport && squads.length > 0 && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center tl-modal-backdrop"
+          className="fixed inset-0 z-[90] bg-black/50 flex items-center justify-center tl-modal-backdrop"
           onClick={() => setShowImport(false)}
         >
           <div
@@ -4699,7 +4731,7 @@ function resolveBuffText(
 
       {showSettings && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center tl-modal-backdrop"
+          className="fixed inset-0 z-[90] bg-black/50 flex items-center justify-center tl-modal-backdrop"
           onClick={() => setShowSettings(false)}
         >
           <div
@@ -5165,7 +5197,7 @@ function resolveBuffText(
 
       {showAlignModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center tl-modal-backdrop"
+          className="fixed inset-0 z-[90] bg-black/50 flex items-center justify-center tl-modal-backdrop"
           onClick={() => setShowAlignModal(false)}
         >
           <div
@@ -5198,7 +5230,7 @@ function resolveBuffText(
 
       {showHistoryModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center tl-modal-backdrop"
+          className="fixed inset-0 z-[90] bg-black/50 flex items-center justify-center tl-modal-backdrop"
           onClick={() => setShowHistoryModal(false)}
         >
           <div
@@ -5249,7 +5281,7 @@ function resolveBuffText(
 
       {showExTemplateModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center tl-modal-backdrop"
+          className="fixed inset-0 z-[90] bg-black/50 flex items-center justify-center tl-modal-backdrop"
           onClick={() => setShowExTemplateModal(false)}
         >
           <div
@@ -5463,7 +5495,7 @@ const size = pluginWindowSizeMap[key] ?? defaultSize
 const winStyle: React.CSSProperties = { width: `${size.w}px`, height: `${size.h}px` }
 return (
             <div
-              className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center tl-modal-backdrop"
+              className="fixed inset-0 z-[95] bg-black/50 flex items-center justify-center tl-modal-backdrop"
               onClick={() => setOpenPluginWindow(null)}
             >
               <div
@@ -5502,7 +5534,7 @@ return (
 
       {showPluginModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center tl-modal-backdrop"
+          className="fixed inset-0 z-[90] bg-black/50 flex items-center justify-center tl-modal-backdrop"
           onClick={() => {
             setPluginError(null)
             setShowPluginModal(false)
@@ -5771,7 +5803,55 @@ return (
         <div className="flex gap-0 max-h-96 overflow-y-hidden touch-pan-x overscroll-none select-none">
           <div className="flex flex-col">
             <div className="h-5" />
-          {Array.from({ length: displayRows }, (_, i) => {
+          {Array.from({ length: displayRowsWithAdd }, (_, i) => {
+            if (i === displayRows) {
+              return (
+                <div
+                  key="add-row"
+                  className="border border-gray-500 flex items-center justify-center relative"
+                  style={{ width: rowHeight, height: rowHeight }}
+                >
+                  <button
+                    type="button"
+                    className="w-full h-full flex items-center justify-center text-sm text-gray-700"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowAddRowMenu((prev) => !prev)
+                    }}
+                    aria-label="行を追加"
+                  >
+                    ＋
+                  </button>
+                  {showAddRowMenu && (
+                    <div
+                      className="absolute left-full ml-2 border bg-white rounded shadow z-20 text-sm w-32 tl-popover"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          addRow()
+                          setShowAddRowMenu(false)
+                        }}
+                        className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                      >
+                        行追加
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowEnemyModal(true)
+                          setShowAddRowMenu(false)
+                        }}
+                        className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                      >
+                        敵行追加
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            }
             if (showCostRow && i === costRowIndex) {
               return (
                 <div
@@ -5900,47 +5980,6 @@ setBuffPopup({
               </div>
             )
           })}
-          <div className="relative flex items-center justify-center">
-            <button
-              type="button"
-              className="border border-gray-500 flex items-center justify-center text-sm text-gray-700 bg-white/80"
-              style={{ width: rowHeight, height: rowHeight }}
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowAddRowMenu((prev) => !prev)
-              }}
-              aria-label="行を追加"
-            >
-              ＋
-            </button>
-            {showAddRowMenu && (
-              <div
-                className="absolute left-full ml-2 border bg-white rounded shadow z-20 text-sm w-32 tl-popover"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    addRow()
-                    setShowAddRowMenu(false)
-                  }}
-                  className="block w-full text-left px-2 py-1 hover:bg-gray-200"
-                >
-                  行追加
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEnemyModal(true)
-                    setShowAddRowMenu(false)
-                  }}
-                  className="block w-full text-left px-2 py-1 hover:bg-gray-200"
-                >
-                  敵行追加
-                </button>
-              </div>
-            )}
-          </div>
         </div>
         <div
           ref={containerRef}
@@ -6007,7 +6046,7 @@ setBuffPopup({
               className="relative border bg-gray-900"
               style={{
                 width: '100%',
-                height: displayRows * rowHeight,
+                height: displayRowsWithAdd * rowHeight,
                 backgroundImage:
                   `repeating-linear-gradient(to right, #555 0, #555 1px, transparent 1px, transparent ${timeScale}px)` +
                   (timeScale >= 40
@@ -6191,7 +6230,7 @@ setBuffPopup({
                       left: m.time * timeScale,
                       top: 0,
                       width: Math.max(m.duration * timeScale, 4),
-                      height: displayRows * rowHeight,
+                      height: displayRowsWithAdd * rowHeight,
                       touchAction: 'pan-x',
                     }}
                     onClick={(e) => {
@@ -6593,7 +6632,7 @@ setBuffPopup({
       </div>
       {menuInfo && (
         <div
-          className="fixed bg-white border rounded shadow text-sm z-50 tl-popover"
+          className="fixed bg-white border rounded shadow text-sm z-40 tl-popover"
           style={{ left: menuInfo.x, top: menuInfo.y }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -6611,7 +6650,7 @@ setBuffPopup({
       )}
       {eventMenu && (
         <div
-          className="fixed bg-white border rounded shadow text-sm z-50 tl-popover"
+          className="fixed bg-white border rounded shadow text-sm z-40 tl-popover"
           style={{ left: eventMenu.x, top: eventMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -6738,7 +6777,7 @@ setBuffPopup({
       )}
       {playheadMenu && (
         <div
-          className="fixed bg-white border rounded shadow text-sm z-50 tl-popover"
+          className="fixed bg-white border rounded shadow text-sm z-40 tl-popover"
           style={{ left: playheadMenu.x, top: playheadMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -6788,7 +6827,7 @@ setBuffPopup({
       )}
       {buffMenu && (
         <div
-          className="fixed bg-white border rounded shadow text-sm z-50 tl-popover"
+          className="fixed bg-white border rounded shadow text-sm z-40 tl-popover"
           style={{ left: buffMenu.x, top: buffMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -6823,7 +6862,7 @@ setBuffPopup({
       )}
       {buffPopup && (
         <div
-          className="fixed bg-white border rounded shadow text-sm z-50 px-2 py-1 tl-popover"
+          className="fixed bg-white border rounded shadow text-sm z-40 px-2 py-1 tl-popover"
           style={{ left: buffPopup.x, top: buffPopup.y }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -6849,7 +6888,7 @@ setBuffPopup({
       )}
       {skillPopup && (
         <div
-          className="fixed bg-white border rounded shadow text-sm z-50 px-2 py-1 tl-popover"
+          className="fixed bg-white border rounded shadow text-sm z-40 px-2 py-1 tl-popover"
           style={{ left: skillPopup.x, top: skillPopup.y }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -6859,7 +6898,7 @@ setBuffPopup({
       )}
       {costDetailPopup && (
         <div
-          className="fixed bg-white border rounded shadow text-xs z-50 px-2 py-2 max-w-xs tl-popover"
+          className="fixed bg-white border rounded shadow text-xs z-40 px-2 py-2 max-w-xs tl-popover"
           style={{ left: costDetailPopup.x, top: costDetailPopup.y }}
           onClick={(e) => e.stopPropagation()}
         >
