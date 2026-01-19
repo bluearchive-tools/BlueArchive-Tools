@@ -2890,7 +2890,6 @@ useEffect(() => {
       ? FIXED_COST_ROW_INDEX + 1
       : rows
   const displayRows = Math.max(rows, extraRowMax)
-  const displayRowsWithAdd = displayRows + 1
   const costRowIndex = FIXED_COST_ROW_INDEX
   const recoveryRowIndex = FIXED_RECOVERY_ROW_INDEX
 
@@ -5801,57 +5800,9 @@ return (
           </div>
         )}
         <div className="flex gap-0 max-h-96 overflow-y-hidden touch-pan-x overscroll-none select-none">
-          <div className="flex flex-col">
+          <div className="flex flex-col relative">
             <div className="h-5" />
-          {Array.from({ length: displayRowsWithAdd }, (_, i) => {
-            if (i === displayRows) {
-              return (
-                <div
-                  key="add-row"
-                  className="border border-gray-500 flex items-center justify-center relative"
-                  style={{ width: rowHeight, height: rowHeight }}
-                >
-                  <button
-                    type="button"
-                    className="w-full h-full flex items-center justify-center text-sm text-gray-700"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setShowAddRowMenu((prev) => !prev)
-                    }}
-                    aria-label="行を追加"
-                  >
-                    ＋
-                  </button>
-                  {showAddRowMenu && (
-                    <div
-                      className="absolute left-full ml-2 border bg-white rounded shadow z-20 text-sm w-32 tl-popover"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          addRow()
-                          setShowAddRowMenu(false)
-                        }}
-                        className="block w-full text-left px-2 py-1 hover:bg-gray-200"
-                      >
-                        行追加
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowEnemyModal(true)
-                          setShowAddRowMenu(false)
-                        }}
-                        className="block w-full text-left px-2 py-1 hover:bg-gray-200"
-                      >
-                        敵行追加
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )
-            }
+          {Array.from({ length: displayRows }, (_, i) => {
             if (showCostRow && i === costRowIndex) {
               return (
                 <div
@@ -5980,6 +5931,49 @@ setBuffPopup({
               </div>
             )
           })}
+          <div
+            className="absolute left-0"
+            style={{ top: rowHeight * displayRows + 20, width: rowHeight, height: rowHeight }}
+          >
+            <button
+              type="button"
+              className="w-full h-full flex items-center justify-center text-sm text-gray-700 border border-gray-500"
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowAddRowMenu((prev) => !prev)
+              }}
+              aria-label="行を追加"
+            >
+              ＋
+            </button>
+            {showAddRowMenu && (
+              <div
+                className="absolute left-full ml-2 border bg-white rounded shadow z-20 text-sm w-32 tl-popover"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    addRow()
+                    setShowAddRowMenu(false)
+                  }}
+                  className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                >
+                  行追加
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEnemyModal(true)
+                    setShowAddRowMenu(false)
+                  }}
+                  className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                >
+                  敵行追加
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div
           ref={containerRef}
@@ -6046,7 +6040,7 @@ setBuffPopup({
               className="relative border bg-gray-900"
               style={{
                 width: '100%',
-                height: displayRowsWithAdd * rowHeight,
+                height: displayRows * rowHeight,
                 backgroundImage:
                   `repeating-linear-gradient(to right, #555 0, #555 1px, transparent 1px, transparent ${timeScale}px)` +
                   (timeScale >= 40
@@ -6230,7 +6224,7 @@ setBuffPopup({
                       left: m.time * timeScale,
                       top: 0,
                       width: Math.max(m.duration * timeScale, 4),
-                      height: displayRowsWithAdd * rowHeight,
+                      height: displayRows * rowHeight,
                       touchAction: 'pan-x',
                     }}
                     onClick={(e) => {
