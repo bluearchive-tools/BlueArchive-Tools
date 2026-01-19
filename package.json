@@ -26,6 +26,7 @@
     "react-markdown": "^9.1.0",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
+    "tesseract.js": "^5.1.0",
     "wanakana": "^5.3.1"
   },
   "devDependencies": {
