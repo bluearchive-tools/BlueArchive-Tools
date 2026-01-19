@@ -17,6 +17,13 @@
         "Register new students or update local data before syncing."
       ]
     },
+    "students-import": {
+      "title": "Student OCR import",
+      "body": [
+        "Upload screenshots to extract student stats with OCR.",
+        "Open this help panel for tips on improving accuracy and speed."
+      ]
+    },
     "student-detail": {
       "title": "Student details",
       "body": [
@@ -125,6 +132,13 @@
       "body": [
         "保存済みの生徒ステータスを並べ替えたり絞り込んだりできます。",
         "新規登録やローカル更新を行い、必要に応じて同期してください。"
+      ]
+    },
+    "students-import": {
+      "title": "生徒データOCR取り込み",
+      "body": [
+        "スクリーンショットからOCRで生徒情報を抽出します。",
+        "精度や速度を上げるヒントはヘルプにまとめています。"
       ]
     },
     "student-detail": {
