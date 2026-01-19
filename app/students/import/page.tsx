@@ -298,6 +298,57 @@ const parseEntriesFromSegments = (
   ]
 }
 
+const extractExternalOcrText = (payload: unknown): string => {
+  const texts: string[] = []
+
+  const visit = (value: unknown) => {
+    if (!value) return
+    if (typeof value === 'string') {
+      if (value.trim()) texts.push(value.trim())
+      return
+    }
+    if (Array.isArray(value)) {
+      value.forEach(visit)
+      return
+    }
+    if (typeof value === 'object') {
+      const obj = value as Record<string, unknown>
+      if (typeof obj.text === 'string') {
+        texts.push(obj.text.trim())
+      }
+      if (typeof obj.value === 'string') {
+        texts.push(obj.value.trim())
+      }
+      if (typeof obj.ocr_text === 'string') {
+        texts.push(obj.ocr_text.trim())
+      }
+      if (obj.words) visit(obj.words)
+      if (obj.data) visit(obj.data)
+      if (obj.result) visit(obj.result)
+      if (obj.results) visit(obj.results)
+    }
+  }
+
+  visit(payload)
+  return texts.filter(Boolean).join('\n').trim()
+}
+
+const fetchExternalOcrText = async (file: File) => {
+  try {
+    const formData = new FormData()
+    formData.append('image', file)
+    const res = await fetch('/api/ocr', {
+      method: 'POST',
+      body: formData,
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    return extractExternalOcrText(data?.data ?? data)
+  } catch {
+    return null
+  }
+}
+
 export default function StudentImportPage() {
   const session = useSession()
   const supabase = useSupabaseClient()
@@ -378,7 +429,17 @@ export default function StudentImportPage() {
 
             nextTexts.push(combinedText)
             const parsed = parseEntriesFromSegments(nameStarText, statTexts, students)
-            nextEntries.push(...(parsed.length ? parsed : parseEntries(combinedText, students)))
+            let results = parsed.length ? parsed : parseEntries(combinedText, students)
+
+            if (!results.length) {
+              const externalText = await fetchExternalOcrText(file)
+              if (externalText) {
+                nextTexts.push(externalText)
+                results = parseEntries(externalText, students)
+              }
+            }
+
+            nextEntries.push(...results)
             setProgress((i + 1) / fileList.length)
           }
         } finally {
