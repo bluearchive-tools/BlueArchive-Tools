@@ -135,6 +135,11 @@ const parseStudentDetails = (text: string) => {
   }
 }
 
+const splitNote = [
+  '画像を左右に分割し、左を上下→下を上下と分割します。',
+  'さらに左側を縦に3分割して各ステータスを抽出します。',
+].join('\n')
+
 const extractNearText = (text: string, name: string) => {
   const index = text.indexOf(name)
   if (index === -1) return text
@@ -152,6 +157,17 @@ const extractStar = (text: string) => {
   const stars = text.match(/★+/)
   if (stars) return stars[0].length
   return null
+}
+
+const findStudentByText = (text: string, students: Student[]) => {
+  const normalized = normalizeText(text)
+  const candidates = students
+    .map((s) => ({
+      ...s,
+      normalizedName: normalizeText(s.name),
+    }))
+    .sort((a, b) => b.normalizedName.length - a.normalizedName.length)
+  return candidates.find((s) => s.normalizedName && normalized.includes(s.normalizedName)) ?? null
 }
 
 const parseEntries = (text: string, students: Student[]) => {
@@ -190,15 +206,24 @@ const parseEntries = (text: string, students: Student[]) => {
   return results
 }
 
-const preprocessImage = async (file: File) => {
-  const bitmap = await createImageBitmap(file)
+const cropCanvas = (bitmap: ImageBitmap, sx: number, sy: number, sw: number, sh: number) => {
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.floor(sw))
+  canvas.height = Math.max(1, Math.floor(sh))
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return canvas
+  ctx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height)
+  return canvas
+}
+
+const preprocessCanvas = (source: HTMLCanvasElement) => {
   const scale = 2
   const canvas = document.createElement('canvas')
-  canvas.width = bitmap.width * scale
-  canvas.height = bitmap.height * scale
+  canvas.width = source.width * scale
+  canvas.height = source.height * scale
   const ctx = canvas.getContext('2d')
-  if (!ctx) return file
-  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  if (!ctx) return source
+  ctx.drawImage(source, 0, 0, canvas.width, canvas.height)
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
   const data = imageData.data
   const contrast = 1.25
@@ -214,6 +239,63 @@ const preprocessImage = async (file: File) => {
   }
   ctx.putImageData(imageData, 0, 0)
   return canvas
+}
+
+const splitStudentImage = async (file: File) => {
+  const bitmap = await createImageBitmap(file)
+  const width = bitmap.width
+  const height = bitmap.height
+  const leftWidth = Math.floor(width * 0.5)
+  const rightWidth = width - leftWidth
+  const leftTopHeight = Math.floor(height * 0.5)
+  const leftBottomHeight = height - leftTopHeight
+  const leftBottomUpperHeight = Math.floor(leftBottomHeight * 0.5)
+
+  const leftCanvas = cropCanvas(bitmap, 0, 0, leftWidth, height)
+  const rightCanvas = cropCanvas(bitmap, leftWidth, 0, rightWidth, height)
+  const leftTop = cropCanvas(bitmap, 0, 0, leftWidth, leftTopHeight)
+  const leftBottomUpper = cropCanvas(
+    bitmap,
+    0,
+    leftTopHeight,
+    leftWidth,
+    leftBottomUpperHeight
+  )
+  const thirdWidth = Math.floor(leftWidth / 3)
+  const leftColumn1 = cropCanvas(bitmap, 0, 0, thirdWidth, height)
+  const leftColumn2 = cropCanvas(bitmap, thirdWidth, 0, thirdWidth, height)
+  const leftColumn3 = cropCanvas(bitmap, thirdWidth * 2, 0, leftWidth - thirdWidth * 2, height)
+
+  return {
+    leftCanvas,
+    rightCanvas,
+    nameStarCanvas: leftBottomUpper,
+    statCanvases: [leftColumn1, leftColumn2, leftColumn3],
+    previewCanvases: [leftCanvas, rightCanvas, leftTop],
+  }
+}
+
+const parseEntriesFromSegments = (
+  nameStarText: string,
+  statTexts: string[],
+  students: Student[]
+) => {
+  const matched = findStudentByText(nameStarText, students)
+  if (!matched) return []
+  const star = extractStar(nameStarText)
+  const combinedStats = statTexts.join('\n')
+  const level = extractLevel(combinedStats)
+  const details = parseStudentDetails(combinedStats)
+  return [
+    {
+      studentId: matched.id,
+      name: matched.name,
+      level,
+      star,
+      ...details,
+      source: [nameStarText, combinedStats].filter(Boolean).join('\n').trim(),
+    },
+  ]
 }
 
 export default function StudentImportPage() {
@@ -277,11 +359,26 @@ export default function StudentImportPage() {
           for (let i = 0; i < fileList.length; i += 1) {
             currentIndex = i
             const file = fileList[i]
-            const image = await preprocessImage(file)
-            const result = await worker.recognize(image)
-            const text = result.data.text ?? ''
-            nextTexts.push(text)
-            nextEntries.push(...parseEntries(text, students))
+            const segments = await splitStudentImage(file)
+            const nameStarCanvas = preprocessCanvas(segments.nameStarCanvas)
+            const nameStarResult = await worker.recognize(nameStarCanvas)
+            const nameStarText = nameStarResult.data.text ?? ''
+
+            const statTexts: string[] = []
+            for (const canvas of segments.statCanvases) {
+              const processed = preprocessCanvas(canvas)
+              const statResult = await worker.recognize(processed)
+              statTexts.push(statResult.data.text ?? '')
+            }
+
+            const fullFallbackCanvas = preprocessCanvas(segments.rightCanvas)
+            const fallbackResult = await worker.recognize(fullFallbackCanvas)
+            const fallbackText = fallbackResult.data.text ?? ''
+            const combinedText = [nameStarText, ...statTexts, fallbackText].join('\n')
+
+            nextTexts.push(combinedText)
+            const parsed = parseEntriesFromSegments(nameStarText, statTexts, students)
+            nextEntries.push(...(parsed.length ? parsed : parseEntries(combinedText, students)))
             setProgress((i + 1) / fileList.length)
           }
         } finally {
@@ -405,6 +502,7 @@ export default function StudentImportPage() {
         <p className="text-xs text-gray-500">
           本機能は無料OCRのみを利用しており、結果は編集できます。
         </p>
+        <p className="text-xs text-gray-500 whitespace-pre-line">{splitNote}</p>
       </div>
       <div className="border rounded p-4 space-y-3">
         <input
