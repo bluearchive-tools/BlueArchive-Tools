@@ -272,8 +272,8 @@ const defaultShortcuts = (preferMeta: boolean) => ({
   undo: preferMeta ? 'Cmd+Z' : 'Ctrl+Z',
   redo: preferMeta ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z',
   addSkill: preferMeta ? 'Cmd+Shift+A' : 'Ctrl+Shift+A',
-  movePlayheadLeft: preferMeta ? 'Cmd+ArrowLeft' : 'Ctrl+ArrowLeft',
-  movePlayheadRight: preferMeta ? 'Cmd+ArrowRight' : 'Ctrl+ArrowRight',
+  movePlayheadLeft: preferMeta ? 'Cmd+Shift+ArrowLeft' : 'Ctrl+Shift+ArrowLeft',
+  movePlayheadRight: preferMeta ? 'Cmd+Shift+ArrowRight' : 'Ctrl+Shift+ArrowRight',
   cut: preferMeta ? 'Cmd+X' : 'Ctrl+X',
   copy: preferMeta ? 'Cmd+C' : 'Ctrl+C',
   paste: preferMeta ? 'Cmd+V' : 'Ctrl+V',
@@ -2079,7 +2079,8 @@ useEffect(() => {
           ? st?.exHitDelay || 0
           : st?.normalHitDelay || 0
       const duration = end - start
-      let s = snapTime(applyTravel ? start - travel : start)
+      const baseStart = snapTime(applyTravel ? start - travel : start)
+      let s = baseStart
       let e = snapTime(start + duration)
       const motion =
         skillKind === 'ex'
@@ -2137,6 +2138,8 @@ useEffect(() => {
         skillKind === 'ex' ? st?.skills?.ex?.type : st?.skills?.normal?.type
       if (skillType === 'attack') target = defaultTargets.attack
       if (skillType === 'debuff') target = defaultTargets.debuff
+      const triggerOffset = s - baseStart
+      const costRecoveryTriggerAdjusted = snapTime(costRecoveryTrigger + triggerOffset)
       setSkills([
         ...skills,
         {
@@ -2154,7 +2157,7 @@ useEffect(() => {
                 costRecovery: {
                   amount: costRecoveryAmount,
                   duration: costRecoveryDuration,
-                  trigger: costRecoveryTrigger,
+                  trigger: costRecoveryTriggerAdjusted,
                   applyDurationBonus: costRecoveryApplyBonus,
                 },
               }
@@ -2364,22 +2367,25 @@ useEffect(() => {
     [snapPreset]
   )
 
-  const playheadStep = useMemo(() => {
-    if (snapPreset === 'off') return 0.1
-    if (snapPreset === '0.5') return 0.5
-    if (snapPreset === '0.1') return 0.1
-    if (snapPreset === '0.05') return 0.05
-    return 0.033
-  }, [snapPreset])
+  const exSkillStarts = useMemo(() => {
+    return skills
+      .filter((ev) => ev.type === 'ex')
+      .map((ev) => ev.start)
+      .sort((a, b) => a - b)
+  }, [skills])
 
-  const movePlayheadBy = useCallback(
-    (delta: number) => {
-      setPlayhead((prev) => {
-        const next = snapTime(prev + delta)
-        return Math.max(0, Math.min(totalSeconds, next))
-      })
+  const movePlayheadToNearestEx = useCallback(
+    (direction: 'left' | 'right') => {
+      if (exSkillStarts.length === 0) return
+      if (direction === 'left') {
+        const target = [...exSkillStarts].reverse().find((t) => t < playhead)
+        if (target !== undefined) setPlayhead(snapTime(target))
+      } else {
+        const target = exSkillStarts.find((t) => t > playhead)
+        if (target !== undefined) setPlayhead(snapTime(target))
+      }
     },
-    [snapTime, totalSeconds]
+    [exSkillStarts, playhead, snapTime]
   )
 
   const openAddSkillModal = useCallback(() => {
@@ -2518,12 +2524,12 @@ useEffect(() => {
       }
       if (matchShortcut(e, shortcutSettings.movePlayheadLeft)) {
         e.preventDefault()
-        movePlayheadBy(-playheadStep)
+        movePlayheadToNearestEx('left')
         return
       }
       if (matchShortcut(e, shortcutSettings.movePlayheadRight)) {
         e.preventDefault()
-        movePlayheadBy(playheadStep)
+        movePlayheadToNearestEx('right')
       }
     }
     window.addEventListener('keydown', onKeyDown)
@@ -2537,8 +2543,7 @@ useEffect(() => {
     copySelected,
     pasteCopied,
     deleteSelected,
-    movePlayheadBy,
-    playheadStep,
+    movePlayheadToNearestEx,
   ])
 
   const runPluginActions = useCallback(
@@ -4892,7 +4897,7 @@ function resolveBuffText(
                       }}
                       readOnly
                       className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+ArrowLeft' : 'Ctrl+ArrowLeft'}
+                      placeholder={isMacPlatform ? 'Cmd+Shift+ArrowLeft' : 'Ctrl+Shift+ArrowLeft'}
                     />
                   </label>
                   <label className="flex items-center gap-2 text-sm">
@@ -4908,7 +4913,7 @@ function resolveBuffText(
                       }}
                       readOnly
                       className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+ArrowRight' : 'Ctrl+ArrowRight'}
+                      placeholder={isMacPlatform ? 'Cmd+Shift+ArrowRight' : 'Ctrl+Shift+ArrowRight'}
                     />
                   </label>
                   <label className="flex items-center gap-2 text-sm">
@@ -5895,10 +5900,10 @@ setBuffPopup({
               </div>
             )
           })}
-          <div className="relative mt-2 flex items-center justify-center">
+          <div className="relative flex items-center justify-center">
             <button
               type="button"
-              className="border border-gray-500 rounded flex items-center justify-center text-sm text-gray-700 bg-white/80"
+              className="border border-gray-500 flex items-center justify-center text-sm text-gray-700 bg-white/80"
               style={{ width: rowHeight, height: rowHeight }}
               onClick={(e) => {
                 e.stopPropagation()
@@ -5965,7 +5970,6 @@ setBuffPopup({
               onPointerUp={(e) => {
                 const state = timeTapRef.current
                 timeTapRef.current = null
-                if (e.target !== e.currentTarget) return
                 if (!state || state.moved || dragging || movingSkill) return
                 setPlayhead(getTimeFromClientX(e.clientX))
               }}

@@ -88,8 +88,8 @@ const defaultShortcuts = (preferMeta: boolean) => ({
   undo: preferMeta ? 'Cmd+Z' : 'Ctrl+Z',
   redo: preferMeta ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z',
   addSkill: preferMeta ? 'Cmd+Shift+A' : 'Ctrl+Shift+A',
-  movePlayheadLeft: preferMeta ? 'Cmd+ArrowLeft' : 'Ctrl+ArrowLeft',
-  movePlayheadRight: preferMeta ? 'Cmd+ArrowRight' : 'Ctrl+ArrowRight',
+  movePlayheadLeft: preferMeta ? 'Cmd+Shift+ArrowLeft' : 'Ctrl+Shift+ArrowLeft',
+  movePlayheadRight: preferMeta ? 'Cmd+Shift+ArrowRight' : 'Ctrl+Shift+ArrowRight',
   cut: preferMeta ? 'Cmd+X' : 'Ctrl+X',
   copy: preferMeta ? 'Cmd+C' : 'Ctrl+C',
   paste: preferMeta ? 'Cmd+V' : 'Ctrl+V',
@@ -2216,7 +2216,7 @@ export default function MyPageClient({
                   }}
                   readOnly
                   className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
-                  placeholder={isMacPlatform ? 'Cmd+ArrowLeft' : 'Ctrl+ArrowLeft'}
+                  placeholder={isMacPlatform ? 'Cmd+Shift+ArrowLeft' : 'Ctrl+Shift+ArrowLeft'}
                 />
               </label>
               <label className="flex items-center gap-3">
@@ -2231,7 +2231,7 @@ export default function MyPageClient({
                   }}
                   readOnly
                   className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
-                  placeholder={isMacPlatform ? 'Cmd+ArrowRight' : 'Ctrl+ArrowRight'}
+                  placeholder={isMacPlatform ? 'Cmd+Shift+ArrowRight' : 'Ctrl+Shift+ArrowRight'}
                 />
               </label>
               <label className="flex items-center gap-3">
