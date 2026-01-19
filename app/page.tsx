@@ -26,17 +26,12 @@ export default function Home() {
               description={t('students.actions.view.description')}
             />
           </Link>
-          <div
-  aria-disabled="true"
-  className="opacity-50 grayscale cursor-not-allowed select-none"
->
-  <div className="pointer-events-none">
-    <FeatureItem
-      title={t('students.actions.import.title')}
-      description={t('students.actions.import.description')}
-    />
-  </div>
-</div>
+          <Link href="/students/import">
+            <FeatureItem
+              title={t('students.actions.import.title')}
+              description={t('students.actions.import.description')}
+            />
+          </Link>
 
           <Link href="/squads">
             <FeatureItem

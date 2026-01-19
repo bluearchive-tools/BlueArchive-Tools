@@ -87,6 +87,13 @@ const detectIsMacPlatform = () => {
 const defaultShortcuts = (preferMeta: boolean) => ({
   undo: preferMeta ? 'Cmd+Z' : 'Ctrl+Z',
   redo: preferMeta ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z',
+  addSkill: preferMeta ? 'Cmd+Shift+A' : 'Ctrl+Shift+A',
+  movePlayheadLeft: preferMeta ? 'Cmd+Shift+ArrowLeft' : 'Ctrl+Shift+ArrowLeft',
+  movePlayheadRight: preferMeta ? 'Cmd+Shift+ArrowRight' : 'Ctrl+Shift+ArrowRight',
+  cut: preferMeta ? 'Cmd+X' : 'Ctrl+X',
+  copy: preferMeta ? 'Cmd+C' : 'Ctrl+C',
+  paste: preferMeta ? 'Cmd+V' : 'Ctrl+V',
+  delete: preferMeta ? 'Backspace' : 'Delete',
 })
 
 const defaultSearchShortcut = (preferMeta: boolean) => (preferMeta ? 'Cmd+K' : 'Ctrl+K')
@@ -384,9 +391,17 @@ export default function MyPageClient({
   const [activeSection, setActiveSection] = useState<
     'profile' | 'social' | 'account' | 'youtube' | 'links' | 'header' | 'shortcuts'
   >('profile')
-  const [makerShortcuts, setMakerShortcuts] = useState<{ undo: string; redo: string }>(() =>
-    defaultShortcuts(detectIsMacPlatform())
-  )
+  const [makerShortcuts, setMakerShortcuts] = useState<{
+    undo: string
+    redo: string
+    addSkill: string
+    movePlayheadLeft: string
+    movePlayheadRight: string
+    cut: string
+    copy: string
+    paste: string
+    delete: string
+  }>(() => defaultShortcuts(detectIsMacPlatform()))
   const [searchShortcut, setSearchShortcut] = useState(() =>
     defaultSearchShortcut(detectIsMacPlatform())
   )
@@ -1224,11 +1239,20 @@ export default function MyPageClient({
         setMakerShortcuts(defaultShortcuts(isMacPlatform))
         return
       }
-      const parsed = JSON.parse(raw) as Partial<{ undo: string; redo: string }>
+      const parsed = JSON.parse(raw) as Partial<typeof makerShortcuts>
       setMakerShortcuts((prev) => ({
         ...prev,
         undo: typeof parsed.undo === 'string' ? parsed.undo : prev.undo,
         redo: typeof parsed.redo === 'string' ? parsed.redo : prev.redo,
+        addSkill: typeof parsed.addSkill === 'string' ? parsed.addSkill : prev.addSkill,
+        movePlayheadLeft:
+          typeof parsed.movePlayheadLeft === 'string' ? parsed.movePlayheadLeft : prev.movePlayheadLeft,
+        movePlayheadRight:
+          typeof parsed.movePlayheadRight === 'string' ? parsed.movePlayheadRight : prev.movePlayheadRight,
+        cut: typeof parsed.cut === 'string' ? parsed.cut : prev.cut,
+        copy: typeof parsed.copy === 'string' ? parsed.copy : prev.copy,
+        paste: typeof parsed.paste === 'string' ? parsed.paste : prev.paste,
+        delete: typeof parsed.delete === 'string' ? parsed.delete : prev.delete,
       }))
     } catch {
       /* ignore */
@@ -2163,6 +2187,111 @@ export default function MyPageClient({
                   readOnly
                   className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
                   placeholder={isMacPlatform ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z'}
+                />
+              </label>
+              <label className="flex items-center gap-3">
+                <span className="w-32 text-gray-700">スキル追加</span>
+                <input
+                  value={makerShortcuts.addSkill}
+                  onKeyDown={(e) => {
+                    e.preventDefault()
+                    const next = formatShortcutFromEvent(e)
+                    if (next === null) return
+                    setMakerShortcuts((prev) => ({ ...prev, addSkill: next }))
+                  }}
+                  readOnly
+                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder={isMacPlatform ? 'Cmd+Shift+A' : 'Ctrl+Shift+A'}
+                />
+              </label>
+              <label className="flex items-center gap-3">
+                <span className="w-32 text-gray-700">バーを左へ</span>
+                <input
+                  value={makerShortcuts.movePlayheadLeft}
+                  onKeyDown={(e) => {
+                    e.preventDefault()
+                    const next = formatShortcutFromEvent(e)
+                    if (next === null) return
+                    setMakerShortcuts((prev) => ({ ...prev, movePlayheadLeft: next }))
+                  }}
+                  readOnly
+                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder={isMacPlatform ? 'Cmd+Shift+ArrowLeft' : 'Ctrl+Shift+ArrowLeft'}
+                />
+              </label>
+              <label className="flex items-center gap-3">
+                <span className="w-32 text-gray-700">バーを右へ</span>
+                <input
+                  value={makerShortcuts.movePlayheadRight}
+                  onKeyDown={(e) => {
+                    e.preventDefault()
+                    const next = formatShortcutFromEvent(e)
+                    if (next === null) return
+                    setMakerShortcuts((prev) => ({ ...prev, movePlayheadRight: next }))
+                  }}
+                  readOnly
+                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder={isMacPlatform ? 'Cmd+Shift+ArrowRight' : 'Ctrl+Shift+ArrowRight'}
+                />
+              </label>
+              <label className="flex items-center gap-3">
+                <span className="w-32 text-gray-700">カット</span>
+                <input
+                  value={makerShortcuts.cut}
+                  onKeyDown={(e) => {
+                    e.preventDefault()
+                    const next = formatShortcutFromEvent(e)
+                    if (next === null) return
+                    setMakerShortcuts((prev) => ({ ...prev, cut: next }))
+                  }}
+                  readOnly
+                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder={isMacPlatform ? 'Cmd+X' : 'Ctrl+X'}
+                />
+              </label>
+              <label className="flex items-center gap-3">
+                <span className="w-32 text-gray-700">コピー</span>
+                <input
+                  value={makerShortcuts.copy}
+                  onKeyDown={(e) => {
+                    e.preventDefault()
+                    const next = formatShortcutFromEvent(e)
+                    if (next === null) return
+                    setMakerShortcuts((prev) => ({ ...prev, copy: next }))
+                  }}
+                  readOnly
+                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder={isMacPlatform ? 'Cmd+C' : 'Ctrl+C'}
+                />
+              </label>
+              <label className="flex items-center gap-3">
+                <span className="w-32 text-gray-700">ペースト</span>
+                <input
+                  value={makerShortcuts.paste}
+                  onKeyDown={(e) => {
+                    e.preventDefault()
+                    const next = formatShortcutFromEvent(e)
+                    if (next === null) return
+                    setMakerShortcuts((prev) => ({ ...prev, paste: next }))
+                  }}
+                  readOnly
+                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder={isMacPlatform ? 'Cmd+V' : 'Ctrl+V'}
+                />
+              </label>
+              <label className="flex items-center gap-3">
+                <span className="w-32 text-gray-700">削除</span>
+                <input
+                  value={makerShortcuts.delete}
+                  onKeyDown={(e) => {
+                    e.preventDefault()
+                    const next = formatShortcutFromEvent(e)
+                    if (next === null) return
+                    setMakerShortcuts((prev) => ({ ...prev, delete: next }))
+                  }}
+                  readOnly
+                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder={isMacPlatform ? 'Backspace' : 'Delete'}
                 />
               </label>
               <label className="flex items-center gap-3">

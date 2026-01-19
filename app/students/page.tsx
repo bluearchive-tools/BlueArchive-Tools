@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -100,6 +100,11 @@ export default function StudentsPage() {
   const [filterRoles, setFilterRoles] = useState<string[]>([])
   const [filterTypes, setFilterTypes] = useState<string[]>([])
   const [grid, setGrid] = useState(1)
+  const [visibleStudentIds, setVisibleStudentIds] = useState<Set<string>>(
+    () => new Set()
+  )
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const cardRefs = useRef(new Map<string, HTMLAnchorElement>())
 
   useEffect(() => {
     const saved = localStorage.getItem('students_page_opts')
@@ -178,6 +183,48 @@ export default function StudentsPage() {
   useEffect(() => {
     refreshUserStats()
   }, [refreshUserStats])
+
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return
+          const target = entry.target as HTMLElement
+          const id = target.dataset.studentId
+          if (!id) return
+          setVisibleStudentIds((prev) => {
+            if (prev.has(id)) return prev
+            const next = new Set(prev)
+            next.add(id)
+            return next
+          })
+          observerRef.current?.unobserve(target)
+        })
+      },
+      { rootMargin: '200px' }
+    )
+
+    return () => {
+      observerRef.current?.disconnect()
+      observerRef.current = null
+    }
+  }, [])
+
+  const setCardRef = useCallback(
+    (id: string) => (node: HTMLAnchorElement | null) => {
+      const prev = cardRefs.current.get(id)
+      if (prev) {
+        observerRef.current?.unobserve(prev)
+      }
+      if (node) {
+        cardRefs.current.set(id, node)
+        observerRef.current?.observe(node)
+      } else {
+        cardRefs.current.delete(id)
+      }
+    },
+    []
+  )
 
   const attackTypes = Array.from(new Set(students.map((s) => s.attackType)))
   const defenseTypes = Array.from(new Set(students.map((s) => s.defenseType)))
@@ -327,9 +374,23 @@ export default function StudentsPage() {
           <Link
             href={`/students/${s.id}`}
             key={s.id}
+            ref={setCardRef(s.id)}
+            data-student-id={s.id}
             className="border rounded p-2 flex flex-col items-center hover:bg-gray-50 dark:hover:bg-gray-700"
           >
-            <img src={s.image} alt={s.name} className="w-full h-auto rounded" />
+            {visibleStudentIds.has(s.id) ? (
+              <img
+                src={s.image}
+                alt={s.name}
+                loading="lazy"
+                className="w-full h-auto rounded"
+              />
+            ) : (
+              <div
+                className="w-full aspect-[3/4] rounded bg-gray-200 animate-pulse"
+                aria-hidden="true"
+              />
+            )}
             <p className="mt-2 text-center">{s.name}</p>
             {!baseKeys.includes(sortKey) && (
               <p className="text-sm">
