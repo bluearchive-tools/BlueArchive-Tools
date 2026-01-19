@@ -182,7 +182,6 @@ export default function StudentImportPage() {
           },
         })
         await worker.setParameters({
-          tessedit_pageseg_mode: '6',
           preserve_interword_spaces: '1',
         })
 
