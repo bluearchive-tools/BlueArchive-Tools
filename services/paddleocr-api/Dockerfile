@@ -11,6 +11,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
 
+RUN python - <<'PY'
+from paddleocr import PaddleOCR
+
+PaddleOCR(use_angle_cls=True, lang="japan")
+print("PaddleOCR models downloaded.")
+PY
+
 ENV PORT=8000
 EXPOSE 8000
 
