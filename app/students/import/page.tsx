@@ -15,6 +15,20 @@ interface ExtractedStudent {
   name: string
   level: number | null
   star: number | null
+  hp: number | null
+  attack: number | null
+  defense: number | null
+  heal: number | null
+  exSkill: number | null
+  normalSkill: number | null
+  passiveSkill: number | null
+  subSkill: number | null
+  weaponLevel: number | null
+  weaponStar: number | null
+  equip1: number | null
+  equip2: number | null
+  equip3: number | null
+  loveTier: number | null
   source: string
 }
 
@@ -51,6 +65,76 @@ const parseNumber = (line: string, patterns: RegExp[]) => {
 const normalizeText = (text: string) =>
   text.replace(/\s+/g, '').replace(/[^\p{L}\p{N}★]/gu, '')
 
+const parseStatNumber = (value: string | undefined) => {
+  if (!value) return null
+  const num = Number(value.replace(/,/g, ''))
+  return Number.isNaN(num) ? null : num
+}
+
+const parseSkillLevel = (text: string, pattern: RegExp) => {
+  const match = text.match(pattern)
+  if (!match) return null
+  if (match[1] === 'MAX') return 10
+  return parseStatNumber(match[2])
+}
+
+const parseWeaponLevel = (text: string) => {
+  const match = text.match(/(SMG|AR|HG|SG|MG|SR|GL|RL)[^\n]*?Lv\.?\s*(\d+)/i)
+  return parseStatNumber(match?.[2])
+}
+
+const parseWeaponStar = (text: string) => {
+  const starMatch = text.match(/固有武器[^\n]*?(★+)/)
+  if (starMatch) return starMatch[1].length
+  const altMatch = text.match(/固有武器[^\n]*?星\s*([1-5])/)
+  return parseStatNumber(altMatch?.[1])
+}
+
+const parseEquipmentLevels = (text: string) => {
+  const matches = [...text.matchAll(/T(\d{1,2})/g)]
+  const levels = matches.map((match) => parseStatNumber(match[1])).filter((val) => val !== null)
+  return {
+    equip1: levels[0] ?? null,
+    equip2: levels[1] ?? null,
+    equip3: levels[2] ?? null,
+  }
+}
+
+const parseLoveTier = (text: string) => {
+  const match = text.match(/愛用品[^\n]*?T(\d{1,2})/i)
+  return parseStatNumber(match?.[1])
+}
+
+const parseStudentDetails = (text: string) => {
+  const hp = parseStatNumber(text.match(/HP\s*([0-9,]+)/i)?.[1])
+  const attack = parseStatNumber(text.match(/攻撃力\s*([0-9,]+)/)?.[1])
+  const defense = parseStatNumber(text.match(/防御力\s*([0-9,]+)/)?.[1])
+  const heal = parseStatNumber(text.match(/治癒力\s*([0-9,]+)/)?.[1])
+  const exSkill = parseSkillLevel(text, /EXスキル\s*(MAX|Lv\.?\s*(\d+))/i)
+  const normalSkill = parseSkillLevel(text, /ノーマルスキル\s*(MAX|Lv\.?\s*(\d+))/i)
+  const passiveSkill = parseSkillLevel(text, /(パッシブスキル\+?|パッシブ)\s*(MAX|Lv\.?\s*(\d+))/i)
+  const subSkill = parseSkillLevel(text, /サブスキル\s*(MAX|Lv\.?\s*(\d+))/i)
+  const weaponLevel = parseWeaponLevel(text)
+  const weaponStar = parseWeaponStar(text)
+  const equipment = parseEquipmentLevels(text)
+  const loveTier = parseLoveTier(text)
+
+  return {
+    hp,
+    attack,
+    defense,
+    heal,
+    exSkill,
+    normalSkill,
+    passiveSkill,
+    subSkill,
+    weaponLevel,
+    weaponStar,
+    ...equipment,
+    loveTier,
+  }
+}
+
 const extractNearText = (text: string, name: string) => {
   const index = text.indexOf(name)
   if (index === -1) return text
@@ -82,19 +166,23 @@ const parseEntries = (text: string, students: Student[]) => {
     }))
     .sort((a, b) => b.normalizedName.length - a.normalizedName.length)
 
+  const singleMatch = candidates.filter((s) => normalized.includes(s.normalizedName)).length === 1
+
   for (const student of candidates) {
     if (!student.normalizedName) continue
     if (!normalized.includes(student.normalizedName)) continue
     if (seen.has(student.id)) continue
-    const nearText = extractNearText(text, student.name)
-    const level = extractLevel(nearText)
-    const star = extractStar(nearText)
+    const contextText = singleMatch ? text : extractNearText(text, student.name)
+    const level = extractLevel(contextText)
+    const star = extractStar(contextText)
+    const details = parseStudentDetails(contextText)
     results.push({
       studentId: student.id,
       name: student.name,
       level,
       star,
-      source: nearText.trim(),
+      ...details,
+      source: contextText.trim(),
     })
     seen.add(student.id)
   }
@@ -235,9 +323,23 @@ export default function StudentImportPage() {
         const payload = entries.map((entry) => ({
           user_id: session.user.id,
           student_id: entry.studentId,
+          ...emptyStats,
           level: entry.level ?? 0,
           star: entry.star ?? 0,
-          ...emptyStats,
+          hp: entry.hp ?? 0,
+          attack: entry.attack ?? 0,
+          defense: entry.defense ?? 0,
+          heal: entry.heal ?? 0,
+          ex_skill: entry.exSkill ?? 0,
+          normal_skill: entry.normalSkill ?? 0,
+          passive_skill: entry.passiveSkill ?? 0,
+          sub_skill: entry.subSkill ?? 0,
+          equip1: entry.equip1 ?? 0,
+          equip2: entry.equip2 ?? 0,
+          equip3: entry.equip3 ?? 0,
+          unique_level: entry.weaponLevel ?? 0,
+          unique_star: entry.weaponStar ?? 0,
+          item_tier: entry.loveTier ?? 0,
         }))
         const { error: saveError } = await supabase.from('user_students').upsert(payload)
         if (saveError) {
@@ -247,9 +349,23 @@ export default function StudentImportPage() {
       } else {
         entries.forEach((entry) => {
           const obj = {
+            ...emptyStats,
             level: entry.level ?? 0,
             star: entry.star ?? 0,
-            ...emptyStats,
+            hp: entry.hp ?? 0,
+            attack: entry.attack ?? 0,
+            defense: entry.defense ?? 0,
+            heal: entry.heal ?? 0,
+            ex_skill: entry.exSkill ?? 0,
+            normal_skill: entry.normalSkill ?? 0,
+            passive_skill: entry.passiveSkill ?? 0,
+            sub_skill: entry.subSkill ?? 0,
+            equip1: entry.equip1 ?? 0,
+            equip2: entry.equip2 ?? 0,
+            equip3: entry.equip3 ?? 0,
+            unique_level: entry.weaponLevel ?? 0,
+            unique_star: entry.weaponStar ?? 0,
+            item_tier: entry.loveTier ?? 0,
           }
           localStorage.setItem(`userStudent:${entry.studentId}`, JSON.stringify(obj))
         })
@@ -285,6 +401,9 @@ export default function StudentImportPage() {
         </p>
         <p className="text-xs text-gray-500">
           生徒詳細（基本情報）画面のスクリーンショットを推奨します。
+        </p>
+        <p className="text-xs text-gray-500">
+          本機能は無料OCRのみを利用しており、結果は編集できます。
         </p>
       </div>
       <div className="border rounded p-4 space-y-3">
@@ -341,6 +460,20 @@ export default function StudentImportPage() {
                   <th className="px-3 py-2 text-left">生徒</th>
                   <th className="px-3 py-2 text-left">レベル</th>
                   <th className="px-3 py-2 text-left">星</th>
+                  <th className="px-3 py-2 text-left">HP</th>
+                  <th className="px-3 py-2 text-left">攻撃力</th>
+                  <th className="px-3 py-2 text-left">防御力</th>
+                  <th className="px-3 py-2 text-left">治癒力</th>
+                  <th className="px-3 py-2 text-left">EX</th>
+                  <th className="px-3 py-2 text-left">NS</th>
+                  <th className="px-3 py-2 text-left">PS</th>
+                  <th className="px-3 py-2 text-left">Sub</th>
+                  <th className="px-3 py-2 text-left">武器Lv</th>
+                  <th className="px-3 py-2 text-left">武器★</th>
+                  <th className="px-3 py-2 text-left">装備1</th>
+                  <th className="px-3 py-2 text-left">装備2</th>
+                  <th className="px-3 py-2 text-left">装備3</th>
+                  <th className="px-3 py-2 text-left">愛用品</th>
                   <th className="px-3 py-2 text-left">抽出元</th>
                   <th className="px-3 py-2" />
                 </tr>
@@ -372,6 +505,184 @@ export default function StudentImportPage() {
                         onChange={(e) =>
                           updateEntry(entry.studentId, {
                             star: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-16"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        value={entry.hp ?? ''}
+                        onChange={(e) =>
+                          updateEntry(entry.studentId, {
+                            hp: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-24"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        value={entry.attack ?? ''}
+                        onChange={(e) =>
+                          updateEntry(entry.studentId, {
+                            attack: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-24"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        value={entry.defense ?? ''}
+                        onChange={(e) =>
+                          updateEntry(entry.studentId, {
+                            defense: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-20"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        value={entry.heal ?? ''}
+                        onChange={(e) =>
+                          updateEntry(entry.studentId, {
+                            heal: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-24"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        min={1}
+                        max={10}
+                        value={entry.exSkill ?? ''}
+                        onChange={(e) =>
+                          updateEntry(entry.studentId, {
+                            exSkill: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-16"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        min={1}
+                        max={10}
+                        value={entry.normalSkill ?? ''}
+                        onChange={(e) =>
+                          updateEntry(entry.studentId, {
+                            normalSkill: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-16"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        min={1}
+                        max={10}
+                        value={entry.passiveSkill ?? ''}
+                        onChange={(e) =>
+                          updateEntry(entry.studentId, {
+                            passiveSkill: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-16"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        min={1}
+                        max={10}
+                        value={entry.subSkill ?? ''}
+                        onChange={(e) =>
+                          updateEntry(entry.studentId, {
+                            subSkill: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-16"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        value={entry.weaponLevel ?? ''}
+                        onChange={(e) =>
+                          updateEntry(entry.studentId, {
+                            weaponLevel: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-20"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        min={0}
+                        max={5}
+                        value={entry.weaponStar ?? ''}
+                        onChange={(e) =>
+                          updateEntry(entry.studentId, {
+                            weaponStar: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-16"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        value={entry.equip1 ?? ''}
+                        onChange={(e) =>
+                          updateEntry(entry.studentId, {
+                            equip1: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-16"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        value={entry.equip2 ?? ''}
+                        onChange={(e) =>
+                          updateEntry(entry.studentId, {
+                            equip2: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-16"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        value={entry.equip3 ?? ''}
+                        onChange={(e) =>
+                          updateEntry(entry.studentId, {
+                            equip3: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-16"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        value={entry.loveTier ?? ''}
+                        onChange={(e) =>
+                          updateEntry(entry.studentId, {
+                            loveTier: e.target.value ? Number(e.target.value) : null,
                           })
                         }
                         className="border rounded px-2 py-1 w-16"
