@@ -358,6 +358,7 @@ export default function StudentImportPage() {
   const [error, setError] = useState<string | null>(null)
   const [rawTexts, setRawTexts] = useState<string[]>([])
   const [entries, setEntries] = useState<ExtractedStudent[]>([])
+  const [ocrMode, setOcrMode] = useState<'paddleocr' | 'tesseract'>('paddleocr')
   const [saving, setSaving] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -391,6 +392,26 @@ export default function StudentImportPage() {
       const fileList = Array.from(files)
 
       try {
+        if (ocrMode === 'paddleocr') {
+          const nextTexts: string[] = []
+          const nextEntries: ExtractedStudent[] = []
+
+          for (let i = 0; i < fileList.length; i += 1) {
+            const file = fileList[i]
+            const externalText = await fetchExternalOcrText(file)
+            if (externalText) {
+              nextTexts.push(externalText)
+              nextEntries.push(...parseEntries(externalText, students))
+            }
+            setProgress((i + 1) / fileList.length)
+          }
+
+          setRawTexts(nextTexts)
+          setEntries(nextEntries)
+          setStatus('done')
+          return
+        }
+
         const { createWorker } = await import('tesseract.js')
         const nextTexts: string[] = []
         const nextEntries: ExtractedStudent[] = []
@@ -429,15 +450,7 @@ export default function StudentImportPage() {
 
             nextTexts.push(combinedText)
             const parsed = parseEntriesFromSegments(nameStarText, statTexts, students)
-            let results = parsed.length ? parsed : parseEntries(combinedText, students)
-
-            if (!results.length) {
-              const externalText = await fetchExternalOcrText(file)
-              if (externalText) {
-                nextTexts.push(externalText)
-                results = parseEntries(externalText, students)
-              }
-            }
+            const results = parsed.length ? parsed : parseEntries(combinedText, students)
 
             nextEntries.push(...results)
             setProgress((i + 1) / fileList.length)
@@ -455,7 +468,7 @@ export default function StudentImportPage() {
         console.error(err)
       }
     },
-    [students]
+    [ocrMode, students]
   )
 
   const updateEntry = useCallback(
@@ -566,6 +579,36 @@ export default function StudentImportPage() {
         <p className="text-xs text-gray-500 whitespace-pre-line">{splitNote}</p>
       </div>
       <div className="border rounded p-4 space-y-3">
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-gray-700">OCRエンジン</p>
+          <div className="flex flex-wrap gap-4 text-sm">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="ocr-mode"
+                value="paddleocr"
+                checked={ocrMode === 'paddleocr'}
+                onChange={() => setOcrMode('paddleocr')}
+                disabled={isProcessing}
+              />
+              PaddleOCR（デフォルト）
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="ocr-mode"
+                value="tesseract"
+                checked={ocrMode === 'tesseract'}
+                onChange={() => setOcrMode('tesseract')}
+                disabled={isProcessing}
+              />
+              tesseract.js
+            </label>
+          </div>
+          <p className="text-xs text-gray-500">
+            PaddleOCRを選択した場合は、画像をそのまま送信して処理します。
+          </p>
+        </div>
         <input
           ref={inputRef}
           type="file"
