@@ -1,4 +1,6 @@
+import gc
 import io
+import os
 
 import numpy as np
 from fastapi import FastAPI, File, UploadFile
@@ -7,15 +9,18 @@ from paddleocr import PaddleOCR
 from PIL import Image
 
 app = FastAPI()
-ocr = PaddleOCR(use_angle_cls=True, lang="japan")
+ocr = PaddleOCR(use_angle_cls=False, lang="japan", show_log=False)
+MAX_SIDE = int(os.getenv("OCR_MAX_SIDE", "2000"))
 
 
 @app.post("/ocr")
 async def ocr_image(image: UploadFile = File(...)):
     data = await image.read()
     pil_image = Image.open(io.BytesIO(data)).convert("RGB")
+    if MAX_SIDE > 0:
+        pil_image.thumbnail((MAX_SIDE, MAX_SIDE))
     np_image = np.array(pil_image)
-    result = ocr.ocr(np_image, cls=True)
+    result = ocr.ocr(np_image, cls=False)
     texts = []
     for line in result:
         if not line:
@@ -24,4 +29,7 @@ async def ocr_image(image: UploadFile = File(...)):
             text = entry[1][0]
             if text:
                 texts.append(text)
-    return JSONResponse({"text": "\n".join(texts), "raw": result})
+    pil_image.close()
+    del np_image, result
+    gc.collect()
+    return JSONResponse({"text": "\n".join(texts)})
