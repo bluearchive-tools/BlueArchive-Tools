@@ -63,7 +63,7 @@ const parseNumber = (line: string, patterns: RegExp[]) => {
 }
 
 const normalizeText = (text: string) =>
-  text.replace(/\s+/g, '').replace(/[^\p{L}\p{N}★]/gu, '')
+  text.replace(/\s+/g, '').replace(/[^\p{L}\p{N}★⭐]/gu, '')
 
 const parseStatNumber = (value: string | undefined) => {
   if (!value) return null
@@ -71,10 +71,10 @@ const parseStatNumber = (value: string | undefined) => {
   return Number.isNaN(num) ? null : num
 }
 
-const parseSkillLevel = (text: string, pattern: RegExp) => {
+const parseSkillLevel = (text: string, pattern: RegExp, maxLevel: number) => {
   const match = text.match(pattern)
   if (!match) return null
-  if (match[1] === 'MAX') return 10
+  if (match[1] === 'MAX') return maxLevel
   return parseStatNumber(match[2])
 }
 
@@ -110,10 +110,10 @@ const parseStudentDetails = (text: string) => {
   const attack = parseStatNumber(text.match(/攻撃力\s*([0-9,]+)/)?.[1])
   const defense = parseStatNumber(text.match(/防御力\s*([0-9,]+)/)?.[1])
   const heal = parseStatNumber(text.match(/治癒力\s*([0-9,]+)/)?.[1])
-  const exSkill = parseSkillLevel(text, /EXスキル\s*(MAX|Lv\.?\s*(\d+))/i)
-  const normalSkill = parseSkillLevel(text, /ノーマルスキル\s*(MAX|Lv\.?\s*(\d+))/i)
-  const passiveSkill = parseSkillLevel(text, /(パッシブスキル\+?|パッシブ)\s*(MAX|Lv\.?\s*(\d+))/i)
-  const subSkill = parseSkillLevel(text, /サブスキル\s*(MAX|Lv\.?\s*(\d+))/i)
+  const exSkill = parseSkillLevel(text, /EXスキル\s*(MAX|Lv\.?\s*(\d+))/i, 5)
+  const normalSkill = parseSkillLevel(text, /ノーマルスキル\s*(MAX|Lv\.?\s*(\d+))/i, 10)
+  const passiveSkill = parseSkillLevel(text, /(パッシブスキル\+?|パッシブ)\s*(MAX|Lv\.?\s*(\d+))/i, 10)
+  const subSkill = parseSkillLevel(text, /サブスキル\s*(MAX|Lv\.?\s*(\d+))/i, 10)
   const weaponLevel = parseWeaponLevel(text)
   const weaponStar = parseWeaponStar(text)
   const equipment = parseEquipmentLevels(text)
@@ -136,8 +136,9 @@ const parseStudentDetails = (text: string) => {
 }
 
 const splitNote = [
-  '画像を左右に分割し、左を上下→下を上下と分割します。',
+  'tesseract.js は画像を左右に分割し、左を上下→下を上下と分割します。',
   'さらに左側を縦に3分割して各ステータスを抽出します。',
+  'PaddleOCR は左右分割のみで処理します。',
 ].join('\n')
 
 const extractNearText = (text: string, name: string) => {
@@ -154,35 +155,38 @@ const extractLevel = (text: string) =>
 const extractStar = (text: string) => {
   const direct = parseNumber(text, [/★\s*([1-5])/, /星\s*([1-5])/])
   if (direct !== null) return direct
-  const stars = text.match(/★+/)
-  if (stars) return stars[0].length
+  const stars = text.match(/[★⭐]/g)
+  if (stars) return stars.length
   return null
 }
 
-const findStudentByText = (text: string, students: Student[]) => {
+const findMatchedStudents = (text: string, students: Student[]) => {
   const normalized = normalizeText(text)
   const candidates = students
     .map((s) => ({
       ...s,
       normalizedName: normalizeText(s.name),
     }))
-    .sort((a, b) => b.normalizedName.length - a.normalizedName.length)
-  return candidates.find((s) => s.normalizedName && normalized.includes(s.normalizedName)) ?? null
+    .filter((s) => s.normalizedName && normalized.includes(s.normalizedName))
+
+  return candidates.filter(
+    (candidate) =>
+      !candidates.some(
+        (other) =>
+          other.normalizedName.length > candidate.normalizedName.length &&
+          other.normalizedName.includes(candidate.normalizedName)
+      )
+  )
 }
 
 const parseEntries = (text: string, students: Student[]) => {
   const normalized = normalizeText(text)
   const results: ExtractedStudent[] = []
   const seen = new Set<string>()
-
-  const candidates = students
-    .map((s) => ({
-      ...s,
-      normalizedName: normalizeText(s.name),
-    }))
-    .sort((a, b) => b.normalizedName.length - a.normalizedName.length)
-
-  const singleMatch = candidates.filter((s) => normalized.includes(s.normalizedName)).length === 1
+  const candidates = findMatchedStudents(text, students).sort(
+    (a, b) => b.normalizedName.length - a.normalizedName.length
+  )
+  const singleMatch = candidates.length === 1
 
   for (const student of candidates) {
     if (!student.normalizedName) continue
@@ -216,8 +220,7 @@ const cropCanvas = (bitmap: ImageBitmap, sx: number, sy: number, sw: number, sh:
   return canvas
 }
 
-const preprocessCanvas = (source: HTMLCanvasElement) => {
-  const scale = 2
+const preprocessCanvas = (source: HTMLCanvasElement, scale = 2) => {
   const canvas = document.createElement('canvas')
   canvas.width = source.width * scale
   canvas.height = source.height * scale
@@ -240,6 +243,8 @@ const preprocessCanvas = (source: HTMLCanvasElement) => {
   ctx.putImageData(imageData, 0, 0)
   return canvas
 }
+
+const preprocessCanvasForPaddle = (source: HTMLCanvasElement) => preprocessCanvas(source, 1)
 
 const splitStudentImage = async (file: File) => {
   const bitmap = await createImageBitmap(file)
@@ -275,27 +280,45 @@ const splitStudentImage = async (file: File) => {
   }
 }
 
+const extractWeaponLevelFromText = (text: string) =>
+  parseNumber(text, [/L[Vv]\.?\s*(\d{1,3})/, /レベル\s*(\d{1,3})/])
+
 const parseEntriesFromSegments = (
   nameStarText: string,
   statTexts: string[],
-  students: Student[]
+  students: Student[],
+  weaponLevelText?: string
 ) => {
-  const matched = findStudentByText(nameStarText, students)
-  if (!matched) return []
+  const matched = findMatchedStudents(nameStarText, students)
+  if (!matched.length) return []
   const star = extractStar(nameStarText)
   const combinedStats = statTexts.join('\n')
   const level = extractLevel(combinedStats)
   const details = parseStudentDetails(combinedStats)
-  return [
-    {
-      studentId: matched.id,
-      name: matched.name,
-      level,
-      star,
-      ...details,
-      source: [nameStarText, combinedStats].filter(Boolean).join('\n').trim(),
-    },
-  ]
+  const weaponLevel = weaponLevelText ? extractWeaponLevelFromText(weaponLevelText) : null
+
+  return matched.map((student) => ({
+    studentId: student.id,
+    name: student.name,
+    level,
+    star,
+    ...details,
+    weaponLevel: weaponLevel ?? details.weaponLevel,
+    source: [nameStarText, combinedStats, weaponLevelText]
+      .filter(Boolean)
+      .join('\n')
+      .trim(),
+  }))
+}
+
+const parseEntriesFromLeftRight = (leftText: string, rightText: string | null, students: Student[]) => {
+  const entries = parseEntries(leftText, students)
+  const weaponLevel = rightText ? extractWeaponLevelFromText(rightText) : null
+  return entries.map((entry) => ({
+    ...entry,
+    weaponLevel: weaponLevel ?? entry.weaponLevel,
+    source: [leftText, rightText].filter(Boolean).join('\n').trim(),
+  }))
 }
 
 const extractExternalOcrText = (payload: unknown): string => {
@@ -334,20 +357,67 @@ const extractExternalOcrText = (payload: unknown): string => {
 }
 
 const fetchExternalOcrText = async (file: File) => {
-  try {
-    const formData = new FormData()
-    formData.append('image', file)
-    const res = await fetch('/api/ocr', {
-      method: 'POST',
-      body: formData,
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    return extractExternalOcrText(data?.data ?? data)
-  } catch {
-    return null
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const formData = new FormData()
+      formData.append('image', file)
+      const res = await fetch('/api/ocr', {
+        method: 'POST',
+        body: formData,
+      })
+      if (!res.ok) {
+        if (attempt === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 500))
+          continue
+        }
+        return null
+      }
+      const data = await res.json()
+      return extractExternalOcrText(data?.data ?? data)
+    } catch {
+      if (attempt === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        continue
+      }
+      return null
+    }
   }
+  return null
 }
+
+const runWithConcurrency = async <T,>(
+  tasks: Array<() => Promise<T>>,
+  limit: number
+): Promise<T[]> => {
+  const results: T[] = []
+  let index = 0
+
+  const workers = Array.from({ length: Math.min(limit, tasks.length) }, async () => {
+    while (index < tasks.length) {
+      const current = index
+      index += 1
+      results[current] = await tasks[current]()
+    }
+  })
+
+  await Promise.all(workers)
+  return results
+}
+
+const canvasToFile = (canvas: HTMLCanvasElement, name: string) =>
+  new Promise<File>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error('blob作成に失敗しました'))
+          return
+        }
+        resolve(new File([blob], name, { type: blob.type || 'image/png' }))
+      },
+      'image/png',
+      0.92
+    )
+  })
 
 export default function StudentImportPage() {
   const session = useSession()
@@ -358,6 +428,7 @@ export default function StudentImportPage() {
   const [error, setError] = useState<string | null>(null)
   const [rawTexts, setRawTexts] = useState<string[]>([])
   const [entries, setEntries] = useState<ExtractedStudent[]>([])
+  const [ocrMode, setOcrMode] = useState<'paddleocr' | 'tesseract'>('paddleocr')
   const [saving, setSaving] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -391,6 +462,62 @@ export default function StudentImportPage() {
       const fileList = Array.from(files)
 
       try {
+        if (ocrMode === 'paddleocr') {
+          const nextTexts: string[] = []
+          const nextEntries: ExtractedStudent[] = []
+          const concurrencyLimit = Math.max(
+            1,
+            Number(process.env.NEXT_PUBLIC_PADDLE_OCR_CONCURRENCY ?? 1)
+          )
+          let completedSteps = 0
+          let totalSteps = fileList.length * 2
+
+          const updateProgress = () => {
+            completedSteps += 1
+            setProgress(Math.min(1, completedSteps / Math.max(totalSteps, 1)))
+          }
+
+          const tasks = fileList.map((file, i) => async () => {
+            const segments = await splitStudentImage(file)
+            const leftCanvas = preprocessCanvasForPaddle(segments.leftCanvas)
+            const rightCanvas = preprocessCanvasForPaddle(segments.rightCanvas)
+            const leftFile = await canvasToFile(leftCanvas, `left-${i}.png`)
+            const rightFile = await canvasToFile(rightCanvas, `right-${i}.png`)
+            const [leftText, rightText] = await Promise.all([
+              fetchExternalOcrText(leftFile).finally(updateProgress),
+              fetchExternalOcrText(rightFile).finally(updateProgress),
+            ])
+
+            if (leftText) {
+              return {
+                texts: [[leftText, rightText].filter(Boolean).join('\n')],
+                entries: parseEntriesFromLeftRight(leftText, rightText, students),
+              }
+            }
+
+            totalSteps += 1
+            const fallbackText = await fetchExternalOcrText(file).finally(updateProgress)
+            if (fallbackText) {
+              return {
+                texts: [fallbackText],
+                entries: parseEntries(fallbackText, students),
+              }
+            }
+            return { texts: [], entries: [] }
+          })
+
+          const results = await runWithConcurrency(tasks, concurrencyLimit)
+          results.forEach((result) => {
+            nextTexts.push(...result.texts)
+            nextEntries.push(...result.entries)
+          })
+
+          setRawTexts(nextTexts)
+          setEntries(nextEntries)
+          setStatus('done')
+          return
+        }
+
         const { createWorker } = await import('tesseract.js')
         const nextTexts: string[] = []
         const nextEntries: ExtractedStudent[] = []
@@ -429,15 +556,7 @@ export default function StudentImportPage() {
 
             nextTexts.push(combinedText)
             const parsed = parseEntriesFromSegments(nameStarText, statTexts, students)
-            let results = parsed.length ? parsed : parseEntries(combinedText, students)
-
-            if (!results.length) {
-              const externalText = await fetchExternalOcrText(file)
-              if (externalText) {
-                nextTexts.push(externalText)
-                results = parseEntries(externalText, students)
-              }
-            }
+            const results = parsed.length ? parsed : parseEntries(combinedText, students)
 
             nextEntries.push(...results)
             setProgress((i + 1) / fileList.length)
@@ -455,7 +574,7 @@ export default function StudentImportPage() {
         console.error(err)
       }
     },
-    [students]
+    [ocrMode, students]
   )
 
   const updateEntry = useCallback(
@@ -566,6 +685,36 @@ export default function StudentImportPage() {
         <p className="text-xs text-gray-500 whitespace-pre-line">{splitNote}</p>
       </div>
       <div className="border rounded p-4 space-y-3">
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-gray-700">OCRエンジン</p>
+          <div className="flex flex-wrap gap-4 text-sm">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="ocr-mode"
+                value="paddleocr"
+                checked={ocrMode === 'paddleocr'}
+                onChange={() => setOcrMode('paddleocr')}
+                disabled={isProcessing}
+              />
+              PaddleOCR（デフォルト）
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="ocr-mode"
+                value="tesseract"
+                checked={ocrMode === 'tesseract'}
+                onChange={() => setOcrMode('tesseract')}
+                disabled={isProcessing}
+              />
+              tesseract.js
+            </label>
+          </div>
+          <p className="text-xs text-gray-500">
+            PaddleOCRを選択した場合は、画像をそのまま送信して処理します。
+          </p>
+        </div>
         <input
           ref={inputRef}
           type="file"
