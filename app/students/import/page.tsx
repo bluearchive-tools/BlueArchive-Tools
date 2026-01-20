@@ -384,6 +384,25 @@ const fetchExternalOcrText = async (file: File) => {
   return null
 }
 
+const runWithConcurrency = async <T,>(
+  tasks: Array<() => Promise<T>>,
+  limit: number
+): Promise<T[]> => {
+  const results: T[] = []
+  let index = 0
+
+  const workers = Array.from({ length: Math.min(limit, tasks.length) }, async () => {
+    while (index < tasks.length) {
+      const current = index
+      index += 1
+      results[current] = await tasks[current]()
+    }
+  })
+
+  await Promise.all(workers)
+  return results
+}
+
 const canvasToFile = (canvas: HTMLCanvasElement, name: string) =>
   new Promise<File>((resolve, reject) => {
     canvas.toBlob(
@@ -445,31 +464,49 @@ export default function StudentImportPage() {
         if (ocrMode === 'paddleocr') {
           const nextTexts: string[] = []
           const nextEntries: ExtractedStudent[] = []
+          const concurrencyLimit = 2
+          let completedSteps = 0
+          let totalSteps = fileList.length * 2
 
-          for (let i = 0; i < fileList.length; i += 1) {
-            const file = fileList[i]
+          const updateProgress = () => {
+            completedSteps += 1
+            setProgress(Math.min(1, completedSteps / Math.max(totalSteps, 1)))
+          }
+
+          const tasks = fileList.map((file, i) => async () => {
             const segments = await splitStudentImage(file)
             const leftCanvas = preprocessCanvas(segments.leftCanvas)
             const rightCanvas = preprocessCanvas(segments.rightCanvas)
-            const leftText = await fetchExternalOcrText(
-              await canvasToFile(leftCanvas, `left-${i}.png`)
-            )
-            const rightText = await fetchExternalOcrText(
-              await canvasToFile(rightCanvas, `right-${i}.png`)
-            )
+            const leftFile = await canvasToFile(leftCanvas, `left-${i}.png`)
+            const rightFile = await canvasToFile(rightCanvas, `right-${i}.png`)
+            const [leftText, rightText] = await Promise.all([
+              fetchExternalOcrText(leftFile).finally(updateProgress),
+              fetchExternalOcrText(rightFile).finally(updateProgress),
+            ])
 
             if (leftText) {
-              nextTexts.push([leftText, rightText].filter(Boolean).join('\n'))
-              nextEntries.push(...parseEntriesFromLeftRight(leftText, rightText, students))
-            } else {
-              const fallbackText = await fetchExternalOcrText(file)
-              if (fallbackText) {
-                nextTexts.push(fallbackText)
-                nextEntries.push(...parseEntries(fallbackText, students))
+              return {
+                texts: [[leftText, rightText].filter(Boolean).join('\n')],
+                entries: parseEntriesFromLeftRight(leftText, rightText, students),
               }
             }
-            setProgress((i + 1) / fileList.length)
-          }
+
+            totalSteps += 1
+            const fallbackText = await fetchExternalOcrText(file).finally(updateProgress)
+            if (fallbackText) {
+              return {
+                texts: [fallbackText],
+                entries: parseEntries(fallbackText, students),
+              }
+            }
+            return { texts: [], entries: [] }
+          })
+
+          const results = await runWithConcurrency(tasks, concurrencyLimit)
+          results.forEach((result) => {
+            nextTexts.push(...result.texts)
+            nextEntries.push(...result.entries)
+          })
 
           setRawTexts(nextTexts)
           setEntries(nextEntries)
