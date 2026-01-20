@@ -36,3 +36,7 @@ OCR_ENDPOINT=https://<your-service>.onrender.com/ocr
 ```
 
 `/api/ocr` はこのエンドポイントへリクエストを転送します。
+
+## ヘルスチェック
+
+デプロイ後は `POST /ocr` が 200 を返すか確認してください。
