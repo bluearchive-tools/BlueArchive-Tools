@@ -393,14 +393,21 @@ const parseEntriesFromSegments = (
   }))
 }
 
-const parseEntriesFromLeftRight = (leftText: string, rightText: string | null, students: Student[]) => {
-  const matched = findMatchedStudents(leftText, students)
+const parseEntriesFromLeftRight = (
+  leftText: string,
+  rightText: string | null,
+  students: Student[]
+) => {
+  const combinedText = [leftText, rightText].filter(Boolean).join('\n')
+  const matched = findMatchedStudents(combinedText, students)
   if (!matched.length) return []
-  const details = parseStudentDetails(leftText)
-  const level = extractLevel(leftText)
-  const star = extractStar(leftText)
-  const weaponLevel = rightText ? extractWeaponLevelFromText(rightText) : null
-  const source = [leftText, rightText].filter(Boolean).join('\n').trim()
+  const details = parseStudentDetails(combinedText)
+  const level = extractLevel(combinedText)
+  const star = extractStar(combinedText)
+  const weaponLevel = rightText
+    ? extractWeaponLevelFromText(rightText)
+    : details.weaponLevel
+  const source = combinedText.trim()
 
   return matched.map((student) => ({
     studentId: student.id,
