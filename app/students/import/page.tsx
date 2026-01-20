@@ -136,8 +136,9 @@ const parseStudentDetails = (text: string) => {
 }
 
 const splitNote = [
-  '画像を左右に分割し、左を上下→下を上下と分割します。',
+  'tesseract.js は画像を左右に分割し、左を上下→下を上下と分割します。',
   'さらに左側を縦に3分割して各ステータスを抽出します。',
+  'PaddleOCR は左右分割のみで処理します。',
 ].join('\n')
 
 const extractNearText = (text: string, name: string) => {
@@ -309,6 +310,16 @@ const parseEntriesFromSegments = (
   }))
 }
 
+const parseEntriesFromLeftRight = (leftText: string, rightText: string | null, students: Student[]) => {
+  const entries = parseEntries(leftText, students)
+  const weaponLevel = rightText ? extractWeaponLevelFromText(rightText) : null
+  return entries.map((entry) => ({
+    ...entry,
+    weaponLevel: weaponLevel ?? entry.weaponLevel,
+    source: [leftText, rightText].filter(Boolean).join('\n').trim(),
+  }))
+}
+
 const extractExternalOcrText = (payload: unknown): string => {
   const texts: string[] = []
 
@@ -345,19 +356,32 @@ const extractExternalOcrText = (payload: unknown): string => {
 }
 
 const fetchExternalOcrText = async (file: File) => {
-  try {
-    const formData = new FormData()
-    formData.append('image', file)
-    const res = await fetch('/api/ocr', {
-      method: 'POST',
-      body: formData,
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    return extractExternalOcrText(data?.data ?? data)
-  } catch {
-    return null
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const formData = new FormData()
+      formData.append('image', file)
+      const res = await fetch('/api/ocr', {
+        method: 'POST',
+        body: formData,
+      })
+      if (!res.ok) {
+        if (attempt === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 500))
+          continue
+        }
+        return null
+      }
+      const data = await res.json()
+      return extractExternalOcrText(data?.data ?? data)
+    } catch {
+      if (attempt === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        continue
+      }
+      return null
+    }
   }
+  return null
 }
 
 const canvasToFile = (canvas: HTMLCanvasElement, name: string) =>
@@ -425,37 +449,24 @@ export default function StudentImportPage() {
           for (let i = 0; i < fileList.length; i += 1) {
             const file = fileList[i]
             const segments = await splitStudentImage(file)
-            const nameStarCanvas = preprocessCanvas(segments.nameStarCanvas)
-            const nameStarText = await fetchExternalOcrText(
-              await canvasToFile(nameStarCanvas, `name-star-${i}.png`)
-            )
-
-            const statTexts: string[] = []
-            for (let index = 0; index < segments.statCanvases.length; index += 1) {
-              const processed = preprocessCanvas(segments.statCanvases[index])
-              const text = await fetchExternalOcrText(
-                await canvasToFile(processed, `stats-${i}-${index}.png`)
-              )
-              if (text) statTexts.push(text)
-            }
-
+            const leftCanvas = preprocessCanvas(segments.leftCanvas)
             const rightCanvas = preprocessCanvas(segments.rightCanvas)
-            const rightText = await fetchExternalOcrText(
-              await canvasToFile(rightCanvas, `weapon-${i}.png`)
+            const leftText = await fetchExternalOcrText(
+              await canvasToFile(leftCanvas, `left-${i}.png`)
             )
-            const parsed = nameStarText
-              ? parseEntriesFromSegments(nameStarText, statTexts, students, rightText ?? undefined)
-              : []
+            const rightText = await fetchExternalOcrText(
+              await canvasToFile(rightCanvas, `right-${i}.png`)
+            )
 
-            if (!parsed.length) {
+            if (leftText) {
+              nextTexts.push([leftText, rightText].filter(Boolean).join('\n'))
+              nextEntries.push(...parseEntriesFromLeftRight(leftText, rightText, students))
+            } else {
               const fallbackText = await fetchExternalOcrText(file)
               if (fallbackText) {
                 nextTexts.push(fallbackText)
                 nextEntries.push(...parseEntries(fallbackText, students))
               }
-            } else {
-              nextTexts.push([nameStarText, ...statTexts, rightText].filter(Boolean).join('\n'))
-              nextEntries.push(...parsed)
             }
             setProgress((i + 1) / fileList.length)
           }
