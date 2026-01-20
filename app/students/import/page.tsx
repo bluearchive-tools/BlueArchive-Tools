@@ -394,12 +394,22 @@ const parseEntriesFromSegments = (
 }
 
 const parseEntriesFromLeftRight = (leftText: string, rightText: string | null, students: Student[]) => {
-  const entries = parseEntries(leftText, students)
+  const matched = findMatchedStudents(leftText, students)
+  if (!matched.length) return []
+  const details = parseStudentDetails(leftText)
+  const level = extractLevel(leftText)
+  const star = extractStar(leftText)
   const weaponLevel = rightText ? extractWeaponLevelFromText(rightText) : null
-  return entries.map((entry) => ({
-    ...entry,
-    weaponLevel: weaponLevel ?? entry.weaponLevel,
-    source: [leftText, rightText].filter(Boolean).join('\n').trim(),
+  const source = [leftText, rightText].filter(Boolean).join('\n').trim()
+
+  return matched.map((student) => ({
+    studentId: student.id,
+    name: student.name,
+    level,
+    star,
+    ...details,
+    weaponLevel: weaponLevel ?? details.weaponLevel,
+    source,
   }))
 }
 
