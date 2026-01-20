@@ -15,10 +15,14 @@ interface ExtractedStudent {
   name: string
   level: number | null
   star: number | null
+  bond: number | null
   hp: number | null
+  hpWb: number | null
   attack: number | null
+  attackWb: number | null
   defense: number | null
   heal: number | null
+  healWb: number | null
   exSkill: number | null
   normalSkill: number | null
   passiveSkill: number | null
@@ -96,7 +100,7 @@ const parseWeaponLevel = (text: string) => {
 }
 
 const parseWeaponStar = (text: string) => {
-  const starMatch = text.match(/固有武器[^\n]*?(★+)/)
+  const starMatch = text.match(/固有武器[^\n]*?([★⭐]+)/)
   if (starMatch) return starMatch[1].length
   const altMatch = text.match(/固有武器[^\n]*?星\s*([1-5])/)
   return parseStatNumber(altMatch?.[1])
@@ -105,8 +109,35 @@ const parseWeaponStar = (text: string) => {
 const parseEquipmentLevels = (text: string) => {
   const matches = [...text.matchAll(/T([0-9IOOo]{1,2})/gi)]
   const levels = matches
-    .map((match) => parseStatNumber(match[1]))
+    .map((match) => {
+      const raw = normalizeOcrNumber(match[1])
+      if (raw.length === 3 && raw.endsWith('10')) return 10
+      return parseStatNumber(raw)
+    })
     .filter((val) => val !== null && val <= 10)
+  if (levels.length >= 3) {
+    return {
+      equip1: levels[0] ?? null,
+      equip2: levels[1] ?? null,
+      equip3: levels[2] ?? null,
+    }
+  }
+  const fallbackMatch = text.match(/装備強化[\s\S]*?([0-9IOOo]{2,3})\s+([0-9IOOo]{2,3})\s+([0-9IOOo]{2,3})/i)
+  if (fallbackMatch) {
+    const fallbackLevels = fallbackMatch
+      .slice(1, 4)
+      .map((value) => {
+        const normalized = normalizeOcrNumber(value)
+        if (normalized.length === 3 && normalized.endsWith('10')) return 10
+        return parseStatNumber(normalized)
+      })
+      .filter((val) => val !== null && val <= 10)
+    return {
+      equip1: fallbackLevels[0] ?? null,
+      equip2: fallbackLevels[1] ?? null,
+      equip3: fallbackLevels[2] ?? null,
+    }
+  }
   return {
     equip1: levels[0] ?? null,
     equip2: levels[1] ?? null,
@@ -119,11 +150,26 @@ const parseLoveTier = (text: string) => {
   return parseStatNumber(match?.[1])
 }
 
+const parseBond = (text: string) =>
+  parseStatNumber(text.match(/日直\s*([0-9Oo]{1,3})/i)?.[1])
+
+const parseWbLevel = (text: string, label: RegExp) => {
+  const levelPattern = /(?:Lv|LV|L[Vv]|\bL[vyン])\.?\s*([0-9Oo]{1,2})/i
+  const matchIndex = text.search(label)
+  if (matchIndex === -1) return null
+  const windowText = text.slice(matchIndex, Math.min(text.length, matchIndex + 80))
+  const match = windowText.match(levelPattern)
+  return parseStatNumber(match?.[1])
+}
+
 const parseStudentDetails = (text: string) => {
   const hp = parseStatNumber(text.match(/HP\s*([0-9O,]+)/i)?.[1])
+  const hpWb = parseWbLevel(text, /HP/)
   const attack = parseStatNumber(text.match(/攻撃力\s*([0-9O,]+)/)?.[1])
+  const attackWb = parseWbLevel(text, /攻撃力/)
   const defense = parseStatNumber(text.match(/防御力\s*([0-9O,]+)/)?.[1])
   const heal = parseStatNumber(text.match(/治癒力\s*([0-9O,]+)/)?.[1])
+  const healWb = parseWbLevel(text, /治癒力/)
   const levelPattern = /(?:Lv|LV|L[Vv]|\bL[vyン])\.?\s*([0-9Oo]{1,2})/i
   const exSkill = parseSkillLevel(
     text,
@@ -149,12 +195,17 @@ const parseStudentDetails = (text: string) => {
   const weaponStar = parseWeaponStar(text)
   const equipment = parseEquipmentLevels(text)
   const loveTier = parseLoveTier(text)
+  const bond = parseBond(text)
 
   return {
+    bond,
     hp,
+    hpWb,
     attack,
+    attackWb,
     defense,
     heal,
+    healWb,
     exSkill,
     normalSkill,
     passiveSkill,
@@ -634,10 +685,14 @@ export default function StudentImportPage() {
           ...emptyStats,
           level: entry.level ?? 0,
           star: entry.star ?? 0,
+          bond: entry.bond ?? 0,
           hp: entry.hp ?? 0,
+          hp_wb: entry.hpWb ?? 0,
           attack: entry.attack ?? 0,
+          attack_wb: entry.attackWb ?? 0,
           defense: entry.defense ?? 0,
           heal: entry.heal ?? 0,
+          heal_wb: entry.healWb ?? 0,
           ex_skill: entry.exSkill ?? 0,
           normal_skill: entry.normalSkill ?? 0,
           passive_skill: entry.passiveSkill ?? 0,
@@ -660,10 +715,14 @@ export default function StudentImportPage() {
             ...emptyStats,
             level: entry.level ?? 0,
             star: entry.star ?? 0,
+            bond: entry.bond ?? 0,
             hp: entry.hp ?? 0,
+            hp_wb: entry.hpWb ?? 0,
             attack: entry.attack ?? 0,
+            attack_wb: entry.attackWb ?? 0,
             defense: entry.defense ?? 0,
             heal: entry.heal ?? 0,
+            heal_wb: entry.healWb ?? 0,
             ex_skill: entry.exSkill ?? 0,
             normal_skill: entry.normalSkill ?? 0,
             passive_skill: entry.passiveSkill ?? 0,
@@ -799,10 +858,14 @@ export default function StudentImportPage() {
                   <th className="px-3 py-2 text-left">生徒</th>
                   <th className="px-3 py-2 text-left">レベル</th>
                   <th className="px-3 py-2 text-left">星</th>
+                  <th className="px-3 py-2 text-left">絆</th>
                   <th className="px-3 py-2 text-left">HP</th>
+                  <th className="px-3 py-2 text-left">HP WB</th>
                   <th className="px-3 py-2 text-left">攻撃力</th>
+                  <th className="px-3 py-2 text-left">攻撃力 WB</th>
                   <th className="px-3 py-2 text-left">防御力</th>
                   <th className="px-3 py-2 text-left">治癒力</th>
+                  <th className="px-3 py-2 text-left">治癒力 WB</th>
                   <th className="px-3 py-2 text-left">EX</th>
                   <th className="px-3 py-2 text-left">NS</th>
                   <th className="px-3 py-2 text-left">PS</th>
@@ -852,6 +915,18 @@ export default function StudentImportPage() {
                     <td className="px-3 py-2">
                       <input
                         type="number"
+                        value={entry.bond ?? ''}
+                        onChange={(e) =>
+                          updateEntry(entry.studentId, {
+                            bond: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-16"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
                         value={entry.hp ?? ''}
                         onChange={(e) =>
                           updateEntry(entry.studentId, {
@@ -864,6 +939,18 @@ export default function StudentImportPage() {
                     <td className="px-3 py-2">
                       <input
                         type="number"
+                        value={entry.hpWb ?? ''}
+                        onChange={(e) =>
+                          updateEntry(entry.studentId, {
+                            hpWb: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-20"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
                         value={entry.attack ?? ''}
                         onChange={(e) =>
                           updateEntry(entry.studentId, {
@@ -871,6 +958,18 @@ export default function StudentImportPage() {
                           })
                         }
                         className="border rounded px-2 py-1 w-24"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        value={entry.attackWb ?? ''}
+                        onChange={(e) =>
+                          updateEntry(entry.studentId, {
+                            attackWb: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-20"
                       />
                     </td>
                     <td className="px-3 py-2">
@@ -895,6 +994,18 @@ export default function StudentImportPage() {
                           })
                         }
                         className="border rounded px-2 py-1 w-24"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        value={entry.healWb ?? ''}
+                        onChange={(e) =>
+                          updateEntry(entry.studentId, {
+                            healWb: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-20"
                       />
                     </td>
                     <td className="px-3 py-2">
