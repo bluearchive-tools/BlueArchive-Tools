@@ -220,8 +220,7 @@ const cropCanvas = (bitmap: ImageBitmap, sx: number, sy: number, sw: number, sh:
   return canvas
 }
 
-const preprocessCanvas = (source: HTMLCanvasElement) => {
-  const scale = 2
+const preprocessCanvas = (source: HTMLCanvasElement, scale = 2) => {
   const canvas = document.createElement('canvas')
   canvas.width = source.width * scale
   canvas.height = source.height * scale
@@ -244,6 +243,8 @@ const preprocessCanvas = (source: HTMLCanvasElement) => {
   ctx.putImageData(imageData, 0, 0)
   return canvas
 }
+
+const preprocessCanvasForPaddle = (source: HTMLCanvasElement) => preprocessCanvas(source, 1)
 
 const splitStudentImage = async (file: File) => {
   const bitmap = await createImageBitmap(file)
@@ -464,7 +465,10 @@ export default function StudentImportPage() {
         if (ocrMode === 'paddleocr') {
           const nextTexts: string[] = []
           const nextEntries: ExtractedStudent[] = []
-          const concurrencyLimit = 2
+          const concurrencyLimit = Math.max(
+            1,
+            Number(process.env.NEXT_PUBLIC_PADDLE_OCR_CONCURRENCY ?? 1)
+          )
           let completedSteps = 0
           let totalSteps = fileList.length * 2
 
@@ -475,8 +479,8 @@ export default function StudentImportPage() {
 
           const tasks = fileList.map((file, i) => async () => {
             const segments = await splitStudentImage(file)
-            const leftCanvas = preprocessCanvas(segments.leftCanvas)
-            const rightCanvas = preprocessCanvas(segments.rightCanvas)
+            const leftCanvas = preprocessCanvasForPaddle(segments.leftCanvas)
+            const rightCanvas = preprocessCanvasForPaddle(segments.rightCanvas)
             const leftFile = await canvasToFile(leftCanvas, `left-${i}.png`)
             const rightFile = await canvasToFile(rightCanvas, `right-${i}.png`)
             const [leftText, rightText] = await Promise.all([
