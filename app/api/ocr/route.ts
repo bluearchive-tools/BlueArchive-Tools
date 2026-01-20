@@ -12,19 +12,25 @@ export async function POST(req: Request) {
 
   const endpoint = process.env.OCR_ENDPOINT ?? DEFAULT_ENDPOINT
   const token = process.env.OCR_API_TOKEN
-  const headers: Record<string, string> = {
-    'Content-Type': file.type || 'application/octet-stream',
-  }
+  const mode = process.env.OCR_ENDPOINT_MODE
+  const isHuggingFace = endpoint.includes('api-inference.huggingface.co')
+  const useMultipart = mode ? mode === 'multipart' : !isHuggingFace
+  const headers: Record<string, string> = {}
   if (token) {
     headers.Authorization = `Bearer ${token}`
   }
 
-  const body = Buffer.from(await file.arrayBuffer())
-  const res = await fetch(endpoint, {
-    method: 'POST',
-    headers,
-    body,
-  })
+  const init: RequestInit = { method: 'POST', headers }
+  if (useMultipart) {
+    const forwardForm = new FormData()
+    forwardForm.append('image', file, file.name || 'image')
+    init.body = forwardForm
+  } else {
+    headers['Content-Type'] = file.type || 'application/octet-stream'
+    init.body = Buffer.from(await file.arrayBuffer())
+  }
+
+  const res = await fetch(endpoint, init)
 
   const text = await res.text()
   let data: unknown = text

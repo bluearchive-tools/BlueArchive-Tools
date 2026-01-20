@@ -11,7 +11,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
 
-ENV PORT=8000
-EXPOSE 8000
+ENV OMP_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1 \
+    OPENBLAS_NUM_THREADS=1 \
+    NUMEXPR_NUM_THREADS=1 \
+    PADDLE_CPU_NUM_THREADS=1 \
+    UVICORN_WORKERS=1
 
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+ENV PORT=10000
+EXPOSE 10000
+
+CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-10000}"]
