@@ -158,7 +158,13 @@ const parseWbLevel = (text: string, label: RegExp) => {
   const matchIndex = text.search(label)
   if (matchIndex === -1) return null
   const windowText = text.slice(matchIndex, Math.min(text.length, matchIndex + 80))
-  const match = windowText.match(levelPattern)
+  const labelMatch = windowText.match(label)
+  if (!labelMatch || labelMatch.index === undefined) return null
+  const afterLabel = windowText.slice(labelMatch.index + labelMatch[0].length)
+  const wbIndex = afterLabel.search(/(W[ＢB]|Ｗ[ＢB])/i)
+  if (wbIndex === -1) return null
+  const wbWindow = afterLabel.slice(wbIndex, wbIndex + 40)
+  const match = wbWindow.match(levelPattern)
   return parseStatNumber(match?.[1])
 }
 
