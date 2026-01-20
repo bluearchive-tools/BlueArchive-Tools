@@ -55,8 +55,9 @@ const emptyStats = {
 }
 
 const parseNumber = (line: string, patterns: RegExp[]) => {
+  const normalized = normalizeOcrNumber(line)
   for (const pattern of patterns) {
-    const match = line.match(pattern)
+    const match = normalized.match(pattern)
     if (match) return Number(match[1])
   }
   return null
@@ -65,22 +66,33 @@ const parseNumber = (line: string, patterns: RegExp[]) => {
 const normalizeText = (text: string) =>
   text.replace(/\s+/g, '').replace(/[^\p{L}\p{N}★⭐]/gu, '')
 
+const normalizeOcrNumber = (value: string) =>
+  value
+    .replace(/[ＯO]/g, '0')
+    .replace(/[ＩIl|]/g, '1')
+    .replace(/[Ｂ]/g, '8')
+    .replace(/[Ｓs]/g, '5')
+    .replace(/[Ａ]/g, '4')
+
 const parseStatNumber = (value: string | undefined) => {
   if (!value) return null
-  const num = Number(value.replace(/,/g, ''))
+  const num = Number(normalizeOcrNumber(value).replace(/,/g, ''))
   return Number.isNaN(num) ? null : num
 }
 
-const parseSkillLevel = (text: string, pattern: RegExp, maxLevel: number) => {
-  const match = text.match(pattern)
+const parseSkillLevel = (text: string, levelPattern: RegExp, maxLevel: number) => {
+  const normalized = text.replace(/\s+/g, '')
+  if (/(MAX|I?TAX|\[?TAX)/i.test(normalized)) return maxLevel
+  const match = text.match(levelPattern)
   if (!match) return null
-  if (match[1] === 'MAX') return maxLevel
-  return parseStatNumber(match[2])
+  return parseStatNumber(match[1])
 }
 
 const parseWeaponLevel = (text: string) => {
-  const match = text.match(/(SMG|AR|HG|SG|MG|SR|GL|RL)[^\n]*?Lv\.?\s*(\d+)/i)
-  return parseStatNumber(match?.[2])
+  const match = text.match(
+    /(SMG|AR|HG|SG|MG|SR|GL|RL)[^\n]*?(Lv|LV|L[Vv]|\bL[vyン])\.?\s*([0-9Oo]{1,3})/i
+  )
+  return parseStatNumber(match?.[3])
 }
 
 const parseWeaponStar = (text: string) => {
@@ -91,8 +103,10 @@ const parseWeaponStar = (text: string) => {
 }
 
 const parseEquipmentLevels = (text: string) => {
-  const matches = [...text.matchAll(/T(\d{1,2})/g)]
-  const levels = matches.map((match) => parseStatNumber(match[1])).filter((val) => val !== null)
+  const matches = [...text.matchAll(/T([0-9IOOo]{1,2})/gi)]
+  const levels = matches
+    .map((match) => parseStatNumber(match[1]))
+    .filter((val) => val !== null && val <= 10)
   return {
     equip1: levels[0] ?? null,
     equip2: levels[1] ?? null,
@@ -106,14 +120,31 @@ const parseLoveTier = (text: string) => {
 }
 
 const parseStudentDetails = (text: string) => {
-  const hp = parseStatNumber(text.match(/HP\s*([0-9,]+)/i)?.[1])
-  const attack = parseStatNumber(text.match(/攻撃力\s*([0-9,]+)/)?.[1])
-  const defense = parseStatNumber(text.match(/防御力\s*([0-9,]+)/)?.[1])
-  const heal = parseStatNumber(text.match(/治癒力\s*([0-9,]+)/)?.[1])
-  const exSkill = parseSkillLevel(text, /EXスキル\s*(MAX|Lv\.?\s*(\d+))/i, 5)
-  const normalSkill = parseSkillLevel(text, /ノーマルスキル\s*(MAX|Lv\.?\s*(\d+))/i, 10)
-  const passiveSkill = parseSkillLevel(text, /(パッシブスキル\+?|パッシブ)\s*(MAX|Lv\.?\s*(\d+))/i, 10)
-  const subSkill = parseSkillLevel(text, /サブスキル\s*(MAX|Lv\.?\s*(\d+))/i, 10)
+  const hp = parseStatNumber(text.match(/HP\s*([0-9O,]+)/i)?.[1])
+  const attack = parseStatNumber(text.match(/攻撃力\s*([0-9O,]+)/)?.[1])
+  const defense = parseStatNumber(text.match(/防御力\s*([0-9O,]+)/)?.[1])
+  const heal = parseStatNumber(text.match(/治癒力\s*([0-9O,]+)/)?.[1])
+  const levelPattern = /(?:Lv|LV|L[Vv]|\bL[vyン])\.?\s*([0-9Oo]{1,2})/i
+  const exSkill = parseSkillLevel(
+    text,
+    new RegExp(`EXスキル\\s*${levelPattern.source}`, 'i'),
+    5
+  )
+  const normalSkill = parseSkillLevel(
+    text,
+    new RegExp(`ノーマルスキル\\s*${levelPattern.source}`, 'i'),
+    10
+  )
+  const passiveSkill = parseSkillLevel(
+    text,
+    new RegExp(`(パッシブスキル\\+?|パッシブ)\\s*${levelPattern.source}`, 'i'),
+    10
+  )
+  const subSkill = parseSkillLevel(
+    text,
+    new RegExp(`サブスキル\\s*${levelPattern.source}`, 'i'),
+    10
+  )
   const weaponLevel = parseWeaponLevel(text)
   const weaponStar = parseWeaponStar(text)
   const equipment = parseEquipmentLevels(text)
