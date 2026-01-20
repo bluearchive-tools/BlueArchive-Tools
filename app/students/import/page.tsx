@@ -153,7 +153,7 @@ const parseLoveTier = (text: string) => {
 const parseBond = (text: string) =>
   parseStatNumber(text.match(/日直\s*([0-9Oo]{1,3})/i)?.[1])
 
-const parseWbLevel = (text: string, label: RegExp) => {
+const parseWbLevel = (text: string, label: RegExp, requireWbMarker = true) => {
   const levelPattern = /(?:Lv|LV|L[Vv]|\bL[vyン])\.?\s*([0-9Oo]{1,2})/i
   const matchIndex = text.search(label)
   if (matchIndex === -1) return null
@@ -161,18 +161,24 @@ const parseWbLevel = (text: string, label: RegExp) => {
   const labelMatch = windowText.match(label)
   if (!labelMatch || labelMatch.index === undefined) return null
   const afterLabel = windowText.slice(labelMatch.index + labelMatch[0].length)
-  const wbIndex = afterLabel.search(/(W[ＢB]|Ｗ[ＢB])/i)
-  if (wbIndex === -1) return null
-  const wbWindow = afterLabel.slice(wbIndex, wbIndex + 40)
+  const wbIndex = afterLabel.search(/(W[ＢB]|Ｗ[ＢB]|\bWB\b)/i)
+  if (wbIndex === -1 && requireWbMarker) return null
+  const statBoundaryIndex = afterLabel.search(
+    /(攻撃力|防御力|治癒力|EXスキル|ノーマルスキル|パッシブスキル|サブスキル)/i
+  )
+  const boundedText =
+    statBoundaryIndex === -1 ? afterLabel : afterLabel.slice(0, statBoundaryIndex)
+  const wbWindow =
+    wbIndex === -1 ? boundedText : boundedText.slice(wbIndex, wbIndex + 40)
   const match = wbWindow.match(levelPattern)
   return parseStatNumber(match?.[1])
 }
 
 const parseStudentDetails = (text: string) => {
   const hp = parseStatNumber(text.match(/HP\s*([0-9O,]+)/i)?.[1])
-  const hpWb = parseWbLevel(text, /HP/)
+  const hpWb = parseWbLevel(text, /HP/, false)
   const attack = parseStatNumber(text.match(/攻撃力\s*([0-9O,]+)/)?.[1])
-  const attackWb = parseWbLevel(text, /攻撃力/)
+  const attackWb = parseWbLevel(text, /攻撃力/, false)
   const defense = parseStatNumber(text.match(/防御力\s*([0-9O,]+)/)?.[1])
   const heal = parseStatNumber(text.match(/治癒力\s*([0-9O,]+)/)?.[1])
   const healWb = parseWbLevel(text, /治癒力/)
@@ -308,10 +314,13 @@ const cropCanvas = (bitmap: ImageBitmap, sx: number, sy: number, sw: number, sh:
   return canvas
 }
 
-const preprocessCanvas = (source: HTMLCanvasElement, scale = 2) => {
+const preprocessCanvas = (source: HTMLCanvasElement, scale = 2, maxSide = 2048) => {
+  const maxDimension = Math.max(source.width, source.height)
+  const boundedScale =
+    maxSide > 0 && maxDimension * scale > maxSide ? maxSide / maxDimension : scale
   const canvas = document.createElement('canvas')
-  canvas.width = source.width * scale
-  canvas.height = source.height * scale
+  canvas.width = Math.max(1, Math.floor(source.width * boundedScale))
+  canvas.height = Math.max(1, Math.floor(source.height * boundedScale))
   const ctx = canvas.getContext('2d')
   if (!ctx) return source
   ctx.drawImage(source, 0, 0, canvas.width, canvas.height)
@@ -346,7 +355,6 @@ const splitStudentImage = async (file: File) => {
 
   const leftCanvas = cropCanvas(bitmap, 0, 0, leftWidth, height)
   const rightCanvas = cropCanvas(bitmap, leftWidth, 0, rightWidth, height)
-  const leftTop = cropCanvas(bitmap, 0, 0, leftWidth, leftTopHeight)
   const leftBottomUpper = cropCanvas(
     bitmap,
     0,
@@ -359,12 +367,13 @@ const splitStudentImage = async (file: File) => {
   const leftColumn2 = cropCanvas(bitmap, thirdWidth, 0, thirdWidth, height)
   const leftColumn3 = cropCanvas(bitmap, thirdWidth * 2, 0, leftWidth - thirdWidth * 2, height)
 
+  bitmap.close()
+
   return {
     leftCanvas,
     rightCanvas,
     nameStarCanvas: leftBottomUpper,
     statCanvases: [leftColumn1, leftColumn2, leftColumn3],
-    previewCanvases: [leftCanvas, rightCanvas, leftTop],
   }
 }
 
@@ -570,10 +579,16 @@ export default function StudentImportPage() {
         if (ocrMode === 'paddleocr') {
           const nextTexts: string[] = []
           const nextEntries: ExtractedStudent[] = []
-          const concurrencyLimit = Math.max(
+          const deviceMemory =
+            typeof navigator !== 'undefined'
+              ? (navigator as Navigator & { deviceMemory?: number }).deviceMemory
+              : undefined
+          const memoryLimit = deviceMemory && deviceMemory <= 1 ? 1 : Infinity
+          const baseConcurrency = Math.max(
             1,
             Number(process.env.NEXT_PUBLIC_PADDLE_OCR_CONCURRENCY ?? 1)
           )
+          const concurrencyLimit = Math.min(memoryLimit, baseConcurrency)
           let completedSteps = 0
           let totalSteps = fileList.length * 2
 
