@@ -1,0 +1,139 @@
+# PaddleOCR Home API
+
+Renderの軽量版とは別に、自宅PC向けに高精度設定で動かすOCR APIです。
+
+## セットアップ（Windows）
+
+```bash
+cd services/paddleocr-home-api
+py -3.11 -m venv .venv
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+> NOTE: Python 3.10/3.11 を推奨します（3.14 では paddlepaddle のホイールがありません）。
+
+もし `paddlepaddle` のインストールでエラーが出る場合は、公式ホイールを使って再インストールしてください。
+
+```bash
+pip install --upgrade pip
+pip install paddlepaddle==2.6.2 -f https://www.paddlepaddle.org.cn/whl/windows/mkl/avx/stable.html
+```
+
+`.env.example` を参考に環境変数を設定してください。
+
+```bash
+set OCR_API_KEY=your-strong-token
+set OCR_MAX_SIDE=1800
+set OCR_DET_LIMIT_SIDE_LEN=1280
+set OCR_MAX_IMAGE_BYTES=5242880
+set OCR_MAX_CONCURRENCY=1
+set OCR_TIMEOUT_SECONDS=15
+set OCR_HIGH_MAX_SIDE=2200
+set OCR_HIGH_DET_LIMIT_SIDE_LEN=1600
+set DEEPSEEK_OCR_ENDPOINT=http://127.0.0.1:12000/ocr
+set DEEPSEEK_OCR_TOKEN=your-deepseek-token
+set DEEPSEEK_VLLM_ENDPOINT=http://127.0.0.1:13000/ocr
+set DEEPSEEK_VLLM_TOKEN=your-deepseek-vllm-token
+```
+
+PowerShell を使う場合は以下の形式で設定してください。
+
+```powershell
+$env:OCR_API_KEY="your-strong-token"
+$env:OCR_MAX_SIDE="1800"
+$env:OCR_DET_LIMIT_SIDE_LEN="1280"
+$env:OCR_MAX_IMAGE_BYTES="5242880"
+$env:OCR_MAX_CONCURRENCY="1"
+$env:OCR_TIMEOUT_SECONDS="15"
+$env:OCR_HIGH_MAX_SIDE="2200"
+$env:OCR_HIGH_DET_LIMIT_SIDE_LEN="1600"
+$env:DEEPSEEK_OCR_ENDPOINT="http://127.0.0.1:12000/ocr"
+$env:DEEPSEEK_OCR_TOKEN="your-deepseek-token"
+$env:DEEPSEEK_VLLM_ENDPOINT="http://127.0.0.1:13000/ocr"
+$env:DEEPSEEK_VLLM_TOKEN="your-deepseek-vllm-token"
+```
+
+起動:
+
+```bash
+uvicorn app:app --host 127.0.0.1 --port 10000
+```
+
+## Cloudflare Tunnel（Quick Tunnel）
+
+ポート開放せずに外部公開する場合は Quick Tunnel を利用します。
+
+> NOTE: `cloudflared` が見つからない場合は、先にインストールしてください（Windows）。
+>
+> **winget が使える場合**
+> ```bash
+> winget install --id Cloudflare.cloudflared
+> ```
+>
+> **Chocolatey が使える場合**
+> ```bash
+> choco install cloudflared
+> ```
+>
+> **手動インストール**
+> 公式ダウンロード: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
+
+```bash
+cloudflared tunnel --url http://127.0.0.1:10000
+```
+
+表示された URL（例: `https://xxxx.trycloudflare.com`）に `/ocr` を付けたものを、
+Vercel の `OCR_ENDPOINT_PRIMARY` に設定してください。
+
+## 動作確認（curl）
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $OCR_API_KEY" \
+  -F "image=@/path/to/image.png" \
+  https://xxxx.trycloudflare.com/ocr
+```
+
+高精度モデル（高解像度プリセット）を指定する場合は `model=high` を送信してください。
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $OCR_API_KEY" \
+  -F "model=high" \
+  -F "image=@/path/to/image.png" \
+  https://xxxx.trycloudflare.com/ocr
+```
+
+DeepSeek OCR を使う場合は `engine=deepseek` と `model` を指定してください。
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $OCR_API_KEY" \
+  -F "engine=deepseek" \
+  -F "model=deepseek-v1" \
+  -F "image=@/path/to/image.png" \
+  https://xxxx.trycloudflare.com/ocr
+```
+
+DeepSeek OCR vLLM を使う場合は `engine=deepseek-vllm` と `model` を指定してください。
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $OCR_API_KEY" \
+  -F "engine=deepseek-vllm" \
+  -F "model=deepseek-v1" \
+  -F "image=@/path/to/image.png" \
+  https://xxxx.trycloudflare.com/ocr
+```
+
+```bash
+curl -H "Authorization: Bearer $OCR_API_KEY" \
+  https://xxxx.trycloudflare.com/health
+```
+
+```bash
+curl -H "Authorization: Bearer $OCR_API_KEY" \
+  https://xxxx.trycloudflare.com/version
+```
