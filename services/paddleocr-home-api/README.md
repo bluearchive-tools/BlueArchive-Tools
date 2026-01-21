@@ -30,6 +30,21 @@ set OCR_DET_LIMIT_SIDE_LEN=1280
 set OCR_MAX_IMAGE_BYTES=5242880
 set OCR_MAX_CONCURRENCY=1
 set OCR_TIMEOUT_SECONDS=15
+set OCR_HIGH_MAX_SIDE=2200
+set OCR_HIGH_DET_LIMIT_SIDE_LEN=1600
+```
+
+PowerShell を使う場合は以下の形式で設定してください。
+
+```powershell
+$env:OCR_API_KEY="your-strong-token"
+$env:OCR_MAX_SIDE="1800"
+$env:OCR_DET_LIMIT_SIDE_LEN="1280"
+$env:OCR_MAX_IMAGE_BYTES="5242880"
+$env:OCR_MAX_CONCURRENCY="1"
+$env:OCR_TIMEOUT_SECONDS="15"
+$env:OCR_HIGH_MAX_SIDE="2200"
+$env:OCR_HIGH_DET_LIMIT_SIDE_LEN="1600"
 ```
 
 起動:
@@ -69,6 +84,16 @@ Vercel の `OCR_ENDPOINT_PRIMARY` に設定してください。
 ```bash
 curl -X POST \
   -H "Authorization: Bearer $OCR_API_KEY" \
+  -F "image=@/path/to/image.png" \
+  https://xxxx.trycloudflare.com/ocr
+```
+
+高精度モデル（高解像度プリセット）を指定する場合は `model=high` を送信してください。
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $OCR_API_KEY" \
+  -F "model=high" \
   -F "image=@/path/to/image.png" \
   https://xxxx.trycloudflare.com/ocr
 ```
