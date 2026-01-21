@@ -128,7 +128,8 @@ const parseWeaponStar = (text: string) => {
 }
 
 const parseEquipmentLevels = (text: string) => {
-  const matches = [...text.matchAll(/T([0-9IOOo]{1,2})/gi)]
+  const equipmentText = normalizeOcrNumber(text).replace(/\b1(?=0{1,2}\b)/g, 'T')
+  const matches = [...equipmentText.matchAll(/T([0-9IOOo]{1,2})/gi)]
   const levels = matches
     .map((match) => {
       const raw = normalizeOcrNumber(match[1])
@@ -143,7 +144,9 @@ const parseEquipmentLevels = (text: string) => {
       equip3: levels[2] ?? null,
     }
   }
-  const fallbackMatch = text.match(/装備強化[\s\S]*?([0-9IOOo]{2,3})\s+([0-9IOOo]{2,3})\s+([0-9IOOo]{2,3})/i)
+  const fallbackMatch = equipmentText.match(
+    /装備強化[\s\S]*?([0-9IOOo]{2,3})\s+([0-9IOOo]{2,3})\s+([0-9IOOo]{2,3})/i
+  )
   if (fallbackMatch) {
     const fallbackLevels = fallbackMatch
       .slice(1, 4)
@@ -175,7 +178,7 @@ const parseBond = (text: string) =>
   parseStatNumber(text.match(/日直\s*([0-9Oo]{1,3})/i)?.[1])
 
 const parseWbLevel = (text: string, label: RegExp, requireWbMarker = true) => {
-  const levelPattern = /(?:Lv|LV|L[Vv]|\bL[vyン])\.?\s*([0-9Oo]{1,2})/i
+  const levelPattern = /(?:Lv|LV|L[uUvV]|\bL[uyン])\.?\s*([0-9Oo]{1,2})/i
   const matchIndex = text.search(label)
   if (matchIndex === -1) return null
   const windowText = text.slice(matchIndex, Math.min(text.length, matchIndex + 80))
@@ -203,7 +206,7 @@ const parseStudentDetails = (text: string) => {
   const defense = parseStatNumber(text.match(/防御力\s*([0-9O,]+)/)?.[1])
   const heal = parseStatNumber(text.match(/治癒力\s*([0-9O,]+)/)?.[1])
   const healWb = parseWbLevel(text, /治癒力/)
-  const levelPattern = /(?:Lv|LV|L[Vv]|\bL[vyン])\.?\s*([0-9Oo]{1,2})/i
+  const levelPattern = /(?:Lv|LV|L[uUvV]|\bL[uyン])\.?\s*([0-9Oo]{1,2})/i
   const exSkill = parseSkillLevel(
     text,
     new RegExp(`EXスキル\\s*${levelPattern.source}`, 'i'),
@@ -265,7 +268,7 @@ const extractNearText = (text: string, name: string) => {
 }
 
 const extractLevel = (text: string) =>
-  parseNumber(text, [/L[Vv]\.?\s*(\d{1,3})/, /レベル\s*(\d{1,3})/])
+  parseNumber(text, [/L[uUvV]\.?\s*(\d{1,3})/, /レベル\s*(\d{1,3})/])
 
 const extractStar = (text: string) => {
   const direct = parseNumber(text, [/★\s*([1-5])/, /星\s*([1-5])/])
