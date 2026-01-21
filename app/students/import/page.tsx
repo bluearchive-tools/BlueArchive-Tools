@@ -10,6 +10,11 @@ interface Student {
   name: string
 }
 
+interface MatchedStudent extends Student {
+  normalizedName: string
+  normalizedNameNoDigits: string
+}
+
 interface ExtractedStudent {
   studentId: string
   name: string
@@ -68,7 +73,23 @@ const parseNumber = (line: string, patterns: RegExp[]) => {
 }
 
 const normalizeText = (text: string) =>
-  text.replace(/\s+/g, '').replace(/[^\p{L}\p{N}★⭐]/gu, '')
+  text.replace(/\s+/g, '').replace(/[^\p{L}\p{N}★⭐()]/gu, '')
+
+const normalizeBrackets = (text: string) =>
+  text.replace(/[（）]/g, (char) => (char === '（' ? '(' : ')'))
+
+const normalizeOcrNameText = (text: string) => {
+  const normalized = normalizeBrackets(text)
+  return normalized.replace(
+    /([^\s()\n]{1,12})\s*[\r\n]+\s*\(([^)\n]+)\)/g,
+    '$1($2)'
+  )
+}
+
+const extractBracketSuffixes = (text: string) =>
+  [...text.matchAll(/\(([^)]+)\)/g)]
+    .map((match) => normalizeText(match[1]))
+    .filter(Boolean)
 
 const normalizeOcrNumber = (value: string) =>
   value
@@ -107,7 +128,8 @@ const parseWeaponStar = (text: string) => {
 }
 
 const parseEquipmentLevels = (text: string) => {
-  const matches = [...text.matchAll(/T([0-9IOOo]{1,2})/gi)]
+  const equipmentText = normalizeOcrNumber(text).replace(/\b1(?=0{1,2}\b)/g, 'T')
+  const matches = [...equipmentText.matchAll(/T([0-9IOOo]{1,2})/gi)]
   const levels = matches
     .map((match) => {
       const raw = normalizeOcrNumber(match[1])
@@ -122,7 +144,9 @@ const parseEquipmentLevels = (text: string) => {
       equip3: levels[2] ?? null,
     }
   }
-  const fallbackMatch = text.match(/装備強化[\s\S]*?([0-9IOOo]{2,3})\s+([0-9IOOo]{2,3})\s+([0-9IOOo]{2,3})/i)
+  const fallbackMatch = equipmentText.match(
+    /装備強化[\s\S]*?([0-9IOOo]{2,3})\s+([0-9IOOo]{2,3})\s+([0-9IOOo]{2,3})/i
+  )
   if (fallbackMatch) {
     const fallbackLevels = fallbackMatch
       .slice(1, 4)
@@ -153,24 +177,36 @@ const parseLoveTier = (text: string) => {
 const parseBond = (text: string) =>
   parseStatNumber(text.match(/日直\s*([0-9Oo]{1,3})/i)?.[1])
 
-const parseWbLevel = (text: string, label: RegExp) => {
-  const levelPattern = /(?:Lv|LV|L[Vv]|\bL[vyン])\.?\s*([0-9Oo]{1,2})/i
+const parseWbLevel = (text: string, label: RegExp, requireWbMarker = true) => {
+  const levelPattern = /(?:Lv|LV|L[uUvV]|\bL[uyン])\.?\s*([0-9Oo]{1,2})/i
   const matchIndex = text.search(label)
   if (matchIndex === -1) return null
   const windowText = text.slice(matchIndex, Math.min(text.length, matchIndex + 80))
-  const match = windowText.match(levelPattern)
+  const labelMatch = windowText.match(label)
+  if (!labelMatch || labelMatch.index === undefined) return null
+  const afterLabel = windowText.slice(labelMatch.index + labelMatch[0].length)
+  const wbIndex = afterLabel.search(/(W[ＢB]|Ｗ[ＢB]|\bWB\b)/i)
+  if (wbIndex === -1 && requireWbMarker) return null
+  const statBoundaryIndex = afterLabel.search(
+    /(攻撃力|防御力|治癒力|EXスキル|ノーマルスキル|パッシブスキル|サブスキル)/i
+  )
+  const boundedText =
+    statBoundaryIndex === -1 ? afterLabel : afterLabel.slice(0, statBoundaryIndex)
+  const wbWindow =
+    wbIndex === -1 ? boundedText : boundedText.slice(wbIndex, wbIndex + 40)
+  const match = wbWindow.match(levelPattern)
   return parseStatNumber(match?.[1])
 }
 
 const parseStudentDetails = (text: string) => {
   const hp = parseStatNumber(text.match(/HP\s*([0-9O,]+)/i)?.[1])
-  const hpWb = parseWbLevel(text, /HP/)
+  const hpWb = parseWbLevel(text, /HP/, false)
   const attack = parseStatNumber(text.match(/攻撃力\s*([0-9O,]+)/)?.[1])
-  const attackWb = parseWbLevel(text, /攻撃力/)
+  const attackWb = parseWbLevel(text, /攻撃力/, false)
   const defense = parseStatNumber(text.match(/防御力\s*([0-9O,]+)/)?.[1])
   const heal = parseStatNumber(text.match(/治癒力\s*([0-9O,]+)/)?.[1])
   const healWb = parseWbLevel(text, /治癒力/)
-  const levelPattern = /(?:Lv|LV|L[Vv]|\bL[vyン])\.?\s*([0-9Oo]{1,2})/i
+  const levelPattern = /(?:Lv|LV|L[uUvV]|\bL[uyン])\.?\s*([0-9Oo]{1,2})/i
   const exSkill = parseSkillLevel(
     text,
     new RegExp(`EXスキル\\s*${levelPattern.source}`, 'i'),
@@ -232,7 +268,7 @@ const extractNearText = (text: string, name: string) => {
 }
 
 const extractLevel = (text: string) =>
-  parseNumber(text, [/L[Vv]\.?\s*(\d{1,3})/, /レベル\s*(\d{1,3})/])
+  parseNumber(text, [/L[uUvV]\.?\s*(\d{1,3})/, /レベル\s*(\d{1,3})/])
 
 const extractStar = (text: string) => {
   const direct = parseNumber(text, [/★\s*([1-5])/, /星\s*([1-5])/])
@@ -242,16 +278,23 @@ const extractStar = (text: string) => {
   return null
 }
 
-const findMatchedStudents = (text: string, students: Student[]) => {
-  const normalized = normalizeText(text)
+const findMatchedStudents = (text: string, students: Student[]): MatchedStudent[] => {
+  const mergedText = normalizeOcrNameText(text)
+  const normalized = normalizeText(mergedText)
+  const bracketSuffixes = extractBracketSuffixes(mergedText)
   const candidates = students
     .map((s) => ({
       ...s,
       normalizedName: normalizeText(s.name),
+      normalizedNameNoDigits: normalizeText(s.name.replace(/\d+$/g, '')),
     }))
     .filter((s) => s.normalizedName && normalized.includes(s.normalizedName))
+    .filter((s) => {
+      if (!bracketSuffixes.length) return true
+      return bracketSuffixes.some((suffix) => s.normalizedName.includes(suffix))
+    })
 
-  return candidates.filter(
+  const filtered = candidates.filter(
     (candidate) =>
       !candidates.some(
         (other) =>
@@ -259,13 +302,26 @@ const findMatchedStudents = (text: string, students: Student[]) => {
           other.normalizedName.includes(candidate.normalizedName)
       )
   )
+
+  if (!bracketSuffixes.length) return filtered
+
+  const deduped = new Map<string, MatchedStudent>()
+  filtered
+    .slice()
+    .sort((a, b) => Number(a.id) - Number(b.id))
+    .forEach((candidate) => {
+      const key = candidate.normalizedNameNoDigits || candidate.normalizedName
+      if (!deduped.has(key)) deduped.set(key, candidate)
+    })
+  return Array.from(deduped.values())
 }
 
 const parseEntries = (text: string, students: Student[]) => {
-  const normalized = normalizeText(text)
+  const mergedText = normalizeOcrNameText(text)
+  const normalized = normalizeText(mergedText)
   const results: ExtractedStudent[] = []
   const seen = new Set<string>()
-  const candidates = findMatchedStudents(text, students).sort(
+  const candidates = findMatchedStudents(mergedText, students).sort(
     (a, b) => b.normalizedName.length - a.normalizedName.length
   )
   const singleMatch = candidates.length === 1
@@ -274,7 +330,9 @@ const parseEntries = (text: string, students: Student[]) => {
     if (!student.normalizedName) continue
     if (!normalized.includes(student.normalizedName)) continue
     if (seen.has(student.id)) continue
-    const contextText = singleMatch ? text : extractNearText(text, student.name)
+    const contextText = singleMatch
+      ? mergedText
+      : extractNearText(mergedText, student.name)
     const level = extractLevel(contextText)
     const star = extractStar(contextText)
     const details = parseStudentDetails(contextText)
@@ -302,10 +360,13 @@ const cropCanvas = (bitmap: ImageBitmap, sx: number, sy: number, sw: number, sh:
   return canvas
 }
 
-const preprocessCanvas = (source: HTMLCanvasElement, scale = 2) => {
+const preprocessCanvas = (source: HTMLCanvasElement, scale = 2, maxSide = 2048) => {
+  const maxDimension = Math.max(source.width, source.height)
+  const boundedScale =
+    maxSide > 0 && maxDimension * scale > maxSide ? maxSide / maxDimension : scale
   const canvas = document.createElement('canvas')
-  canvas.width = source.width * scale
-  canvas.height = source.height * scale
+  canvas.width = Math.max(1, Math.floor(source.width * boundedScale))
+  canvas.height = Math.max(1, Math.floor(source.height * boundedScale))
   const ctx = canvas.getContext('2d')
   if (!ctx) return source
   ctx.drawImage(source, 0, 0, canvas.width, canvas.height)
@@ -340,7 +401,6 @@ const splitStudentImage = async (file: File) => {
 
   const leftCanvas = cropCanvas(bitmap, 0, 0, leftWidth, height)
   const rightCanvas = cropCanvas(bitmap, leftWidth, 0, rightWidth, height)
-  const leftTop = cropCanvas(bitmap, 0, 0, leftWidth, leftTopHeight)
   const leftBottomUpper = cropCanvas(
     bitmap,
     0,
@@ -353,12 +413,13 @@ const splitStudentImage = async (file: File) => {
   const leftColumn2 = cropCanvas(bitmap, thirdWidth, 0, thirdWidth, height)
   const leftColumn3 = cropCanvas(bitmap, thirdWidth * 2, 0, leftWidth - thirdWidth * 2, height)
 
+  bitmap.close()
+
   return {
     leftCanvas,
     rightCanvas,
     nameStarCanvas: leftBottomUpper,
     statCanvases: [leftColumn1, leftColumn2, leftColumn3],
-    previewCanvases: [leftCanvas, rightCanvas, leftTop],
   }
 }
 
@@ -393,14 +454,21 @@ const parseEntriesFromSegments = (
   }))
 }
 
-const parseEntriesFromLeftRight = (leftText: string, rightText: string | null, students: Student[]) => {
-  const matched = findMatchedStudents(leftText, students)
+const parseEntriesFromLeftRight = (
+  leftText: string,
+  rightText: string | null,
+  students: Student[]
+) => {
+  const combinedText = [leftText, rightText].filter(Boolean).join('\n')
+  const matched = findMatchedStudents(combinedText, students)
   if (!matched.length) return []
-  const details = parseStudentDetails(leftText)
-  const level = extractLevel(leftText)
-  const star = extractStar(leftText)
-  const weaponLevel = rightText ? extractWeaponLevelFromText(rightText) : null
-  const source = [leftText, rightText].filter(Boolean).join('\n').trim()
+  const details = parseStudentDetails(combinedText)
+  const level = extractLevel(combinedText)
+  const star = extractStar(combinedText)
+  const weaponLevel = rightText
+    ? extractWeaponLevelFromText(rightText)
+    : details.weaponLevel
+  const source = combinedText.trim()
 
   return matched.map((student) => ({
     studentId: student.id,
@@ -557,10 +625,16 @@ export default function StudentImportPage() {
         if (ocrMode === 'paddleocr') {
           const nextTexts: string[] = []
           const nextEntries: ExtractedStudent[] = []
-          const concurrencyLimit = Math.max(
+          const deviceMemory =
+            typeof navigator !== 'undefined'
+              ? (navigator as Navigator & { deviceMemory?: number }).deviceMemory
+              : undefined
+          const memoryLimit = deviceMemory && deviceMemory <= 1 ? 1 : Infinity
+          const baseConcurrency = Math.max(
             1,
             Number(process.env.NEXT_PUBLIC_PADDLE_OCR_CONCURRENCY ?? 1)
           )
+          const concurrencyLimit = Math.min(memoryLimit, baseConcurrency)
           let completedSteps = 0
           let totalSteps = fileList.length * 2
 
