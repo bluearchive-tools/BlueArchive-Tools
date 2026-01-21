@@ -302,7 +302,7 @@ const findMatchedStudents = (text: string, students: Student[]): MatchedStudent[
 
   if (!bracketSuffixes.length) return filtered
 
-  const deduped = new Map<string, Student>()
+  const deduped = new Map<string, MatchedStudent>()
   filtered
     .slice()
     .sort((a, b) => Number(a.id) - Number(b.id))
