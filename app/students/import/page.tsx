@@ -516,11 +516,14 @@ const extractExternalOcrText = (payload: unknown): string => {
   return texts.filter(Boolean).join('\n').trim()
 }
 
-const fetchExternalOcrText = async (file: File) => {
+const fetchExternalOcrText = async (file: File, model?: string) => {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       const formData = new FormData()
       formData.append('image', file)
+      if (model) {
+        formData.append('model', model)
+      }
       const res = await fetch('/api/ocr', {
         method: 'POST',
         body: formData,
@@ -589,6 +592,7 @@ export default function StudentImportPage() {
   const [rawTexts, setRawTexts] = useState<string[]>([])
   const [entries, setEntries] = useState<ExtractedStudent[]>([])
   const [ocrMode, setOcrMode] = useState<'paddleocr' | 'tesseract'>('paddleocr')
+  const [ocrModel, setOcrModel] = useState<'standard' | 'high'>('standard')
   const [saving, setSaving] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -650,8 +654,8 @@ export default function StudentImportPage() {
             const leftFile = await canvasToFile(leftCanvas, `left-${i}.png`)
             const rightFile = await canvasToFile(rightCanvas, `right-${i}.png`)
             const [leftText, rightText] = await Promise.all([
-              fetchExternalOcrText(leftFile).finally(updateProgress),
-              fetchExternalOcrText(rightFile).finally(updateProgress),
+              fetchExternalOcrText(leftFile, ocrModel).finally(updateProgress),
+              fetchExternalOcrText(rightFile, ocrModel).finally(updateProgress),
             ])
 
             if (leftText) {
@@ -662,7 +666,7 @@ export default function StudentImportPage() {
             }
 
             totalSteps += 1
-            const fallbackText = await fetchExternalOcrText(file).finally(updateProgress)
+            const fallbackText = await fetchExternalOcrText(file, ocrModel).finally(updateProgress)
             if (fallbackText) {
               return {
                 texts: [fallbackText],
@@ -740,7 +744,7 @@ export default function StudentImportPage() {
         console.error(err)
       }
     },
-    [ocrMode, students]
+    [ocrMode, ocrModel, students]
   )
 
   const updateEntry = useCallback(
@@ -887,6 +891,36 @@ export default function StudentImportPage() {
           </div>
           <p className="text-xs text-gray-500">
             PaddleOCRを選択した場合は、画像をそのまま送信して処理します。
+          </p>
+        </div>
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-gray-700">PaddleOCRモデル</p>
+          <div className="flex flex-wrap gap-4 text-sm">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="paddleocr-model"
+                value="standard"
+                checked={ocrModel === 'standard'}
+                onChange={() => setOcrModel('standard')}
+                disabled={isProcessing || ocrMode !== 'paddleocr'}
+              />
+              標準
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="paddleocr-model"
+                value="high"
+                checked={ocrModel === 'high'}
+                onChange={() => setOcrModel('high')}
+                disabled={isProcessing || ocrMode !== 'paddleocr'}
+              />
+              高精度
+            </label>
+          </div>
+          <p className="text-xs text-gray-500">
+            高精度は高解像度プリセットで処理するため、時間がかかる場合があります。
           </p>
         </div>
         <input

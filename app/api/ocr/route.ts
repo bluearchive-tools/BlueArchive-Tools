@@ -6,6 +6,9 @@ const LEGACY_ENDPOINT = 'https://api-inference.huggingface.co/models/PaddlePaddl
 export async function POST(req: Request) {
   const formData = await req.formData()
   const file = formData.get('image')
+  const requestedModel = formData.get('model')
+  const model =
+    typeof requestedModel === 'string' ? requestedModel.trim().toLowerCase() : ''
 
   if (!(file instanceof File)) {
     return NextResponse.json({ error: '画像が見つかりません。' }, { status: 400 })
@@ -13,8 +16,13 @@ export async function POST(req: Request) {
 
   const token = process.env.OCR_API_TOKEN
   const mode = process.env.OCR_ENDPOINT_MODE
-  const primaryEndpoint = process.env.OCR_ENDPOINT_PRIMARY ?? process.env.OCR_ENDPOINT
-  const fallbackEndpoint = process.env.OCR_ENDPOINT_FALLBACK
+  const useHighModel = model === 'high' || model === 'accurate'
+  const primaryEndpoint = useHighModel
+    ? process.env.OCR_ENDPOINT_PRIMARY_HIGH ?? process.env.OCR_ENDPOINT_HIGH
+    : process.env.OCR_ENDPOINT_PRIMARY ?? process.env.OCR_ENDPOINT
+  const fallbackEndpoint = useHighModel
+    ? process.env.OCR_ENDPOINT_FALLBACK_HIGH
+    : process.env.OCR_ENDPOINT_FALLBACK
   const customEndpoints = [primaryEndpoint, fallbackEndpoint].filter(
     (value, index, self): value is string => Boolean(value) && self.indexOf(value) === index
   )
@@ -33,6 +41,9 @@ export async function POST(req: Request) {
     if (useMultipart) {
       const forwardForm = new FormData()
       forwardForm.append('image', file, file.name || 'image')
+      if (model) {
+        forwardForm.append('model', model)
+      }
       init.body = forwardForm
     } else {
       headers['Content-Type'] = file.type || 'application/octet-stream'
