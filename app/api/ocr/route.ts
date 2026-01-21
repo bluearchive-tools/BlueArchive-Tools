@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server'
 
-const DEFAULT_ENDPOINT = 'https://api-inference.huggingface.co/models/PaddlePaddle/paddleocr'
-
 export async function POST(req: Request) {
   const formData = await req.formData()
   const file = formData.get('image')
+  const requestedModel = formData.get('model')
+  const requestedEngine = formData.get('engine')
+  const model =
+    typeof requestedModel === 'string' ? requestedModel.trim().toLowerCase() : ''
+  const engine =
+    typeof requestedEngine === 'string' ? requestedEngine.trim().toLowerCase() : ''
 
   if (!(file instanceof File)) {
     return NextResponse.json({ error: '画像が見つかりません。' }, { status: 400 })
@@ -12,11 +16,25 @@ export async function POST(req: Request) {
 
   const token = process.env.OCR_API_TOKEN
   const mode = process.env.OCR_ENDPOINT_MODE
-  const primaryEndpoint = process.env.OCR_ENDPOINT_PRIMARY ?? process.env.OCR_ENDPOINT
-  const fallbackEndpoint = process.env.OCR_ENDPOINT_FALLBACK
-  const endpoints = [primaryEndpoint, fallbackEndpoint, DEFAULT_ENDPOINT].filter(
+  const useHighModel = model === 'high' || model === 'accurate'
+  const basePrimaryEndpoint = process.env.OCR_ENDPOINT_PRIMARY ?? process.env.OCR_ENDPOINT
+  const baseFallbackEndpoint = process.env.OCR_ENDPOINT_FALLBACK
+  const highPrimaryEndpoint =
+    process.env.OCR_ENDPOINT_PRIMARY_HIGH ?? process.env.OCR_ENDPOINT_HIGH
+  const highFallbackEndpoint = process.env.OCR_ENDPOINT_FALLBACK_HIGH
+  const highEndpoints = [highPrimaryEndpoint, highFallbackEndpoint].filter(
     (value, index, self): value is string => Boolean(value) && self.indexOf(value) === index
   )
+  const baseEndpoints = [basePrimaryEndpoint, baseFallbackEndpoint].filter(
+    (value, index, self): value is string => Boolean(value) && self.indexOf(value) === index
+  )
+  const endpoints = useHighModel && highEndpoints.length > 0 ? highEndpoints : baseEndpoints
+  if (endpoints.length === 0) {
+    return NextResponse.json(
+      { error: 'OCRエンドポイントが設定されていません。', detail: { model, engine } },
+      { status: 500 }
+    )
+  }
 
   const fileBuffer = Buffer.from(await file.arrayBuffer())
 
@@ -30,6 +48,12 @@ export async function POST(req: Request) {
     if (useMultipart) {
       const forwardForm = new FormData()
       forwardForm.append('image', file, file.name || 'image')
+      if (model) {
+        forwardForm.append('model', model)
+      }
+      if (engine) {
+        forwardForm.append('engine', engine)
+      }
       init.body = forwardForm
     } else {
       headers['Content-Type'] = file.type || 'application/octet-stream'
@@ -40,7 +64,9 @@ export async function POST(req: Request) {
 
   let lastError: unknown = null
   for (const endpoint of endpoints) {
-    const isHuggingFace = endpoint.includes('api-inference.huggingface.co')
+    const isHuggingFace =
+      endpoint.includes('api-inference.huggingface.co') ||
+      endpoint.includes('router.huggingface.co')
     const useMultipart = mode ? mode === 'multipart' : !isHuggingFace
     try {
       const res = await fetch(endpoint, buildInit(useMultipart))
