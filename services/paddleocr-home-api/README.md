@@ -47,6 +47,17 @@ $env:OCR_HIGH_MAX_SIDE="2200"
 $env:OCR_HIGH_DET_LIMIT_SIDE_LEN="1600"
 ```
 
+PowerShell を使う場合は以下の形式で設定してください。
+
+```powershell
+$env:OCR_API_KEY="your-strong-token"
+$env:OCR_MAX_SIDE="1800"
+$env:OCR_DET_LIMIT_SIDE_LEN="1280"
+$env:OCR_MAX_IMAGE_BYTES="5242880"
+$env:OCR_MAX_CONCURRENCY="1"
+$env:OCR_TIMEOUT_SECONDS="15"
+```
+
 起動:
 
 ```bash
