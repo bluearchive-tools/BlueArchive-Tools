@@ -30,6 +30,29 @@ set OCR_DET_LIMIT_SIDE_LEN=1280
 set OCR_MAX_IMAGE_BYTES=5242880
 set OCR_MAX_CONCURRENCY=1
 set OCR_TIMEOUT_SECONDS=15
+set OCR_HIGH_MAX_SIDE=2200
+set OCR_HIGH_DET_LIMIT_SIDE_LEN=1600
+set DEEPSEEK_OCR_ENDPOINT=http://127.0.0.1:12000/ocr
+set DEEPSEEK_OCR_TOKEN=your-deepseek-token
+set DEEPSEEK_VLLM_ENDPOINT=http://127.0.0.1:13000/ocr
+set DEEPSEEK_VLLM_TOKEN=your-deepseek-vllm-token
+```
+
+PowerShell を使う場合は以下の形式で設定してください。
+
+```powershell
+$env:OCR_API_KEY="your-strong-token"
+$env:OCR_MAX_SIDE="1800"
+$env:OCR_DET_LIMIT_SIDE_LEN="1280"
+$env:OCR_MAX_IMAGE_BYTES="5242880"
+$env:OCR_MAX_CONCURRENCY="1"
+$env:OCR_TIMEOUT_SECONDS="15"
+$env:OCR_HIGH_MAX_SIDE="2200"
+$env:OCR_HIGH_DET_LIMIT_SIDE_LEN="1600"
+$env:DEEPSEEK_OCR_ENDPOINT="http://127.0.0.1:12000/ocr"
+$env:DEEPSEEK_OCR_TOKEN="your-deepseek-token"
+$env:DEEPSEEK_VLLM_ENDPOINT="http://127.0.0.1:13000/ocr"
+$env:DEEPSEEK_VLLM_TOKEN="your-deepseek-vllm-token"
 ```
 
 起動:
@@ -69,6 +92,38 @@ Vercel の `OCR_ENDPOINT_PRIMARY` に設定してください。
 ```bash
 curl -X POST \
   -H "Authorization: Bearer $OCR_API_KEY" \
+  -F "image=@/path/to/image.png" \
+  https://xxxx.trycloudflare.com/ocr
+```
+
+高精度モデル（高解像度プリセット）を指定する場合は `model=high` を送信してください。
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $OCR_API_KEY" \
+  -F "model=high" \
+  -F "image=@/path/to/image.png" \
+  https://xxxx.trycloudflare.com/ocr
+```
+
+DeepSeek OCR を使う場合は `engine=deepseek` と `model` を指定してください。
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $OCR_API_KEY" \
+  -F "engine=deepseek" \
+  -F "model=deepseek-v1" \
+  -F "image=@/path/to/image.png" \
+  https://xxxx.trycloudflare.com/ocr
+```
+
+DeepSeek OCR vLLM を使う場合は `engine=deepseek-vllm` と `model` を指定してください。
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $OCR_API_KEY" \
+  -F "engine=deepseek-vllm" \
+  -F "model=deepseek-v1" \
   -F "image=@/path/to/image.png" \
   https://xxxx.trycloudflare.com/ocr
 ```
