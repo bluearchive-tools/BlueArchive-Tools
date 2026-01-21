@@ -10,6 +10,11 @@ interface Student {
   name: string
 }
 
+interface MatchedStudent extends Student {
+  normalizedName: string
+  normalizedNameNoDigits: string
+}
+
 interface ExtractedStudent {
   studentId: string
   name: string
@@ -270,7 +275,7 @@ const extractStar = (text: string) => {
   return null
 }
 
-const findMatchedStudents = (text: string, students: Student[]) => {
+const findMatchedStudents = (text: string, students: Student[]): MatchedStudent[] => {
   const mergedText = normalizeOcrNameText(text)
   const normalized = normalizeText(mergedText)
   const bracketSuffixes = extractBracketSuffixes(mergedText)
