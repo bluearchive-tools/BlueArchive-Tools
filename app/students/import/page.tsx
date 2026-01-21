@@ -68,7 +68,23 @@ const parseNumber = (line: string, patterns: RegExp[]) => {
 }
 
 const normalizeText = (text: string) =>
-  text.replace(/\s+/g, '').replace(/[^\p{L}\p{N}★⭐]/gu, '')
+  text.replace(/\s+/g, '').replace(/[^\p{L}\p{N}★⭐()]/gu, '')
+
+const normalizeBrackets = (text: string) =>
+  text.replace(/[（）]/g, (char) => (char === '（' ? '(' : ')'))
+
+const normalizeOcrNameText = (text: string) => {
+  const normalized = normalizeBrackets(text)
+  return normalized.replace(
+    /([^\s()\n]{1,12})\s*[\r\n]+\s*\(([^)\n]+)\)/g,
+    '$1($2)'
+  )
+}
+
+const extractBracketSuffixes = (text: string) =>
+  [...text.matchAll(/\(([^)]+)\)/g)]
+    .map((match) => normalizeText(match[1]))
+    .filter(Boolean)
 
 const normalizeOcrNumber = (value: string) =>
   value
@@ -255,15 +271,22 @@ const extractStar = (text: string) => {
 }
 
 const findMatchedStudents = (text: string, students: Student[]) => {
-  const normalized = normalizeText(text)
+  const mergedText = normalizeOcrNameText(text)
+  const normalized = normalizeText(mergedText)
+  const bracketSuffixes = extractBracketSuffixes(mergedText)
   const candidates = students
     .map((s) => ({
       ...s,
       normalizedName: normalizeText(s.name),
+      normalizedNameNoDigits: normalizeText(s.name.replace(/\d+$/g, '')),
     }))
     .filter((s) => s.normalizedName && normalized.includes(s.normalizedName))
+    .filter((s) => {
+      if (!bracketSuffixes.length) return true
+      return bracketSuffixes.some((suffix) => s.normalizedName.includes(suffix))
+    })
 
-  return candidates.filter(
+  const filtered = candidates.filter(
     (candidate) =>
       !candidates.some(
         (other) =>
@@ -271,13 +294,26 @@ const findMatchedStudents = (text: string, students: Student[]) => {
           other.normalizedName.includes(candidate.normalizedName)
       )
   )
+
+  if (!bracketSuffixes.length) return filtered
+
+  const deduped = new Map<string, Student>()
+  filtered
+    .slice()
+    .sort((a, b) => Number(a.id) - Number(b.id))
+    .forEach((candidate) => {
+      const key = candidate.normalizedNameNoDigits || candidate.normalizedName
+      if (!deduped.has(key)) deduped.set(key, candidate)
+    })
+  return Array.from(deduped.values())
 }
 
 const parseEntries = (text: string, students: Student[]) => {
-  const normalized = normalizeText(text)
+  const mergedText = normalizeOcrNameText(text)
+  const normalized = normalizeText(mergedText)
   const results: ExtractedStudent[] = []
   const seen = new Set<string>()
-  const candidates = findMatchedStudents(text, students).sort(
+  const candidates = findMatchedStudents(mergedText, students).sort(
     (a, b) => b.normalizedName.length - a.normalizedName.length
   )
   const singleMatch = candidates.length === 1
@@ -286,7 +322,9 @@ const parseEntries = (text: string, students: Student[]) => {
     if (!student.normalizedName) continue
     if (!normalized.includes(student.normalizedName)) continue
     if (seen.has(student.id)) continue
-    const contextText = singleMatch ? text : extractNearText(text, student.name)
+    const contextText = singleMatch
+      ? mergedText
+      : extractNearText(mergedText, student.name)
     const level = extractLevel(contextText)
     const star = extractStar(contextText)
     const details = parseStudentDetails(contextText)
