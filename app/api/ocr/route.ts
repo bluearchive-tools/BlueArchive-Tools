@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server'
 
-const DEFAULT_ENDPOINT = 'https://router.huggingface.co/hf-inference/models/PaddlePaddle/paddleocr'
-const LEGACY_ENDPOINT = 'https://api-inference.huggingface.co/models/PaddlePaddle/paddleocr'
-
 export async function POST(req: Request) {
   const formData = await req.formData()
   const file = formData.get('image')
   const requestedModel = formData.get('model')
+  const requestedEngine = formData.get('engine')
   const model =
     typeof requestedModel === 'string' ? requestedModel.trim().toLowerCase() : ''
+  const engine =
+    typeof requestedEngine === 'string' ? requestedEngine.trim().toLowerCase() : ''
 
   if (!(file instanceof File)) {
     return NextResponse.json({ error: '画像が見つかりません。' }, { status: 400 })
@@ -17,17 +17,24 @@ export async function POST(req: Request) {
   const token = process.env.OCR_API_TOKEN
   const mode = process.env.OCR_ENDPOINT_MODE
   const useHighModel = model === 'high' || model === 'accurate'
-  const primaryEndpoint = useHighModel
-    ? process.env.OCR_ENDPOINT_PRIMARY_HIGH ?? process.env.OCR_ENDPOINT_HIGH
-    : process.env.OCR_ENDPOINT_PRIMARY ?? process.env.OCR_ENDPOINT
-  const fallbackEndpoint = useHighModel
-    ? process.env.OCR_ENDPOINT_FALLBACK_HIGH
-    : process.env.OCR_ENDPOINT_FALLBACK
-  const customEndpoints = [primaryEndpoint, fallbackEndpoint].filter(
+  const basePrimaryEndpoint = process.env.OCR_ENDPOINT_PRIMARY ?? process.env.OCR_ENDPOINT
+  const baseFallbackEndpoint = process.env.OCR_ENDPOINT_FALLBACK
+  const highPrimaryEndpoint =
+    process.env.OCR_ENDPOINT_PRIMARY_HIGH ?? process.env.OCR_ENDPOINT_HIGH
+  const highFallbackEndpoint = process.env.OCR_ENDPOINT_FALLBACK_HIGH
+  const highEndpoints = [highPrimaryEndpoint, highFallbackEndpoint].filter(
     (value, index, self): value is string => Boolean(value) && self.indexOf(value) === index
   )
-  const endpoints =
-    customEndpoints.length > 0 ? customEndpoints : [DEFAULT_ENDPOINT, LEGACY_ENDPOINT]
+  const baseEndpoints = [basePrimaryEndpoint, baseFallbackEndpoint].filter(
+    (value, index, self): value is string => Boolean(value) && self.indexOf(value) === index
+  )
+  const endpoints = useHighModel && highEndpoints.length > 0 ? highEndpoints : baseEndpoints
+  if (endpoints.length === 0) {
+    return NextResponse.json(
+      { error: 'OCRエンドポイントが設定されていません。', detail: { model, engine } },
+      { status: 500 }
+    )
+  }
 
   const fileBuffer = Buffer.from(await file.arrayBuffer())
 
@@ -43,6 +50,9 @@ export async function POST(req: Request) {
       forwardForm.append('image', file, file.name || 'image')
       if (model) {
         forwardForm.append('model', model)
+      }
+      if (engine) {
+        forwardForm.append('engine', engine)
       }
       init.body = forwardForm
     } else {

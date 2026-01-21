@@ -516,11 +516,14 @@ const extractExternalOcrText = (payload: unknown): string => {
   return texts.filter(Boolean).join('\n').trim()
 }
 
-const fetchExternalOcrText = async (file: File, model?: string) => {
+const fetchExternalOcrText = async (file: File, engine?: string, model?: string) => {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       const formData = new FormData()
       formData.append('image', file)
+      if (engine) {
+        formData.append('engine', engine)
+      }
       if (model) {
         formData.append('model', model)
       }
@@ -591,8 +594,16 @@ export default function StudentImportPage() {
   const [error, setError] = useState<string | null>(null)
   const [rawTexts, setRawTexts] = useState<string[]>([])
   const [entries, setEntries] = useState<ExtractedStudent[]>([])
-  const [ocrMode, setOcrMode] = useState<'paddleocr' | 'tesseract'>('paddleocr')
+  const [ocrMode, setOcrMode] = useState<
+    'paddleocr' | 'deepseek' | 'deepseek-vllm' | 'tesseract'
+  >('paddleocr')
   const [ocrModel, setOcrModel] = useState<'standard' | 'high'>('standard')
+  const [deepseekModel, setDeepseekModel] = useState<'deepseek-v1' | 'deepseek-v2'>(
+    'deepseek-v1'
+  )
+  const [deepseekVllmModel, setDeepseekVllmModel] = useState<
+    'deepseek-v1' | 'deepseek-v2'
+  >('deepseek-v1')
   const [saving, setSaving] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -626,7 +637,7 @@ export default function StudentImportPage() {
       const fileList = Array.from(files)
 
       try {
-        if (ocrMode === 'paddleocr') {
+        if (ocrMode === 'paddleocr' || ocrMode === 'deepseek' || ocrMode === 'deepseek-vllm') {
           const nextTexts: string[] = []
           const nextEntries: ExtractedStudent[] = []
           const deviceMemory =
@@ -647,6 +658,13 @@ export default function StudentImportPage() {
             setProgress(Math.min(1, completedSteps / Math.max(totalSteps, 1)))
           }
 
+          const ocrEngine = ocrMode
+          const selectedModel =
+            ocrMode === 'deepseek'
+              ? deepseekModel
+              : ocrMode === 'deepseek-vllm'
+                ? deepseekVllmModel
+                : ocrModel
           const tasks = fileList.map((file, i) => async () => {
             const segments = await splitStudentImage(file)
             const leftCanvas = preprocessCanvasForPaddle(segments.leftCanvas)
@@ -654,8 +672,8 @@ export default function StudentImportPage() {
             const leftFile = await canvasToFile(leftCanvas, `left-${i}.png`)
             const rightFile = await canvasToFile(rightCanvas, `right-${i}.png`)
             const [leftText, rightText] = await Promise.all([
-              fetchExternalOcrText(leftFile, ocrModel).finally(updateProgress),
-              fetchExternalOcrText(rightFile, ocrModel).finally(updateProgress),
+              fetchExternalOcrText(leftFile, ocrEngine, selectedModel).finally(updateProgress),
+              fetchExternalOcrText(rightFile, ocrEngine, selectedModel).finally(updateProgress),
             ])
 
             if (leftText) {
@@ -666,7 +684,11 @@ export default function StudentImportPage() {
             }
 
             totalSteps += 1
-            const fallbackText = await fetchExternalOcrText(file, ocrModel).finally(updateProgress)
+            const fallbackText = await fetchExternalOcrText(
+              file,
+              ocrEngine,
+              selectedModel
+            ).finally(updateProgress)
             if (fallbackText) {
               return {
                 texts: [fallbackText],
@@ -744,7 +766,7 @@ export default function StudentImportPage() {
         console.error(err)
       }
     },
-    [ocrMode, ocrModel, students]
+    [deepseekModel, deepseekVllmModel, ocrMode, ocrModel, students]
   )
 
   const updateEntry = useCallback(
@@ -888,6 +910,28 @@ export default function StudentImportPage() {
               />
               tesseract.js
             </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="ocr-mode"
+                value="deepseek"
+                checked={ocrMode === 'deepseek'}
+                onChange={() => setOcrMode('deepseek')}
+                disabled={isProcessing}
+              />
+              DeepSeek OCR
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="ocr-mode"
+                value="deepseek-vllm"
+                checked={ocrMode === 'deepseek-vllm'}
+                onChange={() => setOcrMode('deepseek-vllm')}
+                disabled={isProcessing}
+              />
+              DeepSeek OCR（vLLM）
+            </label>
           </div>
           <p className="text-xs text-gray-500">
             PaddleOCRを選択した場合は、画像をそのまま送信して処理します。
@@ -921,6 +965,66 @@ export default function StudentImportPage() {
           </div>
           <p className="text-xs text-gray-500">
             高精度は高解像度プリセットで処理するため、時間がかかる場合があります。
+          </p>
+        </div>
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-gray-700">DeepSeekモデル</p>
+          <div className="flex flex-wrap gap-4 text-sm">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="deepseek-model"
+                value="deepseek-v1"
+                checked={deepseekModel === 'deepseek-v1'}
+                onChange={() => setDeepseekModel('deepseek-v1')}
+                disabled={isProcessing || ocrMode !== 'deepseek'}
+              />
+              DeepSeek v1
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="deepseek-model"
+                value="deepseek-v2"
+                checked={deepseekModel === 'deepseek-v2'}
+                onChange={() => setDeepseekModel('deepseek-v2')}
+                disabled={isProcessing || ocrMode !== 'deepseek'}
+              />
+              DeepSeek v2
+            </label>
+          </div>
+          <p className="text-xs text-gray-500">
+            DeepSeek OCRは外部のローカルサービスに転送して処理します。
+          </p>
+        </div>
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-gray-700">DeepSeek vLLMモデル</p>
+          <div className="flex flex-wrap gap-4 text-sm">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="deepseek-vllm-model"
+                value="deepseek-v1"
+                checked={deepseekVllmModel === 'deepseek-v1'}
+                onChange={() => setDeepseekVllmModel('deepseek-v1')}
+                disabled={isProcessing || ocrMode !== 'deepseek-vllm'}
+              />
+              DeepSeek v1
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="deepseek-vllm-model"
+                value="deepseek-v2"
+                checked={deepseekVllmModel === 'deepseek-v2'}
+                onChange={() => setDeepseekVllmModel('deepseek-v2')}
+                disabled={isProcessing || ocrMode !== 'deepseek-vllm'}
+              />
+              DeepSeek v2
+            </label>
+          </div>
+          <p className="text-xs text-gray-500">
+            DeepSeek vLLMはローカルのvLLM推論APIに転送して処理します。
           </p>
         </div>
         <input

@@ -5,6 +5,7 @@ import logging
 import os
 from typing import Optional
 
+import httpx
 import numpy as np
 from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile, status
 from fastapi.responses import JSONResponse
@@ -22,6 +23,10 @@ MAX_SIDE = int(os.getenv("OCR_MAX_SIDE", "1800"))
 DET_LIMIT_SIDE_LEN = int(os.getenv("OCR_DET_LIMIT_SIDE_LEN", "1280"))
 HIGH_MAX_SIDE = int(os.getenv("OCR_HIGH_MAX_SIDE", "2200"))
 HIGH_DET_LIMIT_SIDE_LEN = int(os.getenv("OCR_HIGH_DET_LIMIT_SIDE_LEN", "1600"))
+DEEPSEEK_OCR_ENDPOINT = os.getenv("DEEPSEEK_OCR_ENDPOINT", "")
+DEEPSEEK_OCR_TOKEN = os.getenv("DEEPSEEK_OCR_TOKEN", "")
+DEEPSEEK_VLLM_ENDPOINT = os.getenv("DEEPSEEK_VLLM_ENDPOINT", "")
+DEEPSEEK_VLLM_TOKEN = os.getenv("DEEPSEEK_VLLM_TOKEN", "")
 
 semaphore = asyncio.Semaphore(MAX_CONCURRENCY if MAX_CONCURRENCY > 0 else 1)
 
@@ -104,6 +109,7 @@ async def version() -> JSONResponse:
 @app.post("/ocr")
 async def ocr_image(
     image: UploadFile = File(...),
+    engine: Optional[str] = Form(default=None),
     model: Optional[str] = Form(default=None),
     authorization: Optional[str] = Header(default=None),
 ) -> JSONResponse:
@@ -115,7 +121,67 @@ async def ocr_image(
             detail="Image exceeds size limit.",
         )
 
+    engine_key = (engine or "paddleocr").strip().lower()
     model_key = (model or "default").strip().lower()
+    if engine_key == "deepseek":
+        if not DEEPSEEK_OCR_ENDPOINT:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="DEEPSEEK_OCR_ENDPOINT is not configured.",
+            )
+        headers = {}
+        if DEEPSEEK_OCR_TOKEN:
+            headers["Authorization"] = f"Bearer {DEEPSEEK_OCR_TOKEN}"
+        files = {"image": (image.filename or "image", data, image.content_type)}
+        form_data = {}
+        if model_key:
+            form_data["model"] = model_key
+        try:
+            async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
+                response = await client.post(
+                    DEEPSEEK_OCR_ENDPOINT,
+                    headers=headers,
+                    data=form_data,
+                    files=files,
+                )
+                response.raise_for_status()
+                return JSONResponse(response.json())
+        except httpx.HTTPError as exc:
+            logger.exception("DeepSeek OCR request failed")
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"DeepSeek OCR request failed: {exc}",
+            ) from exc
+    if engine_key == "deepseek-vllm":
+        if not DEEPSEEK_VLLM_ENDPOINT:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="DEEPSEEK_VLLM_ENDPOINT is not configured.",
+            )
+        headers = {}
+        if DEEPSEEK_VLLM_TOKEN:
+            headers["Authorization"] = f"Bearer {DEEPSEEK_VLLM_TOKEN}"
+        files = {"image": (image.filename or "image", data, image.content_type)}
+        form_data = {}
+        if model_key:
+            form_data["model"] = model_key
+        try:
+            async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
+                response = await client.post(
+                    DEEPSEEK_VLLM_ENDPOINT,
+                    headers=headers,
+                    data=form_data,
+                    files=files,
+                )
+                response.raise_for_status()
+                return JSONResponse(response.json())
+        except httpx.HTTPError as exc:
+            logger.exception("DeepSeek vLLM request failed")
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"DeepSeek vLLM request failed: {exc}",
+            ) from exc
+
     if model_key in ("high", "accurate"):
         ocr_instance = ocr_high
         max_side = HIGH_MAX_SIDE
