@@ -15,14 +15,11 @@ export async function POST(req: Request) {
   const mode = process.env.OCR_ENDPOINT_MODE
   const primaryEndpoint = process.env.OCR_ENDPOINT_PRIMARY ?? process.env.OCR_ENDPOINT
   const fallbackEndpoint = process.env.OCR_ENDPOINT_FALLBACK
-  const endpoints = [
-    primaryEndpoint,
-    fallbackEndpoint,
-    DEFAULT_ENDPOINT,
-    LEGACY_ENDPOINT,
-  ].filter(
+  const customEndpoints = [primaryEndpoint, fallbackEndpoint].filter(
     (value, index, self): value is string => Boolean(value) && self.indexOf(value) === index
   )
+  const endpoints =
+    customEndpoints.length > 0 ? customEndpoints : [DEFAULT_ENDPOINT, LEGACY_ENDPOINT]
 
   const fileBuffer = Buffer.from(await file.arrayBuffer())
 
