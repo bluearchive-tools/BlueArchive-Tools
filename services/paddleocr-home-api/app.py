@@ -1,6 +1,7 @@
 import asyncio
 import gc
 import io
+import logging
 import os
 from typing import Optional
 
@@ -11,6 +12,7 @@ from paddleocr import PaddleOCR
 from PIL import Image
 
 app = FastAPI()
+logger = logging.getLogger("paddleocr-home-api")
 
 OCR_API_KEY = os.getenv("OCR_API_KEY", "")
 MAX_IMAGE_BYTES = int(os.getenv("OCR_MAX_IMAGE_BYTES", "5242880"))
@@ -113,6 +115,12 @@ async def ocr_image(
             raise HTTPException(
                 status_code=status.HTTP_504_GATEWAY_TIMEOUT,
                 detail="OCR processing timed out.",
+            ) from exc
+        except Exception as exc:
+            logger.exception("OCR processing failed")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"OCR processing failed: {exc}",
             ) from exc
 
     del data

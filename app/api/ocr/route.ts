@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 
-const DEFAULT_ENDPOINT = 'https://api-inference.huggingface.co/models/PaddlePaddle/paddleocr'
+const DEFAULT_ENDPOINT = 'https://router.huggingface.co/hf-inference/models/PaddlePaddle/paddleocr'
+const LEGACY_ENDPOINT = 'https://api-inference.huggingface.co/models/PaddlePaddle/paddleocr'
 
 export async function POST(req: Request) {
   const formData = await req.formData()
@@ -14,9 +15,11 @@ export async function POST(req: Request) {
   const mode = process.env.OCR_ENDPOINT_MODE
   const primaryEndpoint = process.env.OCR_ENDPOINT_PRIMARY ?? process.env.OCR_ENDPOINT
   const fallbackEndpoint = process.env.OCR_ENDPOINT_FALLBACK
-  const endpoints = [primaryEndpoint, fallbackEndpoint, DEFAULT_ENDPOINT].filter(
+  const customEndpoints = [primaryEndpoint, fallbackEndpoint].filter(
     (value, index, self): value is string => Boolean(value) && self.indexOf(value) === index
   )
+  const endpoints =
+    customEndpoints.length > 0 ? customEndpoints : [DEFAULT_ENDPOINT, LEGACY_ENDPOINT]
 
   const fileBuffer = Buffer.from(await file.arrayBuffer())
 
@@ -40,7 +43,9 @@ export async function POST(req: Request) {
 
   let lastError: unknown = null
   for (const endpoint of endpoints) {
-    const isHuggingFace = endpoint.includes('api-inference.huggingface.co')
+    const isHuggingFace =
+      endpoint.includes('api-inference.huggingface.co') ||
+      endpoint.includes('router.huggingface.co')
     const useMultipart = mode ? mode === 'multipart' : !isHuggingFace
     try {
       const res = await fetch(endpoint, buildInit(useMultipart))
