@@ -6,9 +6,19 @@ Renderの軽量版とは別に、自宅PC向けに高精度設定で動かすOCR
 
 ```bash
 cd services/paddleocr-home-api
-python -m venv .venv
-.\.venv\Scripts\activate
+py -3.11 -m venv .venv
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+```
+
+> NOTE: Python 3.10/3.11 を推奨します（3.14 では paddlepaddle のホイールがありません）。
+
+もし `paddlepaddle` のインストールでエラーが出る場合は、公式ホイールを使って再インストールしてください。
+
+```bash
+pip install --upgrade pip
+pip install paddlepaddle==2.6.2 -f https://www.paddlepaddle.org.cn/whl/windows/mkl/avx/stable.html
 ```
 
 `.env.example` を参考に環境変数を設定してください。
