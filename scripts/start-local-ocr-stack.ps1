@@ -52,35 +52,35 @@ $Command
         -WorkingDirectory $WorkingDirectory | Out-Null
 }
 
-$paddleCommand = @"
-\$env:OCR_API_KEY="$OcrApiKey"
-\$env:OCR_MAX_SIDE="1800"
-\$env:OCR_DET_LIMIT_SIDE_LEN="1280"
-\$env:OCR_MAX_IMAGE_BYTES="5242880"
-\$env:OCR_MAX_CONCURRENCY="1"
-\$env:OCR_TIMEOUT_SECONDS="15"
-\$env:OCR_HIGH_MAX_SIDE="2200"
-\$env:OCR_HIGH_DET_LIMIT_SIDE_LEN="1600"
-\$env:DEEPSEEK_OCR_ENDPOINT="http://127.0.0.1:12000/ocr"
-\$env:DEEPSEEK_OCR_TOKEN="$DeepseekOcrToken"
-\$env:DEEPSEEK_VLLM_ENDPOINT="http://127.0.0.1:13000/ocr"
-\$env:DEEPSEEK_VLLM_TOKEN="$DeepseekVllmToken"
-uvicorn app:app --host 127.0.0.1 --port 10000
-"@
+$paddleCommand = @(
+    "`$env:OCR_API_KEY=`"$OcrApiKey`"",
+    "`$env:OCR_MAX_SIDE=`"1800`"",
+    "`$env:OCR_DET_LIMIT_SIDE_LEN=`"1280`"",
+    "`$env:OCR_MAX_IMAGE_BYTES=`"5242880`"",
+    "`$env:OCR_MAX_CONCURRENCY=`"1`"",
+    "`$env:OCR_TIMEOUT_SECONDS=`"15`"",
+    "`$env:OCR_HIGH_MAX_SIDE=`"2200`"",
+    "`$env:OCR_HIGH_DET_LIMIT_SIDE_LEN=`"1600`"",
+    "`$env:DEEPSEEK_OCR_ENDPOINT=`"http://127.0.0.1:12000/ocr`"",
+    "`$env:DEEPSEEK_OCR_TOKEN=`"$DeepseekOcrToken`"",
+    "`$env:DEEPSEEK_VLLM_ENDPOINT=`"http://127.0.0.1:13000/ocr`"",
+    "`$env:DEEPSEEK_VLLM_TOKEN=`"$DeepseekVllmToken`"",
+    "uvicorn app:app --host 127.0.0.1 --port 10000"
+) -join "`r`n"
 
-$deepseekOcrCommand = @"
-\$env:OCR_API_KEY="$DeepseekOcrToken"
-\$env:VLLM_CHAT_ENDPOINT="$DeepseekOcrChatEndpoint"
-\$env:VLLM_API_KEY="$DeepseekOcrUpstreamKey"
-uvicorn app:app --host 127.0.0.1 --port 12000
-"@
+$deepseekOcrCommand = @(
+    "`$env:OCR_API_KEY=`"$DeepseekOcrToken`"",
+    "`$env:VLLM_CHAT_ENDPOINT=`"$DeepseekOcrChatEndpoint`"",
+    "`$env:VLLM_API_KEY=`"$DeepseekOcrUpstreamKey`"",
+    "uvicorn app:app --host 127.0.0.1 --port 12000"
+) -join "`r`n"
 
-$deepseekVllmCommand = @"
-\$env:OCR_API_KEY="$DeepseekVllmToken"
-\$env:VLLM_CHAT_ENDPOINT="$DeepseekVllmChatEndpoint"
-\$env:VLLM_API_KEY="$DeepseekVllmUpstreamKey"
-uvicorn app:app --host 127.0.0.1 --port 13000
-"@
+$deepseekVllmCommand = @(
+    "`$env:OCR_API_KEY=`"$DeepseekVllmToken`"",
+    "`$env:VLLM_CHAT_ENDPOINT=`"$DeepseekVllmChatEndpoint`"",
+    "`$env:VLLM_API_KEY=`"$DeepseekVllmUpstreamKey`"",
+    "uvicorn app:app --host 127.0.0.1 --port 13000"
+) -join "`r`n"
 
 Ensure-Venv -WorkingDirectory $paddleRoot
 Ensure-Venv -WorkingDirectory $deepseekRoot
