@@ -6,7 +6,9 @@ param(
     [string]$DeepseekVllmChatEndpoint = "http://127.0.0.1:8000/v1/chat/completions",
     [string]$DeepseekOcrUpstreamKey = "",
     [string]$DeepseekVllmUpstreamKey = "",
-    [string]$CloudflaredUrl = "http://127.0.0.1:10000"
+    [string]$CloudflaredUrl = "http://127.0.0.1:10000",
+    [string]$CloudflaredTunnelName = "",
+    [string]$CloudflaredConfigPath = ""
 )
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
@@ -88,5 +90,15 @@ Start-OcrProcess -Name "DeepSeek OCR API" -WorkingDirectory $deepseekRoot -Comma
 Start-OcrProcess -Name "DeepSeek OCR vLLM API" -WorkingDirectory $deepseekRoot -Command $deepseekVllmCommand
 
 Write-Host "Starting Cloudflare Tunnel..." -ForegroundColor Cyan
-Start-Process -FilePath "powershell" `
-    -ArgumentList @("-NoExit", "-Command", "cloudflared tunnel --url $CloudflaredUrl") | Out-Null
+if ($CloudflaredTunnelName) {
+    if ($CloudflaredConfigPath) {
+        Start-Process -FilePath "powershell" `
+            -ArgumentList @("-NoExit", "-Command", "cloudflared tunnel --config `"$CloudflaredConfigPath`" run $CloudflaredTunnelName") | Out-Null
+    } else {
+        Start-Process -FilePath "powershell" `
+            -ArgumentList @("-NoExit", "-Command", "cloudflared tunnel run $CloudflaredTunnelName") | Out-Null
+    }
+} else {
+    Start-Process -FilePath "powershell" `
+        -ArgumentList @("-NoExit", "-Command", "cloudflared tunnel --url $CloudflaredUrl") | Out-Null
+}

@@ -72,6 +72,31 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
   -DeepseekVllmChatEndpoint "http://127.0.0.1:8000/v1/chat/completions"
 ```
 
+Named Tunnel を使う場合は、トンネル名を渡してください（Quick Tunnel ではなく固定ドメインになります）。
+
+```powershell
+.\scripts\start-local-ocr-stack.ps1 `
+  -OcrApiKey "your-strong-token" `
+  -DeepseekOcrToken "your-deepseek-token" `
+  -DeepseekVllmToken "your-deepseek-vllm-token" `
+  -DeepseekOcrChatEndpoint "http://127.0.0.1:8000/v1/chat/completions" `
+  -DeepseekVllmChatEndpoint "http://127.0.0.1:8000/v1/chat/completions" `
+  -CloudflaredTunnelName "BA_TOOLS_OCR"
+```
+
+`CloudflaredConfigPath` を指定すると、指定した `config.yml` を使って起動します。
+
+```powershell
+.\scripts\start-local-ocr-stack.ps1 `
+  -OcrApiKey "your-strong-token" `
+  -DeepseekOcrToken "your-deepseek-token" `
+  -DeepseekVllmToken "your-deepseek-vllm-token" `
+  -DeepseekOcrChatEndpoint "http://127.0.0.1:8000/v1/chat/completions" `
+  -DeepseekVllmChatEndpoint "http://127.0.0.1:8000/v1/chat/completions" `
+  -CloudflaredTunnelName "BA_TOOLS_OCR" `
+  -CloudflaredConfigPath "C:\Users\<user>\.cloudflared\config.yml"
+```
+
 コピペ用の 1 行コマンド:
 
 ```powershell
@@ -137,6 +162,8 @@ cloudflared tunnel create paddleocr-home
 # 3) DNS を割り当て（例: ocr.example.com）
 cloudflared tunnel route dns paddleocr-home ocr.example.com
 ```
+
+> NOTE: トンネルが未作成の場合は、先に `cloudflared tunnel create <tunnel-name>` を実行してください。
 
 `%USERPROFILE%\.cloudflared\config.yml` を作成して、ローカル API に向けます。
 
