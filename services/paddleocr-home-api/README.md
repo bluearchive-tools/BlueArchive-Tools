@@ -55,6 +55,32 @@ $env:DEEPSEEK_VLLM_ENDPOINT="http://127.0.0.1:13000/ocr"
 $env:DEEPSEEK_VLLM_TOKEN="your-deepseek-vllm-token"
 ```
 
+## 一括起動（PowerShell）
+
+PaddleOCR + DeepSeek OCR + DeepSeek OCR(vLLM) + Cloudflare Tunnel をまとめて起動したい場合は、
+リポジトリ直下のスクリプトを使うと一括で立ち上げられます。
+
+> NOTE: スクリプトが venv 作成と `pip install -r requirements.txt` まで自動で行います。
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+.\scripts\start-local-ocr-stack.ps1 `
+  -OcrApiKey "your-strong-token" `
+  -DeepseekOcrToken "your-deepseek-token" `
+  -DeepseekVllmToken "your-deepseek-vllm-token" `
+  -DeepseekOcrChatEndpoint "http://127.0.0.1:8000/v1/chat/completions" `
+  -DeepseekVllmChatEndpoint "http://127.0.0.1:8000/v1/chat/completions"
+```
+
+コピペ用の 1 行コマンド:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-local-ocr-stack.ps1 -OcrApiKey "your-strong-token" -DeepseekOcrToken "your-deepseek-token" -DeepseekVllmToken "your-deepseek-vllm-token" -DeepseekOcrChatEndpoint "http://127.0.0.1:8000/v1/chat/completions" -DeepseekVllmChatEndpoint "http://127.0.0.1:8000/v1/chat/completions"
+```
+
+`DeepseekOcrChatEndpoint` / `DeepseekVllmChatEndpoint` はそれぞれ上流の OpenAI 互換 API を指定してください。
+vLLM を別ポートで起動している場合は、その URL に差し替えてください。
+
 起動:
 
 ```bash
@@ -86,6 +112,51 @@ cloudflared tunnel --url http://127.0.0.1:10000
 
 表示された URL（例: `https://xxxx.trycloudflare.com`）に `/ocr` を付けたものを、
 Vercel の `OCR_ENDPOINT_PRIMARY` に設定してください。
+
+### 固定ドメインを使う場合（Named Tunnel）
+
+Quick Tunnel は毎回 URL が変わるため、固定ドメインを使いたい場合は Named Tunnel を作成します。
+Cloudflare で DNS を管理している前提で、以下の手順で固定 URL にできます。
+
+> NOTE: 現在 `bluearchive.tools` の NS が Vercel を指している場合は、Named Tunnel で固定ドメインを使うには
+> Cloudflare 側に DNS を委任する必要があります。方法は 2 つです。
+> 1) レジストラ側の NS を Cloudflare に変更して、Vercel の DNS レコードを Cloudflare に移す。
+> 2) サブドメイン（例: `ocr.bluearchive.tools`）だけを Cloudflare に委任し、そのサブドメインでトンネルを使う。
+>
+> サブドメインだけ委任したい場合は、Vercel 側の DNS に **NS レコード** を追加して Cloudflare の NS を設定します。
+> 例: `ocr.bluearchive.tools` に Cloudflare が指定する NS（2 つ）を追加します。
+> その後、Cloudflare 側で `ocr.bluearchive.tools` のゾーンを作成し、Named Tunnel の DNS を作成してください。
+
+```powershell
+# 1) 初回ログイン
+cloudflared login
+
+# 2) トンネル作成
+cloudflared tunnel create paddleocr-home
+
+# 3) DNS を割り当て（例: ocr.example.com）
+cloudflared tunnel route dns paddleocr-home ocr.example.com
+```
+
+`%USERPROFILE%\.cloudflared\config.yml` を作成して、ローカル API に向けます。
+
+```yaml
+tunnel: paddleocr-home
+credentials-file: C:\Users\<user>\.cloudflared\<tunnel-id>.json
+
+ingress:
+  - hostname: ocr.example.com
+    service: http://127.0.0.1:10000
+  - service: http_status:404
+```
+
+起動:
+
+```powershell
+cloudflared tunnel --config "C:\Users\<user>\.cloudflared\config.yml" run paddleocr-home
+```
+
+この場合は `https://ocr.example.com/ocr` を `OCR_ENDPOINT_PRIMARY` に設定します。
 
 ## 動作確認（curl）
 
