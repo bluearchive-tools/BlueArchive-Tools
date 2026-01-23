@@ -103,6 +103,12 @@ Named Tunnel を使う場合は、トンネル名を渡してください（Quic
 powershell -ExecutionPolicy Bypass -File .\scripts\start-local-ocr-stack.ps1 -OcrApiKey "your-strong-token" -DeepseekOcrToken "your-deepseek-token" -DeepseekVllmToken "your-deepseek-vllm-token" -DeepseekOcrChatEndpoint "http://127.0.0.1:8000/v1/chat/completions" -DeepseekVllmChatEndpoint "http://127.0.0.1:8000/v1/chat/completions"
 ```
 
+Named Tunnel で OCR もまとめて起動する 1 行コマンド:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-local-ocr-stack.ps1 -OcrApiKey "your-strong-token" -DeepseekOcrToken "your-deepseek-token" -DeepseekVllmToken "your-deepseek-vllm-token" -DeepseekOcrChatEndpoint "http://127.0.0.1:8000/v1/chat/completions" -DeepseekVllmChatEndpoint "http://127.0.0.1:8000/v1/chat/completions" -CloudflaredTunnelName "BA_TOOLS_OCR"
+```
+
 `DeepseekOcrChatEndpoint` / `DeepseekVllmChatEndpoint` はそれぞれ上流の OpenAI 互換 API を指定してください。
 vLLM を別ポートで起動している場合は、その URL に差し替えてください。
 
