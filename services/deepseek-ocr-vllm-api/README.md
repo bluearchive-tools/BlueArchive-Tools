@@ -38,6 +38,21 @@ $env:VLLM_SYSTEM_PROMPT="You are an OCR engine. Extract all readable text from t
 uvicorn app:app --host 127.0.0.1 --port 13000
 ```
 
+DeepSeek OCR と DeepSeek OCR vLLM を分けたい場合は、同じ API を 2 つ起動します。
+例として 12000 を通常の DeepSeek OCR、13000 を vLLM 向けとして使います。
+
+```powershell
+$env:OCR_API_KEY="your-deepseek-token"
+$env:VLLM_CHAT_ENDPOINT="http://127.0.0.1:8000/v1/chat/completions"
+uvicorn app:app --host 127.0.0.1 --port 12000
+```
+
+```powershell
+$env:OCR_API_KEY="your-deepseek-vllm-token"
+$env:VLLM_CHAT_ENDPOINT="http://127.0.0.1:8001/v1/chat/completions"
+uvicorn app:app --host 127.0.0.1 --port 13000
+```
+
 `services/paddleocr-home-api` 側の環境変数 `DEEPSEEK_VLLM_ENDPOINT` を
 `http://127.0.0.1:13000/ocr` に設定してください。
 
