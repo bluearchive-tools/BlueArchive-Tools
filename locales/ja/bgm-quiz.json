@@ -1,0 +1,32 @@
+{
+  "title": "BGMクイズ",
+  "description": "ヒントから楽曲名を当てるミニゲームです。",
+  "progress": "問題 {current} / {total}",
+  "hintLabel": "ヒント",
+  "score": "正解数: {score} / {total}",
+  "resultTitle": "結果発表",
+  "resultPerfect": "全問正解！さすが先生！",
+  "resultGood": "あと少し！もう一度挑戦してみましょう。",
+  "next": "次の問題へ",
+  "restart": "もう一度遊ぶ",
+  "home": "ホームへ戻る",
+  "correct": "正解！",
+  "incorrect": "不正解…正解は「{answer}」でした。",
+  "questions": [
+    {
+      "hint": "透き通るような青空を思わせる、学園の日常シーンでよく流れる曲",
+      "choices": ["Clear Morning", "Unwelcome School", "Hifumi Daisuki", "Target for Love"],
+      "answerIndex": 0
+    },
+    {
+      "hint": "緊張感のある旋律で、任務開始時の雰囲気を高めるバトル寄りの楽曲",
+      "choices": ["Colorful Mess", "Constant Moderato", "Ready to Go", "Unwelcome School"],
+      "answerIndex": 2
+    },
+    {
+      "hint": "コミカルで軽快、トラブルメーカーたちの登場で印象に残りやすい曲",
+      "choices": ["Unwelcome School", "Clear Morning", "Midsummer Cat", "Goal Wo Nerae!"],
+      "answerIndex": 0
+    }
+  ]
+}

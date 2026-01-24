@@ -1,0 +1,32 @@
+{
+  "title": "BGM Quiz",
+  "description": "A mini game where you guess the track name from a hint.",
+  "progress": "Question {current} / {total}",
+  "hintLabel": "Hint",
+  "score": "Score: {score} / {total}",
+  "resultTitle": "Results",
+  "resultPerfect": "Perfect score! Great job, Sensei!",
+  "resultGood": "So close! Try again and aim for perfect.",
+  "next": "Next question",
+  "restart": "Play again",
+  "home": "Back to home",
+  "correct": "Correct!",
+  "incorrect": "Not quite... The answer was \"{answer}\".",
+  "questions": [
+    {
+      "hint": "A bright everyday campus theme that feels like a clear blue morning.",
+      "choices": ["Clear Morning", "Unwelcome School", "Hifumi Daisuki", "Target for Love"],
+      "answerIndex": 0
+    },
+    {
+      "hint": "A battle-leaning track with tension that ramps up right as a mission begins.",
+      "choices": ["Colorful Mess", "Constant Moderato", "Ready to Go", "Unwelcome School"],
+      "answerIndex": 2
+    },
+    {
+      "hint": "Comical and energetic, often associated with chaotic troublemakers.",
+      "choices": ["Unwelcome School", "Clear Morning", "Midsummer Cat", "Goal Wo Nerae!"],
+      "answerIndex": 0
+    }
+  ]
+}

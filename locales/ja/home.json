@@ -58,6 +58,16 @@
           "description": "絆レベル上げに必要なアイテム数を計算します"
         }
       }
+    },
+    "minigames": {
+      "title": "ミニゲーム",
+      "description": "ちょっとした息抜きに遊べるコンテンツです",
+      "actions": {
+        "bgmQuiz": {
+          "title": "BGMクイズ",
+          "description": "ヒントを頼りに楽曲名を当てましょう"
+        }
+      }
     }
   }
 }
