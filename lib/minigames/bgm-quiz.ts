@@ -6,7 +6,7 @@ export type BgmTrack = {
   category: string
 }
 
-export type QuizMode = 'multiple-choice' | 'free-input'
+export type QuizMode = 'multiple-choice' | 'free-input' | 'list-select'
 
 export type QuizQuestion = {
   track: BgmTrack
