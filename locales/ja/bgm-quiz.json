@@ -1,0 +1,15 @@
+{
+  "title": "BGMクイズ",
+  "description": "ヒントから楽曲名を当てるミニゲームです。",
+  "progress": "問題 {current} / {total}",
+  "hintLabel": "ヒント",
+  "score": "正解数: {score} / {total}",
+  "resultTitle": "結果発表",
+  "resultPerfect": "全問正解！さすが先生！",
+  "resultGood": "あと少し！もう一度挑戦してみましょう。",
+  "next": "次の問題へ",
+  "restart": "もう一度遊ぶ",
+  "home": "ホームへ戻る",
+  "correct": "正解！",
+  "incorrect": "不正解…正解は「{answer}」でした。"
+}

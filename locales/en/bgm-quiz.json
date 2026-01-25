@@ -1,0 +1,15 @@
+{
+  "title": "BGM Quiz",
+  "description": "A mini game where you guess the track name from a hint.",
+  "progress": "Question {current} / {total}",
+  "hintLabel": "Hint",
+  "score": "Score: {score} / {total}",
+  "resultTitle": "Results",
+  "resultPerfect": "Perfect score! Great job, Sensei!",
+  "resultGood": "So close! Try again and aim for perfect.",
+  "next": "Next question",
+  "restart": "Play again",
+  "home": "Back to home",
+  "correct": "Correct!",
+  "incorrect": "Not quite... The answer was \"{answer}\"."
+}

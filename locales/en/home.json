@@ -58,6 +58,16 @@
           "description": "Estimate items needed for bond levels"
         }
       }
+    },
+    "minigames": {
+      "title": "Mini games",
+      "description": "Quick breaks you can play right away",
+      "actions": {
+        "bgmQuiz": {
+          "title": "BGM quiz",
+          "description": "Guess the track name from the hint"
+        }
+      }
     }
   }
 }

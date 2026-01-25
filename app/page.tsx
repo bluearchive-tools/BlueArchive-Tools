@@ -108,6 +108,20 @@ export default function Home() {
   </div>
 </div>
       </CollapsibleBox>
+
+      <CollapsibleBox
+        title={t('minigames.title')}
+        description={t('minigames.description')}
+      >
+        <div className="space-y-2">
+          <Link href="/minigames/bgm-quiz">
+            <FeatureItem
+              title={t('minigames.actions.bgmQuiz.title')}
+              description={t('minigames.actions.bgmQuiz.description')}
+            />
+          </Link>
+        </div>
+      </CollapsibleBox>
     </main>
     <Footer />
     </>
