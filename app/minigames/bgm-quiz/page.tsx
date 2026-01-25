@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import Footer from '../../../components/Footer'
 import { useTranslations } from 'next-intl'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import {
   createBgmQuizQuestions,
   getBgmQuizCategories,
@@ -47,6 +48,24 @@ export default function BgmQuizPage() {
   const [playStartTime, setPlayStartTime] = useState<number | null>(null)
   const [showAudio, setShowAudio] = useState(true)
   const [fastElapsed, setFastElapsed] = useState(0)
+  const [isOnline, setIsOnline] = useState(false)
+  const [roomCodeInput, setRoomCodeInput] = useState('')
+  const [onlineRoomCode, setOnlineRoomCode] = useState<string | null>(null)
+  const [onlinePlayerName, setOnlinePlayerName] = useState('')
+  const [onlinePlayerId, setOnlinePlayerId] = useState<string | null>(null)
+  const [onlineQuestion, setOnlineQuestion] = useState<{
+    trackFile: string
+    choices: string[]
+  } | null>(null)
+  const [onlinePlayers, setOnlinePlayers] = useState<Array<{ player_id: string; display_name: string; score: number }>>(
+    [],
+  )
+  const [onlineTotalQuestions, setOnlineTotalQuestions] = useState<number | null>(null)
+  const [onlineStatus, setOnlineStatus] = useState<'playing' | 'finished' | null>(null)
+  const [onlineError, setOnlineError] = useState<string | null>(null)
+  const [onlineLoading, setOnlineLoading] = useState(false)
+
+  const supabase = useSupabaseClient()
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const stopTimerRef = useRef<number | null>(null)
@@ -72,12 +91,17 @@ export default function BgmQuizPage() {
   }, [filteredTracks, selectedCategory])
 
   const currentQuestion = questions[currentIndex]
-  const totalQuestions = questions.length
+  const totalQuestions = isOnline ? onlineTotalQuestions ?? questions.length : questions.length
   const isLastQuestion = currentIndex === totalQuestions - 1
   const isAnswered = answerState !== null
   const canAnswer = gameType !== 'fast' || hasStopped
   const currentFastStopTime = fastStopTimes[currentIndex]
-  const totalScore = isMultiplayer ? playerScores.reduce((sum, value) => sum + value, 0) : score
+  const onlineScore = isOnline ? onlinePlayers.reduce((sum, player) => sum + player.score, 0) : 0
+  const totalScore = isOnline ? onlineScore : isMultiplayer ? playerScores.reduce((sum, value) => sum + value, 0) : score
+  const activeQuestion = isOnline ? onlineQuestion : currentQuestion
+  const activeTrack = isOnline
+    ? tracks.find((track) => track.file === onlineQuestion?.trackFile)
+    : currentQuestion?.track
 
   const clearStopTimer = () => {
     if (stopTimerRef.current) {
@@ -143,6 +167,30 @@ export default function BgmQuizPage() {
   }, [gameType, mode])
 
   useEffect(() => {
+    if (!isOnline) return
+    if (gameType !== 'fast') {
+      setGameType('fast')
+    }
+    if (mode !== 'multiple-choice') {
+      setMode('multiple-choice')
+    }
+  }, [gameType, isOnline, mode])
+
+  useEffect(() => {
+    if (isOnline) {
+      setIsMultiplayer(false)
+      return
+    }
+    setOnlineRoomCode(null)
+    setOnlinePlayerId(null)
+    setOnlineQuestion(null)
+    setOnlinePlayers([])
+    setOnlineTotalQuestions(null)
+    setOnlineStatus(null)
+    setOnlineError(null)
+  }, [isOnline])
+
+  useEffect(() => {
     clearFastTimer()
     if (phase !== 'playing' || gameType !== 'fast' || hasStopped || playStartTime === null) {
       if (currentFastStopTime !== null && currentFastStopTime !== undefined) {
@@ -155,7 +203,64 @@ export default function BgmQuizPage() {
     }, 10)
   }, [currentFastStopTime, gameType, hasStopped, phase, playStartTime])
 
+  useEffect(() => {
+    if (!onlineRoomCode) return
+    const roomCode = onlineRoomCode
+
+    const channel = supabase
+      .channel(`bgm-quiz-room-${roomCode}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'bgm_quiz_rooms',
+          filter: `room_code=eq.${roomCode}`,
+        },
+        async (payload) => {
+          const updatedIndex = payload.new.current_index as number
+          const status = payload.new.status as 'playing' | 'finished'
+          setOnlineStatus(status)
+          setCurrentIndex(updatedIndex)
+          if (status === 'finished') {
+            setPhase('result')
+            return
+          }
+          try {
+            const question = await fetchOnlineQuestion(roomCode, updatedIndex)
+            setOnlineQuestion(question)
+            setAnswerState(null)
+            setSelectedIndex(null)
+            setHasStopped(gameType !== 'fast')
+            setFastElapsed(0)
+          } catch (error) {
+            setOnlineError(error instanceof Error ? error.message : '問題の取得に失敗しました。')
+          }
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bgm_quiz_players',
+          filter: `room_code=eq.${roomCode}`,
+        },
+        () => {
+          void fetchOnlinePlayers(roomCode)
+        },
+      )
+      .subscribe()
+
+    void fetchOnlinePlayers(roomCode)
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [gameType, onlineRoomCode, supabase])
+
   const handleStart = () => {
+    if (isOnline) return
     if (!filteredTracks.length) return
     const selectedTracks = selectedCategory === 'all' ? filteredTracks : availableTracks
     const quizQuestions = createBgmQuizQuestions(selectedTracks, questionCount, mode)
@@ -182,11 +287,123 @@ export default function BgmQuizPage() {
     setPhase('playing')
   }
 
+  const fetchOnlineQuestion = async (roomCode: string, index: number) => {
+    const response = await fetch(`/api/bgm-quiz/rooms/${roomCode}/question?index=${index}`)
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(data?.error ?? '問題の取得に失敗しました。')
+    }
+    return data.question as { trackFile: string; choices: string[] }
+  }
+
+  const fetchOnlinePlayers = async (roomCode: string) => {
+    const { data } = await supabase
+      .from('bgm_quiz_players')
+      .select('player_id,display_name,score')
+      .eq('room_code', roomCode)
+      .order('created_at', { ascending: true })
+    setOnlinePlayers(data ?? [])
+  }
+
+  const createOnlineRoom = async () => {
+    if (onlineLoading) return
+    setOnlineLoading(true)
+    setOnlineError(null)
+    try {
+      const response = await fetch('/api/bgm-quiz/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category: selectedCategory,
+          questionCount,
+          excludeUntitledThemes,
+          displayName: onlinePlayerName,
+          gameType,
+        }),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data?.error ?? 'ルーム作成に失敗しました。')
+      }
+      setOnlineRoomCode(data.roomCode)
+      setOnlinePlayerId(data.playerId)
+      setOnlineTotalQuestions(data.totalQuestions)
+      setOnlineStatus('playing')
+      setCurrentIndex(data.currentIndex)
+      setOnlineQuestion(data.question)
+      setPhase('playing')
+      setAnswerState(null)
+      setSelectedIndex(null)
+      setHasStopped(gameType !== 'fast')
+      await fetchOnlinePlayers(data.roomCode)
+    } catch (error) {
+      setOnlineError(error instanceof Error ? error.message : 'ルーム作成に失敗しました。')
+    } finally {
+      setOnlineLoading(false)
+    }
+  }
+
+  const joinOnlineRoom = async () => {
+    if (!roomCodeInput.trim() || onlineLoading) return
+    setOnlineLoading(true)
+    setOnlineError(null)
+    try {
+      const response = await fetch(`/api/bgm-quiz/rooms/${roomCodeInput.trim().toUpperCase()}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ displayName: onlinePlayerName }),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data?.error ?? 'ルーム参加に失敗しました。')
+      }
+      setOnlineRoomCode(data.roomCode)
+      setOnlinePlayerId(data.playerId)
+      setOnlineTotalQuestions(data.totalQuestions)
+      setOnlineStatus(data.status)
+      setCurrentIndex(data.currentIndex)
+      setOnlineQuestion(data.question)
+      setPhase('playing')
+      setAnswerState(null)
+      setSelectedIndex(null)
+      setHasStopped(gameType !== 'fast')
+      await fetchOnlinePlayers(data.roomCode)
+    } catch (error) {
+      setOnlineError(error instanceof Error ? error.message : 'ルーム参加に失敗しました。')
+    } finally {
+      setOnlineLoading(false)
+    }
+  }
+
+  const submitOnlineAnswer = async (choiceIndex: number) => {
+    if (!onlineRoomCode || !onlinePlayerId) return
+    const response = await fetch(`/api/bgm-quiz/rooms/${onlineRoomCode}/answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        playerId: onlinePlayerId,
+        choiceIndex,
+        stopTime: currentFastStopTime,
+        answerTime: fastElapsed,
+      }),
+    })
+    const data = await response.json()
+    if (!response.ok) {
+      setOnlineError(data?.error ?? '回答に失敗しました。')
+      return
+    }
+    setAnswerState(data.isCorrect ? 'correct' : 'incorrect')
+  }
+
   const handleSelect = (index: number) => {
     if (isAnswered || phase !== 'playing' || !canAnswer) return
     setSelectedIndex(index)
     if (gameType === 'fast') {
       recordFastAnswerTime()
+    }
+    if (isOnline) {
+      void submitOnlineAnswer(index)
+      return
     }
     const isCorrect = currentQuestion.correctIndex === index
     setAnswerState(isCorrect ? 'correct' : 'incorrect')
@@ -209,6 +426,7 @@ export default function BgmQuizPage() {
     if (gameType === 'fast') {
       recordFastAnswerTime()
     }
+    if (isOnline) return
     const isCorrect = isCorrectBgmAnswer(currentQuestion.track, value)
     setAnswerState(isCorrect ? 'correct' : 'incorrect')
     if (isCorrect) {
@@ -225,6 +443,7 @@ export default function BgmQuizPage() {
   }
 
   const handleNext = () => {
+    if (isOnline) return
     if (!isAnswered) return
     if (isLastQuestion) {
       setPhase('result')
@@ -270,9 +489,16 @@ export default function BgmQuizPage() {
     clearStopTimer()
     clearHideTimer()
     clearFastTimer()
+    if (isOnline) {
+      setIsOnline(false)
+    }
   }
 
-  const resultMessage = score === totalQuestions ? t('resultPerfect') : t('resultGood')
+  const resultMessage = isOnline
+    ? t('onlineResultMessage')
+    : score === totalQuestions
+      ? t('resultPerfect')
+      : t('resultGood')
   const averageFastStopTime = (() => {
     const validTimes = fastStopTimes.filter((time): time is number => time !== null)
     if (validTimes.length === 0) return null
@@ -393,6 +619,7 @@ export default function BgmQuizPage() {
                       value="multiple-choice"
                       checked={mode === 'multiple-choice'}
                       onChange={() => setMode('multiple-choice')}
+                      disabled={isOnline}
                     />
                     {t('modeMultipleChoice')}
                   </label>
@@ -403,7 +630,7 @@ export default function BgmQuizPage() {
                       value="list-select"
                       checked={mode === 'list-select'}
                       onChange={() => setMode('list-select')}
-                      disabled={gameType === 'fast'}
+                      disabled={gameType === 'fast' || isOnline}
                     />
                     {t('modeListSelect')}
                   </label>
@@ -414,7 +641,7 @@ export default function BgmQuizPage() {
                       value="free-input"
                       checked={mode === 'free-input'}
                       onChange={() => setMode('free-input')}
-                      disabled={gameType === 'fast'}
+                      disabled={gameType === 'fast' || isOnline}
                     />
                     {t('modeFreeInput')}
                   </label>
@@ -444,6 +671,7 @@ export default function BgmQuizPage() {
                     type="checkbox"
                     checked={isMultiplayer}
                     onChange={(event) => setIsMultiplayer(event.target.checked)}
+                    disabled={isOnline}
                   />
                   <label htmlFor="multiplayer-toggle" className="text-sm text-gray-700">
                     {t('multiplayerToggle')}
@@ -466,12 +694,76 @@ export default function BgmQuizPage() {
                 )}
               </label>
 
+              <label className="space-y-2 text-sm text-gray-700">
+                <span className="font-medium">{t('onlineLabel')}</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="online-toggle"
+                    type="checkbox"
+                    checked={isOnline}
+                    onChange={(event) => setIsOnline(event.target.checked)}
+                  />
+                  <label htmlFor="online-toggle" className="text-sm text-gray-700">
+                    {t('onlineToggle')}
+                  </label>
+                </div>
+                {isOnline && (
+                  <div className="space-y-2">
+                    <label className="block text-xs text-gray-500">
+                      {t('onlineNameLabel')}
+                      <input
+                        type="text"
+                        value={onlinePlayerName}
+                        onChange={(event) => setOnlinePlayerName(event.target.value)}
+                        className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                        placeholder={t('onlineNamePlaceholder')}
+                      />
+                    </label>
+                    <label className="block text-xs text-gray-500">
+                      {t('onlineRoomCodeLabel')}
+                      <input
+                        type="text"
+                        value={roomCodeInput}
+                        onChange={(event) => setRoomCodeInput(event.target.value.toUpperCase())}
+                        className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase tracking-widest"
+                        placeholder="ABC123"
+                      />
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={createOnlineRoom}
+                        disabled={onlineLoading}
+                        className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                      >
+                        {t('onlineCreate')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={joinOnlineRoom}
+                        disabled={!roomCodeInput.trim() || onlineLoading}
+                        className="rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                      >
+                        {t('onlineJoin')}
+                      </button>
+                    </div>
+                    {onlineRoomCode && (
+                      <p className="text-xs text-gray-500">
+                        {t('onlineRoomCreated', { code: onlineRoomCode })}
+                      </p>
+                    )}
+                    {onlineError && <p className="text-xs text-red-600">{onlineError}</p>}
+                  </div>
+                )}
+              </label>
+
               <label className="space-y-1 text-sm text-gray-700">
                 <span className="font-medium">{t('gameTypeLabel')}</span>
                 <select
                   value={gameType}
                   onChange={(event) => setGameType(event.target.value as GameType)}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  disabled={isOnline}
                 >
                   <option value="normal">{t('gameTypeNormal')}</option>
                   <option value="fast">{t('gameTypeFast')}</option>
@@ -524,7 +816,7 @@ export default function BgmQuizPage() {
               <button
                 type="button"
                 onClick={handleStart}
-                disabled={availableTracks.length === 0}
+                disabled={availableTracks.length === 0 || isOnline}
                 className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
               >
                 {t('start')}
@@ -539,7 +831,7 @@ export default function BgmQuizPage() {
           </section>
         )}
 
-        {phase === 'playing' && currentQuestion && (
+        {phase === 'playing' && activeQuestion && activeTrack && (
           <section className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -547,8 +839,8 @@ export default function BgmQuizPage() {
               </p>
               {showAudio && (
                 <audio
-                  key={currentQuestion.track.file}
-                  src={`/bgm/${encodeURIComponent(currentQuestion.track.file)}`}
+                  key={activeTrack.file}
+                  src={`/bgm/${encodeURIComponent(activeTrack.file)}`}
                   controls
                   autoPlay
                   className="w-full"
@@ -591,8 +883,8 @@ export default function BgmQuizPage() {
 
             {(gameType !== 'fast' || hasStopped) && mode === 'multiple-choice' ? (
               <div className="space-y-2">
-                {currentQuestion.choices.map((choice, index) => {
-                  const isCorrect = currentQuestion.correctIndex === index
+                {activeQuestion.choices.map((choice, index) => {
+                  const isCorrect = !isOnline && currentQuestion.correctIndex === index
                   const isSelected = index === selectedIndex
                   const showCorrect = isAnswered && isCorrect
                   const showIncorrect = isAnswered && isSelected && !isCorrect
@@ -673,7 +965,7 @@ export default function BgmQuizPage() {
                 {answerState === 'correct'
                   ? t('correct')
                   : t('incorrect', {
-                      answer: getBgmTrackDisplayTitle(currentQuestion.track),
+                      answer: activeTrack ? getBgmTrackDisplayTitle(activeTrack) : '',
                     })}
               </div>
             )}
@@ -682,7 +974,7 @@ export default function BgmQuizPage() {
               <button
                 type="button"
                 onClick={handleNext}
-                disabled={!isAnswered}
+                disabled={!isAnswered || isOnline}
                 className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
               >
                 {isLastQuestion ? t('resultTitle') : t('next')}
@@ -720,6 +1012,18 @@ export default function BgmQuizPage() {
                   {playerScores.map((value, index) => (
                     <li key={`player-score-${index}`}>
                       {t('multiplayerResultItem', { index: index + 1, score: value })}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {isOnline && onlinePlayers.length > 0 && (
+              <div className="space-y-2 text-sm text-gray-600">
+                <p className="font-medium text-gray-700">{t('onlineResultTitle')}</p>
+                <ul className="space-y-1">
+                  {onlinePlayers.map((player) => (
+                    <li key={player.player_id}>
+                      {t('onlineResultItem', { name: player.display_name, score: player.score })}
                     </li>
                   ))}
                 </ul>
