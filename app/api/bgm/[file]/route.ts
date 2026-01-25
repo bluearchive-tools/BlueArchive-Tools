@@ -1,11 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createReadStream, statSync } from 'fs'
 import path from 'path'
 
 export const runtime = 'nodejs'
 
-export async function GET(_request: NextRequest, { params }: { params: { file: string } }) {
-  const { file } = params
+export async function GET(request: Request) {
+  const url = new URL(request.url)
+  const file = url.pathname.split('/').pop() ?? ''
   const decoded = decodeURIComponent(file)
 
   if (!/^[\w.-]+\.opus$/.test(decoded)) {
