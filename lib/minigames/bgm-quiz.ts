@@ -1,50 +1,85 @@
-import type { Locale } from '../i18n/config'
+import bgmQuizData from '../../data/bgm-quiz.json'
 
-type QuizQuestion = {
-  hint: string
+export type BgmTrack = {
+  file: string
+  title?: string
+  category: string
+}
+
+export type QuizMode = 'multiple-choice' | 'free-input'
+
+export type QuizQuestion = {
+  track: BgmTrack
+  answer: string
   choices: string[]
-  answerIndex: number
 }
 
-const QUESTIONS: Record<Locale, QuizQuestion[]> = {
-  ja: [
-    {
-      hint: '透き通るような青空を思わせる、学園の日常シーンでよく流れる曲',
-      choices: ['Clear Morning', 'Unwelcome School', 'Hifumi Daisuki', 'Target for Love'],
-      answerIndex: 0,
-    },
-    {
-      hint: '緊張感のある旋律で、任務開始時の雰囲気を高めるバトル寄りの楽曲',
-      choices: ['Colorful Mess', 'Constant Moderato', 'Ready to Go', 'Unwelcome School'],
-      answerIndex: 2,
-    },
-    {
-      hint: 'コミカルで軽快、トラブルメーカーたちの登場で印象に残りやすい曲',
-      choices: ['Unwelcome School', 'Clear Morning', 'Midsummer Cat', 'Goal Wo Nerae!'],
-      answerIndex: 0,
-    },
-  ],
-  en: [
-    {
-      hint: 'A bright everyday campus theme that feels like a clear blue morning.',
-      choices: ['Clear Morning', 'Unwelcome School', 'Hifumi Daisuki', 'Target for Love'],
-      answerIndex: 0,
-    },
-    {
-      hint: 'A battle-leaning track with tension that ramps up right as a mission begins.',
-      choices: ['Colorful Mess', 'Constant Moderato', 'Ready to Go', 'Unwelcome School'],
-      answerIndex: 2,
-    },
-    {
-      hint: 'Comical and energetic, often associated with chaotic troublemakers.',
-      choices: ['Unwelcome School', 'Clear Morning', 'Midsummer Cat', 'Goal Wo Nerae!'],
-      answerIndex: 0,
-    },
-  ],
+const FALLBACK_CATEGORY = '未分類'
+
+const normalizeText = (value: string) => value.trim().toLowerCase()
+
+const getBaseName = (file: string) => file.replace(/\.[^/.]+$/, '')
+
+export function getBgmTracks(): BgmTrack[] {
+  return (bgmQuizData.tracks ?? []).map((track) => ({
+    ...track,
+    category: track.category?.trim() ? track.category : FALLBACK_CATEGORY,
+  }))
 }
 
-export function getBgmQuizQuestions(locale: Locale): QuizQuestion[] {
-  return QUESTIONS[locale]
+export function getBgmTrackDisplayTitle(track: BgmTrack): string {
+  const title = track.title?.trim()
+  if (title) return title
+  return `Theme ${getBaseName(track.file)}`
 }
 
-export type { QuizQuestion }
+export function getBgmQuizCategories(tracks: BgmTrack[]): string[] {
+  const categorySet = new Set<string>()
+  tracks.forEach((track) => {
+    categorySet.add(track.category?.trim() ? track.category : FALLBACK_CATEGORY)
+  })
+  return Array.from(categorySet)
+}
+
+export function isCorrectBgmAnswer(track: BgmTrack, answer: string): boolean {
+  const normalized = normalizeText(answer)
+  if (!normalized) return false
+  const title = track.title?.trim()
+  if (title) {
+    return normalized === normalizeText(title)
+  }
+  return normalized === normalizeText(getBgmTrackDisplayTitle(track))
+}
+
+const shuffle = <T,>(values: T[]): T[] => {
+  const array = [...values]
+  for (let i = array.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[array[i], array[j]] = [array[j], array[i]]
+  }
+  return array
+}
+
+const buildChoices = (track: BgmTrack, pool: BgmTrack[]): string[] => {
+  const answer = getBgmTrackDisplayTitle(track)
+  const candidates = shuffle(pool.filter((item) => item.file !== track.file))
+  const choiceSet = new Set<string>([answer])
+  for (const candidate of candidates) {
+    const title = getBgmTrackDisplayTitle(candidate)
+    if (!choiceSet.has(title)) {
+      choiceSet.add(title)
+    }
+    if (choiceSet.size >= 4) break
+  }
+  return shuffle(Array.from(choiceSet))
+}
+
+export function createBgmQuizQuestions(tracks: BgmTrack[], count: number, mode: QuizMode): QuizQuestion[] {
+  const available = shuffle(tracks)
+  const selected = available.slice(0, Math.min(count, available.length))
+  return selected.map((track) => ({
+    track,
+    answer: getBgmTrackDisplayTitle(track),
+    choices: mode === 'multiple-choice' ? buildChoices(track, tracks) : [],
+  }))
+}

@@ -1,6 +1,6 @@
 {
   "title": "BGMクイズ",
-  "description": "ヒントから楽曲名を当てるミニゲームです。",
+  "description": "曲を再生して曲名を当てるミニゲームです。",
   "progress": "問題 {current} / {total}",
   "hintLabel": "ヒント",
   "score": "正解数: {score} / {total}",
@@ -11,5 +11,18 @@
   "restart": "もう一度遊ぶ",
   "home": "ホームへ戻る",
   "correct": "正解！",
-  "incorrect": "不正解…正解は「{answer}」でした。"
+  "incorrect": "不正解…正解は「{answer}」でした。",
+  "setupTitle": "出題設定",
+  "setupDescription": "カテゴリーと回答形式、問題数を選んでスタートしてください。",
+  "categoryLabel": "カテゴリー",
+  "categoryAll": "すべて",
+  "modeLabel": "回答形式",
+  "modeMultipleChoice": "4択",
+  "modeFreeInput": "曲名完答",
+  "questionCountLabel": "問題数",
+  "questionCountHint": "選択中のカテゴリーに {total} 曲あります。",
+  "start": "スタート",
+  "nowPlaying": "再生中",
+  "answerPlaceholder": "曲名を入力してください",
+  "submitAnswer": "回答する"
 }

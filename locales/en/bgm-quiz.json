@@ -1,6 +1,6 @@
 {
   "title": "BGM Quiz",
-  "description": "A mini game where you guess the track name from a hint.",
+  "description": "A mini game where you guess the track name by listening.",
   "progress": "Question {current} / {total}",
   "hintLabel": "Hint",
   "score": "Score: {score} / {total}",
@@ -11,5 +11,18 @@
   "restart": "Play again",
   "home": "Back to home",
   "correct": "Correct!",
-  "incorrect": "Not quite... The answer was \"{answer}\"."
+  "incorrect": "Not quite... The answer was \"{answer}\".",
+  "setupTitle": "Quiz setup",
+  "setupDescription": "Choose a category, answer mode, and number of questions to start.",
+  "categoryLabel": "Category",
+  "categoryAll": "All",
+  "modeLabel": "Answer mode",
+  "modeMultipleChoice": "Multiple choice",
+  "modeFreeInput": "Type the title",
+  "questionCountLabel": "Number of questions",
+  "questionCountHint": "There are {total} tracks in the selected category.",
+  "start": "Start",
+  "nowPlaying": "Now playing",
+  "answerPlaceholder": "Enter the track title",
+  "submitAnswer": "Submit"
 }
