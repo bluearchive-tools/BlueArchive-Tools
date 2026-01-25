@@ -47,9 +47,11 @@
   "fastStopped": "停止しました ({time} 秒)",
   "fastPrompt": "止めたいタイミングでボタンを押してください。",
   "fastResultTitle": "早押しタイム",
-  "fastResultItem": "問題 {index}: {time} 秒",
-  "fastAverage": "平均: {time} 秒",
+  "fastResultItem": "問題 {index}: 停止 {stop} 秒 / 回答 {answer} 秒",
+  "fastAverage": "停止平均: {stop} 秒",
   "fastAverageUnavailable": "平均タイムは未計測です。",
+  "fastAverageAnswer": "回答平均: {answer} 秒",
+  "fastAverageAnswerUnavailable": "回答タイムは未計測です。",
   "answerPlaceholder": "曲名を入力してください",
   "listSelectPlaceholder": "一覧から曲名を選択してください",
   "submitAnswer": "回答する"

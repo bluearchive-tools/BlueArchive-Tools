@@ -47,9 +47,11 @@
   "fastStopped": "Stopped ({time}s)",
   "fastPrompt": "Press the button when you want to stop.",
   "fastResultTitle": "Fast mode times",
-  "fastResultItem": "Question {index}: {time}s",
-  "fastAverage": "Average: {time}s",
+  "fastResultItem": "Question {index}: stop {stop}s / answer {answer}s",
+  "fastAverage": "Stop average: {stop}s",
   "fastAverageUnavailable": "Average time unavailable.",
+  "fastAverageAnswer": "Answer average: {answer}s",
+  "fastAverageAnswerUnavailable": "Answer time unavailable.",
   "answerPlaceholder": "Enter the track title",
   "listSelectPlaceholder": "Select a track title from the list",
   "submitAnswer": "Submit"

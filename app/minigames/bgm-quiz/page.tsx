@@ -37,12 +37,15 @@ export default function BgmQuizPage() {
   const [score, setScore] = useState(0)
   const [answerOptions, setAnswerOptions] = useState<string[]>([])
   const [hasStopped, setHasStopped] = useState(true)
-  const [fastTimes, setFastTimes] = useState<Array<number | null>>([])
+  const [fastStopTimes, setFastStopTimes] = useState<Array<number | null>>([])
+  const [fastAnswerTimes, setFastAnswerTimes] = useState<Array<number | null>>([])
   const [randomStart, setRandomStart] = useState<number | null>(null)
   const [playStartTime, setPlayStartTime] = useState<number | null>(null)
+  const [showAudio, setShowAudio] = useState(true)
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const stopTimerRef = useRef<number | null>(null)
+  const hideTimerRef = useRef<number | null>(null)
 
   const filteredTracks = useMemo(() => {
     if (!excludeUntitledThemes) return tracks
@@ -67,12 +70,19 @@ export default function BgmQuizPage() {
   const isLastQuestion = currentIndex === totalQuestions - 1
   const isAnswered = answerState !== null
   const canAnswer = gameType !== 'fast' || hasStopped
-  const currentFastTime = fastTimes[currentIndex]
+  const currentFastStopTime = fastStopTimes[currentIndex]
 
   const clearStopTimer = () => {
     if (stopTimerRef.current) {
       window.clearTimeout(stopTimerRef.current)
       stopTimerRef.current = null
+    }
+  }
+
+  const clearHideTimer = () => {
+    if (hideTimerRef.current) {
+      window.clearTimeout(hideTimerRef.current)
+      hideTimerRef.current = null
     }
   }
 
@@ -83,9 +93,18 @@ export default function BgmQuizPage() {
     }, seconds * 1000)
   }
 
+  const scheduleHideAudio = (seconds: number) => {
+    clearHideTimer()
+    hideTimerRef.current = window.setTimeout(() => {
+      audioRef.current?.pause()
+      setShowAudio(false)
+    }, seconds * 1000)
+  }
+
   useEffect(() => {
     return () => {
       clearStopTimer()
+      clearHideTimer()
     }
   }, [])
 
@@ -94,8 +113,17 @@ export default function BgmQuizPage() {
     setHasStopped(gameType !== 'fast')
     setRandomStart(null)
     setPlayStartTime(null)
+    setShowAudio(true)
     clearStopTimer()
+    clearHideTimer()
   }, [currentQuestion?.track.file, gameType, phase])
+
+  useEffect(() => {
+    if (gameType !== 'fast') return
+    if (mode !== 'multiple-choice') {
+      setMode('multiple-choice')
+    }
+  }, [gameType, mode])
 
   const handleStart = () => {
     if (!filteredTracks.length) return
@@ -113,15 +141,20 @@ export default function BgmQuizPage() {
     setAnswerState(null)
     setScore(0)
     setHasStopped(gameType !== 'fast')
-    setFastTimes(gameType === 'fast' ? Array(quizQuestions.length).fill(null) : [])
+    setFastStopTimes(gameType === 'fast' ? Array(quizQuestions.length).fill(null) : [])
+    setFastAnswerTimes(gameType === 'fast' ? Array(quizQuestions.length).fill(null) : [])
     setRandomStart(null)
     setPlayStartTime(null)
+    setShowAudio(true)
     setPhase('playing')
   }
 
   const handleSelect = (index: number) => {
     if (isAnswered || phase !== 'playing' || !canAnswer) return
     setSelectedIndex(index)
+    if (gameType === 'fast') {
+      recordFastAnswerTime()
+    }
     const isCorrect = index === currentQuestion.choices.indexOf(currentQuestion.answer)
     setAnswerState(isCorrect ? 'correct' : 'incorrect')
     if (isCorrect) {
@@ -132,6 +165,9 @@ export default function BgmQuizPage() {
   const handleSubmitAnswer = () => {
     if (isAnswered || phase !== 'playing' || !canAnswer) return
     const value = mode === 'list-select' ? listSelection : answerInput
+    if (gameType === 'fast') {
+      recordFastAnswerTime()
+    }
     const isCorrect = isCorrectBgmAnswer(currentQuestion.track, value)
     setAnswerState(isCorrect ? 'correct' : 'incorrect')
     if (isCorrect) {
@@ -153,7 +189,9 @@ export default function BgmQuizPage() {
     setHasStopped(gameType !== 'fast')
     setPlayStartTime(null)
     setRandomStart(null)
+    setShowAudio(true)
     clearStopTimer()
+    clearHideTimer()
   }
 
   const handleRestart = () => {
@@ -167,15 +205,24 @@ export default function BgmQuizPage() {
     setScore(0)
     setAnswerOptions([])
     setHasStopped(true)
-    setFastTimes([])
+    setFastStopTimes([])
+    setFastAnswerTimes([])
     setRandomStart(null)
     setPlayStartTime(null)
+    setShowAudio(true)
     clearStopTimer()
+    clearHideTimer()
   }
 
   const resultMessage = score === totalQuestions ? t('resultPerfect') : t('resultGood')
-  const averageFastTime = (() => {
-    const validTimes = fastTimes.filter((time): time is number => time !== null)
+  const averageFastStopTime = (() => {
+    const validTimes = fastStopTimes.filter((time): time is number => time !== null)
+    if (validTimes.length === 0) return null
+    return validTimes.reduce((sum, time) => sum + time, 0) / validTimes.length
+  })()
+
+  const averageFastAnswerTime = (() => {
+    const validTimes = fastAnswerTimes.filter((time): time is number => time !== null)
     if (validTimes.length === 0) return null
     return validTimes.reduce((sum, time) => sum + time, 0) / validTimes.length
   })()
@@ -186,9 +233,11 @@ export default function BgmQuizPage() {
     }
     if (gameType === 'intro') {
       scheduleStopTimer(introSeconds)
+      scheduleHideAudio(introSeconds)
     }
     if (gameType === 'random') {
       scheduleStopTimer(randomSeconds)
+      scheduleHideAudio(randomSeconds)
     }
   }
 
@@ -209,7 +258,18 @@ export default function BgmQuizPage() {
     const endTime = performance.now()
     const elapsed = playStartTime ? (endTime - playStartTime) / 1000 : 0
     setHasStopped(true)
-    setFastTimes((prev) => {
+    setFastStopTimes((prev) => {
+      const updated = [...prev]
+      updated[currentIndex] = elapsed
+      return updated
+    })
+  }
+
+  const recordFastAnswerTime = () => {
+    if (gameType !== 'fast' || playStartTime === null) return
+    const endTime = performance.now()
+    const elapsed = (endTime - playStartTime) / 1000
+    setFastAnswerTimes((prev) => {
       const updated = [...prev]
       updated[currentIndex] = elapsed
       return updated
@@ -279,6 +339,7 @@ export default function BgmQuizPage() {
                       value="list-select"
                       checked={mode === 'list-select'}
                       onChange={() => setMode('list-select')}
+                      disabled={gameType === 'fast'}
                     />
                     {t('modeListSelect')}
                   </label>
@@ -289,6 +350,7 @@ export default function BgmQuizPage() {
                       value="free-input"
                       checked={mode === 'free-input'}
                       onChange={() => setMode('free-input')}
+                      disabled={gameType === 'fast'}
                     />
                     {t('modeFreeInput')}
                   </label>
@@ -389,16 +451,18 @@ export default function BgmQuizPage() {
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                 {t('nowPlaying')}
               </p>
-              <audio
-                key={currentQuestion.track.file}
-                src={`/bgm/${encodeURIComponent(currentQuestion.track.file)}`}
-                controls
-                autoPlay
-                className="w-full"
-                ref={audioRef}
-                onPlay={handleAudioPlay}
-                onLoadedMetadata={handleLoadedMetadata}
-              />
+              {showAudio && (
+                <audio
+                  key={currentQuestion.track.file}
+                  src={`/bgm/${encodeURIComponent(currentQuestion.track.file)}`}
+                  controls
+                  autoPlay
+                  className="w-full"
+                  ref={audioRef}
+                  onPlay={handleAudioPlay}
+                  onLoadedMetadata={handleLoadedMetadata}
+                />
+              )}
               {gameType === 'intro' && (
                 <p className="text-xs text-gray-500">{t('introPlaybackNotice', { seconds: introSeconds })}</p>
               )}
@@ -423,7 +487,7 @@ export default function BgmQuizPage() {
                   <span className="text-xs text-gray-500">
                     {hasStopped
                       ? t('fastStopped', {
-                          time: currentFastTime !== null ? currentFastTime.toFixed(2) : '--',
+                          time: currentFastStopTime !== null ? currentFastStopTime.toFixed(2) : '--',
                         })
                       : t('fastPrompt')}
                   </span>
@@ -431,7 +495,7 @@ export default function BgmQuizPage() {
               )}
             </div>
 
-            {mode === 'multiple-choice' ? (
+            {(gameType !== 'fast' || hasStopped) && mode === 'multiple-choice' ? (
               <div className="space-y-2">
                 {currentQuestion.choices.map((choice, index) => {
                   const isCorrect = choice === currentQuestion.answer
@@ -461,7 +525,7 @@ export default function BgmQuizPage() {
                   )
                 })}
               </div>
-            ) : mode === 'list-select' ? (
+            ) : (gameType !== 'fast' || hasStopped) && mode === 'list-select' ? (
               <div className="space-y-2">
                 <select
                   value={listSelection}
@@ -485,7 +549,7 @@ export default function BgmQuizPage() {
                   {t('submitAnswer')}
                 </button>
               </div>
-            ) : (
+            ) : (gameType !== 'fast' || hasStopped) && (
               <div className="space-y-2">
                 <input
                   type="text"
@@ -555,20 +619,32 @@ export default function BgmQuizPage() {
             <p className="text-3xl font-extrabold text-blue-700">
               {t('score', { score, total: totalQuestions })}
             </p>
-            {gameType === 'fast' && fastTimes.length > 0 && (
+            {gameType === 'fast' && fastStopTimes.length > 0 && (
               <div className="space-y-2 text-sm text-gray-600">
                 <p className="font-medium text-gray-700">{t('fastResultTitle')}</p>
                 <ul className="space-y-1">
-                  {fastTimes.map((time, index) => (
+                  {fastStopTimes.map((time, index) => (
                     <li key={`fast-time-${index}`}>
-                      {t('fastResultItem', { index: index + 1, time: time !== null ? time.toFixed(2) : '--' })}
+                      {t('fastResultItem', {
+                        index: index + 1,
+                        stop: time !== null ? time.toFixed(2) : '--',
+                        answer:
+                          fastAnswerTimes[index] !== null && fastAnswerTimes[index] !== undefined
+                            ? fastAnswerTimes[index]?.toFixed(2)
+                            : '--',
+                      })}
                     </li>
                   ))}
                 </ul>
                 <p className="text-xs text-gray-500">
-                  {averageFastTime !== null
-                    ? t('fastAverage', { time: averageFastTime.toFixed(2) })
+                  {averageFastStopTime !== null
+                    ? t('fastAverage', { stop: averageFastStopTime.toFixed(2) })
                     : t('fastAverageUnavailable')}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {averageFastAnswerTime !== null
+                    ? t('fastAverageAnswer', { answer: averageFastAnswerTime.toFixed(2) })
+                    : t('fastAverageAnswerUnavailable')}
                 </p>
               </div>
             )}
