@@ -1,0 +1,15 @@
+{
+  "categories": ["メイン", "イベント", "学園"],
+  "tracks": [
+    {
+      "filename": "001.opus",
+      "title": "Main Theme",
+      "category": "メイン"
+    },
+    {
+      "filename": "341.opus",
+      "title": "",
+      "category": "イベント"
+    }
+  ]
+}

@@ -49,6 +49,10 @@
           "title": "イベントスケジュール表",
           "description": "イベントの開催予定を確認できます"
         },
+        "bgmQuiz": {
+          "title": "BGMクイズ",
+          "description": "BGMを聴いて曲名を当てるクイズです"
+        },
         "divineCalc": {
           "title": "神名文字計算機",
           "description": "必要な神名文字数を計算します"

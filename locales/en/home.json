@@ -49,6 +49,10 @@
           "title": "Event schedule",
           "description": "Check upcoming events"
         },
+        "bgmQuiz": {
+          "title": "BGM quiz",
+          "description": "Guess the track name from a random BGM"
+        },
         "divineCalc": {
           "title": "Eleph calculator",
           "description": "Calculate required Elephs"
