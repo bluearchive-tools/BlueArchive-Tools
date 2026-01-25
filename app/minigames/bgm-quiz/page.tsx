@@ -188,7 +188,7 @@ export default function BgmQuizPage() {
     if (gameType === 'fast') {
       recordFastAnswerTime()
     }
-    const isCorrect = index === currentQuestion.choices.indexOf(currentQuestion.answer)
+    const isCorrect = currentQuestion.correctIndex === index
     setAnswerState(isCorrect ? 'correct' : 'incorrect')
     if (isCorrect) {
       if (isMultiplayer) {
@@ -592,7 +592,7 @@ export default function BgmQuizPage() {
             {(gameType !== 'fast' || hasStopped) && mode === 'multiple-choice' ? (
               <div className="space-y-2">
                 {currentQuestion.choices.map((choice, index) => {
-                  const isCorrect = choice === currentQuestion.answer
+                  const isCorrect = currentQuestion.correctIndex === index
                   const isSelected = index === selectedIndex
                   const showCorrect = isAnswered && isCorrect
                   const showIncorrect = isAnswered && isSelected && !isCorrect

@@ -10,8 +10,8 @@ export type QuizMode = 'multiple-choice' | 'free-input' | 'list-select'
 
 export type QuizQuestion = {
   track: BgmTrack
-  answer: string
   choices: string[]
+  correctIndex: number | null
 }
 
 const FALLBACK_CATEGORY = '未分類'
@@ -77,9 +77,12 @@ const buildChoices = (track: BgmTrack, pool: BgmTrack[]): string[] => {
 export function createBgmQuizQuestions(tracks: BgmTrack[], count: number, mode: QuizMode): QuizQuestion[] {
   const available = shuffle(tracks)
   const selected = available.slice(0, Math.min(count, available.length))
-  return selected.map((track) => ({
-    track,
-    answer: getBgmTrackDisplayTitle(track),
-    choices: mode === 'multiple-choice' ? buildChoices(track, tracks) : [],
-  }))
+  return selected.map((track) => {
+    const choices = mode === 'multiple-choice' ? buildChoices(track, tracks) : []
+    return {
+      track,
+      choices,
+      correctIndex: mode === 'multiple-choice' ? choices.indexOf(getBgmTrackDisplayTitle(track)) : null,
+    }
+  })
 }
