@@ -207,7 +207,7 @@ export default function BgmQuizPage() {
               </p>
               <audio
                 key={currentQuestion.track.file}
-                src={`/api/bgm/${encodeURIComponent(currentQuestion.track.file)}`}
+                src={`/bgm/${encodeURIComponent(currentQuestion.track.file)}`}
                 controls
                 autoPlay
                 className="w-full"
