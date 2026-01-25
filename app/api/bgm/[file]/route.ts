@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createReadStream, statSync } from 'fs'
 import path from 'path'
 
 export const runtime = 'nodejs'
 
-export async function GET(_request: Request, context: { params: { file: string } }) {
-  const { file } = context.params
+export async function GET(_request: NextRequest, { params }: { params: { file: string } }) {
+  const { file } = params
   const decoded = decodeURIComponent(file)
 
   if (!/^[\w.-]+\.opus$/.test(decoded)) {
