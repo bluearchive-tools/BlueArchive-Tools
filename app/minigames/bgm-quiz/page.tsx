@@ -3,20 +3,17 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import Footer from '../../../components/Footer'
-import { useTranslations } from 'next-intl'
-
-type QuizQuestion = {
-  hint: string
-  choices: string[]
-  answerIndex: number
-}
+import { useLocale, useTranslations } from 'next-intl'
+import { getBgmQuizQuestions } from '../../../lib/minigames/bgm-quiz'
+import type { Locale } from '../../../lib/i18n/config'
 
 type Phase = 'playing' | 'result'
 
 export default function BgmQuizPage() {
   const t = useTranslations('bgm-quiz')
+  const locale = useLocale() as Locale
 
-  const questions = useMemo(() => t.raw('questions') as QuizQuestion[], [t])
+  const questions = useMemo(() => getBgmQuizQuestions(locale), [locale])
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
