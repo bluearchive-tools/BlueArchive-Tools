@@ -25,7 +25,7 @@ export async function GET(_request: Request, context: { params: { file: string }
         'Accept-Ranges': 'bytes',
       },
     })
-  } catch (error) {
+  } catch {
     return new NextResponse('Not found', { status: 404 })
   }
 }
