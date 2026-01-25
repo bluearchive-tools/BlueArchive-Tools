@@ -30,6 +30,10 @@ export default function BgmQuizPage() {
   const [excludeUntitledThemes, setExcludeUntitledThemes] = useState(false)
   const [questions, setQuestions] = useState<QuizQuestion[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [isMultiplayer, setIsMultiplayer] = useState(false)
+  const [playerCount, setPlayerCount] = useState(2)
+  const [playerScores, setPlayerScores] = useState<number[]>([])
+  const [currentPlayer, setCurrentPlayer] = useState(0)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [answerInput, setAnswerInput] = useState('')
   const [listSelection, setListSelection] = useState('')
@@ -42,10 +46,12 @@ export default function BgmQuizPage() {
   const [randomStart, setRandomStart] = useState<number | null>(null)
   const [playStartTime, setPlayStartTime] = useState<number | null>(null)
   const [showAudio, setShowAudio] = useState(true)
+  const [fastElapsed, setFastElapsed] = useState(0)
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const stopTimerRef = useRef<number | null>(null)
   const hideTimerRef = useRef<number | null>(null)
+  const fastTimerRef = useRef<number | null>(null)
 
   const filteredTracks = useMemo(() => {
     if (!excludeUntitledThemes) return tracks
@@ -71,6 +77,7 @@ export default function BgmQuizPage() {
   const isAnswered = answerState !== null
   const canAnswer = gameType !== 'fast' || hasStopped
   const currentFastStopTime = fastStopTimes[currentIndex]
+  const totalScore = isMultiplayer ? playerScores.reduce((sum, value) => sum + value, 0) : score
 
   const clearStopTimer = () => {
     if (stopTimerRef.current) {
@@ -83,6 +90,13 @@ export default function BgmQuizPage() {
     if (hideTimerRef.current) {
       window.clearTimeout(hideTimerRef.current)
       hideTimerRef.current = null
+    }
+  }
+
+  const clearFastTimer = () => {
+    if (fastTimerRef.current) {
+      window.clearInterval(fastTimerRef.current)
+      fastTimerRef.current = null
     }
   }
 
@@ -105,6 +119,7 @@ export default function BgmQuizPage() {
     return () => {
       clearStopTimer()
       clearHideTimer()
+      clearFastTimer()
     }
   }, [])
 
@@ -114,8 +129,10 @@ export default function BgmQuizPage() {
     setRandomStart(null)
     setPlayStartTime(null)
     setShowAudio(true)
+    setFastElapsed(0)
     clearStopTimer()
     clearHideTimer()
+    clearFastTimer()
   }, [currentQuestion?.track.file, gameType, phase])
 
   useEffect(() => {
@@ -124,6 +141,19 @@ export default function BgmQuizPage() {
       setMode('multiple-choice')
     }
   }, [gameType, mode])
+
+  useEffect(() => {
+    clearFastTimer()
+    if (phase !== 'playing' || gameType !== 'fast' || hasStopped || playStartTime === null) {
+      if (currentFastStopTime !== null && currentFastStopTime !== undefined) {
+        setFastElapsed(currentFastStopTime)
+      }
+      return
+    }
+    fastTimerRef.current = window.setInterval(() => {
+      setFastElapsed((performance.now() - playStartTime) / 1000)
+    }, 10)
+  }, [currentFastStopTime, gameType, hasStopped, phase, playStartTime])
 
   const handleStart = () => {
     if (!filteredTracks.length) return
@@ -143,9 +173,12 @@ export default function BgmQuizPage() {
     setHasStopped(gameType !== 'fast')
     setFastStopTimes(gameType === 'fast' ? Array(quizQuestions.length).fill(null) : [])
     setFastAnswerTimes(gameType === 'fast' ? Array(quizQuestions.length).fill(null) : [])
+    setPlayerScores(isMultiplayer ? Array(Math.max(1, playerCount)).fill(0) : [])
+    setCurrentPlayer(0)
     setRandomStart(null)
     setPlayStartTime(null)
     setShowAudio(true)
+    setFastElapsed(0)
     setPhase('playing')
   }
 
@@ -158,7 +191,15 @@ export default function BgmQuizPage() {
     const isCorrect = index === currentQuestion.choices.indexOf(currentQuestion.answer)
     setAnswerState(isCorrect ? 'correct' : 'incorrect')
     if (isCorrect) {
-      setScore((prev) => prev + 1)
+      if (isMultiplayer) {
+        setPlayerScores((prev) => {
+          const updated = [...prev]
+          updated[currentPlayer] = (updated[currentPlayer] ?? 0) + 1
+          return updated
+        })
+      } else {
+        setScore((prev) => prev + 1)
+      }
     }
   }
 
@@ -171,7 +212,15 @@ export default function BgmQuizPage() {
     const isCorrect = isCorrectBgmAnswer(currentQuestion.track, value)
     setAnswerState(isCorrect ? 'correct' : 'incorrect')
     if (isCorrect) {
-      setScore((prev) => prev + 1)
+      if (isMultiplayer) {
+        setPlayerScores((prev) => {
+          const updated = [...prev]
+          updated[currentPlayer] = (updated[currentPlayer] ?? 0) + 1
+          return updated
+        })
+      } else {
+        setScore((prev) => prev + 1)
+      }
     }
   }
 
@@ -190,8 +239,13 @@ export default function BgmQuizPage() {
     setPlayStartTime(null)
     setRandomStart(null)
     setShowAudio(true)
+    setFastElapsed(0)
     clearStopTimer()
     clearHideTimer()
+    clearFastTimer()
+    if (isMultiplayer) {
+      setCurrentPlayer((prev) => (playerScores.length > 0 ? (prev + 1) % playerScores.length : 0))
+    }
   }
 
   const handleRestart = () => {
@@ -207,11 +261,15 @@ export default function BgmQuizPage() {
     setHasStopped(true)
     setFastStopTimes([])
     setFastAnswerTimes([])
+    setPlayerScores([])
+    setCurrentPlayer(0)
     setRandomStart(null)
     setPlayStartTime(null)
     setShowAudio(true)
+    setFastElapsed(0)
     clearStopTimer()
     clearHideTimer()
+    clearFastTimer()
   }
 
   const resultMessage = score === totalQuestions ? t('resultPerfect') : t('resultGood')
@@ -263,6 +321,7 @@ export default function BgmQuizPage() {
       updated[currentIndex] = elapsed
       return updated
     })
+    setFastElapsed(elapsed)
   }
 
   const recordFastAnswerTime = () => {
@@ -290,8 +349,13 @@ export default function BgmQuizPage() {
               {t('progress', { current: phase === 'result' ? totalQuestions : currentIndex + 1, total: totalQuestions })}
             </span>
             <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">
-              {t('score', { score, total: totalQuestions })}
+              {t('score', { score: totalScore, total: totalQuestions })}
             </span>
+            {isMultiplayer && playerScores.length > 0 && (
+              <span className="rounded-full bg-purple-50 px-3 py-1 text-purple-700">
+                {t('currentPlayer', { index: currentPlayer + 1 })}
+              </span>
+            )}
           </div>
         )}
 
@@ -372,6 +436,36 @@ export default function BgmQuizPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
+              <label className="space-y-1 text-sm text-gray-700">
+                <span className="font-medium">{t('multiplayerLabel')}</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="multiplayer-toggle"
+                    type="checkbox"
+                    checked={isMultiplayer}
+                    onChange={(event) => setIsMultiplayer(event.target.checked)}
+                  />
+                  <label htmlFor="multiplayer-toggle" className="text-sm text-gray-700">
+                    {t('multiplayerToggle')}
+                  </label>
+                </div>
+                {isMultiplayer && (
+                  <div className="mt-2 space-y-1">
+                    <input
+                      type="number"
+                      min={2}
+                      max={8}
+                      value={playerCount}
+                      onChange={(event) => setPlayerCount(Number(event.target.value))}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    />
+                    <p className="text-xs text-gray-500">
+                      {t('multiplayerHint', { count: playerCount })}
+                    </p>
+                  </div>
+                )}
+              </label>
+
               <label className="space-y-1 text-sm text-gray-700">
                 <span className="font-medium">{t('gameTypeLabel')}</span>
                 <select
@@ -489,7 +583,7 @@ export default function BgmQuizPage() {
                       ? t('fastStopped', {
                           time: currentFastStopTime !== null ? currentFastStopTime.toFixed(2) : '--',
                         })
-                      : t('fastPrompt')}
+                      : t('fastRunning', { time: fastElapsed.toFixed(2) })}
                   </span>
                 </div>
               )}
@@ -617,8 +711,20 @@ export default function BgmQuizPage() {
               <p className="text-sm text-gray-600">{resultMessage}</p>
             </div>
             <p className="text-3xl font-extrabold text-blue-700">
-              {t('score', { score, total: totalQuestions })}
+              {t('score', { score: totalScore, total: totalQuestions })}
             </p>
+            {isMultiplayer && playerScores.length > 0 && (
+              <div className="space-y-2 text-sm text-gray-600">
+                <p className="font-medium text-gray-700">{t('multiplayerResultTitle')}</p>
+                <ul className="space-y-1">
+                  {playerScores.map((value, index) => (
+                    <li key={`player-score-${index}`}>
+                      {t('multiplayerResultItem', { index: index + 1, score: value })}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {gameType === 'fast' && fastStopTimes.length > 0 && (
               <div className="space-y-2 text-sm text-gray-600">
                 <p className="font-medium text-gray-700">{t('fastResultTitle')}</p>
