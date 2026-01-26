@@ -12,7 +12,12 @@ export function getSupabaseAdmin(): SupabaseClient {
   const supabaseUrl = process.env.SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error('Supabase環境変数が設定されていません。')
+    throw new Error('SUPABASE_URL と SUPABASE_SERVICE_ROLE_KEY を設定してください。')
+  }
+  try {
+    new URL(supabaseUrl)
+  } catch {
+    throw new Error('SUPABASE_URL の形式が不正です。')
   }
   return createClient(supabaseUrl, serviceRoleKey)
 }
