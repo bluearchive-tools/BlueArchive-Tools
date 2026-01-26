@@ -1,6 +1,7 @@
 {
   "title": "BGM Quiz",
   "description": "A mini game where you guess the track name by listening.",
+  "osInfo": "OS: {os}",
   "progress": "Question {current} / {total}",
   "hintLabel": "Hint",
   "score": "Score: {score} / {total}",

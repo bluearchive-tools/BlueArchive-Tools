@@ -1,6 +1,7 @@
 {
   "title": "BGMクイズ",
   "description": "曲を再生して曲名を当てるミニゲームです。",
+  "osInfo": "OS: {os}",
   "progress": "問題 {current} / {total}",
   "hintLabel": "ヒント",
   "score": "正解数: {score} / {total}",

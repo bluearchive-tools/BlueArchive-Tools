@@ -8,9 +8,9 @@ type AnswerPayload = {
   answerTime?: number
 }
 
-export async function POST(request: Request, context: { params: { code: string } }) {
+export async function POST(request: Request, { params }: { params: { code: string } }) {
   const payload = (await request.json()) as AnswerPayload
-  const roomCode = context.params.code.toUpperCase()
+  const roomCode = params.code.toUpperCase()
 
   const supabase = getSupabaseAdmin()
   const { data: room, error: roomError } = await supabase

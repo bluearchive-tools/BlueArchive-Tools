@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '../../../utils'
 
-export async function GET(request: Request, context: { params: { code: string } }) {
+export async function GET(request: Request, { params }: { params: { code: string } }) {
   const { searchParams } = new URL(request.url)
   const index = Number(searchParams.get('index') ?? 0)
-  const roomCode = context.params.code.toUpperCase()
+  const roomCode = params.code.toUpperCase()
 
   const supabase = getSupabaseAdmin()
   const { data: question, error } = await supabase

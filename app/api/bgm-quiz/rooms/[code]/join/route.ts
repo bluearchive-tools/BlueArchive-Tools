@@ -5,10 +5,10 @@ type JoinPayload = {
   displayName?: string
 }
 
-export async function POST(request: Request, context: { params: { code: string } }) {
+export async function POST(request: Request, { params }: { params: { code: string } }) {
   const payload = (await request.json()) as JoinPayload
   const displayName = payload.displayName?.trim() || 'ゲスト'
-  const roomCode = context.params.code.toUpperCase()
+  const roomCode = params.code.toUpperCase()
 
   const supabase = getSupabaseAdmin()
 

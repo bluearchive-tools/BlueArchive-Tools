@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import Footer from '../../../components/Footer'
 import { useTranslations } from 'next-intl'
@@ -16,6 +16,41 @@ import type { QuizMode, QuizQuestion } from '../../../lib/minigames/bgm-quiz'
 
 type Phase = 'setup' | 'playing' | 'result'
 type GameType = 'normal' | 'fast' | 'intro' | 'random'
+
+const detectOsInfo = (): string => {
+  if (typeof navigator === 'undefined') return 'Unknown'
+  const ua = navigator.userAgent
+  const platform = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform
+
+  if (/Windows NT/.test(ua)) {
+    const match = ua.match(/Windows NT ([\d.]+)/)
+    if (match?.[1]) {
+      const version = match[1]
+      const mapped =
+        version === '10.0' ? 'Windows 10/11' : version === '6.3' ? 'Windows 8.1' : version === '6.2' ? 'Windows 8' : version === '6.1' ? 'Windows 7' : `Windows ${version}`
+      return mapped
+    }
+    return 'Windows'
+  }
+  if (/Android/.test(ua)) {
+    const match = ua.match(/Android ([\d.]+)/)
+    return match?.[1] ? `Android ${match[1]}` : 'Android'
+  }
+  if (/iPhone OS/.test(ua) || /iPad OS/.test(ua)) {
+    const match = ua.match(/OS (\d+[_\d]*)/)
+    const version = match?.[1]?.replace(/_/g, '.')
+    return version ? `iOS ${version}` : 'iOS'
+  }
+  if (/Mac OS X/.test(ua)) {
+    const match = ua.match(/Mac OS X (\d+[_\d]*)/)
+    const version = match?.[1]?.replace(/_/g, '.')
+    return version ? `macOS ${version}` : 'macOS'
+  }
+  if (/Linux/.test(ua)) {
+    return platform ? `${platform}` : 'Linux'
+  }
+  return platform ?? 'Unknown'
+}
 
 export default function BgmQuizPage() {
   const t = useTranslations('bgm-quiz')
@@ -63,6 +98,7 @@ export default function BgmQuizPage() {
   const [onlineTotalQuestions, setOnlineTotalQuestions] = useState<number | null>(null)
   const [onlineError, setOnlineError] = useState<string | null>(null)
   const [onlineLoading, setOnlineLoading] = useState(false)
+  const [osInfo, setOsInfo] = useState<string | null>(null)
 
   const supabase = useSupabaseClient()
 
@@ -147,6 +183,10 @@ export default function BgmQuizPage() {
   }, [])
 
   useEffect(() => {
+    setOsInfo(detectOsInfo())
+  }, [])
+
+  useEffect(() => {
     if (phase !== 'playing') return
     setHasStopped(gameType !== 'fast')
     setRandomStart(null)
@@ -201,6 +241,27 @@ export default function BgmQuizPage() {
     }, 10)
   }, [currentFastStopTime, gameType, hasStopped, phase, playStartTime])
 
+  const fetchOnlineQuestion = useCallback(async (roomCode: string, index: number) => {
+    const response = await fetch(`/api/bgm-quiz/rooms/${roomCode}/question?index=${index}`)
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(data?.error ?? '問題の取得に失敗しました。')
+    }
+    return data.question as { trackFile: string; choices: string[] }
+  }, [])
+
+  const fetchOnlinePlayers = useCallback(
+    async (roomCode: string) => {
+      const { data } = await supabase
+        .from('bgm_quiz_players')
+        .select('player_id,display_name,score')
+        .eq('room_code', roomCode)
+        .order('created_at', { ascending: true })
+      setOnlinePlayers(data ?? [])
+    },
+    [supabase],
+  )
+
   useEffect(() => {
     if (!onlineRoomCode) return
     const roomCode = onlineRoomCode
@@ -254,7 +315,7 @@ export default function BgmQuizPage() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [gameType, onlineRoomCode, supabase])
+  }, [fetchOnlinePlayers, fetchOnlineQuestion, gameType, onlineRoomCode, supabase])
 
   const handleStart = () => {
     if (isOnline) return
@@ -282,24 +343,6 @@ export default function BgmQuizPage() {
     setShowAudio(true)
     setFastElapsed(0)
     setPhase('playing')
-  }
-
-  const fetchOnlineQuestion = async (roomCode: string, index: number) => {
-    const response = await fetch(`/api/bgm-quiz/rooms/${roomCode}/question?index=${index}`)
-    const data = await response.json()
-    if (!response.ok) {
-      throw new Error(data?.error ?? '問題の取得に失敗しました。')
-    }
-    return data.question as { trackFile: string; choices: string[] }
-  }
-
-  const fetchOnlinePlayers = async (roomCode: string) => {
-    const { data } = await supabase
-      .from('bgm_quiz_players')
-      .select('player_id,display_name,score')
-      .eq('room_code', roomCode)
-      .order('created_at', { ascending: true })
-    setOnlinePlayers(data ?? [])
   }
 
   const createOnlineRoom = async () => {
@@ -562,6 +605,7 @@ export default function BgmQuizPage() {
         <div className="space-y-1">
           <h1 className="text-2xl font-bold">{t('title')}</h1>
           <p className="text-sm text-gray-600">{t('description')}</p>
+          {osInfo && <p className="text-xs text-gray-500">{t('osInfo', { os: osInfo })}</p>}
         </div>
 
         {phase !== 'setup' && totalQuestions > 0 && (
