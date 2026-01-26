@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getSupabaseAdmin } from '../../../utils'
-import { getBgmTracks, isCorrectBgmAnswer } from '../../../../../lib/minigames/bgm-quiz'
+import { getBgmTracks, isCorrectBgmAnswer } from '../../../../../../lib/minigames/bgm-quiz'
 
 type AnswerPayload = {
   playerId: string
