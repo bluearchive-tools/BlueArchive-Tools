@@ -26,7 +26,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const requestedPlayerId = payload.playerId?.trim()
-  let playerId = requestedPlayerId || crypto.randomUUID()
+  const playerId = requestedPlayerId || crypto.randomUUID()
 
   const { data: existingPlayer } = await supabase
     .from('bgm_quiz_players')
