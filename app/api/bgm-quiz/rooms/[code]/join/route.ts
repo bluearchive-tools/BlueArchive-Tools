@@ -16,7 +16,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { data: room, error: roomError } = await supabase
     .from('bgm_quiz_rooms')
-    .select('room_code,current_index,total_questions,game_type,status')
+    .select('room_code,current_index,total_questions,game_type,status,host_player_id')
     .eq('room_code', roomCode)
     .maybeSingle()
 
@@ -36,15 +36,26 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: playerError.message }, { status: 500 })
   }
 
-  const { data: question, error: questionError } = await supabase
-    .from('bgm_quiz_questions_public')
-    .select('question_index,track_file,choices')
-    .eq('room_code', roomCode)
-    .eq('question_index', room.current_index)
-    .maybeSingle()
+  let question = null
+  if (room.status === 'playing') {
+    const { data: questionData, error: questionError } = await supabase
+      .from('bgm_quiz_questions_public')
+      .select('question_index,track_file,choices,is_solved,winner_player_id')
+      .eq('room_code', roomCode)
+      .eq('question_index', room.current_index)
+      .maybeSingle()
 
-  if (questionError || !question) {
-    return NextResponse.json({ error: '問題の取得に失敗しました。' }, { status: 500 })
+    if (questionError || !questionData) {
+      return NextResponse.json({ error: '問題の取得に失敗しました。' }, { status: 500 })
+    }
+
+    question = {
+      trackFile: questionData.track_file,
+      choices: questionData.choices,
+      questionIndex: questionData.question_index,
+      isSolved: questionData.is_solved,
+      winnerPlayerId: questionData.winner_player_id,
+    }
   }
 
   return NextResponse.json({
@@ -54,10 +65,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     currentIndex: room.current_index,
     gameType: room.game_type,
     status: room.status,
-    question: {
-      trackFile: question.track_file,
-      choices: question.choices,
-      questionIndex: question.question_index,
-    },
+    hostPlayerId: room.host_player_id,
+    question,
   })
 }

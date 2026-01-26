@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import Footer from '../../../components/Footer'
 import { useTranslations } from 'next-intl'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
@@ -14,8 +15,15 @@ import {
 } from '../../../lib/minigames/bgm-quiz'
 import type { QuizMode, QuizQuestion } from '../../../lib/minigames/bgm-quiz'
 
-type Phase = 'setup' | 'playing' | 'result'
+type Phase = 'setup' | 'lobby' | 'playing' | 'result'
 type GameType = 'normal' | 'fast' | 'intro' | 'random'
+type OnlineQuestion = {
+  trackFile: string
+  choices: string[]
+  questionIndex: number
+  isSolved: boolean
+  winnerPlayerId: string | null
+}
 
 const detectOsInfo = (): string => {
   if (typeof navigator === 'undefined') return 'Unknown'
@@ -55,6 +63,7 @@ const detectOsInfo = (): string => {
 export default function BgmQuizPage() {
   const t = useTranslations('bgm-quiz')
   const tracks = useMemo(() => getBgmTracks(), [])
+  const searchParams = useSearchParams()
 
   const [phase, setPhase] = useState<Phase>('setup')
   const [mode, setMode] = useState<QuizMode>('multiple-choice')
@@ -86,18 +95,19 @@ export default function BgmQuizPage() {
   const [isOnline, setIsOnline] = useState(false)
   const [roomCodeInput, setRoomCodeInput] = useState('')
   const [onlineRoomCode, setOnlineRoomCode] = useState<string | null>(null)
+  const [onlineRoomStatus, setOnlineRoomStatus] = useState<'lobby' | 'playing' | 'finished' | null>(null)
+  const [onlineHostPlayerId, setOnlineHostPlayerId] = useState<string | null>(null)
   const [onlinePlayerName, setOnlinePlayerName] = useState('')
   const [onlinePlayerId, setOnlinePlayerId] = useState<string | null>(null)
-  const [onlineQuestion, setOnlineQuestion] = useState<{
-    trackFile: string
-    choices: string[]
-  } | null>(null)
+  const [onlineQuestion, setOnlineQuestion] = useState<OnlineQuestion | null>(null)
   const [onlinePlayers, setOnlinePlayers] = useState<Array<{ player_id: string; display_name: string; score: number }>>(
     [],
   )
   const [onlineTotalQuestions, setOnlineTotalQuestions] = useState<number | null>(null)
+  const [onlinePresence, setOnlinePresence] = useState<Record<string, boolean>>({})
   const [onlineError, setOnlineError] = useState<string | null>(null)
   const [onlineLoading, setOnlineLoading] = useState(false)
+  const [onlineShareCopied, setOnlineShareCopied] = useState(false)
   const [osInfo, setOsInfo] = useState<string | null>(null)
 
   const supabase = useSupabaseClient()
@@ -137,6 +147,16 @@ export default function BgmQuizPage() {
   const activeTrack = isOnline
     ? tracks.find((track) => track.file === onlineQuestion?.trackFile)
     : currentQuestion?.track
+  const isHost = Boolean(onlinePlayerId && onlineHostPlayerId && onlinePlayerId === onlineHostPlayerId)
+  const canAdvanceOnline = Boolean(isHost && onlineQuestion?.isSolved && onlineRoomStatus === 'playing')
+  const onlineShareUrl = useMemo(() => {
+    if (!onlineRoomCode || typeof window === 'undefined') return null
+    return `${window.location.origin}/minigames/bgm-quiz?room=${onlineRoomCode}`
+  }, [onlineRoomCode])
+  const onlineWinnerName = useMemo(() => {
+    if (!onlineQuestion?.winnerPlayerId) return null
+    return onlinePlayers.find((player) => player.player_id === onlineQuestion.winnerPlayerId)?.display_name ?? null
+  }, [onlinePlayers, onlineQuestion?.winnerPlayerId])
 
   const clearStopTimer = () => {
     if (stopTimerRef.current) {
@@ -187,6 +207,13 @@ export default function BgmQuizPage() {
   }, [])
 
   useEffect(() => {
+    const roomFromUrl = searchParams.get('room')
+    if (!roomFromUrl) return
+    setIsOnline(true)
+    setRoomCodeInput(roomFromUrl.toUpperCase())
+  }, [searchParams])
+
+  useEffect(() => {
     if (phase !== 'playing') return
     setHasStopped(gameType !== 'fast')
     setRandomStart(null)
@@ -221,12 +248,19 @@ export default function BgmQuizPage() {
       return
     }
     setOnlineRoomCode(null)
+    setOnlineRoomStatus(null)
+    setOnlineHostPlayerId(null)
     setOnlinePlayerId(null)
     setOnlineQuestion(null)
     setOnlinePlayers([])
     setOnlineTotalQuestions(null)
+    setOnlinePresence({})
     setOnlineError(null)
   }, [isOnline])
+
+  useEffect(() => {
+    setOnlineShareCopied(false)
+  }, [onlineRoomCode])
 
   useEffect(() => {
     clearFastTimer()
@@ -247,7 +281,7 @@ export default function BgmQuizPage() {
     if (!response.ok) {
       throw new Error(data?.error ?? '問題の取得に失敗しました。')
     }
-    return data.question as { trackFile: string; choices: string[] }
+    return data.question as OnlineQuestion
   }, [])
 
   const fetchOnlinePlayers = useCallback(
@@ -263,59 +297,125 @@ export default function BgmQuizPage() {
   )
 
   useEffect(() => {
-    if (!onlineRoomCode) return
+    if (!onlineRoomCode || !onlinePlayerId) return
     const roomCode = onlineRoomCode
 
-    const channel = supabase
-      .channel(`bgm-quiz-room-${roomCode}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'bgm_quiz_rooms',
-          filter: `room_code=eq.${roomCode}`,
-        },
-        async (payload) => {
-          const updatedIndex = payload.new.current_index as number
-          const status = payload.new.status as 'playing' | 'finished'
-          setCurrentIndex(updatedIndex)
-          if (status === 'finished') {
-            setPhase('result')
-            return
+    const channel = supabase.channel(`bgm-quiz-room-${roomCode}`, {
+      config: {
+        presence: { key: onlinePlayerId },
+      },
+    })
+
+    const syncPresence = () => {
+      const state = channel.presenceState()
+      const onlineIds = new Set<string>()
+      Object.values(state).forEach((presences) => {
+        presences.forEach((presence) => {
+          if (typeof presence === 'object' && presence && 'player_id' in presence) {
+            onlineIds.add(String(presence.player_id))
           }
-          try {
-            const question = await fetchOnlineQuestion(roomCode, updatedIndex)
-            setOnlineQuestion(question)
-            setAnswerState(null)
-            setSelectedIndex(null)
-            setHasStopped(gameType !== 'fast')
-            setFastElapsed(0)
-          } catch (error) {
-            setOnlineError(error instanceof Error ? error.message : '問題の取得に失敗しました。')
-          }
-        },
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'bgm_quiz_players',
-          filter: `room_code=eq.${roomCode}`,
-        },
-        () => {
-          void fetchOnlinePlayers(roomCode)
-        },
-      )
-      .subscribe()
+        })
+      })
+      const nextPresence: Record<string, boolean> = {}
+      onlineIds.forEach((id) => {
+        nextPresence[id] = true
+      })
+      setOnlinePresence(nextPresence)
+    }
+
+    channel.on('presence', { event: 'sync' }, syncPresence)
+    channel.on('presence', { event: 'join' }, syncPresence)
+    channel.on('presence', { event: 'leave' }, syncPresence)
+
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'bgm_quiz_rooms',
+        filter: `room_code=eq.${roomCode}`,
+      },
+      async (payload) => {
+        const updatedIndex = payload.new.current_index as number
+        const status = payload.new.status as 'playing' | 'finished' | 'lobby'
+        setCurrentIndex(updatedIndex)
+        setOnlineRoomStatus(status)
+        if (status === 'finished') {
+          setPhase('result')
+          return
+        }
+        if (status === 'lobby') {
+          setPhase('lobby')
+          setOnlineQuestion(null)
+          return
+        }
+        setPhase('playing')
+        try {
+          const question = await fetchOnlineQuestion(roomCode, updatedIndex)
+          setOnlineQuestion(question)
+          setAnswerState(null)
+          setSelectedIndex(null)
+          setHasStopped(gameType !== 'fast')
+          setFastElapsed(0)
+        } catch (error) {
+          setOnlineError(error instanceof Error ? error.message : '問題の取得に失敗しました。')
+        }
+      },
+    )
+
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'bgm_quiz_questions_public',
+        filter: `room_code=eq.${roomCode}`,
+      },
+      (payload) => {
+        const updated = payload.new as { question_index: number; is_solved: boolean; winner_player_id: string | null }
+        setOnlineQuestion((prev) => {
+          if (!prev || prev.questionIndex !== updated.question_index) return prev
+          return { ...prev, isSolved: updated.is_solved, winnerPlayerId: updated.winner_player_id }
+        })
+      },
+    )
+
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'bgm_quiz_players',
+        filter: `room_code=eq.${roomCode}`,
+      },
+      () => {
+        void fetchOnlinePlayers(roomCode)
+      },
+    )
+
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        void channel.track({
+          player_id: onlinePlayerId,
+          display_name: onlinePlayerName || 'ゲスト',
+        })
+      }
+    })
 
     void fetchOnlinePlayers(roomCode)
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [fetchOnlinePlayers, fetchOnlineQuestion, gameType, onlineRoomCode, supabase])
+  }, [
+    fetchOnlinePlayers,
+    fetchOnlineQuestion,
+    gameType,
+    onlinePlayerId,
+    onlinePlayerName,
+    onlineRoomCode,
+    supabase,
+  ])
 
   const handleStart = () => {
     if (isOnline) return
@@ -367,10 +467,12 @@ export default function BgmQuizPage() {
       }
       setOnlineRoomCode(data.roomCode)
       setOnlinePlayerId(data.playerId)
+      setOnlineHostPlayerId(data.hostPlayerId ?? null)
       setOnlineTotalQuestions(data.totalQuestions)
       setCurrentIndex(data.currentIndex)
-      setOnlineQuestion(data.question)
-      setPhase('playing')
+      setOnlineRoomStatus(data.status ?? 'lobby')
+      setOnlineQuestion(data.question ?? null)
+      setPhase(data.status === 'playing' ? 'playing' : 'lobby')
       setAnswerState(null)
       setSelectedIndex(null)
       setHasStopped(gameType !== 'fast')
@@ -398,10 +500,12 @@ export default function BgmQuizPage() {
       }
       setOnlineRoomCode(data.roomCode)
       setOnlinePlayerId(data.playerId)
+      setOnlineHostPlayerId(data.hostPlayerId ?? null)
       setOnlineTotalQuestions(data.totalQuestions)
       setCurrentIndex(data.currentIndex)
-      setOnlineQuestion(data.question)
-      setPhase('playing')
+      setOnlineRoomStatus(data.status ?? 'lobby')
+      setOnlineQuestion(data.question ?? null)
+      setPhase(data.status === 'playing' ? 'playing' : 'lobby')
       setAnswerState(null)
       setSelectedIndex(null)
       setHasStopped(gameType !== 'fast')
@@ -410,6 +514,95 @@ export default function BgmQuizPage() {
       setOnlineError(error instanceof Error ? error.message : 'ルーム参加に失敗しました。')
     } finally {
       setOnlineLoading(false)
+    }
+  }
+
+  const startOnlineMatch = async () => {
+    if (!onlineRoomCode || !onlinePlayerId || onlineLoading) return
+    setOnlineLoading(true)
+    setOnlineError(null)
+    try {
+      const response = await fetch(`/api/bgm-quiz/rooms/${onlineRoomCode}/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId: onlinePlayerId }),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data?.error ?? '対戦開始に失敗しました。')
+      }
+      setOnlineRoomStatus(data.status)
+      setCurrentIndex(data.currentIndex)
+      setOnlineQuestion(data.question ?? null)
+      setPhase('playing')
+      setAnswerState(null)
+      setSelectedIndex(null)
+      setHasStopped(gameType !== 'fast')
+    } catch (error) {
+      setOnlineError(error instanceof Error ? error.message : '対戦開始に失敗しました。')
+    } finally {
+      setOnlineLoading(false)
+    }
+  }
+
+  const advanceOnlineQuestion = async () => {
+    if (!onlineRoomCode || !onlinePlayerId || onlineLoading) return
+    setOnlineLoading(true)
+    setOnlineError(null)
+    try {
+      const response = await fetch(`/api/bgm-quiz/rooms/${onlineRoomCode}/advance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId: onlinePlayerId }),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data?.error ?? '次の問題へ進めませんでした。')
+      }
+      setOnlineRoomStatus(data.status)
+      setCurrentIndex(data.currentIndex)
+      setOnlineQuestion(data.question ?? null)
+      setAnswerState(null)
+      setSelectedIndex(null)
+      setHasStopped(gameType !== 'fast')
+      if (data.status === 'finished') {
+        setPhase('result')
+      }
+    } catch (error) {
+      setOnlineError(error instanceof Error ? error.message : '次の問題へ進めませんでした。')
+    } finally {
+      setOnlineLoading(false)
+    }
+  }
+
+  const kickOnlinePlayer = async (targetPlayerId: string) => {
+    if (!onlineRoomCode || !onlinePlayerId || onlineLoading) return
+    setOnlineLoading(true)
+    setOnlineError(null)
+    try {
+      const response = await fetch(`/api/bgm-quiz/rooms/${onlineRoomCode}/kick`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId: onlinePlayerId, targetPlayerId }),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data?.error ?? '退出処理に失敗しました。')
+      }
+    } catch (error) {
+      setOnlineError(error instanceof Error ? error.message : '退出処理に失敗しました。')
+    } finally {
+      setOnlineLoading(false)
+    }
+  }
+
+  const copyOnlineShareLink = async () => {
+    if (!onlineShareUrl) return
+    try {
+      await navigator.clipboard.writeText(onlineShareUrl)
+      setOnlineShareCopied(true)
+    } catch {
+      setOnlineError(t('onlineShareCopyFailed'))
     }
   }
 
@@ -599,6 +792,49 @@ export default function BgmQuizPage() {
     })
   }
 
+  const onlinePlayerList = isOnline ? (
+    <ul className="flex flex-wrap gap-2">
+      {onlinePlayers.map((player) => {
+        const isPlayerOnline = Boolean(onlinePresence[player.player_id])
+        const isPlayerHost = player.player_id === onlineHostPlayerId
+        return (
+          <li
+            key={player.player_id}
+            className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs text-gray-700"
+          >
+            <span
+              className={`h-2 w-2 rounded-full ${isPlayerOnline ? 'bg-emerald-500' : 'bg-gray-400'}`}
+              aria-label={isPlayerOnline ? t('onlineStatusOnline') : t('onlineStatusOffline')}
+            />
+            <span className="font-medium">{player.display_name}</span>
+            {isPlayerHost && (
+              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                {t('onlineHostBadge')}
+              </span>
+            )}
+            {phase === 'playing' && (
+              <span className="text-[10px] text-gray-500">{t('onlineScoreBadge', { score: player.score })}</span>
+            )}
+            {!isPlayerOnline && (
+              <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
+                {t('onlineStatusOffline')}
+              </span>
+            )}
+            {isHost && !isPlayerHost && (
+              <button
+                type="button"
+                onClick={() => kickOnlinePlayer(player.player_id)}
+                className="rounded-full border border-red-200 px-2 py-0.5 text-[10px] font-semibold text-red-600 hover:bg-red-50"
+              >
+                {t('onlineKick')}
+              </button>
+            )}
+          </li>
+        )
+      })}
+    </ul>
+  ) : null
+
   return (
     <>
       <main className="p-4 pb-20 space-y-4">
@@ -608,7 +844,7 @@ export default function BgmQuizPage() {
           {osInfo && <p className="text-xs text-gray-500">{t('osInfo', { os: osInfo })}</p>}
         </div>
 
-        {phase !== 'setup' && totalQuestions > 0 && (
+        {(phase === 'playing' || phase === 'result') && totalQuestions > 0 && (
           <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
             <span className="rounded-full bg-gray-100 px-3 py-1">
               {t('progress', { current: phase === 'result' ? totalQuestions : currentIndex + 1, total: totalQuestions })}
@@ -870,8 +1106,86 @@ export default function BgmQuizPage() {
           </section>
         )}
 
+        {phase === 'lobby' && isOnline && (
+          <section className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="space-y-1">
+              <h2 className="text-lg font-semibold text-gray-900">{t('onlineLobbyTitle')}</h2>
+              <p className="text-sm text-gray-600">{t('onlineLobbyDescription')}</p>
+            </div>
+            {onlineRoomCode && (
+              <div className="rounded-md border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+                <p className="font-semibold">{t('onlineRoomCreated', { code: onlineRoomCode })}</p>
+                {onlineShareUrl && (
+                  <div className="mt-2 space-y-2">
+                    <label className="block text-xs text-gray-500">{t('onlineShareLabel')}</label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="text"
+                        value={onlineShareUrl}
+                        readOnly
+                        className="w-full flex-1 rounded-md border border-gray-300 px-3 py-2 text-xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={copyOnlineShareLink}
+                        className="rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700"
+                      >
+                        {onlineShareCopied ? t('onlineShareCopied') : t('onlineShareCopy')}
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500">{t('onlineShareHint')}</p>
+                  </div>
+                )}
+              </div>
+            )}
+            {onlinePlayers.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  {t('onlinePlayerList')}
+                </p>
+                {onlinePlayerList}
+              </div>
+            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {isHost ? (
+                <button
+                  type="button"
+                  onClick={startOnlineMatch}
+                  disabled={onlineLoading}
+                  className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                >
+                  {t('onlineStartMatch')}
+                </button>
+              ) : (
+                <p className="text-sm text-gray-600">{t('onlineWaitingHost')}</p>
+              )}
+            </div>
+            {onlineError && <p className="text-xs text-red-600">{onlineError}</p>}
+          </section>
+        )}
+
         {phase === 'playing' && activeQuestion && activeTrack && (
           <section className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+            {isOnline && onlinePlayers.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  {t('onlinePlayerList')}
+                </p>
+                {onlinePlayerList}
+              </div>
+            )}
+            {isOnline && onlineShareUrl && (
+              <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                <span>{t('onlineShareLabel')}</span>
+                <button
+                  type="button"
+                  onClick={copyOnlineShareLink}
+                  className="rounded-full border border-blue-200 px-2 py-0.5 text-[10px] font-semibold text-blue-600 hover:bg-blue-50"
+                >
+                  {onlineShareCopied ? t('onlineShareCopied') : t('onlineShareCopy')}
+                </button>
+              </div>
+            )}
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                 {t('nowPlaying')}
@@ -919,6 +1233,14 @@ export default function BgmQuizPage() {
                 </div>
               )}
             </div>
+
+            {isOnline && onlineQuestion?.isSolved && (
+              <div className="rounded-md border border-blue-100 bg-blue-50 px-4 py-2 text-sm text-blue-700">
+                {onlineWinnerName
+                  ? t('onlineSolvedBy', { name: onlineWinnerName })
+                  : t('onlineSolved')}
+              </div>
+            )}
 
             {(gameType !== 'fast' || hasStopped) && mode === 'multiple-choice' ? (
               <div className="space-y-2">
@@ -1010,14 +1332,31 @@ export default function BgmQuizPage() {
             )}
 
             <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={handleNext}
-                disabled={!isAnswered || isOnline}
-                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-              >
-                {isLastQuestion ? t('resultTitle') : t('next')}
-              </button>
+              {isOnline ? (
+                isHost ? (
+                  <button
+                    type="button"
+                    onClick={advanceOnlineQuestion}
+                    disabled={!canAdvanceOnline || onlineLoading}
+                    className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                  >
+                    {isLastQuestion ? t('resultTitle') : t('next')}
+                  </button>
+                ) : (
+                  <span className="inline-flex items-center rounded-md border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600">
+                    {t('onlineWaitingNext')}
+                  </span>
+                )
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={!isAnswered}
+                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                >
+                  {isLastQuestion ? t('resultTitle') : t('next')}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleRestart}

@@ -2,10 +2,11 @@
 
 create table if not exists public.bgm_quiz_rooms (
   room_code text primary key,
-  status text not null default 'playing',
+  status text not null default 'lobby',
   current_index integer not null default 0,
   total_questions integer not null default 0,
   game_type text not null default 'fast',
+  host_player_id uuid,
   created_at timestamptz not null default now()
 );
 

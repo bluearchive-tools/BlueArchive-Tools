@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const supabase = getSupabaseAdmin()
   const { data: question, error } = await supabase
     .from('bgm_quiz_questions_public')
-    .select('question_index,track_file,choices')
+    .select('question_index,track_file,choices,is_solved,winner_player_id')
     .eq('room_code', roomCode)
     .eq('question_index', index)
     .maybeSingle()
@@ -25,6 +25,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       trackFile: question.track_file,
       choices: question.choices,
       questionIndex: question.question_index,
+      isSolved: question.is_solved,
+      winnerPlayerId: question.winner_player_id,
     },
   })
 }

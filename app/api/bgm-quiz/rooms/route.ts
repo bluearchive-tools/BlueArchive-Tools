@@ -41,10 +41,11 @@ export async function POST(request: Request) {
 
     const { error: roomError } = await supabase.from('bgm_quiz_rooms').insert({
       room_code: roomCode,
-      status: 'playing',
+      status: 'lobby',
       current_index: 0,
       total_questions: questions.length,
       game_type: gameType,
+      host_player_id: playerId,
     })
     if (roomError) {
       return NextResponse.json({ error: roomError.message }, { status: 500 })
@@ -85,18 +86,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: publicError.message }, { status: 500 })
     }
 
-    const currentQuestion = questions[0]
-
     return NextResponse.json({
       roomCode,
       playerId,
+      hostPlayerId: playerId,
       totalQuestions: questions.length,
       currentIndex: 0,
-      question: {
-        trackFile: currentQuestion.trackFile,
-        choices: currentQuestion.choices,
-        questionIndex: currentQuestion.questionIndex,
-      },
+      status: 'lobby',
     })
   } catch (error) {
     return NextResponse.json(
