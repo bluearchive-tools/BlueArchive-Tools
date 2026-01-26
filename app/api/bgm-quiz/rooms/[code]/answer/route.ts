@@ -9,13 +9,10 @@ type AnswerPayload = {
   answerTime?: number
 }
 
-export async function POST(request: NextRequest, { params }: { params?: Promise<{ code?: string }> }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ code: string }> }) {
   const payload = (await request.json()) as AnswerPayload
-  const resolvedParams = (await params) ?? {}
-  const roomCode = resolvedParams.code?.toUpperCase()
-  if (!roomCode) {
-    return NextResponse.json({ error: 'ルームコードが不正です。' }, { status: 400 })
-  }
+  const resolvedParams = await params
+  const roomCode = resolvedParams.code.toUpperCase()
 
   const supabase = getSupabaseAdmin()
   const { data: room, error: roomError } = await supabase

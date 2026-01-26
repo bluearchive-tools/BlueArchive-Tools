@@ -2,14 +2,11 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getSupabaseAdmin } from '../../../utils'
 
-export async function GET(request: NextRequest, { params }: { params?: Promise<{ code?: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ code: string }> }) {
   const { searchParams } = new URL(request.url)
   const index = Number(searchParams.get('index') ?? 0)
-  const resolvedParams = (await params) ?? {}
-  const roomCode = resolvedParams.code?.toUpperCase()
-  if (!roomCode) {
-    return NextResponse.json({ error: 'ルームコードが不正です。' }, { status: 400 })
-  }
+  const resolvedParams = await params
+  const roomCode = resolvedParams.code.toUpperCase()
 
   const supabase = getSupabaseAdmin()
   const { data: question, error } = await supabase
