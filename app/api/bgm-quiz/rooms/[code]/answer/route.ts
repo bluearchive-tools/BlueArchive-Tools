@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 import { getSupabaseAdmin } from '../../../utils'
 
 type AnswerPayload = {
@@ -8,9 +9,13 @@ type AnswerPayload = {
   answerTime?: number
 }
 
-export async function POST(request: Request, { params }: { params: { code: string } }) {
+export async function POST(request: NextRequest, { params }: { params?: Promise<{ code?: string }> }) {
   const payload = (await request.json()) as AnswerPayload
-  const roomCode = params.code.toUpperCase()
+  const resolvedParams = (await params) ?? {}
+  const roomCode = resolvedParams.code?.toUpperCase()
+  if (!roomCode) {
+    return NextResponse.json({ error: 'ルームコードが不正です。' }, { status: 400 })
+  }
 
   const supabase = getSupabaseAdmin()
   const { data: room, error: roomError } = await supabase
