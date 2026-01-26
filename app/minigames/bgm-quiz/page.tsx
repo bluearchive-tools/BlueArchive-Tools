@@ -368,6 +368,24 @@ export default function BgmQuizPage() {
     window.localStorage.setItem('bgmQuizOnlineSession', payload)
   }, [onlinePlayerId, onlinePlayerName, onlineRoomCode])
 
+  const fetchOnlinePlayers = useCallback(
+    async (roomCode: string) => {
+      const { data } = await supabase
+        .from('bgm_quiz_players')
+        .select('player_id,display_name,score,is_waiting,ready_question_index')
+        .eq('room_code', roomCode)
+        .order('created_at', { ascending: true })
+      setOnlinePlayers(
+        (data ?? []).map((player) => ({
+          ...player,
+          is_waiting: Boolean(player.is_waiting),
+          ready_question_index: player.ready_question_index ?? null,
+        })),
+      )
+    },
+    [supabase],
+  )
+
   const joinOnlineRoom = useCallback(async () => {
     if (!roomCodeInput.trim() || onlineLoading) return
     setOnlineLoading(true)
@@ -562,24 +580,6 @@ export default function BgmQuizPage() {
       }
     },
     [fetchOnlineQuestion, hasEditedOnlineSettings, onlinePlayerId, supabase],
-  )
-
-  const fetchOnlinePlayers = useCallback(
-    async (roomCode: string) => {
-      const { data } = await supabase
-        .from('bgm_quiz_players')
-        .select('player_id,display_name,score,is_waiting,ready_question_index')
-        .eq('room_code', roomCode)
-        .order('created_at', { ascending: true })
-      setOnlinePlayers(
-        (data ?? []).map((player) => ({
-          ...player,
-          is_waiting: Boolean(player.is_waiting),
-          ready_question_index: player.ready_question_index ?? null,
-        })),
-      )
-    },
-    [supabase],
   )
 
   useEffect(() => {
