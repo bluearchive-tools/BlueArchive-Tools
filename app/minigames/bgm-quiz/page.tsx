@@ -368,6 +368,65 @@ export default function BgmQuizPage() {
     window.localStorage.setItem('bgmQuizOnlineSession', payload)
   }, [onlinePlayerId, onlinePlayerName, onlineRoomCode])
 
+  const joinOnlineRoom = useCallback(async () => {
+    if (!roomCodeInput.trim() || onlineLoading) return
+    setOnlineLoading(true)
+    setOnlineAction('join')
+    setOnlineError(null)
+    try {
+      const response = await fetch(`/api/bgm-quiz/rooms/${roomCodeInput.trim().toUpperCase()}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ displayName: onlinePlayerName, playerId: onlinePlayerId ?? undefined }),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data?.error ?? 'ルーム参加に失敗しました。')
+      }
+      setOnlineRoomCode(data.roomCode)
+      setOnlinePlayerId(data.playerId)
+      setOnlineHostPlayerId(data.hostPlayerId ?? null)
+      setOnlineTotalQuestions(data.totalQuestions)
+      setCurrentIndex(data.currentIndex)
+      setOnlineRoomStatus(data.status ?? 'lobby')
+      setOnlineQuestion(data.question ?? null)
+      if (data.category) {
+        setSelectedCategory(data.category)
+      }
+      setExcludeUntitledThemes(Boolean(data.excludeUntitledThemes))
+      if (data.totalQuestions) {
+        setQuestionCount(data.totalQuestions)
+      }
+      if (data.gameType) {
+        setGameType(data.gameType as GameType)
+      }
+      if (typeof data.introSeconds === 'number') {
+        setIntroSeconds(data.introSeconds)
+      }
+      if (typeof data.randomSeconds === 'number') {
+        setRandomSeconds(data.randomSeconds)
+      }
+      setPhase(data.status === 'playing' ? 'playing' : 'lobby')
+      setAnswerState(null)
+      setSelectedIndex(null)
+      setHasStopped(gameType !== 'fast')
+      await fetchOnlinePlayers(data.roomCode)
+    } catch (error) {
+      setOnlineError(error instanceof Error ? error.message : 'ルーム参加に失敗しました。')
+      setOnlineJoinMode(true)
+    } finally {
+      setOnlineLoading(false)
+      setOnlineAction(null)
+    }
+  }, [
+    fetchOnlinePlayers,
+    gameType,
+    onlineLoading,
+    onlinePlayerId,
+    onlinePlayerName,
+    roomCodeInput,
+  ])
+
   useEffect(() => {
     if (!pendingAutoJoin || !isOnline) return
     if (!roomCodeInput.trim()) return
@@ -773,65 +832,6 @@ export default function BgmQuizPage() {
       setOnlineAction(null)
     }
   }
-
-  const joinOnlineRoom = useCallback(async () => {
-    if (!roomCodeInput.trim() || onlineLoading) return
-    setOnlineLoading(true)
-    setOnlineAction('join')
-    setOnlineError(null)
-    try {
-      const response = await fetch(`/api/bgm-quiz/rooms/${roomCodeInput.trim().toUpperCase()}/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ displayName: onlinePlayerName, playerId: onlinePlayerId ?? undefined }),
-      })
-      const data = await response.json()
-      if (!response.ok) {
-        throw new Error(data?.error ?? 'ルーム参加に失敗しました。')
-      }
-      setOnlineRoomCode(data.roomCode)
-      setOnlinePlayerId(data.playerId)
-      setOnlineHostPlayerId(data.hostPlayerId ?? null)
-      setOnlineTotalQuestions(data.totalQuestions)
-      setCurrentIndex(data.currentIndex)
-      setOnlineRoomStatus(data.status ?? 'lobby')
-      setOnlineQuestion(data.question ?? null)
-      if (data.category) {
-        setSelectedCategory(data.category)
-      }
-      setExcludeUntitledThemes(Boolean(data.excludeUntitledThemes))
-      if (data.totalQuestions) {
-        setQuestionCount(data.totalQuestions)
-      }
-      if (data.gameType) {
-        setGameType(data.gameType as GameType)
-      }
-      if (typeof data.introSeconds === 'number') {
-        setIntroSeconds(data.introSeconds)
-      }
-      if (typeof data.randomSeconds === 'number') {
-        setRandomSeconds(data.randomSeconds)
-      }
-      setPhase(data.status === 'playing' ? 'playing' : 'lobby')
-      setAnswerState(null)
-      setSelectedIndex(null)
-      setHasStopped(gameType !== 'fast')
-      await fetchOnlinePlayers(data.roomCode)
-    } catch (error) {
-      setOnlineError(error instanceof Error ? error.message : 'ルーム参加に失敗しました。')
-      setOnlineJoinMode(true)
-    } finally {
-      setOnlineLoading(false)
-      setOnlineAction(null)
-    }
-  }, [
-    fetchOnlinePlayers,
-    gameType,
-    onlineLoading,
-    onlinePlayerId,
-    onlinePlayerName,
-    roomCodeInput,
-  ])
 
   const startOnlineMatch = async () => {
     if (!onlineRoomCode || !onlinePlayerId || onlineLoading) return
