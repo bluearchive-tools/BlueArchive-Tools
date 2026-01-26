@@ -109,6 +109,7 @@ export default function BgmQuizPage() {
   const [onlineLoading, setOnlineLoading] = useState(false)
   const [onlineShareCopied, setOnlineShareCopied] = useState(false)
   const [osInfo, setOsInfo] = useState<string | null>(null)
+  const [sessionLoaded, setSessionLoaded] = useState(false)
 
   const supabase = useSupabaseClient()
 
@@ -207,6 +208,33 @@ export default function BgmQuizPage() {
   }, [])
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    const saved = window.localStorage.getItem('bgmQuizOnlineSession')
+    if (!saved) {
+      setSessionLoaded(true)
+      return
+    }
+    try {
+      const parsed = JSON.parse(saved) as { roomCode?: string; playerId?: string; displayName?: string }
+      if (parsed.roomCode) {
+        setIsOnline(true)
+        setRoomCodeInput(parsed.roomCode)
+        setOnlineRoomCode(parsed.roomCode)
+      }
+      if (parsed.playerId) {
+        setOnlinePlayerId(parsed.playerId)
+      }
+      if (parsed.displayName) {
+        setOnlinePlayerName(parsed.displayName)
+      }
+    } catch {
+      window.localStorage.removeItem('bgmQuizOnlineSession')
+    } finally {
+      setSessionLoaded(true)
+    }
+  }, [])
+
+  useEffect(() => {
     const roomFromUrl = searchParams.get('room')
     if (!roomFromUrl) return
     setIsOnline(true)
@@ -256,11 +284,25 @@ export default function BgmQuizPage() {
     setOnlineTotalQuestions(null)
     setOnlinePresence({})
     setOnlineError(null)
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('bgmQuizOnlineSession')
+    }
   }, [isOnline])
 
   useEffect(() => {
     setOnlineShareCopied(false)
   }, [onlineRoomCode])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (!onlineRoomCode || !onlinePlayerId) return
+    const payload = JSON.stringify({
+      roomCode: onlineRoomCode,
+      playerId: onlinePlayerId,
+      displayName: onlinePlayerName,
+    })
+    window.localStorage.setItem('bgmQuizOnlineSession', payload)
+  }, [onlinePlayerId, onlinePlayerName, onlineRoomCode])
 
   useEffect(() => {
     clearFastTimer()
@@ -283,6 +325,38 @@ export default function BgmQuizPage() {
     }
     return data.question as OnlineQuestion
   }, [])
+
+  const fetchOnlineRoomStatus = useCallback(
+    async (roomCode: string) => {
+      const { data } = await supabase
+        .from('bgm_quiz_rooms')
+        .select('status,current_index,host_player_id,total_questions')
+        .eq('room_code', roomCode)
+        .maybeSingle()
+      if (!data) return
+      setOnlineRoomStatus(data.status)
+      setOnlineHostPlayerId(data.host_player_id)
+      setOnlineTotalQuestions(data.total_questions)
+      setCurrentIndex(data.current_index)
+      if (data.status === 'finished') {
+        setPhase('result')
+        return
+      }
+      if (data.status === 'lobby') {
+        setPhase('lobby')
+        setOnlineQuestion(null)
+        return
+      }
+      setPhase('playing')
+      try {
+        const question = await fetchOnlineQuestion(roomCode, data.current_index)
+        setOnlineQuestion(question)
+      } catch (error) {
+        setOnlineError(error instanceof Error ? error.message : '問題の取得に失敗しました。')
+      }
+    },
+    [fetchOnlineQuestion, supabase],
+  )
 
   const fetchOnlinePlayers = useCallback(
     async (roomCode: string) => {
@@ -417,6 +491,17 @@ export default function BgmQuizPage() {
     supabase,
   ])
 
+  useEffect(() => {
+    if (!onlineRoomCode || !sessionLoaded) return
+    void fetchOnlinePlayers(onlineRoomCode)
+    void fetchOnlineRoomStatus(onlineRoomCode)
+    const intervalId = window.setInterval(() => {
+      void fetchOnlinePlayers(onlineRoomCode)
+      void fetchOnlineRoomStatus(onlineRoomCode)
+    }, 4000)
+    return () => window.clearInterval(intervalId)
+  }, [fetchOnlinePlayers, fetchOnlineRoomStatus, onlineRoomCode, sessionLoaded])
+
   const handleStart = () => {
     if (isOnline) return
     if (!filteredTracks.length) return
@@ -492,7 +577,7 @@ export default function BgmQuizPage() {
       const response = await fetch(`/api/bgm-quiz/rooms/${roomCodeInput.trim().toUpperCase()}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ displayName: onlinePlayerName }),
+        body: JSON.stringify({ displayName: onlinePlayerName, playerId: onlinePlayerId ?? undefined }),
       })
       const data = await response.json()
       if (!response.ok) {

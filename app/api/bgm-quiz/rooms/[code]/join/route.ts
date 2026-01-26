@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from '../../../utils'
 
 type JoinPayload = {
   displayName?: string
+  playerId?: string
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ code: string }> }) {
@@ -24,16 +25,27 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'ルームが見つかりません。' }, { status: 404 })
   }
 
-  const playerId = crypto.randomUUID()
-  const { error: playerError } = await supabase.from('bgm_quiz_players').insert({
-    room_code: roomCode,
-    player_id: playerId,
-    display_name: displayName,
-    score: 0,
-  })
+  const requestedPlayerId = payload.playerId?.trim()
+  let playerId = requestedPlayerId || crypto.randomUUID()
 
-  if (playerError) {
-    return NextResponse.json({ error: playerError.message }, { status: 500 })
+  const { data: existingPlayer } = await supabase
+    .from('bgm_quiz_players')
+    .select('player_id')
+    .eq('room_code', roomCode)
+    .eq('player_id', playerId)
+    .maybeSingle()
+
+  if (!existingPlayer) {
+    const { error: playerError } = await supabase.from('bgm_quiz_players').insert({
+      room_code: roomCode,
+      player_id: playerId,
+      display_name: displayName,
+      score: 0,
+    })
+
+    if (playerError) {
+      return NextResponse.json({ error: playerError.message }, { status: 500 })
+    }
   }
 
   let question = null
