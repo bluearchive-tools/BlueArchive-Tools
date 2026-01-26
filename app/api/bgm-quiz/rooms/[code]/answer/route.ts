@@ -105,16 +105,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       }),
     ])
 
-    const nextIndex = room.current_index + 1
-    const nextStatus = nextIndex >= room.total_questions ? 'finished' : 'playing'
-
-    await supabase
-      .from('bgm_quiz_rooms')
-      .update({
-        current_index: Math.min(nextIndex, room.total_questions - 1),
-        status: nextStatus,
-      })
-      .eq('room_code', roomCode)
   }
 
   return NextResponse.json({ isCorrect })

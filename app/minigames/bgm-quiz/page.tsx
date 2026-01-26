@@ -60,8 +60,6 @@ type OnlineAction =
   | 'force-end'
   | 'transfer-host'
 
-const ONLINE_LOBBY_COUNTDOWN_SECONDS = 10
-
 const detectOsInfo = (): string => {
   if (typeof navigator === 'undefined') return 'Unknown'
   const ua = navigator.userAgent
@@ -156,7 +154,6 @@ export default function BgmQuizPage() {
   const [onlineJoinMode, setOnlineJoinMode] = useState(false)
   const [pendingAutoJoin, setPendingAutoJoin] = useState(false)
   const [manualLobbyView, setManualLobbyView] = useState(false)
-  const [onlineCountdown, setOnlineCountdown] = useState<number | null>(null)
 
   const supabase = useSupabaseClient()
 
@@ -167,7 +164,6 @@ export default function BgmQuizPage() {
   const statsRef = useRef<HTMLDivElement | null>(null)
   const settingsUpdateTimerRef = useRef<number | null>(null)
   const hostTransferRef = useRef(false)
-  const autoStartRef = useRef(false)
 
   const filteredTracks = useMemo(() => {
     if (!excludeUntitledThemes) return tracks
@@ -201,7 +197,6 @@ export default function BgmQuizPage() {
     : currentQuestion?.track
   const isHost = Boolean(onlinePlayerId && onlineHostPlayerId && onlinePlayerId === onlineHostPlayerId)
   const canAdvanceOnline = Boolean(isHost && onlineQuestion?.isSolved && onlineRoomStatus === 'playing')
-  const shouldShowLobbyStartButton = Boolean(isHost || onlineCountdown === 0)
   const displayPhase = manualLobbyView ? 'lobby' : phase
   const onlineShareUrl = useMemo(() => {
     if (!onlineRoomCode || typeof window === 'undefined') return null
@@ -342,6 +337,22 @@ export default function BgmQuizPage() {
       setIsMultiplayer(false)
       return
     }
+    setPhase('setup')
+    setQuestions([])
+    setCurrentIndex(0)
+    setSelectedIndex(null)
+    setAnswerInput('')
+    setListSelection('')
+    setAnswerState(null)
+    setScore(0)
+    setAnswerOptions([])
+    setHasStopped(true)
+    setFastStopTimes([])
+    setFastAnswerTimes([])
+    setFastElapsed(0)
+    setRandomStart(null)
+    setPlayStartTime(null)
+    setShowAudio(true)
     setOnlineRoomCode(null)
     setOnlineRoomStatus(null)
     setOnlineHostPlayerId(null)
@@ -728,6 +739,7 @@ export default function BgmQuizPage() {
           setAnswerInput('')
           setListSelection('')
           setHasStopped(gameType !== 'fast')
+          setPlayStartTime(null)
           setFastElapsed(0)
         } catch (error) {
           setOnlineError(error instanceof Error ? error.message : '問題の取得に失敗しました。')
@@ -807,31 +819,6 @@ export default function BgmQuizPage() {
       setHasEditedOnlineSettings(false)
     }
   }, [phase])
-
-  const isLobbyCountdownActive =
-    isOnline && phase === 'lobby' && onlineRoomStatus === 'lobby' && Boolean(onlineRoomCode)
-
-  useEffect(() => {
-    if (!isLobbyCountdownActive) {
-      setOnlineCountdown(null)
-      autoStartRef.current = false
-      return
-    }
-    setOnlineCountdown((previous) => (previous === null ? ONLINE_LOBBY_COUNTDOWN_SECONDS : previous))
-  }, [isLobbyCountdownActive])
-
-  useEffect(() => {
-    if (!isLobbyCountdownActive || onlineCountdown === null || onlineCountdown <= 0) {
-      return
-    }
-    const timerId = window.setTimeout(() => {
-      setOnlineCountdown((previous) => {
-        if (previous === null) return previous
-        return Math.max(0, previous - 1)
-      })
-    }, 1000)
-    return () => window.clearTimeout(timerId)
-  }, [isLobbyCountdownActive, onlineCountdown])
 
   const handleStart = () => {
     if (isOnline) return
@@ -942,6 +929,8 @@ export default function BgmQuizPage() {
       setAnswerState(null)
       setSelectedIndex(null)
       setHasStopped(gameType !== 'fast')
+      setPlayStartTime(null)
+      setFastElapsed(0)
     } catch (error) {
       setOnlineError(error instanceof Error ? error.message : '対戦開始に失敗しました。')
     } finally {
@@ -949,14 +938,6 @@ export default function BgmQuizPage() {
       setOnlineAction(null)
     }
   }, [gameType, onlineLoading, onlinePlayerId, onlineRoomCode])
-
-  useEffect(() => {
-    if (!isLobbyCountdownActive || onlineCountdown !== 0) return
-    if (!isHost || onlineLoading || onlineRoomStatus !== 'lobby') return
-    if (autoStartRef.current) return
-    autoStartRef.current = true
-    void startOnlineMatch()
-  }, [isHost, isLobbyCountdownActive, onlineCountdown, onlineLoading, onlineRoomStatus, startOnlineMatch])
 
   const advanceOnlineQuestion = async () => {
     if (!onlineRoomCode || !onlinePlayerId || onlineLoading) return
@@ -979,6 +960,8 @@ export default function BgmQuizPage() {
       setAnswerState(null)
       setSelectedIndex(null)
       setHasStopped(gameType !== 'fast')
+      setPlayStartTime(null)
+      setFastElapsed(0)
       if (data.status === 'finished') {
         setPhase('result')
       }
@@ -1970,44 +1953,37 @@ export default function BgmQuizPage() {
               )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              {onlineCountdown !== null && (
-                <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
-                  {onlineCountdown > 0
-                    ? t('onlineCountdown', { seconds: onlineCountdown })
-                    : t('onlineCountdownReady')}
-                </div>
-              )}
-              {shouldShowLobbyStartButton ? (
-                <button
-                  type="button"
-                  onClick={startOnlineMatch}
-                  disabled={!isHost || onlineLoading}
-                  className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-                >
-                  <span className="inline-flex items-center gap-2">
-                    {onlineAction === 'start' && (
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    )}
-                    {t('onlineStartMatch')}
-                  </span>
-                </button>
+              {isHost ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={startOnlineMatch}
+                    disabled={onlineLoading}
+                    className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      {onlineAction === 'start' && (
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      )}
+                      {t('onlineStartMatch')}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={disbandOnlineRoom}
+                    disabled={onlineLoading}
+                    className="rounded-md border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:bg-gray-200"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      {onlineAction === 'disband' && (
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-red-400 border-t-transparent" />
+                      )}
+                      {t('onlineDisband')}
+                    </span>
+                  </button>
+                </>
               ) : (
                 <p className="text-sm text-gray-600">{t('onlineWaitingHost')}</p>
-              )}
-              {isHost && (
-                <button
-                  type="button"
-                  onClick={disbandOnlineRoom}
-                  disabled={onlineLoading}
-                  className="rounded-md border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:bg-gray-200"
-                >
-                  <span className="inline-flex items-center gap-2">
-                    {onlineAction === 'disband' && (
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-red-400 border-t-transparent" />
-                    )}
-                    {t('onlineDisband')}
-                  </span>
-                </button>
               )}
               <button
                 type="button"
@@ -2136,10 +2112,15 @@ export default function BgmQuizPage() {
             {(gameType !== 'fast' || hasStopped) && mode === 'multiple-choice' ? (
               <div className="space-y-2">
                 {activeQuestion.choices.map((choice, index) => {
-                  const isCorrect = !isOnline && currentQuestion.correctIndex === index
                   const isSelected = index === selectedIndex
+                  const isCorrect = !isOnline
+                    ? currentQuestion.correctIndex === index
+                    : isSelected && answerState === 'correct'
                   const showCorrect = isAnswered && isCorrect
-                  const showIncorrect = isAnswered && isSelected && !isCorrect
+                  const showIncorrect =
+                    isAnswered &&
+                    isSelected &&
+                    (isOnline ? answerState === 'incorrect' : currentQuestion.correctIndex !== index)
 
                   const baseClasses =
                     'w-full rounded-md border px-4 py-3 text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2'
@@ -2258,13 +2239,15 @@ export default function BgmQuizPage() {
                   {isLastQuestion ? t('resultTitle') : t('next')}
                 </button>
               )}
-              <button
-                type="button"
-                onClick={handleRestart}
-                className="rounded-md border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
-              >
-                {t('restart')}
-              </button>
+              {!isOnline && (
+                <button
+                  type="button"
+                  onClick={handleRestart}
+                  className="rounded-md border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                >
+                  {t('restart')}
+                </button>
+              )}
               <Link
                 href="/"
                 className="inline-flex items-center rounded-md border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
