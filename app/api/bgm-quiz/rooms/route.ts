@@ -7,6 +7,8 @@ type CreateRoomPayload = {
   excludeUntitledThemes?: boolean
   displayName?: string
   gameType?: string
+  introSeconds?: number
+  randomSeconds?: number
 }
 
 export async function POST(request: Request) {
@@ -17,6 +19,8 @@ export async function POST(request: Request) {
     const excludeUntitled = Boolean(payload.excludeUntitledThemes)
     const displayName = payload.displayName?.trim() || 'ゲスト'
     const gameType = payload.gameType ?? 'fast'
+    const introSeconds = Math.max(1, Number(payload.introSeconds ?? 5))
+    const randomSeconds = Math.max(1, Number(payload.randomSeconds ?? 5))
 
     const supabase = getSupabaseAdmin()
     let roomCode = generateRoomCode()
@@ -46,6 +50,10 @@ export async function POST(request: Request) {
       total_questions: questions.length,
       game_type: gameType,
       host_player_id: playerId,
+      category,
+      exclude_untitled: excludeUntitled,
+      intro_seconds: introSeconds,
+      random_seconds: randomSeconds,
     })
     if (roomError) {
       return NextResponse.json({ error: roomError.message }, { status: 500 })
@@ -56,6 +64,9 @@ export async function POST(request: Request) {
       player_id: playerId,
       display_name: displayName,
       score: 0,
+      is_waiting: false,
+      ready_question_index: null,
+      last_seen_at: new Date().toISOString(),
     })
     if (playerError) {
       return NextResponse.json({ error: playerError.message }, { status: 500 })
@@ -93,6 +104,11 @@ export async function POST(request: Request) {
       totalQuestions: questions.length,
       currentIndex: 0,
       status: 'lobby',
+      category,
+      excludeUntitledThemes: excludeUntitled,
+      gameType,
+      introSeconds,
+      randomSeconds,
     })
   } catch (error) {
     return NextResponse.json(
