@@ -62,7 +62,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     })
   })
 
-  ;(answers ?? []).forEach((answer) => {
+  const typedAnswers =
+    (answers as Array<{
+      player_id: string
+      is_correct: boolean
+      stop_time: number | null
+      answer_time: number | null
+    }>) ?? []
+
+  typedAnswers.forEach((answer) => {
     const entry =
       stats.get(answer.player_id) ??
       (() => {
