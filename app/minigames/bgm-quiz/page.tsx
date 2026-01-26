@@ -833,14 +833,6 @@ export default function BgmQuizPage() {
     return () => window.clearTimeout(timerId)
   }, [isLobbyCountdownActive, onlineCountdown])
 
-  useEffect(() => {
-    if (!isLobbyCountdownActive || onlineCountdown !== 0) return
-    if (!isHost || onlineLoading || onlineRoomStatus !== 'lobby') return
-    if (autoStartRef.current) return
-    autoStartRef.current = true
-    void startOnlineMatch()
-  }, [isHost, isLobbyCountdownActive, onlineCountdown, onlineLoading, onlineRoomStatus, startOnlineMatch])
-
   const handleStart = () => {
     if (isOnline) return
     if (!filteredTracks.length) return
@@ -928,7 +920,7 @@ export default function BgmQuizPage() {
     }
   }
 
-  const startOnlineMatch = async () => {
+  const startOnlineMatch = useCallback(async () => {
     if (!onlineRoomCode || !onlinePlayerId || onlineLoading) return
     setOnlineLoading(true)
     setOnlineAction('start')
@@ -956,7 +948,15 @@ export default function BgmQuizPage() {
       setOnlineLoading(false)
       setOnlineAction(null)
     }
-  }
+  }, [gameType, onlineLoading, onlinePlayerId, onlineRoomCode])
+
+  useEffect(() => {
+    if (!isLobbyCountdownActive || onlineCountdown !== 0) return
+    if (!isHost || onlineLoading || onlineRoomStatus !== 'lobby') return
+    if (autoStartRef.current) return
+    autoStartRef.current = true
+    void startOnlineMatch()
+  }, [isHost, isLobbyCountdownActive, onlineCountdown, onlineLoading, onlineRoomStatus, startOnlineMatch])
 
   const advanceOnlineQuestion = async () => {
     if (!onlineRoomCode || !onlinePlayerId || onlineLoading) return
