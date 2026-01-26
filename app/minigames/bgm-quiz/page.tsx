@@ -146,7 +146,9 @@ export default function BgmQuizPage() {
   const [onlineStatsLoading, setOnlineStatsLoading] = useState(false)
   const [onlineStatsError, setOnlineStatsError] = useState<string | null>(null)
   const [showOnlineStats, setShowOnlineStats] = useState(false)
-  const [isEditingOnlineSettings, setIsEditingOnlineSettings] = useState(false)
+  const [hasEditedOnlineSettings, setHasEditedOnlineSettings] = useState(false)
+  const [onlineJoinMode, setOnlineJoinMode] = useState(false)
+  const [pendingAutoJoin, setPendingAutoJoin] = useState(false)
 
   const supabase = useSupabaseClient()
 
@@ -155,6 +157,7 @@ export default function BgmQuizPage() {
   const hideTimerRef = useRef<number | null>(null)
   const fastTimerRef = useRef<number | null>(null)
   const statsRef = useRef<HTMLDivElement | null>(null)
+  const settingsUpdateTimerRef = useRef<number | null>(null)
 
   const filteredTracks = useMemo(() => {
     if (!excludeUntitledThemes) return tracks
@@ -254,6 +257,10 @@ export default function BgmQuizPage() {
       clearStopTimer()
       clearHideTimer()
       clearFastTimer()
+      if (settingsUpdateTimerRef.current) {
+        window.clearTimeout(settingsUpdateTimerRef.current)
+        settingsUpdateTimerRef.current = null
+      }
     }
   }, [])
 
@@ -293,6 +300,8 @@ export default function BgmQuizPage() {
     if (!roomFromUrl) return
     setIsOnline(true)
     setRoomCodeInput(roomFromUrl.toUpperCase())
+    setOnlineJoinMode(false)
+    setPendingAutoJoin(true)
   }, [searchParams])
 
   useEffect(() => {
@@ -314,12 +323,7 @@ export default function BgmQuizPage() {
     }
   }, [gameType, mode])
 
-  useEffect(() => {
-    if (!isOnline) return
-    if (mode !== 'multiple-choice') {
-      setMode('multiple-choice')
-    }
-  }, [isOnline, mode])
+
 
   useEffect(() => {
     if (isOnline) {
@@ -341,7 +345,9 @@ export default function BgmQuizPage() {
     setOnlineStats(null)
     setOnlineStatsError(null)
     setShowOnlineStats(false)
-    setIsEditingOnlineSettings(false)
+    setHasEditedOnlineSettings(false)
+    setOnlineJoinMode(false)
+    setPendingAutoJoin(false)
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem('bgmQuizOnlineSession')
     }
@@ -363,6 +369,17 @@ export default function BgmQuizPage() {
   }, [onlinePlayerId, onlinePlayerName, onlineRoomCode])
 
   useEffect(() => {
+    if (!pendingAutoJoin || !isOnline) return
+    if (!roomCodeInput.trim()) return
+    if (onlineRoomCode) {
+      setPendingAutoJoin(false)
+      return
+    }
+    if (!sessionLoaded) return
+    void joinOnlineRoom().finally(() => setPendingAutoJoin(false))
+  }, [isOnline, joinOnlineRoom, onlineRoomCode, pendingAutoJoin, roomCodeInput, sessionLoaded])
+
+  useEffect(() => {
     clearFastTimer()
     if (phase !== 'playing' || gameType !== 'fast' || hasStopped || playStartTime === null) {
       if (currentFastStopTime !== null && currentFastStopTime !== undefined) {
@@ -374,6 +391,13 @@ export default function BgmQuizPage() {
       setFastElapsed((performance.now() - playStartTime) / 1000)
     }, 10)
   }, [currentFastStopTime, gameType, hasStopped, phase, playStartTime])
+
+  useEffect(() => {
+    if (!isOnline) return
+    if (mode !== 'list-select') return
+    if (!onlineQuestion) return
+    setAnswerOptions(onlineQuestion.choices)
+  }, [isOnline, mode, onlineQuestion])
 
   useEffect(() => {
     if (!isOnline || phase !== 'playing') return
@@ -449,7 +473,7 @@ export default function BgmQuizPage() {
       setOnlineHostPlayerId(data.host_player_id)
       setOnlineTotalQuestions(data.total_questions)
       setCurrentIndex(data.current_index)
-      if (!isHostPlayer || data.status !== 'lobby' || !isEditingOnlineSettings) {
+      if (!isHostPlayer || data.status !== 'lobby' || !hasEditedOnlineSettings) {
         setSelectedCategory(data.category ?? 'all')
         setExcludeUntitledThemes(Boolean(data.exclude_untitled))
         setQuestionCount(data.total_questions)
@@ -478,7 +502,7 @@ export default function BgmQuizPage() {
         setOnlineError(error instanceof Error ? error.message : '問題の取得に失敗しました。')
       }
     },
-    [fetchOnlineQuestion, isEditingOnlineSettings, onlinePlayerId, supabase],
+    [fetchOnlineQuestion, hasEditedOnlineSettings, onlinePlayerId, supabase],
   )
 
   const fetchOnlinePlayers = useCallback(
@@ -551,7 +575,7 @@ export default function BgmQuizPage() {
         const isHostPlayer = onlinePlayerId && hostPlayerIdValue === onlinePlayerId
         setCurrentIndex(updatedIndex)
         setOnlineRoomStatus(status)
-        if (!isHostPlayer || status !== 'lobby' || !isEditingOnlineSettings) {
+        if (!isHostPlayer || status !== 'lobby' || !hasEditedOnlineSettings) {
           setSelectedCategory(categoryValue)
           setExcludeUntitledThemes(excludeUntitledValue)
           if (totalQuestionsValue) {
@@ -581,6 +605,8 @@ export default function BgmQuizPage() {
           setOnlineQuestion(question)
           setAnswerState(null)
           setSelectedIndex(null)
+          setAnswerInput('')
+          setListSelection('')
           setHasStopped(gameType !== 'fast')
           setFastElapsed(0)
         } catch (error) {
@@ -637,7 +663,7 @@ export default function BgmQuizPage() {
     fetchOnlinePlayers,
     fetchOnlineQuestion,
     gameType,
-    isEditingOnlineSettings,
+    hasEditedOnlineSettings,
     onlinePlayerId,
     onlinePlayerName,
     onlineRoomCode,
@@ -657,7 +683,7 @@ export default function BgmQuizPage() {
 
   useEffect(() => {
     if (phase !== 'lobby') {
-      setIsEditingOnlineSettings(false)
+      setHasEditedOnlineSettings(false)
     }
   }, [phase])
 
@@ -748,7 +774,7 @@ export default function BgmQuizPage() {
     }
   }
 
-  const joinOnlineRoom = async () => {
+  const joinOnlineRoom = useCallback(async () => {
     if (!roomCodeInput.trim() || onlineLoading) return
     setOnlineLoading(true)
     setOnlineAction('join')
@@ -793,11 +819,19 @@ export default function BgmQuizPage() {
       await fetchOnlinePlayers(data.roomCode)
     } catch (error) {
       setOnlineError(error instanceof Error ? error.message : 'ルーム参加に失敗しました。')
+      setOnlineJoinMode(true)
     } finally {
       setOnlineLoading(false)
       setOnlineAction(null)
     }
-  }
+  }, [
+    fetchOnlinePlayers,
+    gameType,
+    onlineLoading,
+    onlinePlayerId,
+    onlinePlayerName,
+    roomCodeInput,
+  ])
 
   const startOnlineMatch = async () => {
     if (!onlineRoomCode || !onlinePlayerId || onlineLoading) return
@@ -897,18 +931,21 @@ export default function BgmQuizPage() {
     }
   }
 
-  const submitOnlineAnswer = async (choiceIndex: number) => {
+  const submitOnlineAnswer = async (payload: { choiceIndex?: number; answerText?: string }) => {
     if (!onlineRoomCode || !onlinePlayerId) return
     if (isCurrentPlayerWaiting) return
     setOnlineAction('answer')
-    setOnlineAnswerIndex(choiceIndex)
+    if (typeof payload.choiceIndex === 'number') {
+      setOnlineAnswerIndex(payload.choiceIndex)
+    }
     try {
       const response = await fetch(`/api/bgm-quiz/rooms/${onlineRoomCode}/answer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           playerId: onlinePlayerId,
-          choiceIndex,
+          choiceIndex: payload.choiceIndex,
+          answerText: payload.answerText,
           stopTime: currentFastStopTime,
           answerTime: fastElapsed,
         }),
@@ -926,7 +963,7 @@ export default function BgmQuizPage() {
   }
 
   const updateOnlineSettings = async () => {
-    if (!onlineRoomCode || !onlinePlayerId || !isHost || onlineLoading) return
+    if (!onlineRoomCode || !onlinePlayerId || !isHost || onlineLoading || onlineRoomStatus !== 'lobby') return
     setOnlineLoading(true)
     setOnlineAction('settings')
     setOnlineError(null)
@@ -957,7 +994,7 @@ export default function BgmQuizPage() {
       setSelectedIndex(null)
       setHasStopped(gameType !== 'fast')
       await fetchOnlinePlayers(onlineRoomCode)
-      setIsEditingOnlineSettings(false)
+      setHasEditedOnlineSettings(false)
     } catch (error) {
       setOnlineError(error instanceof Error ? error.message : '設定の更新に失敗しました。')
     } finally {
@@ -990,7 +1027,7 @@ export default function BgmQuizPage() {
       setSelectedIndex(null)
       setHasStopped(gameType !== 'fast')
       await fetchOnlinePlayers(onlineRoomCode)
-      setIsEditingOnlineSettings(false)
+      setHasEditedOnlineSettings(false)
     } catch (error) {
       setOnlineError(error instanceof Error ? error.message : 'ロビーに戻れませんでした。')
     } finally {
@@ -1064,7 +1101,7 @@ export default function BgmQuizPage() {
       recordFastAnswerTime()
     }
     if (isOnline) {
-      void submitOnlineAnswer(index)
+      void submitOnlineAnswer({ choiceIndex: index })
       return
     }
     const isCorrect = currentQuestion.correctIndex === index
@@ -1084,11 +1121,16 @@ export default function BgmQuizPage() {
 
   const handleSubmitAnswer = () => {
     if (isAnswered || phase !== 'playing' || !canAnswer) return
+    if (isOnline && isOnlineAnswerLocked) return
     const value = mode === 'list-select' ? listSelection : answerInput
     if (gameType === 'fast') {
       recordFastAnswerTime()
     }
-    if (isOnline) return
+    if (isOnline) {
+      if (!value.trim()) return
+      void submitOnlineAnswer({ answerText: value })
+      return
+    }
     const isCorrect = isCorrectBgmAnswer(currentQuestion.track, value)
     setAnswerState(isCorrect ? 'correct' : 'incorrect')
     if (isCorrect) {
@@ -1229,10 +1271,15 @@ export default function BgmQuizPage() {
     })
   }
 
-  const markOnlineSettingsEdited = () => {
-    if (isOnline && phase === 'lobby' && isHost) {
-      setIsEditingOnlineSettings(true)
+  const queueOnlineSettingsUpdate = () => {
+    if (!isOnline || phase !== 'lobby' || !isHost || onlineRoomStatus !== 'lobby') return
+    setHasEditedOnlineSettings(true)
+    if (settingsUpdateTimerRef.current) {
+      window.clearTimeout(settingsUpdateTimerRef.current)
     }
+    settingsUpdateTimerRef.current = window.setTimeout(() => {
+      void updateOnlineSettings()
+    }, 600)
   }
 
   const onlinePlayerList = isOnline ? (
@@ -1348,7 +1395,7 @@ export default function BgmQuizPage() {
                       value="multiple-choice"
                       checked={mode === 'multiple-choice'}
                       onChange={() => setMode('multiple-choice')}
-                      disabled={isOnline}
+                      disabled={false}
                     />
                     {t('modeMultipleChoice')}
                   </label>
@@ -1359,7 +1406,7 @@ export default function BgmQuizPage() {
                       value="list-select"
                       checked={mode === 'list-select'}
                       onChange={() => setMode('list-select')}
-                      disabled={gameType === 'fast' || isOnline}
+                      disabled={gameType === 'fast'}
                     />
                     {t('modeListSelect')}
                   </label>
@@ -1370,7 +1417,7 @@ export default function BgmQuizPage() {
                       value="free-input"
                       checked={mode === 'free-input'}
                       onChange={() => setMode('free-input')}
-                      disabled={gameType === 'fast' || isOnline}
+                      disabled={gameType === 'fast'}
                     />
                     {t('modeFreeInput')}
                   </label>
@@ -1448,21 +1495,27 @@ export default function BgmQuizPage() {
                         placeholder={t('onlineNamePlaceholder')}
                       />
                     </label>
-                    <label className="block text-xs text-gray-500">
-                      {t('onlineRoomCodeLabel')}
-                      <input
-                        type="text"
-                        value={roomCodeInput}
-                        onChange={(event) => setRoomCodeInput(event.target.value.toUpperCase())}
-                        className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase tracking-widest"
-                        placeholder="ABC123"
-                      />
-                    </label>
+                    {onlineJoinMode && !pendingAutoJoin && (
+                      <label className="block text-xs text-gray-500">
+                        {t('onlineRoomCodeLabel')}
+                        <input
+                          type="text"
+                          value={roomCodeInput}
+                          onChange={(event) => setRoomCodeInput(event.target.value.toUpperCase())}
+                          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase tracking-widest"
+                          placeholder="ABC123"
+                        />
+                      </label>
+                    )}
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
-                        onClick={createOnlineRoom}
-                        disabled={onlineLoading}
+                        onClick={() => {
+                          setOnlineJoinMode(false)
+                          setRoomCodeInput('')
+                          void createOnlineRoom()
+                        }}
+                        disabled={onlineLoading || pendingAutoJoin}
                         className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                       >
                         <span className="inline-flex items-center gap-2">
@@ -1474,8 +1527,14 @@ export default function BgmQuizPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={joinOnlineRoom}
-                        disabled={!roomCodeInput.trim() || onlineLoading}
+                        onClick={() => {
+                          if (!onlineJoinMode) {
+                            setOnlineJoinMode(true)
+                            return
+                          }
+                          void joinOnlineRoom()
+                        }}
+                        disabled={(onlineJoinMode && !roomCodeInput.trim()) || onlineLoading || pendingAutoJoin}
                         className="rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                       >
                         <span className="inline-flex items-center gap-2">
@@ -1486,6 +1545,7 @@ export default function BgmQuizPage() {
                         </span>
                       </button>
                     </div>
+                    {pendingAutoJoin && <p className="text-xs text-gray-500">{t('onlineAutoJoining')}</p>}
                     {onlineRoomCode && (
                       <p className="text-xs text-gray-500">
                         {t('onlineRoomCreated', { code: onlineRoomCode })}
@@ -1502,7 +1562,7 @@ export default function BgmQuizPage() {
                   value={gameType}
                   onChange={(event) => setGameType(event.target.value as GameType)}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  disabled={isOnline}
+                  disabled={false}
                 >
                   <option value="normal">{t('gameTypeNormal')}</option>
                   <option value="fast">{t('gameTypeFast')}</option>
@@ -1629,7 +1689,7 @@ export default function BgmQuizPage() {
                     value={selectedCategory}
                     onChange={(event) => {
                       setSelectedCategory(event.target.value)
-                      markOnlineSettingsEdited()
+                      queueOnlineSettingsUpdate()
                     }}
                     className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                     disabled={!isHost || onlineLoading}
@@ -1651,7 +1711,7 @@ export default function BgmQuizPage() {
                     value={questionCount}
                     onChange={(event) => {
                       setQuestionCount(Number(event.target.value))
-                      markOnlineSettingsEdited()
+                      queueOnlineSettingsUpdate()
                     }}
                     className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                     disabled={!isHost || onlineLoading}
@@ -1663,7 +1723,7 @@ export default function BgmQuizPage() {
                     value={gameType}
                     onChange={(event) => {
                       setGameType(event.target.value as GameType)
-                      markOnlineSettingsEdited()
+                      queueOnlineSettingsUpdate()
                     }}
                     className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                     disabled={!isHost || onlineLoading}
@@ -1690,7 +1750,7 @@ export default function BgmQuizPage() {
                         } else {
                           setRandomSeconds(Number(event.target.value))
                         }
-                        markOnlineSettingsEdited()
+                        queueOnlineSettingsUpdate()
                       }}
                       className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                       disabled={!isHost || onlineLoading}
@@ -1703,7 +1763,7 @@ export default function BgmQuizPage() {
                     checked={excludeUntitledThemes}
                     onChange={(event) => {
                       setExcludeUntitledThemes(event.target.checked)
-                      markOnlineSettingsEdited()
+                      queueOnlineSettingsUpdate()
                     }}
                     className="mt-1"
                     disabled={!isHost || onlineLoading}
@@ -1714,20 +1774,8 @@ export default function BgmQuizPage() {
                   </span>
                 </label>
               </div>
-              {isHost && (
-                <button
-                  type="button"
-                  onClick={updateOnlineSettings}
-                  disabled={onlineLoading}
-                  className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-                >
-                  <span className="inline-flex items-center justify-center gap-2">
-                    {onlineAction === 'settings' && (
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    )}
-                    {t('onlineSettingsSave')}
-                  </span>
-                </button>
+              {isHost && onlineAction === 'settings' && (
+                <p className="text-xs text-gray-500">{t('onlineSettingsSaving')}</p>
               )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -1885,7 +1933,7 @@ export default function BgmQuizPage() {
                   value={listSelection}
                   onChange={(event) => setListSelection(event.target.value)}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  disabled={isAnswered || !canAnswer}
+                  disabled={isAnswered || !canAnswer || isOnlineAnswerLocked}
                 >
                   <option value="">{t('listSelectPlaceholder')}</option>
                   {answerOptions.map((option) => (
@@ -1897,7 +1945,7 @@ export default function BgmQuizPage() {
                 <button
                   type="button"
                   onClick={handleSubmitAnswer}
-                  disabled={isAnswered || !listSelection || !canAnswer}
+                  disabled={isAnswered || !listSelection || !canAnswer || isOnlineAnswerLocked}
                   className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                 >
                   {t('submitAnswer')}
@@ -1911,12 +1959,12 @@ export default function BgmQuizPage() {
                   onChange={(event) => setAnswerInput(event.target.value)}
                   placeholder={t('answerPlaceholder')}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  disabled={isAnswered || !canAnswer}
+                  disabled={isAnswered || !canAnswer || isOnlineAnswerLocked}
                 />
                 <button
                   type="button"
                   onClick={handleSubmitAnswer}
-                  disabled={isAnswered || !answerInput.trim() || !canAnswer}
+                  disabled={isAnswered || !answerInput.trim() || !canAnswer || isOnlineAnswerLocked}
                   className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                 >
                   {t('submitAnswer')}

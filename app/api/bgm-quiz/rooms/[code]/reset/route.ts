@@ -56,12 +56,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     choices: question.choices,
   }))
 
-  const { error: questionError } = await supabase.from('bgm_quiz_questions').insert(questionRows)
+  const { error: questionError } = await supabase
+    .from('bgm_quiz_questions')
+    .upsert(questionRows, { onConflict: 'room_code,question_index' })
   if (questionError) {
     return NextResponse.json({ error: questionError.message }, { status: 500 })
   }
 
-  const { error: publicError } = await supabase.from('bgm_quiz_questions_public').insert(questionPublicRows)
+  const { error: publicError } = await supabase
+    .from('bgm_quiz_questions_public')
+    .upsert(questionPublicRows, { onConflict: 'room_code,question_index' })
   if (publicError) {
     return NextResponse.json({ error: publicError.message }, { status: 500 })
   }

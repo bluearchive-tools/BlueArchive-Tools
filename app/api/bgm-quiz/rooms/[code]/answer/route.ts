@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getSupabaseAdmin } from '../../../utils'
+import { getBgmTracks, isCorrectBgmAnswer } from '../../../../../lib/minigames/bgm-quiz'
 
 type AnswerPayload = {
   playerId: string
-  choiceIndex: number
+  choiceIndex?: number
+  answerText?: string
   stopTime?: number
   answerTime?: number
 }
@@ -46,7 +48,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { data: question, error: questionError } = await supabase
     .from('bgm_quiz_questions')
-    .select('correct_index,is_solved')
+    .select('correct_index,is_solved,track_file')
     .eq('room_code', roomCode)
     .eq('question_index', room.current_index)
     .maybeSingle()
@@ -55,13 +57,25 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: '問題が見つかりません。' }, { status: 404 })
   }
 
-  const isCorrect = payload.choiceIndex === question.correct_index
+  const isCorrect = (() => {
+    if (typeof payload.choiceIndex === 'number') {
+      return payload.choiceIndex === question.correct_index
+    }
+    if (payload.answerText) {
+      const track = getBgmTracks().find((item) => item.file === question.track_file)
+      if (!track) {
+        return false
+      }
+      return isCorrectBgmAnswer(track, payload.answerText)
+    }
+    return false
+  })()
 
   const { error: answerError } = await supabase.from('bgm_quiz_answers').insert({
     room_code: roomCode,
     player_id: payload.playerId,
     question_index: room.current_index,
-    choice_index: payload.choiceIndex,
+    choice_index: payload.choiceIndex ?? null,
     is_correct: isCorrect,
     stop_time: payload.stopTime ?? null,
     answer_time: payload.answerTime ?? null,
