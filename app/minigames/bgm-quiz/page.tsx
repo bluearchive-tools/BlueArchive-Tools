@@ -61,7 +61,6 @@ export default function BgmQuizPage() {
     [],
   )
   const [onlineTotalQuestions, setOnlineTotalQuestions] = useState<number | null>(null)
-  const [onlineStatus, setOnlineStatus] = useState<'playing' | 'finished' | null>(null)
   const [onlineError, setOnlineError] = useState<string | null>(null)
   const [onlineLoading, setOnlineLoading] = useState(false)
 
@@ -186,7 +185,6 @@ export default function BgmQuizPage() {
     setOnlineQuestion(null)
     setOnlinePlayers([])
     setOnlineTotalQuestions(null)
-    setOnlineStatus(null)
     setOnlineError(null)
   }, [isOnline])
 
@@ -220,7 +218,6 @@ export default function BgmQuizPage() {
         async (payload) => {
           const updatedIndex = payload.new.current_index as number
           const status = payload.new.status as 'playing' | 'finished'
-          setOnlineStatus(status)
           setCurrentIndex(updatedIndex)
           if (status === 'finished') {
             setPhase('result')
@@ -328,7 +325,6 @@ export default function BgmQuizPage() {
       setOnlineRoomCode(data.roomCode)
       setOnlinePlayerId(data.playerId)
       setOnlineTotalQuestions(data.totalQuestions)
-      setOnlineStatus('playing')
       setCurrentIndex(data.currentIndex)
       setOnlineQuestion(data.question)
       setPhase('playing')
@@ -360,7 +356,6 @@ export default function BgmQuizPage() {
       setOnlineRoomCode(data.roomCode)
       setOnlinePlayerId(data.playerId)
       setOnlineTotalQuestions(data.totalQuestions)
-      setOnlineStatus(data.status)
       setCurrentIndex(data.currentIndex)
       setOnlineQuestion(data.question)
       setPhase('playing')
