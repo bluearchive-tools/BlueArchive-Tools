@@ -158,6 +158,7 @@ export default function BgmQuizPage() {
     if (!onlineQuestion?.winnerPlayerId) return null
     return onlinePlayers.find((player) => player.player_id === onlineQuestion.winnerPlayerId)?.display_name ?? null
   }, [onlinePlayers, onlineQuestion?.winnerPlayerId])
+  const formatSeconds = (value: number | null | undefined) => (typeof value === 'number' ? value.toFixed(2) : '--')
 
   const clearStopTimer = () => {
     if (stopTimerRef.current) {
@@ -1294,7 +1295,7 @@ export default function BgmQuizPage() {
                 <p className="text-xs text-gray-500">
                   {t('randomPlaybackNotice', {
                     seconds: randomSeconds,
-                    start: randomStart !== null ? randomStart.toFixed(1) : '-',
+                    start: typeof randomStart === 'number' ? randomStart.toFixed(1) : '-',
                   })}
                 </p>
               )}
@@ -1311,9 +1312,9 @@ export default function BgmQuizPage() {
                   <span className="text-xs text-gray-500">
                     {hasStopped
                       ? t('fastStopped', {
-                          time: currentFastStopTime !== null ? currentFastStopTime.toFixed(2) : '--',
+                          time: formatSeconds(currentFastStopTime),
                         })
-                      : t('fastRunning', { time: fastElapsed.toFixed(2) })}
+                      : t('fastRunning', { time: formatSeconds(fastElapsed) })}
                   </span>
                 </div>
               )}
