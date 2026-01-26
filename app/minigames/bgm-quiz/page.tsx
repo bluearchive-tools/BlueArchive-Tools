@@ -503,6 +503,34 @@ export default function BgmQuizPage() {
     audio.play().catch(() => null)
   }, [allOnlineReady, currentIndex, isOnline, phase])
 
+  const transferOnlineHost = useCallback(
+    async (targetPlayerId: string, force = false) => {
+      if (!onlineRoomCode || !onlinePlayerId || onlineLoading) return
+      if (targetPlayerId === onlineHostPlayerId) return
+      setOnlineLoading(true)
+      setOnlineAction('transfer-host')
+      setOnlineError(null)
+      try {
+        const response = await fetch(`/api/bgm-quiz/rooms/${onlineRoomCode}/host`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playerId: onlinePlayerId, targetPlayerId, force }),
+        })
+        const data = await response.json()
+        if (!response.ok) {
+          throw new Error(data?.error ?? 'ホスト移譲に失敗しました。')
+        }
+        setOnlineHostPlayerId(targetPlayerId)
+      } catch (error) {
+        setOnlineError(error instanceof Error ? error.message : 'ホスト移譲に失敗しました。')
+      } finally {
+        setOnlineLoading(false)
+        setOnlineAction(null)
+      }
+    },
+    [onlineHostPlayerId, onlineLoading, onlinePlayerId, onlineRoomCode],
+  )
+
   useEffect(() => {
     if (!isOnline || !onlineHostPlayerId) return
     if (onlinePresence[onlineHostPlayerId]) return
@@ -1176,34 +1204,6 @@ export default function BgmQuizPage() {
       setOnlineAction(null)
     }
   }
-
-  const transferOnlineHost = useCallback(
-    async (targetPlayerId: string, force = false) => {
-      if (!onlineRoomCode || !onlinePlayerId || onlineLoading) return
-      if (targetPlayerId === onlineHostPlayerId) return
-      setOnlineLoading(true)
-      setOnlineAction('transfer-host')
-      setOnlineError(null)
-      try {
-        const response = await fetch(`/api/bgm-quiz/rooms/${onlineRoomCode}/host`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ playerId: onlinePlayerId, targetPlayerId, force }),
-        })
-        const data = await response.json()
-        if (!response.ok) {
-          throw new Error(data?.error ?? 'ホスト移譲に失敗しました。')
-        }
-        setOnlineHostPlayerId(targetPlayerId)
-      } catch (error) {
-        setOnlineError(error instanceof Error ? error.message : 'ホスト移譲に失敗しました。')
-      } finally {
-        setOnlineLoading(false)
-        setOnlineAction(null)
-      }
-    },
-    [onlineHostPlayerId, onlineLoading, onlinePlayerId, onlineRoomCode],
-  )
 
   const fetchOnlineStats = useCallback(async () => {
     if (!onlineRoomCode) return
