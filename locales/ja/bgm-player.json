@@ -1,0 +1,13 @@
+{
+  "title": "BGMプレイヤー",
+  "description": "Blue ArchiveのBGMを再生できます。",
+  "nowPlaying": "再生中",
+  "empty": "再生するBGMを選択してください。",
+  "filters": {
+    "all": "すべて",
+    "category": "カテゴリ",
+    "search": "検索",
+    "searchPlaceholder": "曲名やファイル名で検索",
+    "count": "{count} 曲"
+  }
+}

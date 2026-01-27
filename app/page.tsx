@@ -94,6 +94,12 @@ export default function Home() {
               description={t('tools.actions.divineCalc.description')}
             />
           </Link>
+          <Link href="/tools/bgm-player">
+            <FeatureItem
+              title={t('tools.actions.bgmPlayer.title')}
+              description={t('tools.actions.bgmPlayer.description')}
+            />
+          </Link>
         </div>
         <div
   aria-disabled="true"
