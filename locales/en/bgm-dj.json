@@ -1,18 +1,43 @@
 {
   "title": "BGM DJ",
-  "description": "Mix BGM with two decks.",
+  "description": "Mix BGM with a hardware-inspired DJ layout.",
   "deck": {
-    "left": "Left deck",
-    "right": "Right deck",
-    "track": "Select track",
+    "label": "Deck {deck}",
+    "noTrack": "No track loaded",
+    "selectHint": "Load from library",
     "play": "Play",
     "pause": "Pause",
-    "volume": "Volume"
+    "cue": "Cue",
+    "sync": "Sync",
+    "volume": "Volume",
+    "pitch": "Pitch %",
+    "bpm": "BPM",
+    "loop": "Loop",
+    "loopBeats": "{beats} beats",
+    "hotCue": "Hot cue",
+    "hotCueLabel": "Cue {label}",
+    "hotCueClear": "Clear",
+    "filter": "Filter",
+    "filterType": "Filter type",
+    "filterOff": "Off",
+    "filterLow": "LPF",
+    "filterHigh": "HPF",
+    "delay": "Delay",
+    "eq": {
+      "low": "Low",
+      "mid": "Mid",
+      "high": "High"
+    }
   },
-  "crossfader": {
-    "label": "Crossfader",
-    "left": "Left",
-    "right": "Right"
+  "mixer": {
+    "title": "Mixer",
+    "crossfader": "Crossfader",
+    "curve": "Curve",
+    "curveLinear": "Linear",
+    "curveSharp": "Sharp",
+    "speakers": "Speakers",
+    "speakerLeft": "Left speaker",
+    "speakerRight": "Right speaker"
   },
   "search": {
     "label": "Track search",
@@ -20,7 +45,7 @@
   },
   "list": {
     "title": "Track list",
-    "loadLeft": "Load left",
-    "loadRight": "Load right"
+    "loadLeft": "Load to Deck A",
+    "loadRight": "Load to Deck B"
   }
 }

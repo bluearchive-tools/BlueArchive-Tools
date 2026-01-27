@@ -10,7 +10,9 @@ export default function SiteTutorial() {
   const t = useTranslations('site-tutorial')
   const steps = useMemo(() => {
     const raw = t.raw('steps') as Record<string, string>
-    return Object.values(raw)
+    return Object.keys(raw)
+      .sort()
+      .map((key) => raw[key])
   }, [t])
   const [promptOpen, setPromptOpen] = useState(false)
   const [tutorialOpen, setTutorialOpen] = useState(false)

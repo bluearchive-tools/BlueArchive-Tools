@@ -1,18 +1,43 @@
 {
   "title": "BGM DJ",
-  "description": "2デッキでBGMをミックスできます。",
+  "description": "DJ機材風のUIでBGMをミックスできます。",
   "deck": {
-    "left": "左デッキ",
-    "right": "右デッキ",
-    "track": "曲を選択",
-    "play": "再生",
-    "pause": "停止",
-    "volume": "音量"
+    "label": "Deck {deck}",
+    "noTrack": "トラック未選択",
+    "selectHint": "ライブラリから読み込み",
+    "play": "Play",
+    "pause": "Pause",
+    "cue": "Cue",
+    "sync": "Sync",
+    "volume": "Volume",
+    "pitch": "Pitch %",
+    "bpm": "BPM",
+    "loop": "ループ",
+    "loopBeats": "{beats}拍",
+    "hotCue": "ホットキュー",
+    "hotCueLabel": "Cue {label}",
+    "hotCueClear": "Clear",
+    "filter": "Filter",
+    "filterType": "Filter Type",
+    "filterOff": "Off",
+    "filterLow": "LPF",
+    "filterHigh": "HPF",
+    "delay": "Delay",
+    "eq": {
+      "low": "Low",
+      "mid": "Mid",
+      "high": "High"
+    }
   },
-  "crossfader": {
-    "label": "クロスフェーダー",
-    "left": "左",
-    "right": "右"
+  "mixer": {
+    "title": "ミキサー",
+    "crossfader": "クロスフェーダー",
+    "curve": "カーブ",
+    "curveLinear": "Linear",
+    "curveSharp": "Sharp",
+    "speakers": "スピーカー",
+    "speakerLeft": "左スピーカー",
+    "speakerRight": "右スピーカー"
   },
   "search": {
     "label": "曲検索",
@@ -20,7 +45,7 @@
   },
   "list": {
     "title": "トラック一覧",
-    "loadLeft": "左へロード",
-    "loadRight": "右へロード"
+    "loadLeft": "Deck Aにロード",
+    "loadRight": "Deck Bにロード"
   }
 }
