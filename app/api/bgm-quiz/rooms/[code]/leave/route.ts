@@ -33,7 +33,46 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: deleteError.message }, { status: 500 })
   }
 
-  if (!deletedPlayers || deletedPlayers.length === 0) {
+  const { data: deletedAnswers, error: answersError } = await supabase
+    .from('bgm_quiz_answers')
+    .delete()
+    .eq('room_code', roomCode)
+    .eq('player_id', payload.playerId)
+    .select('id')
+
+  if (answersError) {
+    return NextResponse.json({ error: answersError.message }, { status: 500 })
+  }
+
+  const { data: updatedQuestions, error: questionError } = await supabase
+    .from('bgm_quiz_questions')
+    .update({ winner_player_id: null })
+    .eq('room_code', roomCode)
+    .eq('winner_player_id', payload.playerId)
+    .select('id')
+
+  if (questionError) {
+    return NextResponse.json({ error: questionError.message }, { status: 500 })
+  }
+
+  const { data: updatedPublicQuestions, error: publicQuestionError } = await supabase
+    .from('bgm_quiz_questions_public')
+    .update({ winner_player_id: null })
+    .eq('room_code', roomCode)
+    .eq('winner_player_id', payload.playerId)
+    .select('id')
+
+  if (publicQuestionError) {
+    return NextResponse.json({ error: publicQuestionError.message }, { status: 500 })
+  }
+
+  const removedAny =
+    (deletedPlayers?.length ?? 0) > 0 ||
+    (deletedAnswers?.length ?? 0) > 0 ||
+    (updatedQuestions?.length ?? 0) > 0 ||
+    (updatedPublicQuestions?.length ?? 0) > 0
+
+  if (!removedAny) {
     return NextResponse.json({ ok: true, removed: false })
   }
 
