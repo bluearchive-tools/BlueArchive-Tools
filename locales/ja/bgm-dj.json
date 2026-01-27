@@ -1,0 +1,26 @@
+{
+  "title": "BGM DJ",
+  "description": "2デッキでBGMをミックスできます。",
+  "deck": {
+    "left": "左デッキ",
+    "right": "右デッキ",
+    "track": "曲を選択",
+    "play": "再生",
+    "pause": "停止",
+    "volume": "音量"
+  },
+  "crossfader": {
+    "label": "クロスフェーダー",
+    "left": "左",
+    "right": "右"
+  },
+  "search": {
+    "label": "曲検索",
+    "placeholder": "曲名やカテゴリで検索"
+  },
+  "list": {
+    "title": "トラック一覧",
+    "loadLeft": "左へロード",
+    "loadRight": "右へロード"
+  }
+}

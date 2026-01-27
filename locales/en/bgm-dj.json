@@ -1,0 +1,26 @@
+{
+  "title": "BGM DJ",
+  "description": "Mix BGM with two decks.",
+  "deck": {
+    "left": "Left deck",
+    "right": "Right deck",
+    "track": "Select track",
+    "play": "Play",
+    "pause": "Pause",
+    "volume": "Volume"
+  },
+  "crossfader": {
+    "label": "Crossfader",
+    "left": "Left",
+    "right": "Right"
+  },
+  "search": {
+    "label": "Track search",
+    "placeholder": "Search by title or category"
+  },
+  "list": {
+    "title": "Track list",
+    "loadLeft": "Load left",
+    "loadRight": "Load right"
+  }
+}

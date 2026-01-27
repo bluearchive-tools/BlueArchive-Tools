@@ -1,0 +1,21 @@
+{
+  "prompt": {
+    "title": "Start the tutorial?",
+    "body": "We can walk you through the basics of this site.",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "tutorial": {
+    "title": "Site tutorial",
+    "skip": "Skip",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Finish",
+    "stepLabel": "Step {current} / {total}"
+  },
+  "steps": [
+    "Pick a tool or mini game from the home page.",
+    "Use the quick search (Ctrl+K / Cmd+K) to jump between pages.",
+    "Try features like the BGM player or BGM quiz."
+  ]
+}

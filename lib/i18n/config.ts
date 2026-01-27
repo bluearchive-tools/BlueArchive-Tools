@@ -6,12 +6,16 @@ import headerEn from '../../locales/en/header.json'
 import homeEn from '../../locales/en/home.json'
 import bgmQuizEn from '../../locales/en/bgm-quiz.json'
 import bgmPlayerEn from '../../locales/en/bgm-player.json'
+import bgmDjEn from '../../locales/en/bgm-dj.json'
+import siteTutorialEn from '../../locales/en/site-tutorial.json'
 import commonJa from '../../locales/ja/common.json'
 import footerJa from '../../locales/ja/footer.json'
 import headerJa from '../../locales/ja/header.json'
 import homeJa from '../../locales/ja/home.json'
 import bgmQuizJa from '../../locales/ja/bgm-quiz.json'
 import bgmPlayerJa from '../../locales/ja/bgm-player.json'
+import bgmDjJa from '../../locales/ja/bgm-dj.json'
+import siteTutorialJa from '../../locales/ja/site-tutorial.json'
 
 export const SUPPORTED_LOCALES = ['ja', 'en'] as const
 export type Locale = (typeof SUPPORTED_LOCALES)[number]
@@ -26,6 +30,8 @@ export const LOCALE_MESSAGES = {
     home: homeEn,
     'bgm-quiz': bgmQuizEn,
     'bgm-player': bgmPlayerEn,
+    'bgm-dj': bgmDjEn,
+    'site-tutorial': siteTutorialEn,
   },
   ja: {
     common: commonJa,
@@ -34,6 +40,8 @@ export const LOCALE_MESSAGES = {
     home: homeJa,
     'bgm-quiz': bgmQuizJa,
     'bgm-player': bgmPlayerJa,
+    'bgm-dj': bgmDjJa,
+    'site-tutorial': siteTutorialJa,
   },
 } as const satisfies Record<Locale, AbstractIntlMessages>
 

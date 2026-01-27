@@ -57,6 +57,10 @@
           "title": "BGM player",
           "description": "Play Blue Archive BGM tracks"
         },
+        "bgmDj": {
+          "title": "BGM DJ",
+          "description": "Mix BGM with two decks"
+        },
         "bondCalc": {
           "title": "Bond calculator",
           "description": "Estimate items needed for bond levels"

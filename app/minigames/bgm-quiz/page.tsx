@@ -14,6 +14,7 @@ import {
   isCorrectBgmAnswer,
 } from '../../../lib/minigames/bgm-quiz'
 import type { QuizMode, QuizQuestion } from '../../../lib/minigames/bgm-quiz'
+import AudioWithFallback from '../../../components/AudioWithFallback'
 
 type Phase = 'setup' | 'lobby' | 'playing' | 'result'
 type GameType = 'normal' | 'fast' | 'intro' | 'random'
@@ -2097,7 +2098,7 @@ export default function BgmQuizPage() {
                 {t('nowPlaying')}
               </p>
               {showAudio && (
-                <audio
+                <AudioWithFallback
                   key={activeTrack.file}
                   src={`/bgm/${encodeURIComponent(activeTrack.file)}`}
                   controls={!isOnline || allOnlineReady}

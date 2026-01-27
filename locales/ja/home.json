@@ -57,6 +57,10 @@
           "title": "BGMプレイヤー",
           "description": "Blue ArchiveのBGMを再生できます"
         },
+        "bgmDj": {
+          "title": "BGM DJ",
+          "description": "2デッキでBGMをミックスできます"
+        },
         "bondCalc": {
           "title": "絆上げ計算機",
           "description": "絆レベル上げに必要なアイテム数を計算します"
