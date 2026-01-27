@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import Footer from '../../../components/Footer'
 import { useTranslations } from 'next-intl'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { toPng } from 'html-to-image'
@@ -405,15 +404,20 @@ export default function BgmQuizPage() {
         .select('player_id,display_name,score,is_waiting,ready_question_index')
         .eq('room_code', roomCode)
         .order('created_at', { ascending: true })
-      setOnlinePlayers(
-        (data ?? []).map((player) => ({
-          ...player,
-          is_waiting: Boolean(player.is_waiting),
-          ready_question_index: player.ready_question_index ?? null,
-        })),
-      )
+      const normalized = (data ?? []).map((player) => ({
+        ...player,
+        is_waiting: Boolean(player.is_waiting),
+        ready_question_index: player.ready_question_index ?? null,
+      }))
+      setOnlinePlayers(normalized)
+      if (onlinePlayerId && onlineRoomCode === roomCode) {
+        const stillInRoom = normalized.some((player) => player.player_id === onlinePlayerId)
+        if (!stillInRoom) {
+          setIsOnline(false)
+        }
+      }
     },
-    [supabase],
+    [onlinePlayerId, onlineRoomCode, supabase],
   )
 
   const joinOnlineRoom = useCallback(async () => {
@@ -1548,7 +1552,7 @@ export default function BgmQuizPage() {
 
   return (
     <>
-      <main className="p-4 pb-20 space-y-4">
+      <main className="p-4 space-y-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold">{t('title')}</h1>
           <p className="text-sm text-gray-600">{t('description')}</p>
@@ -2505,7 +2509,6 @@ export default function BgmQuizPage() {
           </div>
         )}
       </main>
-      <Footer />
     </>
   )
 }

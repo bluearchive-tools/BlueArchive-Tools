@@ -22,14 +22,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'ルームが見つかりません。' }, { status: 404 })
   }
 
-  const { error: deleteError } = await supabase
+  const { data: deletedPlayers, error: deleteError } = await supabase
     .from('bgm_quiz_players')
     .delete()
     .eq('room_code', roomCode)
     .eq('player_id', payload.playerId)
+    .select('player_id')
 
   if (deleteError) {
     return NextResponse.json({ error: deleteError.message }, { status: 500 })
+  }
+
+  if (!deletedPlayers || deletedPlayers.length === 0) {
+    return NextResponse.json({ error: 'プレイヤーが見つかりません。' }, { status: 404 })
   }
 
   const { data: remainingPlayers } = await supabase
