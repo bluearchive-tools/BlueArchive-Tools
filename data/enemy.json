@@ -1,0 +1,24 @@
+[
+  {
+    "id": "enemy1",
+    "name": "テストボス",
+    "level": 50,
+    "armor": "重装甲",
+    "stats": { "hp": 100000, "attack": 1000, "defense": 500, "critResist": 0 },
+    "skills": {
+      "basic": { "name": "通常攻撃", "duration": 1 },
+      "special": { "name": "スペシャルアタック", "duration": 2 }
+    },
+    "attackOrder": [
+      { "time": 10, "skill": "basic" },
+      { "time": 30, "skill": "special" }
+    ]
+  },
+  {
+    "id": "chesed_torment_elastic",
+    "name": "ケセド torment 振動",
+    "level": 90,
+    "armor": "弾力装甲",
+    "stats": { "hp": 21000000, "attack": 10, "defense": 100, "critResist": 5000 }
+  }
+]

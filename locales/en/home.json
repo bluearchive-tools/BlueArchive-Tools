@@ -1,0 +1,77 @@
+{
+  "pageTitle": "BlueArchive Tools",
+  "sections": {
+    "students": {
+      "title": "Student management",
+      "description": "Check and edit your student data",
+      "actions": {
+        "view": {
+          "title": "View students",
+          "description": "Display the students you have saved"
+        },
+        "import": {
+          "title": "Import students",
+          "description": "Import student data from screenshots"
+        },
+        "squads": {
+          "title": "Manage squads",
+          "description": "Build and organize squads"
+        }
+      }
+    },
+    "tlTools": {
+      "title": "TL tools (beta)",
+      "description": "Utilities to help you craft timelines",
+      "actions": {
+        "search": {
+          "title": "Search TLs",
+          "description": "Find existing timelines"
+        },
+        "maker": {
+          "title": "TL maker",
+          "description": "Create timelines from scratch"
+        },
+        "makerDev": {
+          "title": "TL maker (dev)",
+          "description": "Try experimental timeline features"
+        },
+        "videoToTl": {
+          "title": "Video to TL",
+          "description": "Generate a timeline from a video"
+        }
+      }
+    },
+    "tools": {
+      "title": "Utilities",
+      "description": "Handy tools for daily play",
+      "actions": {
+        "eventSchedule": {
+          "title": "Event schedule",
+          "description": "Check upcoming events"
+        },
+        "divineCalc": {
+          "title": "Eleph calculator",
+          "description": "Calculate required Elephs"
+        },
+        "bgmPlayer": {
+          "title": "BGM player",
+          "description": "Play Blue Archive BGM tracks"
+        },
+        "bondCalc": {
+          "title": "Bond calculator",
+          "description": "Estimate items needed for bond levels"
+        }
+      }
+    },
+    "minigames": {
+      "title": "Mini games",
+      "description": "Quick breaks you can play right away",
+      "actions": {
+        "bgmQuiz": {
+          "title": "BGM quiz",
+          "description": "Guess the track name from the hint"
+        }
+      }
+    }
+  }
+}

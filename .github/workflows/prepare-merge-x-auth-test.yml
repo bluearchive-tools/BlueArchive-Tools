@@ -1,0 +1,55 @@
+name: Prepare merge branch (x-auth-test -> main)
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main (full history)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch x-auth-test
+        run: |
+          git fetch origin x-auth-test:refs/remotes/origin/x-auth-test
+
+      - name: Create merge branch and merge (prefer x-auth-test on conflicts)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git switch -c merge/x-auth-test-into-main origin/main
+
+          # Try merge (unrelated histories allowed)
+          if git merge --no-ff --allow-unrelated-histories origin/x-auth-test -m "Merge x-auth-test into main"; then
+            echo "Merge succeeded without conflicts."
+            exit 0
+          fi
+
+          echo "Merge had conflicts. Resolving by taking x-auth-test ('theirs') for ALL conflicted files..."
+
+          # List unmerged files and take "theirs" version for all of them
+          git diff --name-only --diff-filter=U | while IFS= read -r f; do
+            echo "Taking theirs: $f"
+            git checkout --theirs -- "$f"
+            git add "$f"
+          done
+
+          # Commit finishes the merge (creates the merge commit)
+          git commit -m "Merge x-auth-test into main (prefer x-auth-test for conflicts)"
+
+
+      - name: Push merge branch
+        run: |
+          git push -u origin HEAD:merge/x-auth-test-into-main
