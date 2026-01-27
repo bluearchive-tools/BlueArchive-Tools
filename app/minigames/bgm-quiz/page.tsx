@@ -164,6 +164,8 @@ export default function BgmQuizPage() {
   const statsRef = useRef<HTMLDivElement | null>(null)
   const settingsUpdateTimerRef = useRef<number | null>(null)
   const hostTransferRef = useRef(false)
+  const gameTypeRef = useRef(gameType)
+  const hasEditedOnlineSettingsRef = useRef(hasEditedOnlineSettings)
 
   const filteredTracks = useMemo(() => {
     if (!excludeUntitledThemes) return tracks
@@ -211,10 +213,14 @@ export default function BgmQuizPage() {
     [onlinePlayers, onlinePlayerId],
   )
   const isCurrentPlayerWaiting = Boolean(currentOnlinePlayer?.is_waiting)
-  const activeOnlinePlayers = useMemo(
-    () => onlinePlayers.filter((player) => !player.is_waiting),
-    [onlinePlayers],
-  )
+  const onlinePresenceCount = useMemo(() => Object.keys(onlinePresence).length, [onlinePresence])
+  const activeOnlinePlayers = useMemo(() => {
+    const basePlayers =
+      onlinePresenceCount > 0
+        ? onlinePlayers.filter((player) => onlinePresence[player.player_id])
+        : onlinePlayers
+    return basePlayers.filter((player) => !player.is_waiting)
+  }, [onlinePlayers, onlinePresence, onlinePresenceCount])
   const allOnlineReady =
     isOnline &&
     phase === 'playing' &&
@@ -544,6 +550,8 @@ export default function BgmQuizPage() {
 
   useEffect(() => {
     if (!isOnline || !onlineHostPlayerId) return
+    if (onlineRoomStatus !== 'lobby' && onlineRoomStatus !== 'playing') return
+    if (onlinePresenceCount === 0) return
     if (onlinePresence[onlineHostPlayerId]) return
     const onlineCandidates = onlinePlayers.filter((player) => onlinePresence[player.player_id])
     if (onlineCandidates.length === 0) return
@@ -554,7 +562,16 @@ export default function BgmQuizPage() {
     void transferOnlineHost(nextHost.player_id, true).finally(() => {
       hostTransferRef.current = false
     })
-  }, [isOnline, onlineHostPlayerId, onlinePlayerId, onlinePlayers, onlinePresence, transferOnlineHost])
+  }, [
+    isOnline,
+    onlineHostPlayerId,
+    onlinePlayerId,
+    onlinePlayers,
+    onlinePresence,
+    onlinePresenceCount,
+    onlineRoomStatus,
+    transferOnlineHost,
+  ])
 
   useEffect(() => {
     if (!onlineRoomCode || !onlinePlayerId) return
@@ -610,13 +627,16 @@ export default function BgmQuizPage() {
         )
         .eq('room_code', roomCode)
         .maybeSingle()
-      if (!data) return
+      if (!data) {
+        setIsOnline(false)
+        return
+      }
       const isHostPlayer = onlinePlayerId && data.host_player_id === onlinePlayerId
       setOnlineRoomStatus(data.status)
       setOnlineHostPlayerId(data.host_player_id)
       setOnlineTotalQuestions(data.total_questions)
       setCurrentIndex(data.current_index)
-      if (!isHostPlayer || data.status !== 'lobby' || !hasEditedOnlineSettings) {
+      if (!isHostPlayer || data.status !== 'lobby' || !hasEditedOnlineSettingsRef.current) {
         setSelectedCategory(data.category ?? 'all')
         setExcludeUntitledThemes(Boolean(data.exclude_untitled))
         setQuestionCount(data.total_questions)
@@ -648,7 +668,7 @@ export default function BgmQuizPage() {
         setOnlineError(error instanceof Error ? error.message : '問題の取得に失敗しました。')
       }
     },
-    [fetchOnlineQuestion, hasEditedOnlineSettings, manualLobbyView, onlinePlayerId, supabase],
+    [fetchOnlineQuestion, manualLobbyView, onlinePlayerId, supabase],
   )
 
   useEffect(() => {
@@ -685,6 +705,19 @@ export default function BgmQuizPage() {
     channel.on(
       'postgres_changes',
       {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'bgm_quiz_rooms',
+        filter: `room_code=eq.${roomCode}`,
+      },
+      () => {
+        setIsOnline(false)
+      },
+    )
+
+    channel.on(
+      'postgres_changes',
+      {
         event: 'UPDATE',
         schema: 'public',
         table: 'bgm_quiz_rooms',
@@ -703,7 +736,7 @@ export default function BgmQuizPage() {
         const isHostPlayer = onlinePlayerId && hostPlayerIdValue === onlinePlayerId
         setCurrentIndex(updatedIndex)
         setOnlineRoomStatus(status)
-        if (!isHostPlayer || status !== 'lobby' || !hasEditedOnlineSettings) {
+        if (!isHostPlayer || status !== 'lobby' || !hasEditedOnlineSettingsRef.current) {
           setSelectedCategory(categoryValue)
           setExcludeUntitledThemes(excludeUntitledValue)
           if (totalQuestionsValue) {
@@ -738,7 +771,7 @@ export default function BgmQuizPage() {
           setSelectedIndex(null)
           setAnswerInput('')
           setListSelection('')
-          setHasStopped(gameType !== 'fast')
+          setHasStopped(gameTypeRef.current !== 'fast')
           setPlayStartTime(null)
           setFastElapsed(0)
         } catch (error) {
@@ -791,17 +824,7 @@ export default function BgmQuizPage() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [
-    fetchOnlinePlayers,
-    fetchOnlineQuestion,
-    gameType,
-    hasEditedOnlineSettings,
-    manualLobbyView,
-    onlinePlayerId,
-    onlinePlayerName,
-    onlineRoomCode,
-    supabase,
-  ])
+  }, [fetchOnlinePlayers, fetchOnlineQuestion, manualLobbyView, onlinePlayerId, onlinePlayerName, onlineRoomCode, supabase])
 
   useEffect(() => {
     if (!onlineRoomCode || !sessionLoaded) return
@@ -819,6 +842,14 @@ export default function BgmQuizPage() {
       setHasEditedOnlineSettings(false)
     }
   }, [phase])
+
+  useEffect(() => {
+    gameTypeRef.current = gameType
+  }, [gameType])
+
+  useEffect(() => {
+    hasEditedOnlineSettingsRef.current = hasEditedOnlineSettings
+  }, [hasEditedOnlineSettings])
 
   const handleStart = () => {
     if (isOnline) return
@@ -988,6 +1019,14 @@ export default function BgmQuizPage() {
       if (!response.ok) {
         throw new Error(data?.error ?? '退出処理に失敗しました。')
       }
+      setOnlinePlayers((prev) => prev.filter((player) => player.player_id !== targetPlayerId))
+      setOnlinePresence((prev) => {
+        if (!prev[targetPlayerId]) return prev
+        const next = { ...prev }
+        delete next[targetPlayerId]
+        return next
+      })
+      await fetchOnlinePlayers(onlineRoomCode)
     } catch (error) {
       setOnlineError(error instanceof Error ? error.message : '退出処理に失敗しました。')
     } finally {
@@ -1440,7 +1479,10 @@ export default function BgmQuizPage() {
 
   const onlinePlayerList = isOnline ? (
     <ul className="flex flex-wrap gap-2">
-      {onlinePlayers.map((player) => {
+      {(onlinePresenceCount > 0
+        ? onlinePlayers.filter((player) => onlinePresence[player.player_id])
+        : onlinePlayers
+      ).map((player) => {
         const isPlayerOnline = Boolean(onlinePresence[player.player_id])
         const isPlayerHost = player.player_id === onlineHostPlayerId
         return (
@@ -1464,11 +1506,6 @@ export default function BgmQuizPage() {
             {player.is_waiting && (
               <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
                 {t('onlineWaitingBadge')}
-              </span>
-            )}
-            {!isPlayerOnline && (
-              <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
-                {t('onlineStatusOffline')}
               </span>
             )}
             {isHost && !isPlayerHost && (
