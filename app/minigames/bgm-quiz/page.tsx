@@ -1108,6 +1108,24 @@ export default function BgmQuizPage() {
       }
       setOnlineRoomStatus(data.status ?? 'lobby')
       setOnlineTotalQuestions(data.totalQuestions ?? null)
+      if (data.category) {
+        setSelectedCategory(data.category)
+      }
+      if (typeof data.totalQuestions === 'number') {
+        setQuestionCount(data.totalQuestions)
+      }
+      if (typeof data.excludeUntitled === 'boolean') {
+        setExcludeUntitledThemes(data.excludeUntitled)
+      }
+      if (data.gameType) {
+        setGameType(data.gameType as GameType)
+      }
+      if (typeof data.introSeconds === 'number') {
+        setIntroSeconds(data.introSeconds)
+      }
+      if (typeof data.randomSeconds === 'number') {
+        setRandomSeconds(data.randomSeconds)
+      }
       setCurrentIndex(0)
       setOnlineQuestion(null)
       setPhase('lobby')

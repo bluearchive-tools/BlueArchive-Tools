@@ -34,7 +34,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   if (!deletedPlayers || deletedPlayers.length === 0) {
-    return NextResponse.json({ error: 'プレイヤーが見つかりません。' }, { status: 404 })
+    return NextResponse.json({ ok: true, removed: false })
   }
 
   const { data: remainingPlayers } = await supabase
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await supabase.from('bgm_quiz_questions_public').delete().eq('room_code', roomCode)
     await supabase.from('bgm_quiz_questions').delete().eq('room_code', roomCode)
     await supabase.from('bgm_quiz_rooms').delete().eq('room_code', roomCode)
-    return NextResponse.json({ ok: true, deleted: true })
+    return NextResponse.json({ ok: true, deleted: true, removed: true })
   }
 
   if (room.host_player_id === payload.playerId) {
@@ -58,5 +58,5 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
   }
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, removed: true })
 }

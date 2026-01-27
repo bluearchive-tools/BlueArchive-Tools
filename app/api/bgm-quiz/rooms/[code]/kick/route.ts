@@ -43,8 +43,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   if (!deletedPlayers || deletedPlayers.length === 0) {
-    return NextResponse.json({ error: 'プレイヤーが見つかりません。' }, { status: 404 })
+    return NextResponse.json({ success: true, removed: false })
   }
 
-  return NextResponse.json({ success: true })
+  return NextResponse.json({ success: true, removed: true })
 }

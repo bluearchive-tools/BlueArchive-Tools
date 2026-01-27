@@ -112,5 +112,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   return NextResponse.json({
     status: 'lobby',
     totalQuestions: questions.length,
+    category,
+    excludeUntitled,
+    gameType,
+    introSeconds,
+    randomSeconds,
   })
 }
