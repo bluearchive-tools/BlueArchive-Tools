@@ -71,6 +71,7 @@ const SEARCH_PAGES: SearchEntry[] = [
   { label: 'イベントスケジュール', path: '/tools/event-schedule', keywords: ['event', 'schedule'] },
   { label: '神名文字計算', path: '/tools/divine-calc', keywords: ['divine'] },
   { label: '絆計算', path: '/tools/bond-calc', keywords: ['bond'] },
+  { label: 'BGMプレイヤー', path: '/tools/bgm-player', keywords: ['bgm', 'music', 'player'] },
   { label: 'デコレーション', path: '/decorations', keywords: ['decoration'] },
   { label: 'ヘルプ(ローカル)', path: '/help/editor', keywords: ['help'] },
 ]

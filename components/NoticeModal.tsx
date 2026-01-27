@@ -61,7 +61,8 @@ export default function NoticeModal() {
         const res = await fetch('/api/notices')
         if (!res.ok) return
         const data: Notice[] = await res.json()
-        setNotices(data.reverse())
+        const ordered = [...data].reverse()
+        setNotices(ordered)
         if (data.length) {
           const latest = data[data.length - 1]
           setLatestId(latest.id)

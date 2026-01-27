@@ -53,6 +53,10 @@
           "title": "神名文字計算機",
           "description": "必要な神名文字数を計算します"
         },
+        "bgmPlayer": {
+          "title": "BGMプレイヤー",
+          "description": "Blue ArchiveのBGMを再生できます"
+        },
         "bondCalc": {
           "title": "絆上げ計算機",
           "description": "絆レベル上げに必要なアイテム数を計算します"

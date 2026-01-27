@@ -1,0 +1,13 @@
+{
+  "title": "BGM player",
+  "description": "Play Blue Archive BGM tracks.",
+  "nowPlaying": "Now playing",
+  "empty": "Select a track to start playback.",
+  "filters": {
+    "all": "All",
+    "category": "Category",
+    "search": "Search",
+    "searchPlaceholder": "Search by title or file name",
+    "count": "{count} tracks"
+  }
+}

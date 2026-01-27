@@ -53,6 +53,10 @@
           "title": "Eleph calculator",
           "description": "Calculate required Elephs"
         },
+        "bgmPlayer": {
+          "title": "BGM player",
+          "description": "Play Blue Archive BGM tracks"
+        },
         "bondCalc": {
           "title": "Bond calculator",
           "description": "Estimate items needed for bond levels"
