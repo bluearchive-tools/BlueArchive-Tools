@@ -198,7 +198,7 @@ export default function BgmQuizPage() {
     ? tracks.find((track) => track.file === onlineQuestion?.trackFile)
     : currentQuestion?.track
   const isHost = Boolean(onlinePlayerId && onlineHostPlayerId && onlinePlayerId === onlineHostPlayerId)
-  const canAdvanceOnline = Boolean(isHost && onlineQuestion?.isSolved && onlineRoomStatus === 'playing')
+  const canAdvanceOnline = Boolean(isHost && onlineRoomStatus === 'playing')
   const displayPhase = manualLobbyView ? 'lobby' : phase
   const onlineShareUrl = useMemo(() => {
     if (!onlineRoomCode || typeof window === 'undefined') return null
@@ -1479,10 +1479,7 @@ export default function BgmQuizPage() {
 
   const onlinePlayerList = isOnline ? (
     <ul className="flex flex-wrap gap-2">
-      {(onlinePresenceCount > 0
-        ? onlinePlayers.filter((player) => onlinePresence[player.player_id])
-        : onlinePlayers
-      ).map((player) => {
+      {onlinePlayers.map((player) => {
         const isPlayerOnline = Boolean(onlinePresence[player.player_id])
         const isPlayerHost = player.player_id === onlineHostPlayerId
         return (
@@ -1506,6 +1503,11 @@ export default function BgmQuizPage() {
             {player.is_waiting && (
               <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
                 {t('onlineWaitingBadge')}
+              </span>
+            )}
+            {!isPlayerOnline && (
+              <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
+                {t('onlineStatusOffline')}
               </span>
             )}
             {isHost && !isPlayerHost && (
