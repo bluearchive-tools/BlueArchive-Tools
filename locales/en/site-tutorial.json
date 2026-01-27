@@ -13,9 +13,9 @@
     "finish": "Finish",
     "stepLabel": "Step {current} / {total}"
   },
-  "steps": [
-    "Pick a tool or mini game from the home page.",
-    "Use the quick search (Ctrl+K / Cmd+K) to jump between pages.",
-    "Try features like the BGM player or BGM quiz."
-  ]
+  "steps": {
+    "step1": "Pick a tool or mini game from the home page.",
+    "step2": "Use the quick search (Ctrl+K / Cmd+K) to jump between pages.",
+    "step3": "Try features like the BGM player or BGM quiz."
+  }
 }

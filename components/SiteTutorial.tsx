@@ -8,7 +8,10 @@ const COMPLETED_KEY = 'app:siteTutorialCompleted'
 
 export default function SiteTutorial() {
   const t = useTranslations('site-tutorial')
-  const steps = useMemo(() => t.raw('steps') as string[], [t])
+  const steps = useMemo(() => {
+    const raw = t.raw('steps') as Record<string, string>
+    return Object.values(raw)
+  }, [t])
   const [promptOpen, setPromptOpen] = useState(false)
   const [tutorialOpen, setTutorialOpen] = useState(false)
   const [stepIndex, setStepIndex] = useState(0)
