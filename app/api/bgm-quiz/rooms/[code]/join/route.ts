@@ -17,7 +17,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { data: room, error: roomError } = await supabase
     .from('bgm_quiz_rooms')
-    .select('room_code,current_index,total_questions,game_type,status,host_player_id')
+    .select(
+      'room_code,current_index,total_questions,game_type,status,host_player_id,category,exclude_untitled,intro_seconds,random_seconds',
+    )
     .eq('room_code', roomCode)
     .maybeSingle()
 
@@ -30,17 +32,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { data: existingPlayer } = await supabase
     .from('bgm_quiz_players')
-    .select('player_id')
+    .select('player_id,is_waiting')
     .eq('room_code', roomCode)
     .eq('player_id', playerId)
     .maybeSingle()
 
   if (!existingPlayer) {
+    const isWaiting = room.status === 'playing'
     const { error: playerError } = await supabase.from('bgm_quiz_players').insert({
       room_code: roomCode,
       player_id: playerId,
       display_name: displayName,
       score: 0,
+      is_waiting: isWaiting,
+      ready_question_index: null,
+      last_seen_at: new Date().toISOString(),
     })
 
     if (playerError) {
@@ -49,7 +55,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   let question = null
-  if (room.status === 'playing') {
+  const isWaiting = existingPlayer?.is_waiting ?? (room.status === 'playing' && !existingPlayer)
+  if (room.status === 'playing' && !isWaiting) {
     const { data: questionData, error: questionError } = await supabase
       .from('bgm_quiz_questions_public')
       .select('question_index,track_file,choices,is_solved,winner_player_id')
@@ -79,5 +86,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     status: room.status,
     hostPlayerId: room.host_player_id,
     question,
+    category: room.category,
+    excludeUntitledThemes: room.exclude_untitled,
+    introSeconds: room.intro_seconds,
+    randomSeconds: room.random_seconds,
+    isWaiting,
   })
 }

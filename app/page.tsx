@@ -5,7 +5,6 @@ import CollapsibleBox from '../components/CollapsibleBox'
 import FeatureItem from '../components/FeatureItem'
 import Link from 'next/link'
 import LoginPopup from '../components/LoginPopup'
-import Footer from '../components/Footer'
 import { useTranslations } from 'next-intl'
 
 export default function Home() {
@@ -123,7 +122,6 @@ export default function Home() {
         </div>
       </CollapsibleBox>
     </main>
-    <Footer />
     </>
   )
 }

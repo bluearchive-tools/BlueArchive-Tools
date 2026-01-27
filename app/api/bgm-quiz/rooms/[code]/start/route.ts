@@ -41,6 +41,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
   }
 
+  await supabase
+    .from('bgm_quiz_players')
+    .update({ is_waiting: false, ready_question_index: null })
+    .eq('room_code', roomCode)
+
   const { data: question, error: questionError } = await supabase
     .from('bgm_quiz_questions_public')
     .select('question_index,track_file,choices,is_solved,winner_player_id')

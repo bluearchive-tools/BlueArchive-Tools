@@ -31,15 +31,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'ホストは退出できません。' }, { status: 400 })
   }
 
-  const { error: deleteError } = await supabase
+  const { data: deletedPlayers, error: deleteError } = await supabase
     .from('bgm_quiz_players')
     .delete()
     .eq('room_code', roomCode)
     .eq('player_id', payload.targetPlayerId)
+    .select('player_id')
 
   if (deleteError) {
     return NextResponse.json({ error: deleteError.message }, { status: 500 })
   }
 
-  return NextResponse.json({ success: true })
+  if (!deletedPlayers || deletedPlayers.length === 0) {
+    return NextResponse.json({ success: true, removed: false })
+  }
+
+  return NextResponse.json({ success: true, removed: true })
 }
