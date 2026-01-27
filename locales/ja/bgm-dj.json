@@ -31,6 +31,8 @@
   },
   "mixer": {
     "title": "ミキサー",
+    "playAll": "両方再生",
+    "pauseAll": "両方停止",
     "crossfader": "クロスフェーダー",
     "curve": "カーブ",
     "curveLinear": "Linear",

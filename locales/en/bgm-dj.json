@@ -31,6 +31,8 @@
   },
   "mixer": {
     "title": "Mixer",
+    "playAll": "Play both",
+    "pauseAll": "Pause both",
     "crossfader": "Crossfader",
     "curve": "Curve",
     "curveLinear": "Linear",

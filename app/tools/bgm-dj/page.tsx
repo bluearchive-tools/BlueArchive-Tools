@@ -70,6 +70,32 @@ const createInitialDeckState = (): DeckState => ({
 })
 
 const LOOP_BEATS = [2, 4, 8, 16]
+const SNAP_THRESHOLD = 0.04
+
+const sliderClassName =
+  'w-full accent-sky-400 rounded-full bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500'
+const knobClassName =
+  'rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-200 shadow-inner transition hover:border-sky-400'
+const actionClassName =
+  'rounded-xl bg-emerald-500 px-3 py-2 text-xs font-semibold text-slate-900 shadow transition hover:bg-emerald-400'
+const cueClassName =
+  'rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500'
+
+const snapSliderValue = (value: number, snaps: number[]) => {
+  let closest = value
+  let minDistance = Infinity
+  snaps.forEach((snap) => {
+    const distance = Math.abs(value - snap)
+    if (distance < minDistance) {
+      minDistance = distance
+      closest = snap
+    }
+  })
+  if (minDistance <= SNAP_THRESHOLD) {
+    return closest
+  }
+  return value
+}
 
 const applyCrossfaderCurve = (value: number, curve: 'linear' | 'sharp') => {
   if (curve === 'linear') {
@@ -335,6 +361,33 @@ export default function BgmDjPage() {
     setDeckB((prev) => ({ ...prev, isPlaying: true }))
   }
 
+  const handlePlayAll = () => {
+    ensureAudioContext()
+    const audioA = deckARef.current
+    const audioB = deckBRef.current
+    if (deckA.track && audioA && !deckA.isPlaying) {
+      audioA.play().catch(() => undefined)
+      setDeckA((prev) => ({ ...prev, isPlaying: true }))
+    }
+    if (deckB.track && audioB && !deckB.isPlaying) {
+      audioB.play().catch(() => undefined)
+      setDeckB((prev) => ({ ...prev, isPlaying: true }))
+    }
+  }
+
+  const handlePauseAll = () => {
+    const audioA = deckARef.current
+    const audioB = deckBRef.current
+    if (audioA && deckA.isPlaying) {
+      audioA.pause()
+    }
+    if (audioB && deckB.isPlaying) {
+      audioB.pause()
+    }
+    setDeckA((prev) => ({ ...prev, isPlaying: false }))
+    setDeckB((prev) => ({ ...prev, isPlaying: false }))
+  }
+
   const handleCue = (deckId: DeckId) => {
     ensureAudioContext()
     if (deckId === 'A') {
@@ -571,21 +624,21 @@ export default function BgmDjPage() {
           <button
             type="button"
             onClick={() => handlePlayToggle(deckId)}
-            className="rounded-xl bg-emerald-500 px-3 py-2 text-xs font-semibold text-slate-900 shadow"
+            className={actionClassName}
           >
             {state.isPlaying ? t('deck.pause') : t('deck.play')}
           </button>
           <button
             type="button"
             onClick={() => handleCue(deckId)}
-            className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold"
+            className={cueClassName}
           >
             {t('deck.cue')}
           </button>
           <button
             type="button"
             onClick={() => handleSync(deckId)}
-            className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold"
+            className={cueClassName}
           >
             {t('deck.sync')}
           </button>
@@ -600,8 +653,13 @@ export default function BgmDjPage() {
               max={1}
               step={0.01}
               value={state.volume}
-              onChange={(event) => setState({ ...state, volume: Number(event.target.value) })}
-              className="w-full"
+              onChange={(event) =>
+                setState({
+                  ...state,
+                  volume: snapSliderValue(Number(event.target.value), [0.8]),
+                })
+              }
+              className={sliderClassName}
             />
           </div>
 
@@ -622,9 +680,10 @@ export default function BgmDjPage() {
                   onChange={(event) =>
                     setState({
                       ...state,
-                      [item.key]: Number(event.target.value),
+                      [item.key]: snapSliderValue(Number(event.target.value), [0]),
                     } as DeckState)
                   }
+                  className={sliderClassName}
                 />
               </label>
             ))}
@@ -639,7 +698,13 @@ export default function BgmDjPage() {
                 max={16}
                 step={0.1}
                 value={state.pitch}
-                onChange={(event) => setState({ ...state, pitch: Number(event.target.value) })}
+                onChange={(event) =>
+                  setState({
+                    ...state,
+                    pitch: snapSliderValue(Number(event.target.value), [0]),
+                  })
+                }
+                className={sliderClassName}
               />
             </label>
             <label className="space-y-1">
@@ -678,7 +743,13 @@ export default function BgmDjPage() {
                 max={1}
                 step={0.01}
                 value={state.filterAmount}
-                onChange={(event) => setState({ ...state, filterAmount: Number(event.target.value) })}
+                onChange={(event) =>
+                  setState({
+                    ...state,
+                    filterAmount: snapSliderValue(Number(event.target.value), [0.5]),
+                  })
+                }
+                className={sliderClassName}
               />
             </label>
           </div>
@@ -691,7 +762,13 @@ export default function BgmDjPage() {
               max={0.8}
               step={0.01}
               value={state.delayAmount}
-              onChange={(event) => setState({ ...state, delayAmount: Number(event.target.value) })}
+              onChange={(event) =>
+                setState({
+                  ...state,
+                  delayAmount: snapSliderValue(Number(event.target.value), [0]),
+                })
+              }
+              className={sliderClassName}
             />
           </div>
 
@@ -706,7 +783,7 @@ export default function BgmDjPage() {
                   className={`rounded-full px-3 py-1 text-[10px] font-semibold ${
                     state.loopBeats === beats
                       ? 'bg-blue-400 text-slate-900'
-                      : 'border border-slate-700 bg-slate-900 text-slate-300'
+                      : 'border border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500'
                   }`}
                 >
                   {t('deck.loopBeats', { beats })}
@@ -732,7 +809,7 @@ export default function BgmDjPage() {
                   <button
                     type="button"
                     onClick={() => clearHotCue(deckId, index)}
-                    className="w-full rounded-md border border-slate-700 px-2 py-1 text-[9px] text-slate-400"
+                    className="w-full rounded-md border border-slate-700 px-2 py-1 text-[9px] text-slate-400 hover:border-slate-500"
                   >
                     {t('deck.hotCueClear')}
                   </button>
@@ -767,6 +844,14 @@ export default function BgmDjPage() {
         <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{t('mixer.title')}</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={handlePlayAll} className={actionClassName}>
+                {t('mixer.playAll')}
+              </button>
+              <button type="button" onClick={handlePauseAll} className={knobClassName}>
+                {t('mixer.pauseAll')}
+              </button>
+            </div>
             <label className="space-y-1 text-xs font-semibold text-slate-500">
               {t('mixer.crossfader')}
               <input
@@ -775,8 +860,10 @@ export default function BgmDjPage() {
                 max={1}
                 step={0.01}
                 value={crossfader}
-                onChange={(event) => setCrossfader(Number(event.target.value))}
-                className="w-full"
+                onChange={(event) =>
+                  setCrossfader(snapSliderValue(Number(event.target.value), [0.5]))
+                }
+                className={sliderClassName}
               />
             </label>
             <label className="space-y-1 text-xs font-semibold text-slate-500">
@@ -802,7 +889,10 @@ export default function BgmDjPage() {
                 max={1}
                 step={0.01}
                 value={speakerLeftVolume}
-                onChange={(event) => setSpeakerLeftVolume(Number(event.target.value))}
+                onChange={(event) =>
+                  setSpeakerLeftVolume(snapSliderValue(Number(event.target.value), [0.9]))
+                }
+                className={sliderClassName}
               />
             </label>
             <label className="space-y-1 text-xs font-semibold text-slate-500">
@@ -813,7 +903,10 @@ export default function BgmDjPage() {
                 max={1}
                 step={0.01}
                 value={speakerRightVolume}
-                onChange={(event) => setSpeakerRightVolume(Number(event.target.value))}
+                onChange={(event) =>
+                  setSpeakerRightVolume(snapSliderValue(Number(event.target.value), [0.9]))
+                }
+                className={sliderClassName}
               />
             </label>
           </div>
