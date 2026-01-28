@@ -100,6 +100,12 @@ export default function Home() {
               description={t('tools.actions.bgmPlayer.description')}
             />
           </Link>
+          <Link href="/tools/bgm-dj">
+            <FeatureItem
+              title={t('tools.actions.bgmDj.title')}
+              description={t('tools.actions.bgmDj.description')}
+            />
+          </Link>
         </div>
         <div
   aria-disabled="true"

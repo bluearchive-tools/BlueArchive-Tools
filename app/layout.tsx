@@ -3,6 +3,7 @@ import './globals.css'
 import { Providers } from './providers'
 import Header from '../components/Header'
 import FloatingSearch from '../components/FloatingSearch'
+import SiteTutorial from '../components/SiteTutorial'
 import { M_PLUS_Rounded_1c } from 'next/font/google'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
@@ -74,6 +75,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Providers locale={locale} messages={messages}>
           <Header />
           <FloatingSearch />
+          <SiteTutorial />
           <main className="pt-2 pb-8">{children}</main>
         </Providers>
       </body>

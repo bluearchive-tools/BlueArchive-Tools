@@ -3,6 +3,22 @@
   "description": "Play Blue Archive BGM tracks.",
   "nowPlaying": "Now playing",
   "empty": "Select a track to start playback.",
+  "playbackOptions": {
+    "title": "Playback options",
+    "loop": "Loop",
+    "autoAdvance": "Auto advance",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "playlist": {
+    "title": "Playlist",
+    "add": "Add",
+    "remove": "Remove",
+    "empty": "No tracks in the playlist.",
+    "play": "Play from start",
+    "active": "Playing from playlist",
+    "filtered": "Playing from list"
+  },
   "filters": {
     "all": "All",
     "category": "Category",

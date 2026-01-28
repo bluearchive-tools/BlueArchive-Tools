@@ -72,6 +72,7 @@ const SEARCH_PAGES: SearchEntry[] = [
   { label: '神名文字計算', path: '/tools/divine-calc', keywords: ['divine'] },
   { label: '絆計算', path: '/tools/bond-calc', keywords: ['bond'] },
   { label: 'BGMプレイヤー', path: '/tools/bgm-player', keywords: ['bgm', 'music', 'player'] },
+  { label: 'BGM DJ', path: '/tools/bgm-dj', keywords: ['bgm', 'dj', 'music'] },
   { label: 'デコレーション', path: '/decorations', keywords: ['decoration'] },
   { label: 'ヘルプ(ローカル)', path: '/help/editor', keywords: ['help'] },
 ]
