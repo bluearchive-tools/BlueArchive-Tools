@@ -75,13 +75,13 @@ const LOOP_BEATS = [2, 4, 8, 16]
 const SNAP_THRESHOLD = 0.04
 
 const sliderClassName =
-  'w-full accent-sky-400 rounded-full bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500'
+  'w-full accent-sky-400 rounded-full bg-slate-800 shadow-inner focus:outline-none focus:ring-2 focus:ring-sky-500'
 const knobClassName =
-  'rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-200 shadow-inner transition hover:border-sky-400'
+  'rounded-xl border border-slate-700 bg-gradient-to-b from-slate-800 to-slate-950 px-3 py-2 text-xs font-semibold text-slate-200 shadow-inner transition hover:border-sky-400 active:translate-y-0.5 active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)]'
 const actionClassName =
-  'rounded-xl bg-emerald-500 px-3 py-2 text-xs font-semibold text-slate-900 shadow transition hover:bg-emerald-400'
+  'rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 px-3 py-2 text-xs font-semibold text-slate-950 shadow-md transition hover:from-emerald-300 hover:to-emerald-500 active:translate-y-0.5 active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]'
 const cueClassName =
-  'rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500'
+  'rounded-xl border border-slate-700 bg-gradient-to-b from-slate-800 to-slate-950 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 active:translate-y-0.5 active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)]'
 
 const snapSliderValue = (value: number, snaps: number[]) => {
   let closest = value
@@ -117,12 +117,23 @@ const calculateLoopSeconds = (beats: number, bpm: number) => (60 / Math.max(1, b
 const LOOP_EPSILON = 0.06
 
 type AutomationAction = 'crossfader' | 'deckA.volume' | 'deckB.volume' | 'playA' | 'playB' | 'pauseA' | 'pauseB'
+  | 'restartA'
+  | 'restartB'
+  | 'loopA'
+  | 'loopB'
+  | 'loadA'
+  | 'loadB'
+  | 'playFromBeatA'
+  | 'playFromBeatB'
+  | 'setLoopStartA'
+  | 'setLoopStartB'
 
 type AutomationStep = {
   id: string
   time: number
   action: AutomationAction
   value?: number
+  trackFile?: string
 }
 
 export default function BgmDjPage() {
@@ -135,6 +146,10 @@ export default function BgmDjPage() {
   const [speakerRightVolume, setSpeakerRightVolume] = useState(0.9)
   const [automationSteps, setAutomationSteps] = useState<AutomationStep[]>([])
   const [automationRunning, setAutomationRunning] = useState(false)
+  const [deckATime, setDeckATime] = useState(0)
+  const [deckADuration, setDeckADuration] = useState(0)
+  const [deckBTime, setDeckBTime] = useState(0)
+  const [deckBDuration, setDeckBDuration] = useState(0)
 
   const [deckA, setDeckA] = useState<DeckState>(() => createInitialDeckState())
   const [deckB, setDeckB] = useState<DeckState>(() => createInitialDeckState())
@@ -189,6 +204,18 @@ export default function BgmDjPage() {
       audioContextRef.current.resume().catch(() => undefined)
     }
   }, [])
+
+  const formatTime = (value: number) => {
+    if (!Number.isFinite(value)) return '0:00'
+    const minutes = Math.floor(value / 60)
+    const seconds = Math.floor(value % 60)
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
+
+  const beatToSeconds = (beat: number, bpm: number) => {
+    const safeBeat = Math.max(1, beat)
+    return ((safeBeat - 1) * 60) / Math.max(1, bpm)
+  }
 
   const decodeAudioForBpm = useCallback(async (url: string) => {
     const response = await fetch(url)
@@ -388,6 +415,36 @@ export default function BgmDjPage() {
   }, [deckB.track, setupDeckNodes])
 
   useEffect(() => {
+    const audio = deckARef.current
+    if (!audio) return
+    const handleTime = () => setDeckATime(audio.currentTime)
+    const handleDuration = () => setDeckADuration(Number.isFinite(audio.duration) ? audio.duration : 0)
+    audio.addEventListener('timeupdate', handleTime)
+    audio.addEventListener('loadedmetadata', handleDuration)
+    audio.addEventListener('durationchange', handleDuration)
+    return () => {
+      audio.removeEventListener('timeupdate', handleTime)
+      audio.removeEventListener('loadedmetadata', handleDuration)
+      audio.removeEventListener('durationchange', handleDuration)
+    }
+  }, [deckA.track])
+
+  useEffect(() => {
+    const audio = deckBRef.current
+    if (!audio) return
+    const handleTime = () => setDeckBTime(audio.currentTime)
+    const handleDuration = () => setDeckBDuration(Number.isFinite(audio.duration) ? audio.duration : 0)
+    audio.addEventListener('timeupdate', handleTime)
+    audio.addEventListener('loadedmetadata', handleDuration)
+    audio.addEventListener('durationchange', handleDuration)
+    return () => {
+      audio.removeEventListener('timeupdate', handleTime)
+      audio.removeEventListener('loadedmetadata', handleDuration)
+      audio.removeEventListener('durationchange', handleDuration)
+    }
+  }, [deckB.track])
+
+  useEffect(() => {
     updateDeckNodes('A', deckA)
   }, [deckA, updateDeckNodes])
 
@@ -523,6 +580,20 @@ export default function BgmDjPage() {
     audio.pause()
     audio.currentTime = 0
     setDeckB((prev) => ({ ...prev, isPlaying: false }))
+  }
+
+  const handleRestart = (deckId: DeckId) => {
+    if (deckId === 'A') {
+      const audio = deckARef.current
+      if (!audio) return
+      audio.currentTime = 0
+      setDeckATime(0)
+      return
+    }
+    const audio = deckBRef.current
+    if (!audio) return
+    audio.currentTime = 0
+    setDeckBTime(0)
   }
 
   const loadTrackToDeck = (deckId: DeckId, track: BgmTrack) => {
@@ -745,13 +816,49 @@ export default function BgmDjPage() {
           <canvas ref={waveformRef} width={360} height={80} className="w-full" />
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-3">
+        <div className="mt-3 rounded-xl border border-slate-800 bg-slate-900 p-3">
+          <div className="flex items-center justify-between text-[10px] text-slate-400">
+            <span>{t('deck.seek')}</span>
+            <span>
+              {formatTime(isDeckA ? deckATime : deckBTime)} / {formatTime(isDeckA ? deckADuration : deckBDuration)}
+            </span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={isDeckA ? deckADuration : deckBDuration}
+            step={0.01}
+            value={isDeckA ? deckATime : deckBTime}
+            onChange={(event) => {
+              const value = Number(event.target.value)
+              const audio = audioRef.current
+              if (audio) {
+                audio.currentTime = value
+              }
+              if (isDeckA) {
+                setDeckATime(value)
+              } else {
+                setDeckBTime(value)
+              }
+            }}
+            className={sliderClassName}
+          />
+        </div>
+
+        <div className="mt-4 grid grid-cols-4 gap-3">
           <button
             type="button"
             onClick={() => handlePlayToggle(deckId)}
             className={actionClassName}
           >
             {state.isPlaying ? t('deck.pause') : t('deck.play')}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleRestart(deckId)}
+            className={cueClassName}
+          >
+            {t('deck.restart')}
           </button>
           <button
             type="button"
@@ -1010,6 +1117,74 @@ export default function BgmDjPage() {
           case 'pauseB':
             pauseDeck('B')
             return
+          case 'restartA':
+            handleRestart('A')
+            return
+          case 'restartB':
+            handleRestart('B')
+            return
+          case 'loopA': {
+            const beats = step.value ?? 4
+            toggleLoop('A', beats)
+            return
+          }
+          case 'loopB': {
+            const beats = step.value ?? 4
+            toggleLoop('B', beats)
+            return
+          }
+          case 'loadA': {
+            const track = tracks.find((item) => item.file === step.trackFile)
+            if (track) loadTrackToDeck('A', track)
+            return
+          }
+          case 'loadB': {
+            const track = tracks.find((item) => item.file === step.trackFile)
+            if (track) loadTrackToDeck('B', track)
+            return
+          }
+          case 'playFromBeatA': {
+            const audio = deckARef.current
+            if (audio) {
+              audio.currentTime = beatToSeconds(step.value ?? 1, deckA.bpm)
+              playDeck('A')
+            }
+            return
+          }
+          case 'playFromBeatB': {
+            const audio = deckBRef.current
+            if (audio) {
+              audio.currentTime = beatToSeconds(step.value ?? 1, deckB.bpm)
+              playDeck('B')
+            }
+            return
+          }
+          case 'setLoopStartA': {
+            const audio = deckARef.current
+            if (audio) {
+              const start = beatToSeconds(step.value ?? 1, deckA.bpm)
+              audio.currentTime = start
+              setDeckA((prev) => ({
+                ...prev,
+                loopStart: start,
+                loopBeats: prev.loopBeats ?? 4,
+              }))
+            }
+            return
+          }
+          case 'setLoopStartB': {
+            const audio = deckBRef.current
+            if (audio) {
+              const start = beatToSeconds(step.value ?? 1, deckB.bpm)
+              audio.currentTime = start
+              setDeckB((prev) => ({
+                ...prev,
+                loopStart: start,
+                loopBeats: prev.loopBeats ?? 4,
+              }))
+            }
+            return
+          }
           default:
             return
         }
@@ -1076,7 +1251,10 @@ export default function BgmDjPage() {
             {automationSteps.length ? (
               <div className="space-y-2">
                 {automationSteps.map((step) => {
-                  const needsValue = ['crossfader', 'deckA.volume', 'deckB.volume'].includes(step.action)
+                  const needsValue = ['crossfader', 'deckA.volume', 'deckB.volume', 'loopA', 'loopB', 'playFromBeatA', 'playFromBeatB', 'setLoopStartA', 'setLoopStartB'].includes(
+                    step.action,
+                  )
+                  const needsTrack = ['loadA', 'loadB'].includes(step.action)
                   return (
                     <div key={step.id} className="rounded-lg border border-slate-200 bg-white p-2 text-xs">
                       <div className="grid gap-2 md:grid-cols-[90px_1fr_90px_auto]">
@@ -1102,13 +1280,37 @@ export default function BgmDjPage() {
                           <option value="playB">{t('mixer.automationPlayB')}</option>
                           <option value="pauseA">{t('mixer.automationPauseA')}</option>
                           <option value="pauseB">{t('mixer.automationPauseB')}</option>
+                          <option value="restartA">{t('mixer.automationRestartA')}</option>
+                          <option value="restartB">{t('mixer.automationRestartB')}</option>
+                          <option value="loopA">{t('mixer.automationLoopA')}</option>
+                          <option value="loopB">{t('mixer.automationLoopB')}</option>
+                          <option value="loadA">{t('mixer.automationLoadA')}</option>
+                          <option value="loadB">{t('mixer.automationLoadB')}</option>
+                          <option value="playFromBeatA">{t('mixer.automationPlayFromBeatA')}</option>
+                          <option value="playFromBeatB">{t('mixer.automationPlayFromBeatB')}</option>
+                          <option value="setLoopStartA">{t('mixer.automationSetLoopStartA')}</option>
+                          <option value="setLoopStartB">{t('mixer.automationSetLoopStartB')}</option>
                         </select>
-                        {needsValue ? (
+                        {needsTrack ? (
+                          <select
+                            value={step.trackFile ?? ''}
+                            onChange={(event) =>
+                              updateAutomationStep(step.id, { trackFile: event.target.value })
+                            }
+                            className="rounded-md border border-slate-200 px-2 py-1"
+                          >
+                            <option value="">{t('mixer.automationSelectTrack')}</option>
+                            {tracks.map((track) => (
+                              <option key={track.file} value={track.file}>
+                                {getBgmTrackDisplayTitle(track)}
+                              </option>
+                            ))}
+                          </select>
+                        ) : needsValue ? (
                           <input
                             type="number"
                             min={0}
-                            max={1}
-                            step={0.01}
+                            step={0.1}
                             value={step.value ?? 0}
                             onChange={(event) =>
                               updateAutomationStep(step.id, { value: Number(event.target.value) })
