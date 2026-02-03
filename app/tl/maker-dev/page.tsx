@@ -6004,7 +6004,7 @@ setBuffPopup({
   studentId: st.id,
 
   // ★ ここでは分岐しない
-  values: st.skills?.sub?.values,
+  values: getPrimarySkill(st.skills?.sub)?.values,
 })
                 }}
                 onTouchStart={handleTouchStart}
