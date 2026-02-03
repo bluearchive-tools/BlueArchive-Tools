@@ -7046,16 +7046,18 @@ setBuffPopup({
         let critBuff = 0
         let typeBuff = 0
         const passiveLevel = atkStats.passive_skill ?? defaultLevels.passive
-        const atkBuffArr = attacker.skills?.passive?.values?.attack
-        const critBuffArr = attacker.skills?.passive?.values?.critdamage
-        const typeArr = attacker.skills?.passive?.values?.type
-        const typeArr_sub = attacker.skills?.sub?.values?.type
+        const passiveSkill = getPrimarySkill(attacker.skills?.passive)
+        const subSkill = getPrimarySkill(attacker.skills?.sub)
+        const atkBuffArr = passiveSkill?.values?.attack
+        const critBuffArr = passiveSkill?.values?.critdamage
+        const typeArr = passiveSkill?.values?.type
+        const typeArr_sub = subSkill?.values?.type
         if (atkBuffArr) {
           const val = atkBuffArr[passiveLevel - 1]
           if (val !== undefined) passiveBuff = Number(val)
         }
         if (Number(atkStats.unique_star ?? 0) >= 2) {
-          const plusArr = attacker.skills?.passivePlus?.values?.attacknum
+          const plusArr = getPrimarySkill(attacker.skills?.passivePlus)?.values?.attacknum
           if (plusArr) {
             const val = plusArr[passiveLevel - 1]
             if (val !== undefined) {
@@ -7069,7 +7071,7 @@ setBuffPopup({
           if (val !== undefined) critBuff = Number(val)
         }
         if (Number(atkStats.unique_star ?? 0) >= 2) {
-          const plusArr = attacker.skills?.passivePlus?.values?.critdamagenum
+          const plusArr = getPrimarySkill(attacker.skills?.passivePlus)?.values?.critdamagenum
           if (plusArr) {
             const val = plusArr[passiveLevel - 1]
             if (val !== undefined) {
