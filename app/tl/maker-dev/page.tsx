@@ -33,7 +33,13 @@ type EquipmentSlotMap = Record<string, string>
 
 type SkillValues = Record<string, number[]>
 type SkillData = { title?: string; type?: string; text?: string; values?: SkillValues }
-type SkillEntry = { label?: string; skill: SkillData; related?: SkillEntry[] }
+type SkillEntry = {
+  label?: string
+  skill: SkillData
+  cost?: number
+  duration?: number
+  related?: SkillEntry[]
+}
 type SkillDefinition = SkillData | { variants: SkillEntry[] }
 
 interface Student {
@@ -125,7 +131,7 @@ interface EventTemplate {
   skillable: boolean
 }
 
-type SkillOption = { label: string; skill: SkillData }
+type SkillOption = { label: string; skill: SkillData; cost?: number; duration?: number }
 
 const getSkillEntries = (skill?: SkillDefinition): SkillEntry[] => {
   if (!skill) return []
@@ -142,7 +148,7 @@ const flattenSkillEntries = (entries: SkillEntry[], prefix: string[] = []): Skil
   return entries.flatMap((entry) => {
     const nextPrefix = entry.label ? [...prefix, entry.label] : prefix
     const label = buildSkillLabel(nextPrefix, entry.skill.title)
-    const base: SkillOption = { label, skill: entry.skill }
+    const base: SkillOption = { label, skill: entry.skill, cost: entry.cost, duration: entry.duration }
     if (!entry.related?.length) return [base]
     const relatedPrefix = entry.skill.title ? [...nextPrefix, entry.skill.title] : nextPrefix
     return [base, ...flattenSkillEntries(entry.related, relatedPrefix)]
@@ -1705,7 +1711,7 @@ useEffect(() => {
       const st = students.find((s) => s.id === id)
       if (!st || !st.normalInterval) return
       const interval = st.normalInterval
-      const dur = st.normalDuration || 0
+    const dur = getPrimarySkillOption(st.skills?.normal)?.duration ?? st.normalDuration || 0
       const travel = st.normalHitDelay || 0
       const motion = st.normalMotionDuration || 0
       const primaryOption = getPrimarySkillOption(st.skills?.normal)
@@ -2027,6 +2033,19 @@ useEffect(() => {
   }, [skillOptionIndex, skillOptions])
 
   useEffect(() => {
+    if (selectedType !== 'skill') return
+    if (skillCostTouched) return
+    const opt = skillOptions[skillOptionIndex]
+    if (opt?.cost !== undefined) {
+      setSkillCost(opt.cost)
+      return
+    }
+    const st = students.find((s) => s.id === rowStudents[row])
+    if (!st) return
+    setSkillCost(st.cost ?? 0)
+  }, [selectedType, skillOptions, skillOptionIndex, rowStudents, row, students, skillCostTouched])
+
+  useEffect(() => {
     if (!initialized || !selectedGroup) return
     if (rowStudents.every((id) => id === '') && selectedGroup.squads.length > 0) {
       switchSquad(0)
@@ -2037,8 +2056,9 @@ useEffect(() => {
     if (selectedType !== 'skill') return
     const st = students.find((s) => s.id === rowStudents[row])
     if (!st) return
+    const opt = skillOptions[skillOptionIndex]
     const dur =
-      skillKind === 'ex' ? st.exDuration : st.normalDuration
+      opt?.duration ?? (skillKind === 'ex' ? st.exDuration : st.normalDuration)
     if (dur !== undefined) {
       const travel =
         skillKind === 'ex'
@@ -2186,7 +2206,7 @@ useEffect(() => {
         skillKind === 'ex'
           ? Math.max(0, (st?.exMotionDuration || 0) - travel)
           : Math.max(0, (st?.normalMotionDuration || 0) - travel)
-      const costValue = skillCost === '' ? 0 : skillCost
+      const costValue = pickedOption?.cost ?? (skillCost === '' ? 0 : skillCost)
       if (skillKind === 'ex' && waitCost && costValue > 0) {
         let t = s
         if (calcCost(t) < costValue) {
