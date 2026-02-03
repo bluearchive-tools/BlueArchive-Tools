@@ -3112,7 +3112,8 @@ function sumSpecialSub(
       const base = students.find((s) => s.id === baseId)
       if (!base) return
 
-      const arr = st.skills?.sub?.values?.[key]
+      const subSkill = getPrimarySkill(st.skills?.sub)
+      const arr = subSkill?.values?.[key]
     if (!Array.isArray(arr)) return
 
       const idx = Math.min(subLevel - 1, arr.length - 1)
