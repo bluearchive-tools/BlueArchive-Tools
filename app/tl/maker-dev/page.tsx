@@ -1711,7 +1711,7 @@ useEffect(() => {
       const st = students.find((s) => s.id === id)
       if (!st || !st.normalInterval) return
       const interval = st.normalInterval
-    const dur = getPrimarySkillOption(st.skills?.normal)?.duration ?? st.normalDuration || 0
+    const dur = getPrimarySkillOption(st.skills?.normal)?.duration ?? (st.normalDuration || 0)
       const travel = st.normalHitDelay || 0
       const motion = st.normalMotionDuration || 0
       const primaryOption = getPrimarySkillOption(st.skills?.normal)
