@@ -2112,7 +2112,8 @@ useEffect(() => {
     if (!st) return
 
     if (st.role === 'SPECIAL') {
-      const val = st.skills?.sub?.values?.cost
+      const subSkill = getPrimarySkill(st.skills?.sub)
+      const val = subSkill?.values?.cost
       if (val) {
         const stats = getStats(id)
         const level = stats?.sub_skill ?? defaultLevels.sub
