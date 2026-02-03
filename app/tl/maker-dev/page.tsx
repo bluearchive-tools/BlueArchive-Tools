@@ -2206,6 +2206,9 @@ useEffect(() => {
         skillKind === 'ex'
           ? Math.max(0, (st?.exMotionDuration || 0) - travel)
           : Math.max(0, (st?.normalMotionDuration || 0) - travel)
+      const skillDef = skillKind === 'ex' ? st?.skills?.ex : st?.skills?.normal
+      const options = flattenSkillEntries(getSkillEntries(skillDef))
+      const pickedOption = options[skillOptionIndex]
       const costValue = pickedOption?.cost ?? (skillCost === '' ? 0 : skillCost)
       if (skillKind === 'ex' && waitCost && costValue > 0) {
         let t = s
@@ -2247,9 +2250,6 @@ useEffect(() => {
         })
       }
       if (e <= s) return
-      const skillDef = skillKind === 'ex' ? st?.skills?.ex : st?.skills?.normal
-      const options = flattenSkillEntries(getSkillEntries(skillDef))
-      const pickedOption = options[skillOptionIndex]
       const fallbackLabel =
         pickedOption?.label ||
         getPrimarySkillOption(skillDef)?.label ||
