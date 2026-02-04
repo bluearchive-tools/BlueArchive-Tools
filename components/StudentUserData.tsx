@@ -29,6 +29,14 @@ function attrBg(attr?: string) {
   }
 }
 
+interface SkillEntry {
+  label?: string
+  skill: Skill
+  related?: SkillEntry[]
+}
+
+type SkillDefinition = Skill | { variants: SkillEntry[] }
+
 interface Student {
   id: string
   name: string
@@ -47,7 +55,7 @@ interface Student {
   position: string
   exHitDelay?: number
   normalHitDelay?: number
-  skills?: Record<string, Skill>
+  skills?: Record<string, SkillDefinition>
   equipmentSlots?: Record<string, string[]>
   accessory?: { tiers: { tier: number; name: string; description: string }[] }
 }
@@ -105,8 +113,14 @@ export default function StudentUserData({
   >(null)
   const [editBonds, setEditBonds] = useState(false)
   const [equipment, setEquipment] = useState<Record<string, { tiers: { tier: number; name: string; description: string }[] }>>({})
-  const [skillDetail, setSkillDetail] = useState<{ skill: Skill; level: number } | null>(null)
+  const [skillDetail, setSkillDetail] = useState<{ entries: SkillEntry[]; level: number } | null>(null)
   const [gearDetail, setGearDetail] = useState<{ type: string; tier: number; equipment?: Record<string, { tiers: { tier: number; name: string; description: string }[] }> } | null>(null)
+
+  const getSkillEntries = (target?: SkillDefinition): SkillEntry[] => {
+    if (!target) return []
+    if ('variants' in target) return target.variants
+    return [{ skill: target }]
+  }
   useEffect(() => {
     const loadStudents = async () => {
       try {
@@ -459,7 +473,8 @@ export default function StudentUserData({
                     if (skill.key === 'normal' && display.item_tier >= 2) key = 'normalPlus'
                     if (skill.key === 'passive' && display.unique_star >= 2) key = 'passivePlus'
                     const sk = student.skills?.[key] || student.skills?.[skill.key]
-                    if (sk) setSkillDetail({ skill: sk, level: skill.value })
+                    const entries = getSkillEntries(sk)
+                    if (entries.length > 0) setSkillDetail({ entries, level: skill.value })
                   }
                 }}
               >
@@ -650,7 +665,7 @@ export default function StudentUserData({
       )}
       {skillDetail && (
         <SkillDetailModal
-          skill={skillDetail.skill}
+          entries={skillDetail.entries}
           level={skillDetail.level}
           onClose={() => setSkillDetail(null)}
         />

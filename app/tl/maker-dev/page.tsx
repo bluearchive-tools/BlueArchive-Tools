@@ -31,7 +31,16 @@ import StudentSelect from '../../../components/StudentSelect'
 
 type EquipmentSlotMap = Record<string, string>
 
-
+type SkillValues = Record<string, number[]>
+type SkillData = { title?: string; type?: string; text?: string; values?: SkillValues }
+type SkillEntry = {
+  label?: string
+  skill: SkillData
+  cost?: number
+  duration?: number
+  related?: SkillEntry[]
+}
+type SkillDefinition = SkillData | { variants: SkillEntry[] }
 
 interface Student {
   id: string
@@ -58,11 +67,11 @@ interface Student {
   normalHitDelay?: number
   equipmentSlots?: EquipmentSlotMap
   skills?: {
-    ex?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
-    normal?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
-    passive?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
-    passivePlus?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
-    sub?: { title?: string; type?: string; text?: string; values?: Record<string, number[]> }
+    ex?: SkillDefinition
+    normal?: SkillDefinition
+    passive?: SkillDefinition
+    passivePlus?: SkillDefinition
+    sub?: SkillDefinition
   }
 }
 
@@ -102,6 +111,7 @@ interface SkillEvent {
     trigger: number
     applyDurationBonus: boolean
   }
+  skillRef?: string
   show?: boolean
 }
 
@@ -119,6 +129,47 @@ interface EventTemplate {
   label: string
   duration: number
   skillable: boolean
+}
+
+type SkillOption = { label: string; skill: SkillData; cost?: number; duration?: number }
+
+const getSkillEntries = (skill?: SkillDefinition): SkillEntry[] => {
+  if (!skill) return []
+  if ('variants' in skill) return skill.variants
+  return [{ skill }]
+}
+
+const buildSkillLabel = (parts: string[], title?: string) => {
+  const base = [...parts, title].filter(Boolean)
+  return base.join(' / ') || title || 'スキル'
+}
+
+const flattenSkillEntries = (entries: SkillEntry[], prefix: string[] = []): SkillOption[] => {
+  return entries.flatMap((entry) => {
+    const nextPrefix = entry.label ? [...prefix, entry.label] : prefix
+    const label = buildSkillLabel(nextPrefix, entry.skill.title)
+    const base: SkillOption = { label, skill: entry.skill, cost: entry.cost, duration: entry.duration }
+    if (!entry.related?.length) return [base]
+    const relatedPrefix = entry.skill.title ? [...nextPrefix, entry.skill.title] : nextPrefix
+    return [base, ...flattenSkillEntries(entry.related, relatedPrefix)]
+  })
+}
+
+const getPrimarySkillOption = (skill?: SkillDefinition): SkillOption | undefined =>
+  flattenSkillEntries(getSkillEntries(skill))[0]
+
+const getPrimarySkill = (skill?: SkillDefinition): SkillData | undefined =>
+  getPrimarySkillOption(skill)?.skill
+
+const resolveSkillForEvent = (skillDef: SkillDefinition | undefined, ev: SkillEvent): SkillData | undefined => {
+  const options = flattenSkillEntries(getSkillEntries(skillDef))
+  if (ev.skillRef) {
+    const match = options.find((opt) => opt.label === ev.skillRef)
+    if (match) return match.skill
+  }
+  const labelMatch = options.find((opt) => opt.skill.title === ev.label)
+  if (labelMatch) return labelMatch.skill
+  return getPrimarySkill(skillDef)
 }
 
 // ==== Plugin system (safe JSON plugins; no eval) ====
@@ -542,6 +593,7 @@ export default function TLMakerPage() {
   const [showAddRowMenu, setShowAddRowMenu] = useState(false)
   const [selectedType, setSelectedType] = useState<'skill' | 'event' | null>(null)
   const [skillKind, setSkillKind] = useState<'ex' | 'normal'>('ex')
+  const [skillOptionIndex, setSkillOptionIndex] = useState(0)
   const [timeScale, setTimeScale] = useState(20) // px per second
   const [applyTravel, setApplyTravel] = useState(false)
   const [waitCost, setWaitCost] = useState(false)
@@ -1659,9 +1711,11 @@ useEffect(() => {
       const st = students.find((s) => s.id === id)
       if (!st || !st.normalInterval) return
       const interval = st.normalInterval
-      const dur = st.normalDuration || 0
+    const dur = getPrimarySkillOption(st.skills?.normal)?.duration ?? (st.normalDuration || 0)
       const travel = st.normalHitDelay || 0
       const motion = st.normalMotionDuration || 0
+      const primaryOption = getPrimarySkillOption(st.skills?.normal)
+      const defaultLabel = primaryOption?.label || getPrimarySkill(st.skills?.normal)?.title || 'NS'
       for (let t = interval; t < totalSeconds; t += interval) {
         let start = snapTime(t)
         let end = snapTime(t + dur)
@@ -1683,10 +1737,11 @@ useEffect(() => {
           row: idx,
           start,
           end,
-          label: st.skills?.normal?.title || 'NS',
+          label: defaultLabel,
           travel,
           motion,
           type: 'normal',
+          skillRef: primaryOption?.label,
         })
       }
     })
@@ -1958,6 +2013,38 @@ useEffect(() => {
     }
   }, [templateId, selectedType, allEventTemplates])
 
+  const skillOptions = useMemo(() => {
+    if (selectedType !== 'skill') return []
+    const st = students.find((s) => s.id === rowStudents[row])
+    if (!st) return []
+    const skillDef = skillKind === 'ex' ? st.skills?.ex : st.skills?.normal
+    return flattenSkillEntries(getSkillEntries(skillDef))
+  }, [selectedType, students, rowStudents, row, skillKind])
+
+  useEffect(() => {
+    if (selectedType !== 'skill') return
+    setSkillOptionIndex(0)
+  }, [row, skillKind, selectedType])
+
+  useEffect(() => {
+    if (skillOptionIndex >= skillOptions.length) {
+      setSkillOptionIndex(0)
+    }
+  }, [skillOptionIndex, skillOptions])
+
+  useEffect(() => {
+    if (selectedType !== 'skill') return
+    if (skillCostTouched) return
+    const opt = skillOptions[skillOptionIndex]
+    if (opt?.cost !== undefined) {
+      setSkillCost(opt.cost)
+      return
+    }
+    const st = students.find((s) => s.id === rowStudents[row])
+    if (!st) return
+    setSkillCost(st.cost ?? 0)
+  }, [selectedType, skillOptions, skillOptionIndex, rowStudents, row, students, skillCostTouched])
+
   useEffect(() => {
     if (!initialized || !selectedGroup) return
     if (rowStudents.every((id) => id === '') && selectedGroup.squads.length > 0) {
@@ -1969,8 +2056,9 @@ useEffect(() => {
     if (selectedType !== 'skill') return
     const st = students.find((s) => s.id === rowStudents[row])
     if (!st) return
+    const opt = skillOptions[skillOptionIndex]
     const dur =
-      skillKind === 'ex' ? st.exDuration : st.normalDuration
+      opt?.duration ?? (skillKind === 'ex' ? st.exDuration : st.normalDuration)
     if (dur !== undefined) {
       const travel =
         skillKind === 'ex'
@@ -2044,7 +2132,8 @@ useEffect(() => {
     if (!st) return
 
     if (st.role === 'SPECIAL') {
-      const val = st.skills?.sub?.values?.cost
+      const subSkill = getPrimarySkill(st.skills?.sub)
+      const val = subSkill?.values?.cost
       if (val) {
         const stats = getStats(id)
         const level = stats?.sub_skill ?? defaultLevels.sub
@@ -2117,7 +2206,10 @@ useEffect(() => {
         skillKind === 'ex'
           ? Math.max(0, (st?.exMotionDuration || 0) - travel)
           : Math.max(0, (st?.normalMotionDuration || 0) - travel)
-      const costValue = skillCost === '' ? 0 : skillCost
+      const skillDef = skillKind === 'ex' ? st?.skills?.ex : st?.skills?.normal
+      const options = flattenSkillEntries(getSkillEntries(skillDef))
+      const pickedOption = options[skillOptionIndex]
+      const costValue = pickedOption?.cost ?? (skillCost === '' ? 0 : skillCost)
       if (skillKind === 'ex' && waitCost && costValue > 0) {
         let t = s
         if (calcCost(t) < costValue) {
@@ -2158,15 +2250,20 @@ useEffect(() => {
         })
       }
       if (e <= s) return
+      const fallbackLabel =
+        pickedOption?.label ||
+        getPrimarySkillOption(skillDef)?.label ||
+        (skillKind === 'ex' ? 'EX' : 'NS')
       const lbl =
         label ||
-        (skillKind === 'ex'
-          ? st?.skills?.ex?.title
-          : st?.skills?.normal?.title) ||
+        pickedOption?.label ||
+        getPrimarySkillOption(skillDef)?.label ||
+        getPrimarySkill(skillDef)?.title ||
+        fallbackLabel ||
         ''
       let target: number | undefined
       const skillType =
-        skillKind === 'ex' ? st?.skills?.ex?.type : st?.skills?.normal?.type
+        pickedOption?.skill.type || getPrimarySkill(skillDef)?.type
       if (skillType === 'attack') target = defaultTargets.attack
       if (skillType === 'debuff') target = defaultTargets.debuff
       const triggerOffset = s - baseStart
@@ -2200,6 +2297,7 @@ useEffect(() => {
               }
             : {}),
           ...(target !== undefined ? { target } : {}),
+          ...(pickedOption?.label ? { skillRef: pickedOption.label } : {}),
         },
       ])
     } else if (selectedType === 'event') {
@@ -3034,7 +3132,8 @@ function sumSpecialSub(
       const base = students.find((s) => s.id === baseId)
       if (!base) return
 
-      const arr = st.skills?.sub?.values?.[key]
+      const subSkill = getPrimarySkill(st.skills?.sub)
+      const arr = subSkill?.values?.[key]
     if (!Array.isArray(arr)) return
 
       const idx = Math.min(subLevel - 1, arr.length - 1)
@@ -3053,22 +3152,8 @@ function sumSpecialSub(
   }
 
   const isBuffSkill = (ev: SkillEvent) => {
-    const st = students.find((s) => s.id === rowStudents[ev.row])
-    if (!st || !st.skills) return false
-    if (ev.type === 'ex' && st.skills.ex) {
-      return st.skills.ex.type === 'buff'
-    }
-    if (ev.type === 'normal' && st.skills.normal) {
-      return st.skills.normal.type === 'buff'
-    }
-    if (st.skills.ex && st.skills.ex.title === ev.label) {
-      return st.skills.ex.type === 'buff'
-    }
-    const normalTitle = st.skills.normal?.title || 'NS'
-    if (ev.label === normalTitle) {
-      return st.skills.normal?.type === 'buff'
-    }
-    return false
+    const t = getSkillType(ev)
+    return t === 'buff'
   }
 
   const getSkillType = (ev: SkillEvent): string | undefined => {
@@ -3078,9 +3163,9 @@ function sumSpecialSub(
     }
     const st = students.find((s) => s.id === rowId)
     if (!st || !st.skills) return undefined
-    if (ev.type === 'ex') return st.skills.ex?.type
-    if (ev.type === 'normal') return st.skills.normal?.type
-    return ev.type
+    const skillDef = ev.type === 'normal' ? st.skills.normal : st.skills.ex
+    const skill = resolveSkillForEvent(skillDef, ev)
+    return skill?.type || ev.type
   }
 
   const isTargetableSkill = (ev: SkillEvent) => {
@@ -3109,10 +3194,8 @@ function sumSpecialSub(
         const st = students.find((s) => s.id === rowStudents[ev.row])
         const stats = getStats(rowStudents[ev.row])
         const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
-        const skill =
-          ev.type === 'normal'
-            ? st?.skills?.normal
-            : st?.skills?.ex
+        const skillDef = ev.type === 'normal' ? st?.skills?.normal : st?.skills?.ex
+        const skill = resolveSkillForEvent(skillDef, ev)
         const text = formatSkillText(skill, level)
         return text ? `${ev.label}: ${text}` : ev.label
       })
@@ -3126,17 +3209,15 @@ function sumSpecialSub(
         const target = getEffectiveTarget(ev)
         if (target !== rowIdx) return
         const start = ev.start + (ev.travel || 0)
-        if (start <= t && t <= ev.end) {
-          const st = students.find((s) => s.id === rowStudents[ev.row])
-          const stats = getStats(rowStudents[ev.row])
-          const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
-          const skill =
-            ev.type === 'normal'
-              ? st?.skills?.normal
-              : st?.skills?.ex
-          const val = skill?.values?.ex?.[level - 1]
-          if (val) bonus += Number(val)
-        }
+      if (start <= t && t <= ev.end) {
+        const st = students.find((s) => s.id === rowStudents[ev.row])
+        const stats = getStats(rowStudents[ev.row])
+        const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
+        const skillDef = ev.type === 'normal' ? st?.skills?.normal : st?.skills?.ex
+        const skill = resolveSkillForEvent(skillDef, ev)
+        const val = skill?.values?.ex?.[level - 1]
+        if (val) bonus += Number(val)
+      }
       })
     return (10000 + bonus * 100) / 10000
   }
@@ -3160,10 +3241,8 @@ function sumSpecialSub(
       const stats = getStats(rowStudents[ev.row])
       const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
 
-      const skill =
-        ev.type === 'normal'
-          ? st?.skills?.normal
-          : st?.skills?.ex
+      const skillDef = ev.type === 'normal' ? st?.skills?.normal : st?.skills?.ex
+      const skill = resolveSkillForEvent(skillDef, ev)
 
       const arr = skill?.values?.[key]
       const val = arr?.[level - 1]
@@ -4544,6 +4623,22 @@ function resolveBuffText(
                   <option value="normal">NS</option>
                 </select>
               </label>
+              {skillOptions.length > 1 && (
+                <label className="flex items-center gap-2">
+                  <span>スキル詳細:</span>
+                  <select
+                    value={skillOptionIndex}
+                    onChange={(e) => setSkillOptionIndex(parseInt(e.target.value))}
+                    className="border rounded p-1 flex-1"
+                  >
+                    {skillOptions.map((opt, idx) => (
+                      <option key={`${opt.label}-${idx}`} value={idx}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               <label className="flex items-center gap-2">
                 <span>コスト:</span>
                 <input
@@ -5379,6 +5474,8 @@ function resolveBuffText(
 
                   const dur = st.exDuration ?? 1
                   const base = snapTime(tplStart)
+                  const primaryOption = getPrimarySkillOption(st.skills?.ex)
+                  const defaultLabel = primaryOption?.label || getPrimarySkill(st.skills?.ex)?.title || 'EX'
 
                   const events: SkillEvent[] = Array.from({ length: tplCount }).map((_, i) => {
                     const start = snapTime(base + tplInterval * i)
@@ -5387,8 +5484,9 @@ function resolveBuffText(
                       row: tplRow,
                       start,
                       end: snapTime(start + dur),
-                      label: tplLabel || st.skills?.ex?.title || 'EX',
+                      label: tplLabel || defaultLabel,
                       type: 'ex',
+                      skillRef: primaryOption?.label,
                     }
                   })
 
@@ -5926,7 +6024,7 @@ setBuffPopup({
   studentId: st.id,
 
   // ★ ここでは分岐しない
-  values: st.skills?.sub?.values,
+  values: getPrimarySkill(st.skills?.sub)?.values,
 })
                 }}
                 onTouchStart={handleTouchStart}
@@ -6341,10 +6439,8 @@ setBuffPopup({
                     const st = students.find((s) => s.id === rowStudents[ev.row])
                     const stats = getStats(rowStudents[ev.row])
                     const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
-                    const skill =
-                      ev.type === 'normal'
-                        ? st?.skills?.normal
-                        : st?.skills?.ex
+                    const skillDef = ev.type === 'normal' ? st?.skills?.normal : st?.skills?.ex
+                    const skill = resolveSkillForEvent(skillDef, ev)
                     const text = formatSkillText(skill, level)
                     const targetId = getEffectiveTarget(ev)
                     const targetName = isTargetableSkill(ev)
@@ -6428,10 +6524,8 @@ setBuffPopup({
                       const st = students.find((s) => s.id === rowStudents[ev.row])
                       const stats = getStats(rowStudents[ev.row])
                       const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
-                      const skill =
-                        ev.type === 'normal'
-                          ? st?.skills?.normal
-                          : st?.skills?.ex
+                      const skillDef = ev.type === 'normal' ? st?.skills?.normal : st?.skills?.ex
+                      const skill = resolveSkillForEvent(skillDef, ev)
                       const text = formatSkillText(skill, level)
                       const targetId = getEffectiveTarget(ev)
                       const targetName = isTargetableSkill(ev)
@@ -6972,16 +7066,18 @@ setBuffPopup({
         let critBuff = 0
         let typeBuff = 0
         const passiveLevel = atkStats.passive_skill ?? defaultLevels.passive
-        const atkBuffArr = attacker.skills?.passive?.values?.attack
-        const critBuffArr = attacker.skills?.passive?.values?.critdamage
-        const typeArr = attacker.skills?.passive?.values?.type
-        const typeArr_sub = attacker.skills?.sub?.values?.type
+        const passiveSkill = getPrimarySkill(attacker.skills?.passive)
+        const subSkill = getPrimarySkill(attacker.skills?.sub)
+        const atkBuffArr = passiveSkill?.values?.attack
+        const critBuffArr = passiveSkill?.values?.critdamage
+        const typeArr = passiveSkill?.values?.type
+        const typeArr_sub = subSkill?.values?.type
         if (atkBuffArr) {
           const val = atkBuffArr[passiveLevel - 1]
           if (val !== undefined) passiveBuff = Number(val)
         }
         if (Number(atkStats.unique_star ?? 0) >= 2) {
-          const plusArr = attacker.skills?.passivePlus?.values?.attacknum
+          const plusArr = getPrimarySkill(attacker.skills?.passivePlus)?.values?.attacknum
           if (plusArr) {
             const val = plusArr[passiveLevel - 1]
             if (val !== undefined) {
@@ -6995,7 +7091,7 @@ setBuffPopup({
           if (val !== undefined) critBuff = Number(val)
         }
         if (Number(atkStats.unique_star ?? 0) >= 2) {
-          const plusArr = attacker.skills?.passivePlus?.values?.critdamagenum
+          const plusArr = getPrimarySkill(attacker.skills?.passivePlus)?.values?.critdamagenum
           if (plusArr) {
             const val = plusArr[passiveLevel - 1]
             if (val !== undefined) {
@@ -7021,7 +7117,8 @@ setBuffPopup({
         typeBuff += getBuffBonus(ev.row, t, 'type')
         const atkMul = (1+equipPct.attackMul) + passiveBuff / 100 + attackBuff / 100
         const battleAtk = (baseAtkBefore+equipFlat.attackAdd) * atkMul
-        const skill = ev.type === 'ex' ? attacker.skills?.ex : attacker.skills?.normal
+        const skillDef = ev.type === 'ex' ? attacker.skills?.ex : attacker.skills?.normal
+        const skill = resolveSkillForEvent(skillDef, ev)
         const level = getSkillLevel(ev.type as 'ex' | 'normal', atkStats)
         const mult = Number(
           skill?.values?.damage?.[level - 1] ??
