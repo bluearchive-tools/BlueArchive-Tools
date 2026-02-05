@@ -5,11 +5,8 @@ import PageHelpButton from '../../components/PageHelpButton'
 import MyPageClient from '../../components/MyPageClient'
 
 export default async function MyPage() {
-  const cookieStore = await cookies()
   const supabase = createServerComponentClient(
-    {
-      cookies: () => cookieStore,
-    } as { cookies: () => Awaited<ReturnType<typeof cookies>> },
+    { cookies },
     {
       supabaseUrl: process.env.SUPABASE_URL!,
       supabaseKey: process.env.SUPABASE_ANON_KEY!,
