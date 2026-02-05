@@ -320,15 +320,34 @@ const detectIsMacPlatform = () => {
 }
 
 const defaultShortcuts = (preferMeta: boolean) => ({
+  createProject: preferMeta ? 'Cmd+Shift+N' : 'Ctrl+Shift+N',
+  saveProject: preferMeta ? 'Cmd+Shift+S' : 'Ctrl+Shift+S',
+  loadProject: preferMeta ? 'Cmd+Shift+O' : 'Ctrl+Shift+O',
+  openSettings: preferMeta ? 'Cmd+Shift+,' : 'Ctrl+Shift+,',
   undo: preferMeta ? 'Cmd+Z' : 'Ctrl+Z',
   redo: preferMeta ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z',
   addSkill: preferMeta ? 'Cmd+Shift+A' : 'Ctrl+Shift+A',
+  addEvent: preferMeta ? 'Cmd+Shift+E' : 'Ctrl+Shift+E',
+  addRow: preferMeta ? 'Cmd+Shift+R' : 'Ctrl+Shift+R',
+  addEnemyRow: preferMeta ? 'Cmd+Shift+D' : 'Ctrl+Shift+D',
   movePlayheadLeft: preferMeta ? 'Cmd+Shift+ArrowLeft' : 'Ctrl+Shift+ArrowLeft',
   movePlayheadRight: preferMeta ? 'Cmd+Shift+ArrowRight' : 'Ctrl+Shift+ArrowRight',
   cut: preferMeta ? 'Cmd+X' : 'Ctrl+X',
   copy: preferMeta ? 'Cmd+C' : 'Ctrl+C',
   paste: preferMeta ? 'Cmd+V' : 'Ctrl+V',
   delete: preferMeta ? 'Backspace' : 'Delete',
+  toggleProMode: preferMeta ? 'Cmd+Shift+P' : 'Ctrl+Shift+P',
+  openAlign: preferMeta ? 'Cmd+Shift+L' : 'Ctrl+Shift+L',
+  openHistory: preferMeta ? 'Cmd+Shift+H' : 'Ctrl+Shift+H',
+  openExTemplate: preferMeta ? 'Cmd+Shift+T' : 'Ctrl+Shift+T',
+  openPluginManager: preferMeta ? 'Cmd+Shift+M' : 'Ctrl+Shift+M',
+  openSquadMenu: preferMeta ? 'Cmd+Shift+1' : 'Ctrl+Shift+1',
+  openGroupMenu: preferMeta ? 'Cmd+Shift+2' : 'Ctrl+Shift+2',
+  openSquadEditor: preferMeta ? 'Cmd+Shift+G' : 'Ctrl+Shift+G',
+  toggleDamageCalc: preferMeta ? 'Cmd+Shift+C' : 'Ctrl+Shift+C',
+  toggleTextTL: preferMeta ? 'Cmd+Shift+Y' : 'Ctrl+Shift+Y',
+  toggleCostLines: preferMeta ? 'Cmd+Shift+K' : 'Ctrl+Shift+K',
+  importSquad: preferMeta ? 'Cmd+Shift+I' : 'Ctrl+Shift+I',
 })
 
 const formatShortcutFromEvent = (event: ReactKeyboardEvent<HTMLInputElement>) => {
@@ -599,6 +618,7 @@ export default function TLMakerPage() {
   const [waitCost, setWaitCost] = useState(false)
   const [zoomByPlayhead, setZoomByPlayhead] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const loadProjectInputRef = useRef<HTMLInputElement>(null)
   const playheadTimer = useRef<NodeJS.Timeout | null>(null)
   const [playhead, setPlayhead] = useState(2)
   const [totalSeconds, setTotalSeconds] = useState(240)
@@ -641,15 +661,34 @@ export default function TLMakerPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [toasts, setToasts] = useState<Array<{ id: number; text: string }>>([])
   const [shortcutSettings, setShortcutSettings] = useState<{
+    createProject: string
+    saveProject: string
+    loadProject: string
+    openSettings: string
     undo: string
     redo: string
     addSkill: string
+    addEvent: string
+    addRow: string
+    addEnemyRow: string
     movePlayheadLeft: string
     movePlayheadRight: string
     cut: string
     copy: string
     paste: string
     delete: string
+    toggleProMode: string
+    openAlign: string
+    openHistory: string
+    openExTemplate: string
+    openPluginManager: string
+    openSquadMenu: string
+    openGroupMenu: string
+    openSquadEditor: string
+    toggleDamageCalc: string
+    toggleTextTL: string
+    toggleCostLines: string
+    importSquad: string
   }>(() => defaultShortcuts(detectIsMacPlatform()))
   const isMacPlatform = useMemo(() => detectIsMacPlatform(), [])
 
@@ -667,6 +706,7 @@ export default function TLMakerPage() {
   const PAGE_LAYOUT_EDIT_KEY = 'tlMaker:pageLayoutEdit'
   const PAGE_BLOCK_RECTS_KEY = 'tlMaker:pageBlockRects'
   const HIDE_HEADER_KEY = 'tlMaker:hideHeader'
+  const HIDE_TITLE_KEY = 'tlMaker:hideTitle'
   type PageLayoutMode = 'stack' | 'free'
   type PageBlockRect = { x: number; y: number; w: number; h: number; z: number }
   const TOPBAR_KEY = 'default:topbar'
@@ -1145,6 +1185,7 @@ const startResizePluginWindow = useCallback(
   const [showCostLines, setShowCostLines] = useState(false)
   const [showDamageCalc, setShowDamageCalc] = useState(false)
   const [hideHeader, setHideHeader] = useState(false)
+  const [hideTitle, setHideTitle] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showEnemyModal, setShowEnemyModal] = useState(false)
   const [includeStats, setIncludeStats] = useState(false)
@@ -1209,9 +1250,16 @@ useEffect(() => {
       const parsed = JSON.parse(raw) as Partial<typeof shortcutSettings>
       setShortcutSettings((prev) => ({
         ...prev,
+        createProject: typeof parsed.createProject === 'string' ? parsed.createProject : prev.createProject,
+        saveProject: typeof parsed.saveProject === 'string' ? parsed.saveProject : prev.saveProject,
+        loadProject: typeof parsed.loadProject === 'string' ? parsed.loadProject : prev.loadProject,
+        openSettings: typeof parsed.openSettings === 'string' ? parsed.openSettings : prev.openSettings,
         undo: typeof parsed.undo === 'string' ? parsed.undo : prev.undo,
         redo: typeof parsed.redo === 'string' ? parsed.redo : prev.redo,
         addSkill: typeof parsed.addSkill === 'string' ? parsed.addSkill : prev.addSkill,
+        addEvent: typeof parsed.addEvent === 'string' ? parsed.addEvent : prev.addEvent,
+        addRow: typeof parsed.addRow === 'string' ? parsed.addRow : prev.addRow,
+        addEnemyRow: typeof parsed.addEnemyRow === 'string' ? parsed.addEnemyRow : prev.addEnemyRow,
         movePlayheadLeft:
           typeof parsed.movePlayheadLeft === 'string' ? parsed.movePlayheadLeft : prev.movePlayheadLeft,
         movePlayheadRight:
@@ -1220,6 +1268,18 @@ useEffect(() => {
         copy: typeof parsed.copy === 'string' ? parsed.copy : prev.copy,
         paste: typeof parsed.paste === 'string' ? parsed.paste : prev.paste,
         delete: typeof parsed.delete === 'string' ? parsed.delete : prev.delete,
+        toggleProMode: typeof parsed.toggleProMode === 'string' ? parsed.toggleProMode : prev.toggleProMode,
+        openAlign: typeof parsed.openAlign === 'string' ? parsed.openAlign : prev.openAlign,
+        openHistory: typeof parsed.openHistory === 'string' ? parsed.openHistory : prev.openHistory,
+        openExTemplate: typeof parsed.openExTemplate === 'string' ? parsed.openExTemplate : prev.openExTemplate,
+        openPluginManager: typeof parsed.openPluginManager === 'string' ? parsed.openPluginManager : prev.openPluginManager,
+        openSquadMenu: typeof parsed.openSquadMenu === 'string' ? parsed.openSquadMenu : prev.openSquadMenu,
+        openGroupMenu: typeof parsed.openGroupMenu === 'string' ? parsed.openGroupMenu : prev.openGroupMenu,
+        openSquadEditor: typeof parsed.openSquadEditor === 'string' ? parsed.openSquadEditor : prev.openSquadEditor,
+        toggleDamageCalc: typeof parsed.toggleDamageCalc === 'string' ? parsed.toggleDamageCalc : prev.toggleDamageCalc,
+        toggleTextTL: typeof parsed.toggleTextTL === 'string' ? parsed.toggleTextTL : prev.toggleTextTL,
+        toggleCostLines: typeof parsed.toggleCostLines === 'string' ? parsed.toggleCostLines : prev.toggleCostLines,
+        importSquad: typeof parsed.importSquad === 'string' ? parsed.importSquad : prev.importSquad,
       }))
     } catch {
       /* ignore */
@@ -1241,9 +1301,16 @@ useEffect(() => {
         const parsed = JSON.parse(e.newValue) as Partial<typeof shortcutSettings>
         setShortcutSettings((prev) => ({
           ...prev,
+          createProject: typeof parsed.createProject === 'string' ? parsed.createProject : prev.createProject,
+          saveProject: typeof parsed.saveProject === 'string' ? parsed.saveProject : prev.saveProject,
+          loadProject: typeof parsed.loadProject === 'string' ? parsed.loadProject : prev.loadProject,
+          openSettings: typeof parsed.openSettings === 'string' ? parsed.openSettings : prev.openSettings,
           undo: typeof parsed.undo === 'string' ? parsed.undo : prev.undo,
           redo: typeof parsed.redo === 'string' ? parsed.redo : prev.redo,
           addSkill: typeof parsed.addSkill === 'string' ? parsed.addSkill : prev.addSkill,
+          addEvent: typeof parsed.addEvent === 'string' ? parsed.addEvent : prev.addEvent,
+          addRow: typeof parsed.addRow === 'string' ? parsed.addRow : prev.addRow,
+          addEnemyRow: typeof parsed.addEnemyRow === 'string' ? parsed.addEnemyRow : prev.addEnemyRow,
           movePlayheadLeft:
             typeof parsed.movePlayheadLeft === 'string' ? parsed.movePlayheadLeft : prev.movePlayheadLeft,
           movePlayheadRight:
@@ -1252,6 +1319,18 @@ useEffect(() => {
           copy: typeof parsed.copy === 'string' ? parsed.copy : prev.copy,
           paste: typeof parsed.paste === 'string' ? parsed.paste : prev.paste,
           delete: typeof parsed.delete === 'string' ? parsed.delete : prev.delete,
+          toggleProMode: typeof parsed.toggleProMode === 'string' ? parsed.toggleProMode : prev.toggleProMode,
+          openAlign: typeof parsed.openAlign === 'string' ? parsed.openAlign : prev.openAlign,
+          openHistory: typeof parsed.openHistory === 'string' ? parsed.openHistory : prev.openHistory,
+          openExTemplate: typeof parsed.openExTemplate === 'string' ? parsed.openExTemplate : prev.openExTemplate,
+          openPluginManager: typeof parsed.openPluginManager === 'string' ? parsed.openPluginManager : prev.openPluginManager,
+          openSquadMenu: typeof parsed.openSquadMenu === 'string' ? parsed.openSquadMenu : prev.openSquadMenu,
+          openGroupMenu: typeof parsed.openGroupMenu === 'string' ? parsed.openGroupMenu : prev.openGroupMenu,
+          openSquadEditor: typeof parsed.openSquadEditor === 'string' ? parsed.openSquadEditor : prev.openSquadEditor,
+          toggleDamageCalc: typeof parsed.toggleDamageCalc === 'string' ? parsed.toggleDamageCalc : prev.toggleDamageCalc,
+          toggleTextTL: typeof parsed.toggleTextTL === 'string' ? parsed.toggleTextTL : prev.toggleTextTL,
+          toggleCostLines: typeof parsed.toggleCostLines === 'string' ? parsed.toggleCostLines : prev.toggleCostLines,
+          importSquad: typeof parsed.importSquad === 'string' ? parsed.importSquad : prev.importSquad,
         }))
       } catch {
         /* ignore */
@@ -1271,6 +1350,8 @@ useEffect(() => {
       if (s === 'off' || s === '0.5' || s === '0.1' || s === '0.05' || s === '0.033') setSnapPreset(s)
       const hh = localStorage.getItem(HIDE_HEADER_KEY)
       if (hh != null) setHideHeader(hh === '1')
+      const ht = localStorage.getItem(HIDE_TITLE_KEY)
+      if (ht != null) setHideTitle(ht === '1')
       const p = localStorage.getItem('tlMaker:plugins')
       if (p) {
         try {
@@ -1291,11 +1372,12 @@ useEffect(() => {
       localStorage.setItem('tlMaker:snapPreset', snapPreset)
       localStorage.setItem('tlMaker:plugins', JSON.stringify(plugins))
       localStorage.setItem(HIDE_HEADER_KEY, hideHeader ? '1' : '0')
+      localStorage.setItem(HIDE_TITLE_KEY, hideTitle ? '1' : '0')
       window.dispatchEvent(new Event('tlMaker:hideHeaderChanged'))
     } catch {
       /* ignore */
     }
-  }, [proMode, snapPreset, plugins, hideHeader])
+  }, [proMode, snapPreset, plugins, hideHeader, hideTitle])
 
 
   // Page blocks の保存（並び順・表示/非表示）
@@ -1768,6 +1850,27 @@ useEffect(() => {
   const applyMembers = (members: string[]) => {
     setRowStudents(members.concat(Array(Math.max(0, 6 - members.length)).fill('')))
   }
+
+  const handleLoadProjectFile = useCallback(
+    (file: File) => {
+      file.text().then((txt) => {
+        try {
+          const data = JSON.parse(txt)
+          setProjectName(data.projectName || '')
+          setSkills(data.skills || [])
+          setMarkers(data.markers || [])
+          applyMembers(data.rowStudents || [])
+          const g = groups.find((gr) => gr.id === data.groupId) || null
+          setSelectedGroup(g)
+          setSquadIndex(data.squadIndex || 0)
+          setInitialized(true)
+        } catch {
+          /* ignore */
+        }
+      })
+    },
+    [applyMembers, groups]
+  )
 
   const importSquad = (members: string[]) => {
     setSkills([])
@@ -2627,6 +2730,26 @@ useEffect(() => {
         undo()
         return
       }
+      if (matchShortcut(e, shortcutSettings.createProject)) {
+        e.preventDefault()
+        setShowCreateModal(true)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.saveProject)) {
+        e.preventDefault()
+        setShowSaveModal(true)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.loadProject)) {
+        e.preventDefault()
+        loadProjectInputRef.current?.click()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.openSettings)) {
+        e.preventDefault()
+        setShowSettings(true)
+        return
+      }
       if (matchShortcut(e, shortcutSettings.redo)) {
         e.preventDefault()
         redo()
@@ -2635,6 +2758,23 @@ useEffect(() => {
       if (matchShortcut(e, shortcutSettings.addSkill)) {
         e.preventDefault()
         openAddSkillModal()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.addEvent)) {
+        e.preventDefault()
+        setSelectedType('event')
+        setStart(snapTime(playhead))
+        setShowForm(true)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.addRow)) {
+        e.preventDefault()
+        addRow()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.addEnemyRow)) {
+        e.preventDefault()
+        setShowEnemyModal(true)
         return
       }
       if (matchShortcut(e, shortcutSettings.cut)) {
@@ -2665,6 +2805,78 @@ useEffect(() => {
       if (matchShortcut(e, shortcutSettings.movePlayheadRight)) {
         e.preventDefault()
         movePlayheadToNearestEx('right')
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.toggleProMode)) {
+        e.preventDefault()
+        setProMode((prev) => !prev)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.openAlign)) {
+        e.preventDefault()
+        if (!proMode) setProMode(true)
+        setShowAlignModal(true)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.openHistory)) {
+        e.preventDefault()
+        if (!proMode) setProMode(true)
+        setShowHistoryModal(true)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.openExTemplate)) {
+        e.preventDefault()
+        if (!proMode) setProMode(true)
+        setShowExTemplateModal(true)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.openPluginManager)) {
+        e.preventDefault()
+        if (!proMode) setProMode(true)
+        setShowPluginModal(true)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.openSquadMenu)) {
+        e.preventDefault()
+        setShowSquadMenu((prev) => !prev)
+        setShowGroupMenu(false)
+        setShowTools(false)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.openGroupMenu)) {
+        e.preventDefault()
+        setShowGroupMenu((prev) => !prev)
+        setShowSquadMenu(false)
+        setShowTools(false)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.openSquadEditor)) {
+        e.preventDefault()
+        window.location.href = '/squads'
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.toggleDamageCalc)) {
+        e.preventDefault()
+        setShowDamageCalc((prev) => !prev)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.toggleTextTL)) {
+        e.preventDefault()
+        setShowTextTL((prev) => !prev)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.toggleCostLines)) {
+        e.preventDefault()
+        if (costDetailItems.length > 0 || costRecoverySegments.length > 0) {
+          setShowCostLines((prev) => !prev)
+        }
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.importSquad)) {
+        e.preventDefault()
+        setShowImport(true)
+        pushToast('部隊インポートを開きました')
+        return
       }
     }
     window.addEventListener('keydown', onKeyDown)
@@ -2679,6 +2891,13 @@ useEffect(() => {
     pasteCopied,
     deleteSelected,
     movePlayheadToNearestEx,
+    addRow,
+    snapTime,
+    playhead,
+    proMode,
+    pushToast,
+    costDetailItems,
+    costRecoverySegments,
   ])
 
   const runPluginActions = useCallback(
@@ -3714,10 +3933,12 @@ function resolveBuffText(
       style={pluginVars}
       onClick={hidePopups}
     >
-      <div className="flex items-center gap-2 mb-2">
-        <h1 className="text-xl font-bold">TLメーカー（dev）</h1>
-        <PageHelpButton pageKey="tl-maker-dev" />
-      </div>
+      {!hideTitle && (
+        <div className="flex items-center gap-2 mb-2">
+          <h1 className="text-xl font-bold">TLメーカー（dev）</h1>
+          <PageHelpButton pageKey="tl-maker-dev" />
+        </div>
+      )}
       {globalCss && <style jsx global>{globalCss}</style>}
       {toasts.length > 0 && (
         <div className="fixed top-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2">
@@ -3938,7 +4159,7 @@ function resolveBuffText(
         >
           <div
             className={`relative w-full rounded-lg border border-gray-200 bg-white p-6 shadow-lg space-y-4 tl-modal-panel ${
-              quickCreateOpen ? 'max-w-3xl' : 'max-w-lg'
+              quickCreateOpen ? 'max-w-4xl' : 'max-w-lg'
             }`}
             onClick={(e) => e.stopPropagation()}
           >
@@ -4128,25 +4349,10 @@ function resolveBuffText(
                   type="file"
                   accept="application/json"
                   className="hidden"
+                  ref={loadProjectInputRef}
                   onChange={(e) => {
                     const file = e.target.files?.[0]
-                    if (file) {
-                      file.text().then((txt) => {
-                        try {
-                          const data = JSON.parse(txt)
-                          setProjectName(data.projectName || '')
-                          setSkills(data.skills || [])
-                          setMarkers(data.markers || [])
-                          applyMembers(data.rowStudents || [])
-                          const g = groups.find((gr) => gr.id === data.groupId) || null
-                          setSelectedGroup(g)
-                          setSquadIndex(data.squadIndex || 0)
-                          setInitialized(true)
-                        } catch {
-                          /* ignore */
-                        }
-                      })
-                    }
+                    if (file) handleLoadProjectFile(file)
                     e.target.value = ''
                     closeMenus()
                   }}
@@ -4891,6 +5097,10 @@ function resolveBuffText(
                     <input type="checkbox" checked={hideHeader} onChange={(e) => setHideHeader(e.target.checked)} />
                     <span>ヘッダーを非表示にする</span>
                   </label>
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={hideTitle} onChange={(e) => setHideTitle(e.target.checked)} />
+                    <span>タイトルを非表示にする</span>
+                  </label>
                 </section>
 
                 <section className="rounded border border-gray-200 p-3 space-y-2">
@@ -4977,6 +5187,70 @@ function resolveBuffText(
                 <section className="rounded border border-gray-200 p-3 space-y-2">
                   <div className="text-sm font-bold">ショートカットキー</div>
                   <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">新規TL</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.createProject}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, createProject: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+N' : 'Ctrl+Shift+N'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">TL保存</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.saveProject}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, saveProject: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+S' : 'Ctrl+Shift+S'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">TL読み込み</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.loadProject}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, loadProject: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+O' : 'Ctrl+Shift+O'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">設定</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.openSettings}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, openSettings: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+,' : 'Ctrl+Shift+,'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
                     <span className="w-28">元に戻す</span>
                     <input
                       type="text"
@@ -5022,6 +5296,54 @@ function resolveBuffText(
                       readOnly
                       className="border rounded p-1 flex-1"
                       placeholder={isMacPlatform ? 'Cmd+Shift+A' : 'Ctrl+Shift+A'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">イベント追加</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.addEvent}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, addEvent: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+E' : 'Ctrl+Shift+E'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">行追加</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.addRow}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, addRow: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+R' : 'Ctrl+Shift+R'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">敵行追加</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.addEnemyRow}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, addEnemyRow: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+D' : 'Ctrl+Shift+D'}
                     />
                   </label>
                   <label className="flex items-center gap-2 text-sm">
@@ -5118,6 +5440,198 @@ function resolveBuffText(
                       readOnly
                       className="border rounded p-1 flex-1"
                       placeholder={isMacPlatform ? 'Backspace' : 'Delete'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">プロモード</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.toggleProMode}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, toggleProMode: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+P' : 'Ctrl+Shift+P'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">整列</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.openAlign}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, openAlign: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+L' : 'Ctrl+Shift+L'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">履歴</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.openHistory}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, openHistory: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+H' : 'Ctrl+Shift+H'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">EXテンプレ</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.openExTemplate}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, openExTemplate: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+T' : 'Ctrl+Shift+T'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">プラグイン</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.openPluginManager}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, openPluginManager: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+M' : 'Ctrl+Shift+M'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">部隊変更</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.openSquadMenu}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, openSquadMenu: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+1' : 'Ctrl+Shift+1'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">グループ変更</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.openGroupMenu}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, openGroupMenu: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+2' : 'Ctrl+Shift+2'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">部隊編集</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.openSquadEditor}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, openSquadEditor: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+G' : 'Ctrl+Shift+G'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">ダメージ計算</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.toggleDamageCalc}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, toggleDamageCalc: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+C' : 'Ctrl+Shift+C'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">TLテキスト</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.toggleTextTL}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, toggleTextTL: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+Y' : 'Ctrl+Shift+Y'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">コスト詳細</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.toggleCostLines}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, toggleCostLines: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+K' : 'Ctrl+Shift+K'}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="w-28">部隊インポ</span>
+                    <input
+                      type="text"
+                      value={shortcutSettings.importSquad}
+                      onKeyDown={(e) => {
+                        e.preventDefault()
+                        const next = formatShortcutFromEvent(e)
+                        if (next === null) return
+                        setShortcutSettings((prev) => ({ ...prev, importSquad: next }))
+                      }}
+                      readOnly
+                      className="border rounded p-1 flex-1"
+                      placeholder={isMacPlatform ? 'Cmd+Shift+I' : 'Ctrl+Shift+I'}
                     />
                   </label>
                   <p className="text-xs text-gray-500">

@@ -1,13 +1,13 @@
 // app/mypage/page.tsx
 import { cookies } from 'next/headers'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { redirect } from 'next/navigation'
 import PageHelpButton from '../../components/PageHelpButton'
 import MyPageClient from '../../components/MyPageClient'
 
 export default async function MyPage() {
+  const cookieStore = await cookies()
   const supabase = createServerComponentClient(
-    { cookies },
+    { cookies: () => cookieStore },
     {
       supabaseUrl: process.env.SUPABASE_URL!,
       supabaseKey: process.env.SUPABASE_ANON_KEY!,
@@ -17,17 +17,15 @@ export default async function MyPage() {
     data: { session },
   } = await supabase.auth.getSession()
 
-  if (!session) {
-    redirect('/')
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select(
-      'username, nickname, level, bio, icon_student_id, friend_code, friend_code_public, social_links, tl_default_settings, decoration_id, decoration_ids, decoration_inventory, credit'
-    )
-    .eq('id', session.user.id)
-    .maybeSingle()
+  const { data: profile } = session
+    ? await supabase
+        .from('profiles')
+        .select(
+          'username, nickname, level, bio, icon_student_id, friend_code, friend_code_public, social_links, tl_default_settings, decoration_id, decoration_ids, decoration_inventory, credit'
+        )
+        .eq('id', session.user.id)
+        .maybeSingle()
+    : { data: null }
 
   const { data: decorations } = await supabase
     .from('decorations')
@@ -45,7 +43,7 @@ export default async function MyPage() {
       <MyPageClient
         initialUsername={profile?.username ?? null}
         initialNickname={profile?.nickname ?? null}
-        initialEmail={session.user.email ?? null}
+        initialEmail={session?.user.email ?? null}
         initialLevel={profile?.level ?? null}
         initialBio={profile?.bio ?? null}
         initialIconStudentId={profile?.icon_student_id ?? null}

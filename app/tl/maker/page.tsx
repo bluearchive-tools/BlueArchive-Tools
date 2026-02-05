@@ -3938,7 +3938,7 @@ function resolveBuffText(
         >
           <div
             className={`relative w-full rounded-lg border border-gray-200 bg-white p-6 shadow-lg space-y-4 tl-modal-panel ${
-              quickCreateOpen ? 'max-w-3xl' : 'max-w-lg'
+              quickCreateOpen ? 'max-w-4xl' : 'max-w-lg'
             }`}
             onClick={(e) => e.stopPropagation()}
           >
