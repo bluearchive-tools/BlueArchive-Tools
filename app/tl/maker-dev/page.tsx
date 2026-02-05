@@ -2713,193 +2713,6 @@ useEffect(() => {
     setSelected([])
   }, [selected])
 
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.defaultPrevented) return
-      const target = e.target as HTMLElement | null
-      if (
-        target &&
-        (target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.isContentEditable)
-      ) {
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.undo)) {
-        e.preventDefault()
-        undo()
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.createProject)) {
-        e.preventDefault()
-        setShowCreateModal(true)
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.saveProject)) {
-        e.preventDefault()
-        setShowSaveModal(true)
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.loadProject)) {
-        e.preventDefault()
-        loadProjectInputRef.current?.click()
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.openSettings)) {
-        e.preventDefault()
-        setShowSettings(true)
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.redo)) {
-        e.preventDefault()
-        redo()
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.addSkill)) {
-        e.preventDefault()
-        openAddSkillModal()
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.addEvent)) {
-        e.preventDefault()
-        setSelectedType('event')
-        setStart(snapTime(playhead))
-        setShowForm(true)
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.addRow)) {
-        e.preventDefault()
-        addRow()
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.addEnemyRow)) {
-        e.preventDefault()
-        setShowEnemyModal(true)
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.cut)) {
-        e.preventDefault()
-        cutSelected()
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.copy)) {
-        e.preventDefault()
-        copySelected()
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.paste)) {
-        e.preventDefault()
-        pasteCopied()
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.delete)) {
-        e.preventDefault()
-        deleteSelected()
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.movePlayheadLeft)) {
-        e.preventDefault()
-        movePlayheadToNearestEx('left')
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.movePlayheadRight)) {
-        e.preventDefault()
-        movePlayheadToNearestEx('right')
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.toggleProMode)) {
-        e.preventDefault()
-        setProMode((prev) => !prev)
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.openAlign)) {
-        e.preventDefault()
-        if (!proMode) setProMode(true)
-        setShowAlignModal(true)
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.openHistory)) {
-        e.preventDefault()
-        if (!proMode) setProMode(true)
-        setShowHistoryModal(true)
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.openExTemplate)) {
-        e.preventDefault()
-        if (!proMode) setProMode(true)
-        setShowExTemplateModal(true)
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.openPluginManager)) {
-        e.preventDefault()
-        if (!proMode) setProMode(true)
-        setShowPluginModal(true)
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.openSquadMenu)) {
-        e.preventDefault()
-        setShowSquadMenu((prev) => !prev)
-        setShowGroupMenu(false)
-        setShowTools(false)
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.openGroupMenu)) {
-        e.preventDefault()
-        setShowGroupMenu((prev) => !prev)
-        setShowSquadMenu(false)
-        setShowTools(false)
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.openSquadEditor)) {
-        e.preventDefault()
-        window.location.href = '/squads'
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.toggleDamageCalc)) {
-        e.preventDefault()
-        setShowDamageCalc((prev) => !prev)
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.toggleTextTL)) {
-        e.preventDefault()
-        setShowTextTL((prev) => !prev)
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.toggleCostLines)) {
-        e.preventDefault()
-        if (costDetailItems.length > 0 || costRecoverySegments.length > 0) {
-          setShowCostLines((prev) => !prev)
-        }
-        return
-      }
-      if (matchShortcut(e, shortcutSettings.importSquad)) {
-        e.preventDefault()
-        setShowImport(true)
-        pushToast('部隊インポートを開きました')
-        return
-      }
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [
-    shortcutSettings,
-    undo,
-    redo,
-    openAddSkillModal,
-    cutSelected,
-    copySelected,
-    pasteCopied,
-    deleteSelected,
-    movePlayheadToNearestEx,
-    addRow,
-    snapTime,
-    playhead,
-    proMode,
-    pushToast,
-    costDetailItems,
-    costRecoverySegments,
-  ])
-
   const runPluginActions = useCallback(
     (actions: unknown, ownerPluginId?: string) => {
       const list: unknown[] = Array.isArray(actions) ? actions : []
@@ -3200,6 +3013,193 @@ useEffect(() => {
       ]
     })
   }, [initialized, skills])
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return
+      const target = e.target as HTMLElement | null
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.undo)) {
+        e.preventDefault()
+        undo()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.createProject)) {
+        e.preventDefault()
+        setShowCreateModal(true)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.saveProject)) {
+        e.preventDefault()
+        setShowSaveModal(true)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.loadProject)) {
+        e.preventDefault()
+        loadProjectInputRef.current?.click()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.openSettings)) {
+        e.preventDefault()
+        setShowSettings(true)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.redo)) {
+        e.preventDefault()
+        redo()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.addSkill)) {
+        e.preventDefault()
+        openAddSkillModal()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.addEvent)) {
+        e.preventDefault()
+        setSelectedType('event')
+        setStart(snapTime(playhead))
+        setShowForm(true)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.addRow)) {
+        e.preventDefault()
+        addRow()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.addEnemyRow)) {
+        e.preventDefault()
+        setShowEnemyModal(true)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.cut)) {
+        e.preventDefault()
+        cutSelected()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.copy)) {
+        e.preventDefault()
+        copySelected()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.paste)) {
+        e.preventDefault()
+        pasteCopied()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.delete)) {
+        e.preventDefault()
+        deleteSelected()
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.movePlayheadLeft)) {
+        e.preventDefault()
+        movePlayheadToNearestEx('left')
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.movePlayheadRight)) {
+        e.preventDefault()
+        movePlayheadToNearestEx('right')
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.toggleProMode)) {
+        e.preventDefault()
+        setProMode((prev) => !prev)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.openAlign)) {
+        e.preventDefault()
+        if (!proMode) setProMode(true)
+        setShowAlignModal(true)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.openHistory)) {
+        e.preventDefault()
+        if (!proMode) setProMode(true)
+        setShowHistoryModal(true)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.openExTemplate)) {
+        e.preventDefault()
+        if (!proMode) setProMode(true)
+        setShowExTemplateModal(true)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.openPluginManager)) {
+        e.preventDefault()
+        if (!proMode) setProMode(true)
+        setShowPluginModal(true)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.openSquadMenu)) {
+        e.preventDefault()
+        setShowSquadMenu((prev) => !prev)
+        setShowGroupMenu(false)
+        setShowTools(false)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.openGroupMenu)) {
+        e.preventDefault()
+        setShowGroupMenu((prev) => !prev)
+        setShowSquadMenu(false)
+        setShowTools(false)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.openSquadEditor)) {
+        e.preventDefault()
+        window.location.href = '/squads'
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.toggleDamageCalc)) {
+        e.preventDefault()
+        setShowDamageCalc((prev) => !prev)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.toggleTextTL)) {
+        e.preventDefault()
+        setShowTextTL((prev) => !prev)
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.toggleCostLines)) {
+        e.preventDefault()
+        if (costDetailItems.length > 0 || costRecoverySegments.length > 0) {
+          setShowCostLines((prev) => !prev)
+        }
+        return
+      }
+      if (matchShortcut(e, shortcutSettings.importSquad)) {
+        e.preventDefault()
+        setShowImport(true)
+        pushToast('部隊インポートを開きました')
+        return
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [
+    shortcutSettings,
+    undo,
+    redo,
+    openAddSkillModal,
+    cutSelected,
+    copySelected,
+    pasteCopied,
+    deleteSelected,
+    movePlayheadToNearestEx,
+    addRow,
+    snapTime,
+    playhead,
+    proMode,
+    pushToast,
+    costDetailItems,
+    costRecoverySegments,
+  ])
 
   const rowHeight = 42 // px
   const rows = rowStudents.length
