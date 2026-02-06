@@ -12,7 +12,7 @@ import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import type { UserIdentity } from '@supabase/supabase-js'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faDiscord, faGoogle, faXTwitter } from '@fortawesome/free-brands-svg-icons'
-import { faEye, faEyeSlash, faLink, faUnlink, faUserCheck, faUserCircle } from '@fortawesome/free-solid-svg-icons'
+import { faEye, faEyeSlash, faLink, faLock, faUnlink, faUserCheck, faUserCircle } from '@fortawesome/free-solid-svg-icons'
 import students from '../data/students.json'
 import FriendCodeCopy from './FriendCodeCopy'
 import DecorationInfoButton from './DecorationInfoButton'
@@ -292,6 +292,7 @@ export default function MyPageClient({
 }: Props) {
   const supabase = useSupabaseClient()
   const session = useSession()
+  const isLoggedIn = !!session?.user
   const [username, setUsername] = useState(initialUsername ?? '')
   const [nickname, setNickname] = useState(initialNickname ?? '')
   const email = initialEmail ?? ''
@@ -413,12 +414,32 @@ export default function MyPageClient({
   const headerRef = useRef<HTMLElement | null>(null)
   const shortcutRef = useRef<HTMLElement | null>(null)
 
+  const isSectionLocked = useCallback(
+    (section: typeof activeSection) =>
+      !isLoggedIn && section !== 'header' && section !== 'shortcuts',
+    [isLoggedIn]
+  )
+
+  const handleSectionChange = useCallback(
+    (section: typeof activeSection) => {
+      if (isSectionLocked(section)) return
+      setActiveSection(section)
+    },
+    [isSectionLocked]
+  )
+
   const { dark, toggle } = useTheme()
   const isMacPlatform = useMemo(() => detectIsMacPlatform(), [])
   const locale = useLocale() as Locale
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+
+  useEffect(() => {
+    if (!isLoggedIn && activeSection !== 'header' && activeSection !== 'shortcuts') {
+      setActiveSection('header')
+    }
+  }, [isLoggedIn, activeSection])
 
   const fetchIdentities = async () => {
     const { data, error } = await supabase.auth.getUser()
@@ -1316,6 +1337,27 @@ export default function MyPageClient({
     router.push(`${pathWithSearch}?${target.toString()}`)
   }
 
+  const renderLockedSection = (title: string, description: string) => (
+    <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+      <div className="flex items-center gap-3 mb-3">
+        <FontAwesomeIcon icon={faLock} className="text-2xl text-gray-400" />
+        <div>
+          <h3 className="text-lg font-semibold">{title}</h3>
+          <p className="text-sm text-gray-500">{description}</p>
+        </div>
+      </div>
+      <p className="text-sm text-gray-600">
+        この設定はログイン後に利用できます。ログインしてからもう一度お試しください。
+      </p>
+    </section>
+  )
+
+  const profileLocked = isSectionLocked('profile')
+  const socialLocked = isSectionLocked('social')
+  const accountLocked = isSectionLocked('account')
+  const youtubeLocked = isSectionLocked('youtube')
+  const linksLocked = isSectionLocked('links')
+
   useEffect(() => {
     if (typeof window === 'undefined') return
     try {
@@ -1338,48 +1380,58 @@ export default function MyPageClient({
           <button
             className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
               activeSection === 'profile' ? 'bg-blue-50 text-blue-700' : ''
-            }`}
-            onClick={() => setActiveSection('profile')}
+            } ${profileLocked ? 'cursor-not-allowed text-gray-400 hover:bg-transparent' : ''}`}
+            onClick={() => handleSectionChange('profile')}
+            disabled={profileLocked}
           >
             プロフィール設定
+            {profileLocked && <FontAwesomeIcon icon={faLock} className="ml-2 text-xs text-gray-400" />}
           </button>
           <button
             className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
               activeSection === 'social' ? 'bg-blue-50 text-blue-700' : ''
-            }`}
-            onClick={() => setActiveSection('social')}
+            } ${socialLocked ? 'cursor-not-allowed text-gray-400 hover:bg-transparent' : ''}`}
+            onClick={() => handleSectionChange('social')}
+            disabled={socialLocked}
           >
             ソーシャルアカウント
+            {socialLocked && <FontAwesomeIcon icon={faLock} className="ml-2 text-xs text-gray-400" />}
           </button>
           <button
             className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
               activeSection === 'account' ? 'bg-blue-50 text-blue-700' : ''
-            }`}
-            onClick={() => setActiveSection('account')}
+            } ${accountLocked ? 'cursor-not-allowed text-gray-400 hover:bg-transparent' : ''}`}
+            onClick={() => handleSectionChange('account')}
+            disabled={accountLocked}
           >
             アカウント設定
+            {accountLocked && <FontAwesomeIcon icon={faLock} className="ml-2 text-xs text-gray-400" />}
           </button>
           <button
             className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
               activeSection === 'youtube' ? 'bg-blue-50 text-blue-700' : ''
-            }`}
-            onClick={() => setActiveSection('youtube')}
+            } ${youtubeLocked ? 'cursor-not-allowed text-gray-400 hover:bg-transparent' : ''}`}
+            onClick={() => handleSectionChange('youtube')}
+            disabled={youtubeLocked}
           >
             YouTube/Bilibili設定
+            {youtubeLocked && <FontAwesomeIcon icon={faLock} className="ml-2 text-xs text-gray-400" />}
           </button>
           <button
             className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
               activeSection === 'links' ? 'bg-blue-50 text-blue-700' : ''
-            }`}
-            onClick={() => setActiveSection('links')}
+            } ${linksLocked ? 'cursor-not-allowed text-gray-400 hover:bg-transparent' : ''}`}
+            onClick={() => handleSectionChange('links')}
+            disabled={linksLocked}
           >
             連携サービス
+            {linksLocked && <FontAwesomeIcon icon={faLock} className="ml-2 text-xs text-gray-400" />}
           </button>
           <button
             className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
               activeSection === 'header' ? 'bg-blue-50 text-blue-700' : ''
             }`}
-            onClick={() => setActiveSection('header')}
+            onClick={() => handleSectionChange('header')}
           >
             ヘッダー設定
           </button>
@@ -1387,7 +1439,7 @@ export default function MyPageClient({
             className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
               activeSection === 'shortcuts' ? 'bg-blue-50 text-blue-700' : ''
             }`}
-            onClick={() => setActiveSection('shortcuts')}
+            onClick={() => handleSectionChange('shortcuts')}
           >
             ショートカットキー
           </button>
@@ -1412,10 +1464,12 @@ export default function MyPageClient({
         )}
 
         {activeSection === 'profile' && (
-          <section
-            ref={profileRef as unknown as React.RefObject<HTMLElement>}
-            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
-          >
+          profileLocked
+            ? renderLockedSection('プロフィール設定', 'プロフィール情報の編集')
+            : <section
+                ref={profileRef as unknown as React.RefObject<HTMLElement>}
+                className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+              >
             <div className="flex items-center gap-3 mb-4">
               <FontAwesomeIcon icon={faUserCircle} className="text-3xl text-gray-500" />
               <div>
@@ -1593,10 +1647,12 @@ export default function MyPageClient({
         )}
 
         {activeSection === 'social' && (
-          <section
-            ref={socialRef as unknown as React.RefObject<HTMLElement>}
-            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
-          >
+          socialLocked
+            ? renderLockedSection('ソーシャルアカウント', '公開プロフィールのリンク管理')
+            : <section
+                ref={socialRef as unknown as React.RefObject<HTMLElement>}
+                className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+              >
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold">ソーシャルアカウント</h3>
@@ -1786,10 +1842,12 @@ export default function MyPageClient({
         )}
 
         {activeSection === 'account' && (
-          <section
-            ref={accountRef as unknown as React.RefObject<HTMLElement>}
-            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
-          >
+          accountLocked
+            ? renderLockedSection('アカウント設定', 'アカウント情報の確認')
+            : <section
+                ref={accountRef as unknown as React.RefObject<HTMLElement>}
+                className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+              >
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold">アカウント設定</h3>
@@ -1829,10 +1887,12 @@ export default function MyPageClient({
         )}
 
         {activeSection === 'youtube' && (
-          <section
-            ref={youtubeRef as unknown as React.RefObject<HTMLElement>}
-            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
-          >
+          youtubeLocked
+            ? renderLockedSection('YouTube/Bilibili設定', '本人確認・チャンネル情報の管理')
+            : <section
+                ref={youtubeRef as unknown as React.RefObject<HTMLElement>}
+                className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+              >
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold">YouTube/Bilibili設定</h3>
@@ -2026,10 +2086,12 @@ export default function MyPageClient({
         )}
 
         {activeSection === 'links' && (
-          <section
-            ref={linksRef as unknown as React.RefObject<HTMLElement>}
-            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
-          >
+          linksLocked
+            ? renderLockedSection('連携サービス', 'Google / Discord の連携管理')
+            : <section
+                ref={linksRef as unknown as React.RefObject<HTMLElement>}
+                className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+              >
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold">連携サービス</h3>
