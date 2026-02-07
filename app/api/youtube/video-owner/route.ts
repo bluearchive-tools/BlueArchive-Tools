@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { createSupabaseRouteClient } from '@/lib/supabase-server'
 
 const API_KEYS =
   process.env.YOUTUBE_API_KEYS?.split(',')
@@ -10,6 +11,12 @@ if (process.env.YOUTUBE_API_KEY && !API_KEYS.includes(process.env.YOUTUBE_API_KE
 }
 
 export async function GET(request: Request) {
+  // 認証チェック: ログインユーザーのみ利用可能
+  const auth = createSupabaseRouteClient()
+  const { data: { user } } = await auth.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  }
   const url = new URL(request.url)
   const videoid = url.searchParams.get('videoid')
   if (!videoid) {

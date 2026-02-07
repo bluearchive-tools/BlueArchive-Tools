@@ -34,8 +34,16 @@ async function ensureTables(seasons: Season[]) {
   await supabase.from('tl_unknown').select('id').limit(1)
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // cronシークレットによる認証チェック
+    const cronSecret = process.env.CRON_SECRET
+    if (cronSecret) {
+      const authHeader = request.headers.get('authorization')
+      if (authHeader !== `Bearer ${cronSecret}`) {
+        return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+      }
+    }
     const raidPath = path.join(process.cwd(), 'data', 'raid.json')
     const raid = JSON.parse(await fs.readFile(raidPath, 'utf-8'))
     const seasons: Season[] = raid.seasons

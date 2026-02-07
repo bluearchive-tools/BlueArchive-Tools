@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createSupabaseRouteClient } from '@/lib/supabase-server'
 import { isValidSeasonNumber } from '@/lib/raid-data'
 
 const supabase = createClient(
@@ -9,6 +10,21 @@ const supabase = createClient(
 
 export async function PUT(request: NextRequest) {
   try {
+    // 認証チェック: admin権限が必要
+    const auth = createSupabaseRouteClient()
+    const { data: { user } } = await auth.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'unauthorized' }, { status: 401 })
+    }
+    const { data: profile, error: pErr } = await auth
+      .from('profiles')
+      .select('admin')
+      .eq('id', user.id)
+      .single()
+    if (pErr || !profile?.admin) {
+      return NextResponse.json({ success: false, error: 'forbidden' }, { status: 403 })
+    }
+
     const {
       season,
       score,

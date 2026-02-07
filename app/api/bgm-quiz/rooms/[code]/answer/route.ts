@@ -82,7 +82,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   })
 
   if (answerError) {
-    return NextResponse.json({ error: answerError.message }, { status: 500 })
+    return NextResponse.json({ error: '回答の保存に失敗しました。' }, { status: 500 })
   }
 
   if (isCorrect && !question.is_solved) {

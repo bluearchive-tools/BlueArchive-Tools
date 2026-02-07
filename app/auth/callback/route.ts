@@ -112,7 +112,10 @@ export async function GET(request: Request) {
     await supabase.auth.exchangeCodeForSession(code)
   }
 
-  // Session check
+  // User check (getUser はサーバー側で JWT を検証するため getSession より安全)
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser()
   const {
     data: { session },
   } = await supabase.auth.getSession()
@@ -120,12 +123,12 @@ export async function GET(request: Request) {
   let redirectTo = safeNext
   let message = ''
 
-  if (session) {
+  if (authUser) {
     // Check if new profile setup is needed
     const { data: profile } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', session.user.id)
+      .eq('id', authUser.id)
       .maybeSingle()
 
     if (!profile) {
@@ -194,7 +197,7 @@ export async function GET(request: Request) {
                     const { error: updateError } = await supabase
                       .from('profiles')
                       .update({ social_links: serializeSocialLinksForSave(currentLinks) })
-                      .eq('id', session.user.id)
+                      .eq('id', authUser.id)
 
                     if (updateError) {
                       console.error('Profile update error', updateError)

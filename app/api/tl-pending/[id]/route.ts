@@ -40,8 +40,19 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
   }
 
   if (body.action === 'update') {
+    // 許可されたフィールドのみ更新可能にする（mass assignment 防止）
+    const allowedFields = [
+      'armor', 'difficulty', 'score', 'formation', 'guide',
+      'formation_status', 'title', 'description', 'season_target',
+      'season_guess', 'status', 'videoid', 'published_at',
+    ]
+    const rawData = body.data ?? {}
+    const sanitizedData: Record<string, unknown> = {}
+    for (const key of allowedFields) {
+      if (key in rawData) sanitizedData[key] = rawData[key]
+    }
     const payload = {
-      ...(body.data ?? {}),
+      ...sanitizedData,
       updated_at: new Date().toISOString(),
     }
     const { error: updateError } = await auth

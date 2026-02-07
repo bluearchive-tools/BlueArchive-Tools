@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server'
+import { createSupabaseRouteClient } from '@/lib/supabase-server'
 
 export async function POST(req: Request) {
+  // 認証チェック: ログインユーザーのみ利用可能
+  const auth = createSupabaseRouteClient()
+  const { data: { user } } = await auth.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'ログインが必要です。' }, { status: 401 })
+  }
+
   const formData = await req.formData()
   const file = formData.get('image')
   const requestedModel = formData.get('model')
@@ -79,18 +87,18 @@ export async function POST(req: Request) {
       }
 
       if (!res.ok) {
-        lastError = { endpoint, data }
+        lastError = true
         continue
       }
 
       return NextResponse.json({ data })
-    } catch (error) {
-      lastError = { endpoint, error: String(error) }
+    } catch {
+      lastError = true
     }
   }
 
   return NextResponse.json(
-    { error: 'OCRサービスの呼び出しに失敗しました。', detail: lastError },
+    { error: 'OCRサービスの呼び出しに失敗しました。' },
     { status: 502 }
   )
 }

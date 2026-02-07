@@ -180,11 +180,12 @@ export async function GET(request: Request) {
     }
   )
 
+  // getUser はサーバー側で JWT を検証するため getSession より安全
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user: authUser },
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (!authUser) {
     redirectTo.searchParams.set('message', encodeURIComponent('ログイン状態を確認できませんでした。再ログインしてください。'))
     const res = NextResponse.redirect(redirectTo)
     res.cookies.delete('ba_bili_verify')
@@ -194,7 +195,7 @@ export async function GET(request: Request) {
   const { data: profile } = await supabase
     .from('profiles')
     .select('social_links')
-    .eq('id', session.user.id)
+    .eq('id', authUser.id)
     .maybeSingle()
 
   const currentLinks = parseSocialLinks(profile?.social_links)
@@ -220,7 +221,7 @@ export async function GET(request: Request) {
   const { error } = await supabase
     .from('profiles')
     .update({ social_links: serializeSocialLinksForSave(nextLinks) })
-    .eq('id', session.user.id)
+    .eq('id', authUser.id)
 
   if (error) {
     redirectTo.searchParams.set('message', encodeURIComponent('Bilibili 認証の保存に失敗しました。'))

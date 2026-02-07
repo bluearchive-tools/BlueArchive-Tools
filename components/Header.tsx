@@ -219,9 +219,18 @@ export default function Header() {
         <Link href="/decorations" aria-label="デコレーションショップ" className="text-lg">
           <FontAwesomeIcon icon={faShop} />
         </Link>
-        <Link href="/mypage" aria-label={t('actions.settings')}>
-          <FontAwesomeIcon icon={faCog} />
-        </Link>
+        {isMakerPage ? (
+          <button
+            onClick={() => window.dispatchEvent(new Event('tlMaker:openSettings'))}
+            aria-label={t('actions.settings')}
+          >
+            <FontAwesomeIcon icon={faCog} />
+          </button>
+        ) : (
+          <Link href="/mypage" aria-label={t('actions.settings')}>
+            <FontAwesomeIcon icon={faCog} />
+          </Link>
+        )}
         <button onClick={toggleTheme} aria-label={t('actions.toggleTheme')}>
           <FontAwesomeIcon icon={dark ? faSun : faMoon} />
         </button>

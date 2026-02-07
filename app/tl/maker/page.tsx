@@ -1261,6 +1261,12 @@ useEffect(() => {
     return () => window.removeEventListener('storage', onStorage)
   }, [])
 
+  // ヘッダーの設定アイコンから設定モーダルを開く
+  useEffect(() => {
+    const onOpen = () => setShowSettings(true)
+    window.addEventListener('tlMaker:openSettings', onOpen)
+    return () => window.removeEventListener('tlMaker:openSettings', onOpen)
+  }, [])
 
   // Pro mode / Snap の保存
   useEffect(() => {
