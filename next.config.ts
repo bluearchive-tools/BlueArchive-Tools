@@ -24,6 +24,36 @@ const nextConfig: NextConfig = {
       // }
     ]
   },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()'
+          },
+          {
+            key: 'Content-Security-Policy',
+            value:
+              "default-src 'self'; img-src 'self' data: https: blob:; media-src 'self' https: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com; connect-src 'self' https: wss:; font-src 'self' data: https:; frame-src 'self' https://accounts.google.com https://www.youtube.com https://player.bilibili.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'",
+          },
+        ],
+      },
+    ]
+  },
 }
 
 export default nextConfig

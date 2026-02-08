@@ -3,11 +3,42 @@
 import { useTheme } from '../../components/ThemeProvider'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMoon, faSun } from '@fortawesome/free-solid-svg-icons'
-import { useState } from 'react'
+import { useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import PageHelpButton from '../../components/PageHelpButton'
+import {
+  defaultShortcuts,
+  TL_MAKER_SHORTCUT_CATEGORIES,
+  TL_MAKER_SHORTCUT_STORAGE_KEY,
+  type TlMakerShortcutSettings,
+} from '../../lib/tl-maker-shortcuts'
+
+const detectIsMacPlatform = () => {
+  if (typeof navigator === 'undefined') return false
+  return /Mac|iPhone|iPad|iPod/i.test(navigator.platform)
+}
+
+const formatShortcutFromEvent = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+  const key = event.key
+  if (key === 'Backspace' || key === 'Delete') return ''
+  if (['Shift', 'Control', 'Alt', 'Meta'].includes(key)) return null
+  const parts: string[] = []
+  if (event.ctrlKey) parts.push('Ctrl')
+  if (event.metaKey) parts.push('Cmd')
+  if (event.altKey) parts.push('Alt')
+  if (event.shiftKey) parts.push('Shift')
+  const label =
+    key.length === 1 ? key.toUpperCase() : `${key.slice(0, 1).toUpperCase()}${key.slice(1)}`
+  parts.push(label)
+  return parts.join('+')
+}
 
 export default function Settings() {
   const { dark, toggle } = useTheme()
+  const isMacPlatform = useMemo(() => detectIsMacPlatform(), [])
+  const [shortcutSettings, setShortcutSettings] = useState<TlMakerShortcutSettings>(() =>
+    defaultShortcuts(detectIsMacPlatform())
+  )
+  const shortcutDefaults = useMemo(() => defaultShortcuts(isMacPlatform), [isMacPlatform])
 
   const [delUser, setDelUser] = useState(false)
   const [delTheme, setDelTheme] = useState(false)
@@ -20,6 +51,37 @@ export default function Settings() {
   const [confirmActive, setConfirmActive] = useState(false)
   const [confirmStep, setConfirmStep] = useState<'first' | 'second'>('first')
   const [status, setStatus] = useState<string | null>(null)
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(TL_MAKER_SHORTCUT_STORAGE_KEY)
+      if (!raw) {
+        setShortcutSettings(defaultShortcuts(isMacPlatform))
+        return
+      }
+      const parsed = JSON.parse(raw) as Partial<TlMakerShortcutSettings>
+      setShortcutSettings((prev) => ({
+        ...prev,
+        ...Object.fromEntries(
+          Object.entries(parsed).filter(([, value]) => typeof value === 'string')
+        ),
+      }))
+    } catch {
+      setShortcutSettings(defaultShortcuts(isMacPlatform))
+    }
+  }, [isMacPlatform])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(TL_MAKER_SHORTCUT_STORAGE_KEY, JSON.stringify(shortcutSettings))
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: TL_MAKER_SHORTCUT_STORAGE_KEY,
+        newValue: JSON.stringify(shortcutSettings),
+      }))
+    } catch {
+      /* ignore */
+    }
+  }, [shortcutSettings])
 
   const clearLocal = () => {
     if (delUser) {
@@ -116,6 +178,35 @@ export default function Settings() {
         <FontAwesomeIcon icon={dark ? faSun : faMoon} />
         <span>{dark ? 'ライトモードに切替' : 'ダークモードに切替'}</span>
       </button>
+      <section className="border rounded p-3 space-y-3">
+        <h3 className="font-bold">TLメーカーdev ショートカットキー</h3>
+        {TL_MAKER_SHORTCUT_CATEGORIES.map((category) => (
+          <div key={category.title} className="space-y-2">
+            <h4 className="text-xs font-semibold text-gray-500">{category.title}</h4>
+            {category.items.map((item) => (
+              <label key={item.key} className="flex items-center gap-2 text-sm">
+                <span className="w-32">{item.label}</span>
+                <input
+                  type="text"
+                  value={shortcutSettings[item.key]}
+                  onKeyDown={(e) => {
+                    e.preventDefault()
+                    const next = formatShortcutFromEvent(e)
+                    if (next === null) return
+                    setShortcutSettings((prev) => ({ ...prev, [item.key]: next }))
+                  }}
+                  readOnly
+                  className="border rounded p-1 flex-1"
+                  placeholder={shortcutDefaults[item.key]}
+                />
+              </label>
+            ))}
+          </div>
+        ))}
+        <p className="text-xs text-gray-500">
+          ここで変更した内容は TLメーカーdev にも即時反映されます。
+        </p>
+      </section>
       <div className="border rounded p-2 space-y-1">
         <p className="font-bold">削除するデータ</p>
         <label className="block text-sm">
