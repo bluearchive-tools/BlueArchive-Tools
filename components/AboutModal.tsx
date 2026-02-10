@@ -3,26 +3,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTheme } from './ThemeProvider'
 import { useLocale } from 'next-intl'
-import aboutContent from '../data/about.json'
-
-type AboutSection = {
-  title: string
-  body: string[]
-  currentPathLabel?: string
-  closeLabel?: string
-  discordTitle?: string
-  discordDescription?: string
-  discordWidget?: {
-    src: string
-    width: number
-    height: number
-    title?: string
-  }
-}
-
-type AboutContentMap = Record<string, AboutSection>
-
-const aboutMap = aboutContent as AboutContentMap
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 
 interface Props {
   open: boolean
@@ -30,13 +13,19 @@ interface Props {
   currentPath: string
 }
 
+const CUSTOM_HELP_MD_STORAGE_KEY = 'customHelpMarkdown'
+
 export default function AboutModal({ open, onClose, currentPath }: Props) {
   const { dark } = useTheme()
   const locale = useLocale()
   const [visible, setVisible] = useState(open)
   const [active, setActive] = useState(open)
+  const [markdown, setMarkdown] = useState<string | null>(null)
+  const [heading, setHeading] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
-  const content = useMemo(() => aboutMap[locale] ?? aboutMap.en, [locale])
+  const closeLabel = useMemo(() => (locale === 'ja' ? '閉じる' : 'Close'), [locale])
 
   useEffect(() => {
     if (open) {
@@ -49,11 +38,76 @@ export default function AboutModal({ open, onClose, currentPath }: Props) {
     return () => clearTimeout(timer)
   }, [open])
 
-  if (!visible || !content) return null
+  useEffect(() => {
+    if (!visible) return
+    let cancelled = false
 
-  const pathLabel = content.currentPathLabel?.replace('{path}', currentPath)
-  const closeLabel = content.closeLabel ?? 'Close'
-  const discordWidget = content.discordWidget
+    const readCustomMarkdown = (loc: string) => {
+      try {
+        const raw = localStorage.getItem(CUSTOM_HELP_MD_STORAGE_KEY)
+        if (!raw) return null
+        const parsed = JSON.parse(raw) as Record<string, string>
+        return parsed[`${loc}:about`] ?? null
+      } catch {
+        return null
+      }
+    }
+
+    const applyMarkdown = (text: string) => {
+      const lines = text.split(/\r?\n/)
+      const firstHeadingIndex = lines.findIndex((l) => l.trim().startsWith('# '))
+      if (firstHeadingIndex >= 0) {
+        const h = lines[firstHeadingIndex].replace(/^#\s+/, '').trim()
+        setHeading(h || null)
+        lines.splice(firstHeadingIndex, 1)
+      } else {
+        setHeading(null)
+      }
+      const body = lines.join('\n').trim() || text
+      setMarkdown(body.replace(/\{\{\s*path\s*\}\}/gi, currentPath))
+    }
+
+    const load = async () => {
+      setLoading(true)
+      setError(null)
+      setMarkdown(null)
+      const locales = [locale, 'en']
+
+      for (const loc of locales) {
+        const custom = readCustomMarkdown(loc)
+        if (custom) {
+          if (cancelled) return
+          applyMarkdown(custom)
+          setLoading(false)
+          return
+        }
+
+        try {
+          const res = await fetch(`/helps/${loc}/about.md`)
+          if (!res.ok) continue
+          const text = await res.text()
+          if (cancelled) return
+          applyMarkdown(text)
+          setLoading(false)
+          return
+        } catch {
+          // try next locale
+        }
+      }
+
+      if (!cancelled) {
+        setError('コンテンツを読み込めませんでした。')
+        setLoading(false)
+      }
+    }
+
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [visible, locale, currentPath])
+
+  if (!visible) return null
 
   return (
     <div
@@ -61,41 +115,35 @@ export default function AboutModal({ open, onClose, currentPath }: Props) {
       onClick={onClose}
     >
       <div
-        className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 max-w-lg w-full rounded-lg h-[80vh] max-h-[80vh] flex flex-col`}
+        className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 max-w-md w-full rounded-lg h-[70vh] max-h-[70vh] flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xl font-semibold">{content.title}</h2>
+          <h2 className="text-xl font-semibold">{heading ?? (locale === 'ja' ? 'このページについて' : 'About this page')}</h2>
           <button onClick={onClose} aria-label={closeLabel} className="text-lg leading-none">
             ×
           </button>
         </div>
-        <div className="space-y-4 overflow-y-auto pr-1">
-          <div className="space-y-2">
-            {content.body.map((text, idx) => (
-              <p key={idx} className="text-sm leading-relaxed">
-                {text}
-              </p>
-            ))}
-          </div>
-          {pathLabel && <p className="text-xs text-gray-600 dark:text-gray-300">{pathLabel}</p>}
-          {discordWidget && (
-            <div className="space-y-2">
-              {content.discordTitle && <h3 className="text-lg font-semibold">{content.discordTitle}</h3>}
-              {content.discordDescription && <p className="text-sm leading-relaxed">{content.discordDescription}</p>}
-              <div className="flex justify-center">
-                <iframe
-                  src={discordWidget.src}
-                  width={discordWidget.width}
-                  height={discordWidget.height}
-                  title={discordWidget.title ?? content.discordTitle ?? 'Discord widget'}
-                  allowTransparency
-                  frameBorder="0"
-                  sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
-                  className="rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700"
-                ></iframe>
-              </div>
-            </div>
+        <div className="space-y-2 overflow-y-auto pr-1">
+          {loading && <p className="text-sm text-gray-500 dark:text-gray-300">読み込み中...</p>}
+          {error && <p className="text-sm text-red-500">{error}</p>}
+          {!loading && !error && markdown && (
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeRaw]}
+              className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-semibold prose-h1:text-xl prose-h1:leading-tight prose-h2:text-lg prose-h2:mt-4 prose-p:leading-relaxed"
+              components={{
+                img: ({ alt, ...props }) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img {...props} alt={alt ?? ''} className={`max-w-full h-auto ${props.className ?? ''}`} />
+                ),
+                a: (props) => (
+                  <a {...props} target={props.target ?? '_blank'} rel={props.rel ?? 'noreferrer'} />
+                ),
+              }}
+            >
+              {markdown}
+            </ReactMarkdown>
           )}
         </div>
       </div>
