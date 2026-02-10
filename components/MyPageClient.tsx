@@ -22,6 +22,12 @@ import { useLocale } from 'next-intl'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { SUPPORTED_LOCALES, parseLocale, type Locale } from '../lib/i18n/config'
 import { stripLeadingLocale } from '../lib/i18n/utils'
+import {
+  defaultShortcuts,
+  TL_MAKER_SHORTCUT_CATEGORIES,
+  TL_MAKER_SHORTCUT_STORAGE_KEY,
+  type TlMakerShortcutSettings,
+} from '../lib/tl-maker-shortcuts'
 
 interface Props {
   initialUsername: string | null
@@ -83,18 +89,6 @@ const detectIsMacPlatform = () => {
   if (typeof navigator === 'undefined') return false
   return /Mac|iPhone|iPad|iPod/i.test(navigator.platform)
 }
-
-const defaultShortcuts = (preferMeta: boolean) => ({
-  undo: preferMeta ? 'Cmd+Z' : 'Ctrl+Z',
-  redo: preferMeta ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z',
-  addSkill: preferMeta ? 'Cmd+Shift+A' : 'Ctrl+Shift+A',
-  movePlayheadLeft: preferMeta ? 'Cmd+Shift+ArrowLeft' : 'Ctrl+Shift+ArrowLeft',
-  movePlayheadRight: preferMeta ? 'Cmd+Shift+ArrowRight' : 'Ctrl+Shift+ArrowRight',
-  cut: preferMeta ? 'Cmd+X' : 'Ctrl+X',
-  copy: preferMeta ? 'Cmd+C' : 'Ctrl+C',
-  paste: preferMeta ? 'Cmd+V' : 'Ctrl+V',
-  delete: preferMeta ? 'Backspace' : 'Delete',
-})
 
 const defaultSearchShortcut = (preferMeta: boolean) => (preferMeta ? 'Cmd+K' : 'Ctrl+K')
 
@@ -390,22 +384,24 @@ export default function MyPageClient({
   const [previewVisible, setPreviewVisible] = useState(false)
   const [showUnowned, setShowUnowned] = useState(false)
   const [activeSection, setActiveSection] = useState<
-    'profile' | 'social' | 'account' | 'youtube' | 'links' | 'header' | 'shortcuts'
+    'profile' | 'social' | 'account' | 'youtube' | 'links' | 'header' | 'shortcuts' | 'data'
   >('profile')
-  const [makerShortcuts, setMakerShortcuts] = useState<{
-    undo: string
-    redo: string
-    addSkill: string
-    movePlayheadLeft: string
-    movePlayheadRight: string
-    cut: string
-    copy: string
-    paste: string
-    delete: string
-  }>(() => defaultShortcuts(detectIsMacPlatform()))
+  const [makerShortcuts, setMakerShortcuts] = useState<TlMakerShortcutSettings>(() =>
+    defaultShortcuts(detectIsMacPlatform())
+  )
   const [searchShortcut, setSearchShortcut] = useState(() =>
     defaultSearchShortcut(detectIsMacPlatform())
   )
+  const [delUser, setDelUser] = useState(false)
+  const [delTheme, setDelTheme] = useState(false)
+  const [delNotice, setDelNotice] = useState(false)
+  const [delOpts, setDelOpts] = useState(false)
+  const [delSync, setDelSync] = useState(false)
+  const [delSquad, setDelSquad] = useState(false)
+  const [delTL, setDelTL] = useState(false)
+  const [confirmVisible, setConfirmVisible] = useState(false)
+  const [confirmActive, setConfirmActive] = useState(false)
+  const [confirmStep, setConfirmStep] = useState<'first' | 'second'>('first')
   const profileRef = useRef<HTMLElement | null>(null)
   const socialRef = useRef<HTMLElement | null>(null)
   const accountRef = useRef<HTMLElement | null>(null)
@@ -416,7 +412,7 @@ export default function MyPageClient({
 
   const isSectionLocked = useCallback(
     (section: typeof activeSection) =>
-      !isLoggedIn && section !== 'header' && section !== 'shortcuts',
+      !isLoggedIn && section !== 'header' && section !== 'shortcuts' && section !== 'data',
     [isLoggedIn]
   )
 
@@ -430,13 +426,14 @@ export default function MyPageClient({
 
   const { dark, toggle } = useTheme()
   const isMacPlatform = useMemo(() => detectIsMacPlatform(), [])
+  const makerShortcutDefaults = useMemo(() => defaultShortcuts(isMacPlatform), [isMacPlatform])
   const locale = useLocale() as Locale
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    if (!isLoggedIn && activeSection !== 'header' && activeSection !== 'shortcuts') {
+    if (!isLoggedIn && activeSection !== 'header' && activeSection !== 'shortcuts' && activeSection !== 'data') {
       setActiveSection('header')
     }
   }, [isLoggedIn, activeSection])
@@ -1255,25 +1252,17 @@ export default function MyPageClient({
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem('tlMaker:shortcuts')
+      const raw = localStorage.getItem(TL_MAKER_SHORTCUT_STORAGE_KEY)
       if (!raw) {
         setMakerShortcuts(defaultShortcuts(isMacPlatform))
         return
       }
-      const parsed = JSON.parse(raw) as Partial<typeof makerShortcuts>
+      const parsed = JSON.parse(raw) as Partial<TlMakerShortcutSettings>
       setMakerShortcuts((prev) => ({
         ...prev,
-        undo: typeof parsed.undo === 'string' ? parsed.undo : prev.undo,
-        redo: typeof parsed.redo === 'string' ? parsed.redo : prev.redo,
-        addSkill: typeof parsed.addSkill === 'string' ? parsed.addSkill : prev.addSkill,
-        movePlayheadLeft:
-          typeof parsed.movePlayheadLeft === 'string' ? parsed.movePlayheadLeft : prev.movePlayheadLeft,
-        movePlayheadRight:
-          typeof parsed.movePlayheadRight === 'string' ? parsed.movePlayheadRight : prev.movePlayheadRight,
-        cut: typeof parsed.cut === 'string' ? parsed.cut : prev.cut,
-        copy: typeof parsed.copy === 'string' ? parsed.copy : prev.copy,
-        paste: typeof parsed.paste === 'string' ? parsed.paste : prev.paste,
-        delete: typeof parsed.delete === 'string' ? parsed.delete : prev.delete,
+        ...Object.fromEntries(
+          Object.entries(parsed).filter(([, value]) => typeof value === 'string')
+        ),
       }))
     } catch {
       /* ignore */
@@ -1299,7 +1288,11 @@ export default function MyPageClient({
 
   useEffect(() => {
     try {
-      localStorage.setItem('tlMaker:shortcuts', JSON.stringify(makerShortcuts))
+      localStorage.setItem(TL_MAKER_SHORTCUT_STORAGE_KEY, JSON.stringify(makerShortcuts))
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: TL_MAKER_SHORTCUT_STORAGE_KEY,
+        newValue: JSON.stringify(makerShortcuts),
+      }))
     } catch {
       /* ignore */
     }
@@ -1312,6 +1305,79 @@ export default function MyPageClient({
       /* ignore */
     }
   }, [searchShortcut])
+
+  const selectedTargets = [
+    { label: '学生データ', value: delUser },
+    { label: 'テーマ設定', value: delTheme },
+    { label: 'お知らせ既読状態', value: delNotice },
+    { label: '学生一覧設定', value: delOpts },
+    { label: '同期完了フラグ', value: delSync },
+    { label: '部隊データ', value: delSquad },
+    { label: 'TLデータ', value: delTL },
+  ].filter((item) => item.value)
+
+  const clearLocalData = () => {
+    if (delUser) {
+      const keys: string[] = []
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && key.startsWith('userStudent:')) keys.push(key)
+      }
+      keys.forEach((k) => localStorage.removeItem(k))
+    }
+    if (delTheme) localStorage.removeItem('theme')
+    if (delNotice) localStorage.removeItem('lastNoticeId')
+    if (delOpts) localStorage.removeItem('students_page_opts')
+    if (delSync) {
+      const keys: string[] = []
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && key.startsWith('sync_done_')) keys.push(key)
+      }
+      keys.forEach((k) => localStorage.removeItem(k))
+    }
+    if (delSquad) localStorage.removeItem('squadGroups')
+    if (delTL) {
+      const keys: string[] = []
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (
+          key &&
+          (key.startsWith('tlMakerProject_') ||
+            key === 'tlLength' ||
+            key === 'tlDefaultSkillLevels' ||
+            key === 'tlSkillColors' ||
+            key === 'tlMakerCache' ||
+            key === 'tlMakerLastKey')
+        ) {
+          keys.push(key)
+        }
+      }
+      keys.forEach((k) => localStorage.removeItem(k))
+    }
+    setMessage('選択したローカルデータを削除しました')
+  }
+
+  const handleConfirmNo = () => {
+    setConfirmActive(false)
+    setTimeout(() => {
+      setConfirmVisible(false)
+      setConfirmStep('first')
+    }, 150)
+  }
+
+  const handleConfirmYes = () => {
+    if (confirmStep === 'first') {
+      setConfirmStep('second')
+      return
+    }
+    clearLocalData()
+    setConfirmActive(false)
+    setTimeout(() => {
+      setConfirmVisible(false)
+      setConfirmStep('first')
+    }, 150)
+  }
 
   const pathWithSearch = useMemo(() => {
     const normalizedPath = pathname?.startsWith('/') ? pathname : `/${pathname ?? ''}`
@@ -1442,6 +1508,14 @@ export default function MyPageClient({
             onClick={() => handleSectionChange('shortcuts')}
           >
             ショートカットキー
+          </button>
+          <button
+            className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
+              activeSection === 'data' ? 'bg-blue-50 text-blue-700' : ''
+            }`}
+            onClick={() => handleSectionChange('data')}
+          >
+            データ管理
           </button>
         </nav>
       </aside>
@@ -2206,7 +2280,7 @@ export default function MyPageClient({
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold">ショートカットキー</h3>
-                <p className="text-sm text-gray-500">TLメーカーと検索バーのショートカットキーを設定します</p>
+                <p className="text-sm text-gray-500">TLメーカーdevと検索バーのショートカットキーを設定します</p>
               </div>
               <button
                 type="button"
@@ -2221,141 +2295,28 @@ export default function MyPageClient({
               </button>
             </div>
             <div className="space-y-3 text-sm">
-              <label className="flex items-center gap-3">
-                <span className="w-32 text-gray-700">元に戻す</span>
-                <input
-                  value={makerShortcuts.undo}
-                  onKeyDown={(e) => {
-                    e.preventDefault()
-                    const next = formatShortcutFromEvent(e)
-                    if (next === null) return
-                    setMakerShortcuts((prev) => ({ ...prev, undo: next }))
-                  }}
-                  readOnly
-                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
-                  placeholder={isMacPlatform ? 'Cmd+Z' : 'Ctrl+Z'}
-                />
-              </label>
-              <label className="flex items-center gap-3">
-                <span className="w-32 text-gray-700">やり直す</span>
-                <input
-                  value={makerShortcuts.redo}
-                  onKeyDown={(e) => {
-                    e.preventDefault()
-                    const next = formatShortcutFromEvent(e)
-                    if (next === null) return
-                    setMakerShortcuts((prev) => ({ ...prev, redo: next }))
-                  }}
-                  readOnly
-                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
-                  placeholder={isMacPlatform ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z'}
-                />
-              </label>
-              <label className="flex items-center gap-3">
-                <span className="w-32 text-gray-700">スキル追加</span>
-                <input
-                  value={makerShortcuts.addSkill}
-                  onKeyDown={(e) => {
-                    e.preventDefault()
-                    const next = formatShortcutFromEvent(e)
-                    if (next === null) return
-                    setMakerShortcuts((prev) => ({ ...prev, addSkill: next }))
-                  }}
-                  readOnly
-                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
-                  placeholder={isMacPlatform ? 'Cmd+Shift+A' : 'Ctrl+Shift+A'}
-                />
-              </label>
-              <label className="flex items-center gap-3">
-                <span className="w-32 text-gray-700">バーを左へ</span>
-                <input
-                  value={makerShortcuts.movePlayheadLeft}
-                  onKeyDown={(e) => {
-                    e.preventDefault()
-                    const next = formatShortcutFromEvent(e)
-                    if (next === null) return
-                    setMakerShortcuts((prev) => ({ ...prev, movePlayheadLeft: next }))
-                  }}
-                  readOnly
-                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
-                  placeholder={isMacPlatform ? 'Cmd+Shift+ArrowLeft' : 'Ctrl+Shift+ArrowLeft'}
-                />
-              </label>
-              <label className="flex items-center gap-3">
-                <span className="w-32 text-gray-700">バーを右へ</span>
-                <input
-                  value={makerShortcuts.movePlayheadRight}
-                  onKeyDown={(e) => {
-                    e.preventDefault()
-                    const next = formatShortcutFromEvent(e)
-                    if (next === null) return
-                    setMakerShortcuts((prev) => ({ ...prev, movePlayheadRight: next }))
-                  }}
-                  readOnly
-                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
-                  placeholder={isMacPlatform ? 'Cmd+Shift+ArrowRight' : 'Ctrl+Shift+ArrowRight'}
-                />
-              </label>
-              <label className="flex items-center gap-3">
-                <span className="w-32 text-gray-700">カット</span>
-                <input
-                  value={makerShortcuts.cut}
-                  onKeyDown={(e) => {
-                    e.preventDefault()
-                    const next = formatShortcutFromEvent(e)
-                    if (next === null) return
-                    setMakerShortcuts((prev) => ({ ...prev, cut: next }))
-                  }}
-                  readOnly
-                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
-                  placeholder={isMacPlatform ? 'Cmd+X' : 'Ctrl+X'}
-                />
-              </label>
-              <label className="flex items-center gap-3">
-                <span className="w-32 text-gray-700">コピー</span>
-                <input
-                  value={makerShortcuts.copy}
-                  onKeyDown={(e) => {
-                    e.preventDefault()
-                    const next = formatShortcutFromEvent(e)
-                    if (next === null) return
-                    setMakerShortcuts((prev) => ({ ...prev, copy: next }))
-                  }}
-                  readOnly
-                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
-                  placeholder={isMacPlatform ? 'Cmd+C' : 'Ctrl+C'}
-                />
-              </label>
-              <label className="flex items-center gap-3">
-                <span className="w-32 text-gray-700">ペースト</span>
-                <input
-                  value={makerShortcuts.paste}
-                  onKeyDown={(e) => {
-                    e.preventDefault()
-                    const next = formatShortcutFromEvent(e)
-                    if (next === null) return
-                    setMakerShortcuts((prev) => ({ ...prev, paste: next }))
-                  }}
-                  readOnly
-                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
-                  placeholder={isMacPlatform ? 'Cmd+V' : 'Ctrl+V'}
-                />
-              </label>
-              <label className="flex items-center gap-3">
-                <span className="w-32 text-gray-700">削除</span>
-                <input
-                  value={makerShortcuts.delete}
-                  onKeyDown={(e) => {
-                    e.preventDefault()
-                    const next = formatShortcutFromEvent(e)
-                    if (next === null) return
-                    setMakerShortcuts((prev) => ({ ...prev, delete: next }))
-                  }}
-                  readOnly
-                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
-                  placeholder={isMacPlatform ? 'Backspace' : 'Delete'}
-                />
-              </label>
+              {TL_MAKER_SHORTCUT_CATEGORIES.map((category) => (
+                <div key={category.title} className="space-y-2">
+                  <h4 className="text-xs font-semibold text-gray-500">{category.title}</h4>
+                  {category.items.map((item) => (
+                    <label key={item.key} className="flex items-center gap-3">
+                      <span className="w-32 text-gray-700">{item.label}</span>
+                      <input
+                        value={makerShortcuts[item.key]}
+                        onKeyDown={(e) => {
+                          e.preventDefault()
+                          const next = formatShortcutFromEvent(e)
+                          if (next === null) return
+                          setMakerShortcuts((prev) => ({ ...prev, [item.key]: next }))
+                        }}
+                        readOnly
+                        className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+                        placeholder={makerShortcutDefaults[item.key]}
+                      />
+                    </label>
+                  ))}
+                </div>
+              ))}
               <label className="flex items-center gap-3">
                 <span className="w-32 text-gray-700">検索バー</span>
                 <input
@@ -2377,7 +2338,79 @@ export default function MyPageClient({
             </div>
           </section>
         )}
+
+        {activeSection === 'data' && (
+          <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold">データ管理</h3>
+              <p className="text-sm text-gray-500">端末に保存されたローカルデータをカテゴリごとに削除します</p>
+            </div>
+            <div className="space-y-2 text-sm">
+              <p className="font-bold">削除するデータ</p>
+              <label className="block"><input type="checkbox" className="mr-2" checked={delUser} onChange={(e) => setDelUser(e.target.checked)} />学生データ</label>
+              <label className="block"><input type="checkbox" className="mr-2" checked={delTheme} onChange={(e) => setDelTheme(e.target.checked)} />テーマ設定</label>
+              <label className="block"><input type="checkbox" className="mr-2" checked={delNotice} onChange={(e) => setDelNotice(e.target.checked)} />お知らせ既読状態</label>
+              <label className="block"><input type="checkbox" className="mr-2" checked={delOpts} onChange={(e) => setDelOpts(e.target.checked)} />学生一覧設定</label>
+              <label className="block"><input type="checkbox" className="mr-2" checked={delSync} onChange={(e) => setDelSync(e.target.checked)} />同期完了フラグ</label>
+              <label className="block"><input type="checkbox" className="mr-2" checked={delSquad} onChange={(e) => setDelSquad(e.target.checked)} />部隊データ</label>
+              <label className="block"><input type="checkbox" className="mr-2" checked={delTL} onChange={(e) => setDelTL(e.target.checked)} />TLデータ</label>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmStep('first')
+                  setConfirmVisible(true)
+                  requestAnimationFrame(() => setConfirmActive(true))
+                }}
+                className="mt-2 w-full rounded border border-red-300 bg-red-50 px-3 py-2 text-red-700"
+              >
+                選択したデータを削除
+              </button>
+            </div>
+          </section>
+        )}
       </div>
+
+      {confirmVisible && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/40 transition-opacity duration-200 ${confirmActive ? 'opacity-100' : 'opacity-0'}`}
+          onClick={handleConfirmNo}
+        >
+          <div
+            className={`${dark ? 'bg-gray-800 text-white' : 'bg-white'} w-[90%] max-w-sm rounded p-4 shadow transition-all duration-200 ${confirmActive ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="font-semibold">
+              {confirmStep === 'first'
+                ? '選択したデータを削除してもよろしいですか？'
+                : '本当に削除してもよろしいですか？'}
+            </p>
+            <div className="mt-3 rounded bg-gray-50 p-2 text-sm dark:bg-gray-900">
+              <p className="font-semibold">対象</p>
+              {selectedTargets.length > 0 ? (
+                <ul className="list-disc pl-5">
+                  {selectedTargets.map((target) => (
+                    <li key={target.label}>{target.label}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500">選択なし</p>
+              )}
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" onClick={handleConfirmNo} className="rounded border px-3 py-1">
+                いいえ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmYes}
+                className="rounded border bg-red-600 px-3 py-1 text-white"
+              >
+                はい
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {previewOpen && (
         <div

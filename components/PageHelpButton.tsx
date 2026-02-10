@@ -8,6 +8,7 @@ import { useTheme } from './ThemeProvider'
 import helpContent from '../data/pageHelp.json'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 
 type PageHelpEntry = {
   title: string
@@ -21,6 +22,7 @@ type PageHelpLocale = Record<string, PageHelpEntry> & {
 }
 
 const helpMap = helpContent as unknown as Record<string, PageHelpLocale>
+const CUSTOM_HELP_MD_STORAGE_KEY = 'customHelpMarkdown'
 
 interface Props {
   pageKey: string
@@ -59,6 +61,28 @@ export default function PageHelpButton({ pageKey, className }: Props) {
       setHeading(null)
       const locales = [locale, 'en']
       for (const loc of locales) {
+        try {
+          const customRaw = localStorage.getItem(CUSTOM_HELP_MD_STORAGE_KEY)
+          if (customRaw) {
+            const parsed = JSON.parse(customRaw) as Record<string, string>
+            const customMarkdown = parsed[`${loc}:${pageKey}`]
+            if (customMarkdown) {
+              const lines = customMarkdown.split(/\r?\n/)
+              const firstHeadingIndex = lines.findIndex((l) => l.trim().startsWith('# '))
+              if (firstHeadingIndex >= 0) {
+                const h = lines[firstHeadingIndex].replace(/^#\s+/, '').trim()
+                setHeading(h || null)
+                lines.splice(firstHeadingIndex, 1)
+              }
+              setMarkdown(lines.join('\n').trim() || customMarkdown)
+              setLoading(false)
+              return
+            }
+          }
+        } catch {
+          // fallback to file fetch
+        }
+
         try {
           const res = await fetch(`/helps/${loc}/${pageKey}.md`)
           if (!res.ok) continue
@@ -135,6 +159,7 @@ export default function PageHelpButton({ pageKey, className }: Props) {
               {!loading && !error && markdown && (
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw]}
                   className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-semibold prose-h1:text-xl prose-h1:leading-tight prose-h2:text-lg prose-h2:mt-4 prose-p:leading-relaxed"
                   components={{
                     img: ({ alt, ...props }) => (

@@ -1,25 +1,13 @@
 'use client'
 
-import { useMemo, useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 import helpContent from '../../../data/pageHelp.json'
 
-type PageHelpEntry = {
-  title: string
-  body: string[]
-  buttonLabel?: string
-}
-
-type PageHelpLocale = Record<string, PageHelpEntry> & {
-  _common?: {
-    buttonLabel?: string
-  }
-}
-
-const STORAGE_KEY = 'customPageHelp'
-
-const baseHelpMap = JSON.parse(JSON.stringify(helpContent)) as Record<string, PageHelpLocale>
+const CUSTOM_HELP_MD_STORAGE_KEY = 'customHelpMarkdown'
+const SUPPORTED_LOCALES = ['ja', 'en'] as const
 
 const markdownComponents = {
   img: ({ alt, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => (
@@ -33,133 +21,136 @@ const markdownComponents = {
   ),
 }
 
+const pageKeys = [
+  ...new Set([
+    ...Object.keys((helpContent as Record<string, Record<string, unknown>>).ja ?? {}).filter((k) => k !== '_common'),
+    ...Object.keys((helpContent as Record<string, Record<string, unknown>>).en ?? {}).filter((k) => k !== '_common'),
+    'about',
+    'html-tags-example',
+  ]),
+].sort((a, b) => a.localeCompare(b))
+
 export default function HelpEditorPage() {
-  const [helpMap, setHelpMap] = useState<Record<string, PageHelpLocale>>(baseHelpMap)
-  const [locale, setLocale] = useState<string>(Object.keys(baseHelpMap)[0] ?? 'ja')
-  const [selectedPage, setSelectedPage] = useState<string>('')
+  const [locale, setLocale] = useState<(typeof SUPPORTED_LOCALES)[number]>('ja')
+  const [selectedPage, setSelectedPage] = useState<string>(pageKeys[0] ?? 'about')
+  const [markdownText, setMarkdownText] = useState('')
   const [status, setStatus] = useState('')
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved) {
-        const parsed = JSON.parse(saved) as Record<string, PageHelpLocale>
-        setHelpMap(parsed)
+    let cancelled = false
+    const load = async () => {
+      setLoading(true)
+      try {
+        const savedRaw = localStorage.getItem(CUSTOM_HELP_MD_STORAGE_KEY)
+        const saved = savedRaw ? (JSON.parse(savedRaw) as Record<string, string>) : {}
+        const custom = saved[`${locale}:${selectedPage}`]
+        if (custom != null) {
+          if (!cancelled) setMarkdownText(custom)
+          return
+        }
+
+        const res = await fetch(`/helps/${locale}/${selectedPage}.md`)
+        if (res.ok) {
+          const text = await res.text()
+          if (!cancelled) setMarkdownText(text)
+          return
+        }
+
+        if (!cancelled) setMarkdownText('')
+      } catch {
+        if (!cancelled) setMarkdownText('')
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-    } catch {
-      setHelpMap(baseHelpMap)
     }
-  }, [])
-
-  useEffect(() => {
-    const keys = Object.keys(helpMap[locale] ?? {}).filter((k) => k !== '_common')
-    if (!keys.length) return
-    if (!selectedPage || !keys.includes(selectedPage)) {
-      setSelectedPage(keys[0])
+    load()
+    return () => {
+      cancelled = true
     }
-  }, [helpMap, locale, selectedPage])
-
-  const currentLocale = helpMap[locale] ?? {}
-  const currentEntry = (currentLocale as Record<string, PageHelpEntry>)[selectedPage]
-
-  const updateEntry = (key: string, next: PageHelpEntry) => {
-    setHelpMap((prev) => ({
-      ...prev,
-      [locale]: {
-        ...(prev[locale] ?? {}),
-        [key]: next,
-      },
-    }))
-  }
-
-  const updateCommonLabel = (value: string) => {
-    setHelpMap((prev) => {
-      const nextLocale = {
-        ...(prev[locale] ?? {}),
-        _common: { buttonLabel: value || undefined },
-      } as PageHelpLocale
-      return {
-        ...prev,
-        [locale]: nextLocale,
-      }
-    })
-  }
-
-  const addPage = () => {
-    const key = prompt('ページキーを入力してください (例: tl-maker)')?.trim()
-    if (!key) return
-    setHelpMap((prev) => {
-      const nextLocale = prev[locale] ?? {}
-      if ((nextLocale as Record<string, PageHelpEntry>)[key]) return prev
-      return {
-        ...prev,
-        [locale]: {
-          ...nextLocale,
-          [key]: { title: '新しいヘルプ', body: ['ここに説明を記載してください。'] },
-        },
-      }
-    })
-    setSelectedPage(key)
-  }
+  }, [locale, selectedPage])
 
   const save = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(helpMap))
-    setStatus('保存しました（このブラウザのみ適用）。')
-    setTimeout(() => setStatus(''), 2000)
+    try {
+      const savedRaw = localStorage.getItem(CUSTOM_HELP_MD_STORAGE_KEY)
+      const saved = savedRaw ? (JSON.parse(savedRaw) as Record<string, string>) : {}
+      saved[`${locale}:${selectedPage}`] = markdownText
+      localStorage.setItem(CUSTOM_HELP_MD_STORAGE_KEY, JSON.stringify(saved))
+      setStatus('保存しました（このブラウザのヘルプモーダルに即時反映されます）。')
+      setTimeout(() => setStatus(''), 2000)
+    } catch {
+      setStatus('保存に失敗しました。')
+      setTimeout(() => setStatus(''), 2000)
+    }
   }
 
-  const reset = () => {
-    localStorage.removeItem(STORAGE_KEY)
-    setHelpMap(baseHelpMap)
-    setStatus('保存済みのヘルプをリセットしました。')
+  const resetCurrent = async () => {
+    try {
+      const savedRaw = localStorage.getItem(CUSTOM_HELP_MD_STORAGE_KEY)
+      const saved = savedRaw ? (JSON.parse(savedRaw) as Record<string, string>) : {}
+      delete saved[`${locale}:${selectedPage}`]
+      localStorage.setItem(CUSTOM_HELP_MD_STORAGE_KEY, JSON.stringify(saved))
+
+      const res = await fetch(`/helps/${locale}/${selectedPage}.md`)
+      if (res.ok) {
+        setMarkdownText(await res.text())
+      } else {
+        setMarkdownText('')
+      }
+
+      setStatus('このページのカスタム内容をリセットしました。')
+      setTimeout(() => setStatus(''), 2000)
+    } catch {
+      setStatus('リセットに失敗しました。')
+      setTimeout(() => setStatus(''), 2000)
+    }
+  }
+
+  const resetAll = () => {
+    localStorage.removeItem(CUSTOM_HELP_MD_STORAGE_KEY)
+    setStatus('すべてのカスタムヘルプをリセットしました。')
     setTimeout(() => setStatus(''), 2000)
   }
 
   const preview = useMemo(() => {
-    if (!currentEntry) return null
-    return currentEntry.body.map((text, idx) => (
+    if (!markdownText.trim()) return <p className="text-sm text-gray-500">内容がありません。</p>
+    return (
       <ReactMarkdown
-        key={idx}
         remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
         components={markdownComponents}
         className="prose dark:prose-invert max-w-none"
       >
-        {text}
+        {markdownText}
       </ReactMarkdown>
-    ))
-  }, [currentEntry])
+    )
+  }, [markdownText])
 
   return (
     <main className="p-4 space-y-4">
       <div className="flex items-center gap-3">
-        <h1 className="text-xl font-bold">ヘルプモーダル編集</h1>
-        <button
-          type="button"
-          onClick={addPage}
-          className="px-3 py-2 border rounded text-sm"
-        >
-          ページを追加
-        </button>
+        <h1 className="text-xl font-bold">ヘルプモーダル用 Markdown エディタ</h1>
       </div>
       <p className="text-sm text-gray-700 dark:text-gray-300">
-        編集内容はブラウザのローカルストレージに保存され、各ページのヘルプモーダルに反映されます。共有したい場合はJSONをコピーして別環境に貼り付けてください。
+        ここで編集した内容は localStorage に保存され、ヘルプモーダル（PageHelpButton）と About モーダルに即時反映されます。
       </p>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-3">
         <label className="text-sm">
           ロケール:
           <select
             value={locale}
-            onChange={(e) => setLocale(e.target.value)}
+            onChange={(e) => setLocale(e.target.value as (typeof SUPPORTED_LOCALES)[number])}
             className="ml-2 border rounded px-2 py-1 text-sm"
           >
-            {Object.keys(helpMap).map((loc) => (
+            {SUPPORTED_LOCALES.map((loc) => (
               <option key={loc} value={loc}>
                 {loc}
               </option>
             ))}
           </select>
         </label>
+
         <label className="text-sm">
           ページ:
           <select
@@ -167,76 +158,42 @@ export default function HelpEditorPage() {
             onChange={(e) => setSelectedPage(e.target.value)}
             className="ml-2 border rounded px-2 py-1 text-sm"
           >
-            {Object.keys(currentLocale)
-              .filter((k) => k !== '_common')
-              .map((k) => (
-                <option key={k} value={k}>
-                  {k}
-                </option>
-              ))}
+            {pageKeys.map((key) => (
+              <option key={key} value={key}>
+                {key}
+              </option>
+            ))}
           </select>
         </label>
-        <label className="text-sm">
-          共通ボタンラベル:
-          <input
-            value={currentLocale._common?.buttonLabel ?? ''}
-            onChange={(e) => updateCommonLabel(e.target.value)}
-            className="ml-2 border rounded px-2 py-1 text-sm"
-            placeholder="例: このページについて"
-          />
-        </label>
+
+        <button type="button" onClick={save} className="px-3 py-2 rounded border bg-blue-600 text-white text-sm">
+          保存
+        </button>
+        <button type="button" onClick={resetCurrent} className="px-3 py-2 rounded border text-sm">
+          このページをリセット
+        </button>
+        <button type="button" onClick={resetAll} className="px-3 py-2 rounded border text-sm">
+          全体リセット
+        </button>
       </div>
 
-      {currentEntry && (
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-3">
-            <label className="block text-sm space-y-1">
-              <span className="font-semibold">タイトル</span>
-              <input
-                value={currentEntry.title}
-                onChange={(e) =>
-                  updateEntry(selectedPage, { ...currentEntry, title: e.target.value })
-                }
-                className="w-full border rounded px-2 py-1 text-sm"
-              />
-            </label>
-            <label className="block text-sm space-y-1">
-              <span className="font-semibold">本文（Markdown対応、複数段落は空行で区切り）</span>
-              <textarea
-                value={currentEntry.body.join('\n\n')}
-                onChange={(e) =>
-                  updateEntry(selectedPage, { ...currentEntry, body: e.target.value.split(/\n{2,}/) })
-                }
-                className="w-full h-48 border rounded p-2 text-sm font-mono"
-              />
-            </label>
-            <label className="block text-sm space-y-1">
-              <span className="font-semibold">ボタンラベル（このページ専用・任意）</span>
-              <input
-                value={currentEntry.buttonLabel ?? ''}
-                onChange={(e) =>
-                  updateEntry(selectedPage, { ...currentEntry, buttonLabel: e.target.value || undefined })
-                }
-                className="w-full border rounded px-2 py-1 text-sm"
-                placeholder="未入力なら共通を使用"
-              />
-            </label>
-            <div className="flex gap-2">
-              <button type="button" onClick={save} className="px-3 py-2 rounded border bg-blue-600 text-white text-sm">
-                保存
-              </button>
-              <button type="button" onClick={reset} className="px-3 py-2 rounded border text-sm">
-                リセット
-              </button>
-            </div>
-            {status && <p className="text-sm text-green-600 dark:text-green-400">{status}</p>}
-          </div>
-          <div className="space-y-2 bg-white dark:bg-gray-800 border rounded p-3">
-            <h2 className="text-lg font-semibold">プレビュー</h2>
-            {preview}
-          </div>
+      {status && <p className="text-sm text-green-600 dark:text-green-400">{status}</p>}
+      {loading && <p className="text-sm text-gray-500">読み込み中...</p>}
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <p className="font-semibold text-sm">Markdown入力</p>
+          <textarea
+            value={markdownText}
+            onChange={(e) => setMarkdownText(e.target.value)}
+            className="w-full h-[60vh] border rounded p-2 text-sm font-mono"
+          />
         </div>
-      )}
+        <div className="space-y-2 bg-white dark:bg-gray-800 border rounded p-3">
+          <p className="font-semibold text-sm">プレビュー</p>
+          {preview}
+        </div>
+      </div>
     </main>
   )
 }

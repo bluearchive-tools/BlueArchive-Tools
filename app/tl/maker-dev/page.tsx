@@ -26,6 +26,11 @@ import PageHelpButton from '../../../components/PageHelpButton'
 import equipmentJson from '@/data/equipment.json'
 import AboutModal from '../../../components/AboutModal'
 import StudentSelect from '../../../components/StudentSelect'
+import {
+  defaultShortcuts,
+  TL_MAKER_SHORTCUT_CATEGORIES,
+  TL_MAKER_SHORTCUT_STORAGE_KEY
+} from '@/lib/tl-maker-shortcuts'
 
 
 
@@ -318,37 +323,6 @@ const detectIsMacPlatform = () => {
   if (typeof navigator === 'undefined') return false
   return /Mac|iPhone|iPad|iPod/i.test(navigator.platform)
 }
-
-const defaultShortcuts = (preferMeta: boolean) => ({
-  createProject: preferMeta ? 'Cmd+Shift+N' : 'Ctrl+Shift+N',
-  saveProject: preferMeta ? 'Cmd+Shift+S' : 'Ctrl+Shift+S',
-  loadProject: preferMeta ? 'Cmd+Shift+O' : 'Ctrl+Shift+O',
-  openSettings: preferMeta ? 'Cmd+Shift+,' : 'Ctrl+Shift+,',
-  undo: preferMeta ? 'Cmd+Z' : 'Ctrl+Z',
-  redo: preferMeta ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z',
-  addSkill: preferMeta ? 'Cmd+Shift+A' : 'Ctrl+Shift+A',
-  addEvent: preferMeta ? 'Cmd+Shift+E' : 'Ctrl+Shift+E',
-  addRow: preferMeta ? 'Cmd+Shift+R' : 'Ctrl+Shift+R',
-  addEnemyRow: preferMeta ? 'Cmd+Shift+D' : 'Ctrl+Shift+D',
-  movePlayheadLeft: preferMeta ? 'Cmd+Shift+ArrowLeft' : 'Ctrl+Shift+ArrowLeft',
-  movePlayheadRight: preferMeta ? 'Cmd+Shift+ArrowRight' : 'Ctrl+Shift+ArrowRight',
-  cut: preferMeta ? 'Cmd+X' : 'Ctrl+X',
-  copy: preferMeta ? 'Cmd+C' : 'Ctrl+C',
-  paste: preferMeta ? 'Cmd+V' : 'Ctrl+V',
-  delete: preferMeta ? 'Backspace' : 'Delete',
-  toggleProMode: preferMeta ? 'Cmd+Shift+P' : 'Ctrl+Shift+P',
-  openAlign: preferMeta ? 'Cmd+Shift+L' : 'Ctrl+Shift+L',
-  openHistory: preferMeta ? 'Cmd+Shift+H' : 'Ctrl+Shift+H',
-  openExTemplate: preferMeta ? 'Cmd+Shift+T' : 'Ctrl+Shift+T',
-  openPluginManager: preferMeta ? 'Cmd+Shift+M' : 'Ctrl+Shift+M',
-  openSquadMenu: preferMeta ? 'Cmd+Shift+1' : 'Ctrl+Shift+1',
-  openGroupMenu: preferMeta ? 'Cmd+Shift+2' : 'Ctrl+Shift+2',
-  openSquadEditor: preferMeta ? 'Cmd+Shift+G' : 'Ctrl+Shift+G',
-  toggleDamageCalc: preferMeta ? 'Cmd+Shift+C' : 'Ctrl+Shift+C',
-  toggleTextTL: preferMeta ? 'Cmd+Shift+Y' : 'Ctrl+Shift+Y',
-  toggleCostLines: preferMeta ? 'Cmd+Shift+K' : 'Ctrl+Shift+K',
-  importSquad: preferMeta ? 'Cmd+Shift+I' : 'Ctrl+Shift+I',
-})
 
 const formatShortcutFromEvent = (event: ReactKeyboardEvent<HTMLInputElement>) => {
   const key = event.key
@@ -691,6 +665,7 @@ export default function TLMakerPage() {
     importSquad: string
   }>(() => defaultShortcuts(detectIsMacPlatform()))
   const isMacPlatform = useMemo(() => detectIsMacPlatform(), [])
+  const shortcutDefaults = useMemo(() => defaultShortcuts(isMacPlatform), [isMacPlatform])
 
   // Plugins
   const [plugins, setPlugins] = useState<UserPlugin[]>([])
@@ -1242,7 +1217,7 @@ useEffect(() => {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem('tlMaker:shortcuts')
+      const raw = localStorage.getItem(TL_MAKER_SHORTCUT_STORAGE_KEY)
       if (!raw) {
         setShortcutSettings(defaultShortcuts(isMacPlatform))
         return
@@ -1288,7 +1263,7 @@ useEffect(() => {
 
   useEffect(() => {
     try {
-      localStorage.setItem('tlMaker:shortcuts', JSON.stringify(shortcutSettings))
+      localStorage.setItem(TL_MAKER_SHORTCUT_STORAGE_KEY, JSON.stringify(shortcutSettings))
     } catch {
       /* ignore */
     }
@@ -1296,7 +1271,7 @@ useEffect(() => {
 
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
-      if (e.key !== 'tlMaker:shortcuts' || !e.newValue) return
+      if (e.key !== TL_MAKER_SHORTCUT_STORAGE_KEY || !e.newValue) return
       try {
         const parsed = JSON.parse(e.newValue) as Partial<typeof shortcutSettings>
         setShortcutSettings((prev) => ({
@@ -5184,456 +5159,36 @@ function resolveBuffText(
                   </label>
                 </section>
 
-                <section className="rounded border border-gray-200 p-3 space-y-2">
+                <section className="rounded border border-gray-200 p-3 space-y-3">
                   <div className="text-sm font-bold">ショートカットキー</div>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">新規TL</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.createProject}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, createProject: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+N' : 'Ctrl+Shift+N'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">TL保存</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.saveProject}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, saveProject: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+S' : 'Ctrl+Shift+S'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">TL読み込み</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.loadProject}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, loadProject: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+O' : 'Ctrl+Shift+O'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">設定</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.openSettings}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, openSettings: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+,' : 'Ctrl+Shift+,'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">元に戻す</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.undo}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, undo: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Z' : 'Ctrl+Z'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">やり直す</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.redo}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, redo: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+Z' : 'Ctrl+Shift+Z'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">スキル追加</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.addSkill}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, addSkill: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+A' : 'Ctrl+Shift+A'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">イベント追加</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.addEvent}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, addEvent: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+E' : 'Ctrl+Shift+E'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">行追加</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.addRow}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, addRow: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+R' : 'Ctrl+Shift+R'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">敵行追加</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.addEnemyRow}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, addEnemyRow: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+D' : 'Ctrl+Shift+D'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">バーを左へ</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.movePlayheadLeft}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, movePlayheadLeft: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+ArrowLeft' : 'Ctrl+Shift+ArrowLeft'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">バーを右へ</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.movePlayheadRight}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, movePlayheadRight: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+ArrowRight' : 'Ctrl+Shift+ArrowRight'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">カット</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.cut}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, cut: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+X' : 'Ctrl+X'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">コピー</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.copy}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, copy: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+C' : 'Ctrl+C'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">ペースト</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.paste}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, paste: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+V' : 'Ctrl+V'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">削除</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.delete}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, delete: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Backspace' : 'Delete'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">プロモード</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.toggleProMode}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, toggleProMode: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+P' : 'Ctrl+Shift+P'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">整列</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.openAlign}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, openAlign: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+L' : 'Ctrl+Shift+L'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">履歴</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.openHistory}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, openHistory: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+H' : 'Ctrl+Shift+H'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">EXテンプレ</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.openExTemplate}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, openExTemplate: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+T' : 'Ctrl+Shift+T'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">プラグイン</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.openPluginManager}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, openPluginManager: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+M' : 'Ctrl+Shift+M'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">部隊変更</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.openSquadMenu}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, openSquadMenu: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+1' : 'Ctrl+Shift+1'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">グループ変更</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.openGroupMenu}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, openGroupMenu: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+2' : 'Ctrl+Shift+2'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">部隊編集</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.openSquadEditor}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, openSquadEditor: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+G' : 'Ctrl+Shift+G'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">ダメージ計算</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.toggleDamageCalc}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, toggleDamageCalc: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+C' : 'Ctrl+Shift+C'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">TLテキスト</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.toggleTextTL}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, toggleTextTL: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+Y' : 'Ctrl+Shift+Y'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">コスト詳細</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.toggleCostLines}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, toggleCostLines: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+K' : 'Ctrl+Shift+K'}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="w-28">部隊インポ</span>
-                    <input
-                      type="text"
-                      value={shortcutSettings.importSquad}
-                      onKeyDown={(e) => {
-                        e.preventDefault()
-                        const next = formatShortcutFromEvent(e)
-                        if (next === null) return
-                        setShortcutSettings((prev) => ({ ...prev, importSquad: next }))
-                      }}
-                      readOnly
-                      className="border rounded p-1 flex-1"
-                      placeholder={isMacPlatform ? 'Cmd+Shift+I' : 'Ctrl+Shift+I'}
-                    />
-                  </label>
+                  {TL_MAKER_SHORTCUT_CATEGORIES.map((category) => (
+                    <div key={category.title} className="space-y-2">
+                      <h4 className="text-xs font-semibold text-gray-500">{category.title}</h4>
+                      {category.items.map((item) => {
+                        return (
+                          <label key={item.key} className="flex items-center gap-2 text-sm">
+                            <span className="w-28">{item.label}</span>
+                            <input
+                              type="text"
+                              value={shortcutSettings[item.key]}
+                              onKeyDown={(e) => {
+                                e.preventDefault()
+                                const next = formatShortcutFromEvent(e)
+                                if (next === null) return
+                                setShortcutSettings((prev) => ({
+                                  ...prev,
+                                  [item.key]: next,
+                                }))
+                              }}
+                              readOnly
+                              className="border rounded p-1 flex-1"
+                              placeholder={shortcutDefaults[item.key]}
+                            />
+                          </label>
+                        )
+                      })}
+                    </div>
+                  ))}
                   <p className="text-xs text-gray-500">
                     入力欄をクリックしてキーを押してください（例: {isMacPlatform ? 'Cmd+Z' : 'Ctrl+Z'}）。
                   </p>
