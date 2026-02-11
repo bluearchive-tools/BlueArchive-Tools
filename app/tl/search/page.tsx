@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faLink, faUser, faUserSlash } from '@fortawesome/free-solid-svg-icons'
@@ -132,6 +132,7 @@ export default function TLSearchPage() {
   const [difficulty, setDifficulty] = useState('')
   const [season, setSeason] = useState('')
   const [loadingMessage, setLoadingMessage] = useState('')
+  const [searchError, setSearchError] = useState('')
   const [openTl, setOpenTl] = useState<Timeline | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [currentUsername, setCurrentUsername] = useState<string | null>(null)
@@ -218,6 +219,19 @@ export default function TLSearchPage() {
       platform: 'youtube' | 'bilibili'
     }>
   >([])
+
+  const loadingToastCss = useMemo(
+    () => `
+      @keyframes tl-loading-progress {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(250%); }
+      }
+      .tl-loading-progress {
+        animation: tl-loading-progress 1.2s linear infinite;
+      }
+    `,
+    []
+  )
 
   const formatScore = (value: string) => {
     const num = parseInt(value || '0')
@@ -1102,6 +1116,11 @@ export default function TLSearchPage() {
   }
 
   const handleSearch = async () => {
+    if (!season) {
+      setSearchError('シーズンを選択してください')
+      return
+    }
+    setSearchError('')
     try {
       const params = new URLSearchParams()
       let targets: string[] = []
@@ -1537,12 +1556,6 @@ export default function TLSearchPage() {
             </button>
             {seasonOpen && (
               <ul className="absolute z-10 bg-white border rounded mt-1 max-h-60 overflow-y-auto w-full text-sm">
-                <li
-                  className="px-2 py-1 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => handleSeasonSelect('')}
-                >
-                  全て
-                </li>
                 {availableSeasons.map((s) => (
                   <li
                     key={s.number}
@@ -1557,11 +1570,13 @@ export default function TLSearchPage() {
           </div>
           <button
             onClick={handleSearch}
-            className="border px-3 py-1 rounded bg-blue-500 text-white"
+            disabled={!season}
+            className="border px-3 py-1 rounded bg-blue-500 text-white disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             検索
           </button>
         </div>
+        {searchError && <p className="text-sm text-red-600">{searchError}</p>}
         <div>
           <button
             className="border rounded px-2 py-1"
@@ -1599,7 +1614,17 @@ export default function TLSearchPage() {
           )}
         </div>
       </div>
-      {loadingMessage && <p>{loadingMessage}</p>}
+      {loadingToastCss && <style jsx global>{loadingToastCss}</style>}
+      {loadingMessage && (
+        <div className="fixed top-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2">
+          <div className="relative overflow-hidden rounded border border-blue-200 bg-blue-50 px-4 py-3 pb-4 text-sm text-blue-800 shadow-lg">
+            <div>{loadingMessage}</div>
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-100">
+              <div className="tl-loading-progress h-full w-2/5 bg-blue-400" />
+            </div>
+          </div>
+        </div>
+      )}
       {Object.keys(highestEntries).length === 0 && highest && (
         <div>
           <h3 className="font-bold">現在の最高スコア: {highestScoreText}</h3>
