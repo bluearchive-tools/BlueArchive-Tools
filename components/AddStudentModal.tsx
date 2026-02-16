@@ -17,6 +17,7 @@ interface Student {
   styleOf?: string
   altIds?: string[]
   altOf?: string
+  importid?: string
   initialStars: number
   role: string
   characterType: string
@@ -65,7 +66,7 @@ export default function AddStudentModal({
   defaultStudentId,
 }: AddStudentModalProps) {
   const { dark } = useTheme()
-  const [mode, setMode] = useState<'menu' | 'manual' | 'image'>('menu')
+  const [mode, setMode] = useState<'menu' | 'manual' | 'image' | 'schaledb'>('menu')
   const [visible, setVisible] = useState(false)
   const session = useSession()
   const supabase = useSupabaseClient()
@@ -120,6 +121,8 @@ export default function AddStudentModal({
     love: '0',
   })
   const [bonds, setBonds] = useState<Record<string, string>>({})
+  const [schaleInput, setSchaleInput] = useState('')
+  const [schaleError, setSchaleError] = useState('')
 
   const updateForm = useCallback(
     (next: Partial<typeof form>, markEdited = false) => {
@@ -395,6 +398,89 @@ export default function AddStudentModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.studentId, session, supabase])
 
+  const decodeSchalePayload = (raw: string): Record<string, Record<string, unknown>> => {
+    const trimmed = raw.trim()
+    if (!trimmed) throw new Error('文字列を入力してください。')
+
+    try {
+      return JSON.parse(trimmed) as Record<string, Record<string, unknown>>
+    } catch {
+      // base64 decode
+    }
+
+    const normalized = trimmed.replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/')
+    const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4)
+    const decoded = atob(padded)
+    return JSON.parse(decoded) as Record<string, Record<string, unknown>>
+  }
+
+  const buildImportedStudent = (studentId: string, src: Record<string, unknown>): UserStudent => {
+    const bond = Number(src.b ?? 0)
+    const uniqueStar = Math.max(0, Math.min(3, Number(src.ws ?? 0)))
+
+    return {
+      level: Number(src.l ?? 1),
+      star: Number(src.s ?? 1),
+      unique_star: uniqueStar,
+      unique_level: Number(src.wl ?? 0),
+      bond,
+      hp: 0,
+      hp_wb: Number(src.ph ?? 0),
+      attack: 0,
+      attack_wb: Number(src.pa ?? 0),
+      defense: 0,
+      heal: 0,
+      heal_wb: Number(src.pm ?? 0),
+      ex_skill: Number(src.s1 ?? 1),
+      normal_skill: Number(src.s2 ?? 1),
+      passive_skill: Number(src.s3 ?? 1),
+      sub_skill: Number(src.s4 ?? 1),
+      equip1: Number(src.e1 ?? 1),
+      equip2: Number(src.e2 ?? 1),
+      equip3: Number(src.e3 ?? 1),
+      item_tier: Number(src.e4 ?? 0),
+      alt_bonds: { [studentId]: bond },
+    }
+  }
+
+  const importFromSchaleDb = async () => {
+    setSchaleError('')
+    try {
+      const payload = decodeSchalePayload(schaleInput)
+      const importMap = new Map(students.map((st) => [st.importid, st.id] as const))
+      const rows: Array<{ student_id: string; data: UserStudent }> = []
+
+      for (const [importId, entry] of Object.entries(payload)) {
+        const studentId = importMap.get(importId)
+        if (!studentId) continue
+        rows.push({ student_id: studentId, data: buildImportedStudent(studentId, entry) })
+      }
+
+      if (!rows.length) {
+        throw new Error('一致する生徒が見つかりませんでした。')
+      }
+
+      if (session) {
+        const upsertRows = rows.map((row) => ({
+          user_id: session.user.id,
+          student_id: row.student_id,
+          ...row.data,
+        }))
+        const { error } = await supabase.from('user_students').upsert(upsertRows)
+        if (error) throw new Error(error.message)
+      } else {
+        for (const row of rows) {
+          localStorage.setItem(`userStudent:${row.student_id}`, JSON.stringify(row.data))
+        }
+      }
+
+      onAdded()
+      handleClose()
+    } catch (error) {
+      setSchaleError(error instanceof Error ? error.message : 'SchaleDBデータの読み込みに失敗しました。')
+    }
+  }
+
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -535,6 +621,16 @@ export default function AddStudentModal({
             <button type="button" className="border rounded w-full p-2" onClick={() => fileRef.current?.click()}>
               インポート
             </button>
+            <button
+              type="button"
+              className="border rounded w-full p-2"
+              onClick={() => {
+                setSchaleError('')
+                setMode('schaledb')
+              }}
+            >
+              SchaleDBから追加
+            </button>
             <input
               type="file"
               accept="application/json"
@@ -549,6 +645,26 @@ export default function AddStudentModal({
               onChange={handleImage}
               className="hidden"
             />
+          </div>
+        )}
+        {mode === 'schaledb' && (
+          <div className="space-y-2">
+            <p className="text-sm">SchaleDBのエクスポート文字列（Base64）を貼り付けてください。</p>
+            <textarea
+              value={schaleInput}
+              onChange={(e) => setSchaleInput(e.target.value)}
+              placeholder="ここにSchaleDBの文字列を貼り付け"
+              className="border rounded p-2 w-full h-36 dark:bg-gray-900 dark:border-gray-700 dark:text-white"
+            />
+            {schaleError && <p className="text-sm text-red-500">{schaleError}</p>}
+            <div className="flex gap-2">
+              <button type="button" onClick={importFromSchaleDb} className="border rounded px-2 py-1">
+                取り込み
+              </button>
+              <button type="button" onClick={() => setMode('menu')} className="border rounded px-2 py-1">
+                戻る
+              </button>
+            </div>
           </div>
         )}
         {mode === 'manual' && (
