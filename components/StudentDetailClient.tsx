@@ -67,7 +67,7 @@ export default function StudentDetailClient({ studentId }: { studentId: string }
 
   const checkRegistered = useCallback(async () => {
     const student = students.find((s) => s.id === current)
-    const mainId = student?.styleOf || student?.altOf || current
+    const mainId = student?.styleOf || current
     if (session) {
       const { data } = await supabase
         .from('user_students')
@@ -111,7 +111,7 @@ export default function StudentDetailClient({ studentId }: { studentId: string }
 
   const exportData = useCallback(async () => {
     const student = students.find((s) => s.id === current)
-    const baseId = student?.styleOf || student?.altOf || current
+    const baseId = student?.styleOf || current
     let obj: UserStudent | null = null
     if (session) {
       let { data } = await supabase
