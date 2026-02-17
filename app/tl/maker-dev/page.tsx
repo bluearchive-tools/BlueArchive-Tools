@@ -4129,11 +4129,11 @@ function resolveBuffText(
 
       {showCreateModal && (
         <div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 p-4 tl-modal-backdrop"
+          className="fixed inset-0 z-[90] flex items-start justify-center overflow-y-auto bg-black/50 p-4 sm:items-center tl-modal-backdrop"
           onClick={() => setShowCreateModal(false)}
         >
           <div
-            className={`relative w-full rounded-lg border border-gray-200 bg-white p-6 shadow-lg space-y-4 tl-modal-panel ${
+            className={`relative my-4 w-full max-h-[calc(100vh-2rem)] overflow-y-auto rounded-lg border border-gray-200 bg-white p-6 shadow-lg space-y-4 tl-modal-panel ${
               quickCreateOpen ? 'max-w-4xl' : 'max-w-lg'
             }`}
             onClick={(e) => e.stopPropagation()}
