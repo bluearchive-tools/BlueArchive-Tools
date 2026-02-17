@@ -1,6 +1,7 @@
 [
     {
         "id": "1",
+        "importid": "10001",
         "name": "アル",
         "image": "https://static.wikitide.net/bluearchivewiki/d/db/Aru.png",
         "attackType": "爆発",
@@ -30,6 +31,7 @@
     },
     {
         "id": "2",
+        "importid": "10002",
         "name": "イオリ",
         "image": "https://static.wikitide.net/bluearchivewiki/2/26/Iori.png",
         "attackType": "貫通",
@@ -51,6 +53,7 @@
     },
     {
         "id": "3",
+        "importid": "10003",
         "name": "イズミ",
         "image": "https://static.wikitide.net/bluearchivewiki/1/10/Izumi.png",
         "attackType": "爆発",
@@ -72,6 +75,7 @@
     },
     {
         "id": "4",
+        "importid": "10004",
         "name": "エイミ",
         "image": "https://static.wikitide.net/bluearchivewiki/e/ed/Eimi.png",
         "attackType": "爆発",
@@ -93,6 +97,7 @@
     },
     {
         "id": "5",
+        "importid": "10005",
         "name": "カリン",
         "image": "https://static.wikitide.net/bluearchivewiki/5/50/Karin.png",
         "attackType": "貫通",
@@ -114,6 +119,7 @@
     },
     {
         "id": "6",
+        "importid": "10006",
         "name": "サヤ",
         "image": "https://static.wikitide.net/bluearchivewiki/c/ce/Saya.png",
         "attackType": "爆発",
@@ -135,6 +141,7 @@
     },
     {
         "id": "7",
+        "importid": "10007",
         "name": "シュン",
         "image": "https://static.wikitide.net/bluearchivewiki/1/17/Shun.png",
         "attackType": "爆発",
@@ -156,6 +163,7 @@
     },
     {
         "id": "8",
+        "importid": "10008",
         "name": "シロコ",
         "image": "https://static.wikitide.net/bluearchivewiki/6/63/Shiroko.png",
         "attackType": "爆発",
@@ -177,6 +185,7 @@
     },
     {
         "id": "9",
+        "importid": "10009",
         "name": "スミレ",
         "image": "https://static.wikitide.net/bluearchivewiki/d/d6/Sumire.png",
         "attackType": "貫通",
@@ -198,6 +207,7 @@
     },
     {
         "id": "10",
+        "importid": "10010",
         "name": "ツルギ",
         "image": "https://static.wikitide.net/bluearchivewiki/c/c1/Tsurugi.png",
         "attackType": "貫通",
@@ -219,6 +229,7 @@
     },
     {
         "id": "11",
+        "importid": "10011",
         "name": "ネル",
         "image": "https://static.wikitide.net/bluearchivewiki/2/24/Neru.png",
         "attackType": "貫通",
@@ -240,6 +251,7 @@
     },
     {
         "id": "12",
+        "importid": "10012",
         "name": "ハルナ",
         "image": "https://static.wikitide.net/bluearchivewiki/a/a6/Haruna.png",
         "attackType": "神秘",
@@ -261,6 +273,7 @@
     },
     {
         "id": "13",
+        "importid": "10013",
         "name": "ヒナ",
         "image": "https://static.wikitide.net/bluearchivewiki/8/83/Hina.png",
         "attackType": "爆発",
@@ -282,6 +295,7 @@
     },
     {
         "id": "14",
+        "importid": "10014",
         "name": "ヒビキ",
         "image": "https://static.wikitide.net/bluearchivewiki/b/bc/Hibiki.png",
         "attackType": "爆発",
@@ -303,6 +317,7 @@
     },
     {
         "id": "15",
+        "importid": "10015",
         "name": "ヒフミ",
         "image": "https://static.wikitide.net/bluearchivewiki/3/3b/Hifumi.png",
         "attackType": "貫通",
@@ -324,6 +339,7 @@
     },
     {
         "id": "16",
+        "importid": "10016",
         "name": "ホシノ",
         "image": "https://static.wikitide.net/bluearchivewiki/a/a9/Hoshino.png",
         "attackType": "貫通",
@@ -345,6 +361,7 @@
     },
     {
         "id": "17",
+        "importid": "10017",
         "name": "マキ",
         "image": "https://static.wikitide.net/bluearchivewiki/2/21/Maki.png",
         "attackType": "貫通",
@@ -366,6 +383,7 @@
     },
     {
         "id": "18",
+        "importid": "10018",
         "name": "アイリ",
         "image": "https://static.wikitide.net/bluearchivewiki/9/96/Airi.png",
         "attackType": "爆発",
@@ -387,6 +405,7 @@
     },
     {
         "id": "19",
+        "importid": "10019",
         "name": "アカネ",
         "image": "https://static.wikitide.net/bluearchivewiki/a/aa/Akane.png",
         "attackType": "貫通",
@@ -408,6 +427,7 @@
     },
     {
         "id": "20",
+        "importid": "10020",
         "name": "アカリ",
         "image": "https://static.wikitide.net/bluearchivewiki/7/7d/Akari.png",
         "attackType": "爆発",
@@ -429,6 +449,7 @@
     },
     {
         "id": "21",
+        "importid": "10021",
         "name": "アヤネ",
         "image": "https://static.wikitide.net/bluearchivewiki/a/a7/Ayane.png",
         "attackType": "貫通",
@@ -450,6 +471,7 @@
     },
     {
         "id": "22",
+        "importid": "10022",
         "name": "ウタハ",
         "image": "https://static.wikitide.net/bluearchivewiki/3/37/Utaha.png",
         "attackType": "貫通",
@@ -471,6 +493,7 @@
     },
     {
         "id": "23",
+        "importid": "10023",
         "name": "カヨコ",
         "image": "https://static.wikitide.net/bluearchivewiki/a/a5/Kayoko.png",
         "attackType": "爆発",
@@ -492,6 +515,7 @@
     },
     {
         "id": "24",
+        "importid": "10024",
         "name": "ジュンコ",
         "image": "https://static.wikitide.net/bluearchivewiki/3/3c/Junko.png",
         "attackType": "貫通",
@@ -513,6 +537,7 @@
     },
     {
         "id": "25",
+        "importid": "10025",
         "name": "セリカ",
         "image": "https://static.wikitide.net/bluearchivewiki/c/c8/Serika.png",
         "attackType": "爆発",
@@ -534,6 +559,7 @@
     },
     {
         "id": "26",
+        "importid": "10026",
         "name": "チセ",
         "image": "https://static.wikitide.net/bluearchivewiki/d/d0/Chise.png",
         "attackType": "神秘",
@@ -555,6 +581,7 @@
     },
     {
         "id": "27",
+        "importid": "10027",
         "name": "ツバキ",
         "image": "https://static.wikitide.net/bluearchivewiki/6/6a/Tsubaki.png",
         "attackType": "貫通",
@@ -576,6 +603,7 @@
     },
     {
         "id": "28",
+        "importid": "10028",
         "name": "ノノミ",
         "image": "https://static.wikitide.net/bluearchivewiki/a/ad/Nonomi.png",
         "attackType": "貫通",
@@ -597,6 +625,7 @@
     },
     {
         "id": "29",
+        "importid": "10029",
         "name": "ハスミ",
         "image": "https://static.wikitide.net/bluearchivewiki/8/84/Hasumi.png",
         "attackType": "貫通",
@@ -618,6 +647,7 @@
     },
     {
         "id": "30",
+        "importid": "10030",
         "name": "ハナエ",
         "image": "https://static.wikitide.net/bluearchivewiki/7/72/Hanae.png",
         "attackType": "爆発",
@@ -639,6 +669,7 @@
     },
     {
         "id": "31",
+        "importid": "10031",
         "name": "ハレ",
         "image": "https://static.wikitide.net/bluearchivewiki/4/47/Hare.png",
         "attackType": "爆発",
@@ -660,6 +691,7 @@
     },
     {
         "id": "32",
+        "importid": "10032",
         "name": "フウカ",
         "image": "https://static.wikitide.net/bluearchivewiki/1/1f/Fuuka.png",
         "attackType": "爆発",
@@ -681,6 +713,7 @@
     },
     {
         "id": "33",
+        "importid": "10033",
         "name": "ムツキ",
         "image": "https://static.wikitide.net/bluearchivewiki/0/0b/Mutsuki.png",
         "attackType": "爆発",
@@ -702,6 +735,7 @@
     },
     {
         "id": "34",
+        "importid": "10034",
         "name": "ユウカ",
         "image": "https://static.wikitide.net/bluearchivewiki/3/3e/Yuuka.png",
         "attackType": "爆発",
@@ -723,6 +757,7 @@
     },
     {
         "id": "35",
+        "importid": "10035",
         "name": "アスナ",
         "image": "https://static.wikitide.net/bluearchivewiki/9/9f/Asuna.png",
         "attackType": "神秘",
@@ -744,6 +779,7 @@
     },
     {
         "id": "36",
+        "importid": "10036",
         "name": "コタマ",
         "image": "https://static.wikitide.net/bluearchivewiki/9/94/Kotama.png",
         "attackType": "爆発",
@@ -765,6 +801,7 @@
     },
     {
         "id": "37",
+        "importid": "10037",
         "name": "コトリ",
         "image": "https://static.wikitide.net/bluearchivewiki/a/ab/Kotori.png",
         "attackType": "貫通",
@@ -786,6 +823,7 @@
     },
     {
         "id": "38",
+        "importid": "10038",
         "name": "シミコ",
         "image": "https://static.wikitide.net/bluearchivewiki/f/f4/Shimiko.png",
         "attackType": "爆発",
@@ -806,6 +844,7 @@
     },
     {
         "id": "39",
+        "importid": "10039",
         "name": "ジュリ",
         "image": "https://static.wikitide.net/bluearchivewiki/3/37/Juri.png",
         "attackType": "爆発",
@@ -827,6 +866,7 @@
     },
     {
         "id": "40",
+        "importid": "10040",
         "name": "スズミ",
         "image": "https://static.wikitide.net/bluearchivewiki/0/07/Suzumi.png",
         "attackType": "爆発",
@@ -848,6 +888,7 @@
     },
     {
         "id": "41",
+        "importid": "10041",
         "name": "セリナ",
         "image": "https://static.wikitide.net/bluearchivewiki/4/41/Serina.png",
         "attackType": "神秘",
@@ -869,6 +910,7 @@
     },
     {
         "id": "42",
+        "importid": "10042",
         "name": "チナツ",
         "image": "https://static.wikitide.net/bluearchivewiki/b/b6/Chinatsu.png",
         "attackType": "貫通",
@@ -890,6 +932,7 @@
     },
     {
         "id": "43",
+        "importid": "10043",
         "name": "ハルカ",
         "image": "https://static.wikitide.net/bluearchivewiki/b/b1/Haruka.png",
         "attackType": "爆発",
@@ -911,6 +954,7 @@
     },
     {
         "id": "44",
+        "importid": "10044",
         "name": "フィーナ",
         "image": "https://static.wikitide.net/bluearchivewiki/9/96/Pina.png",
         "attackType": "貫通",
@@ -932,6 +976,7 @@
     },
     {
         "id": "45",
+        "importid": "10045",
         "name": "ヨシミ",
         "image": "https://static.wikitide.net/bluearchivewiki/c/c2/Yoshimi.png",
         "attackType": "貫通",
@@ -953,6 +998,7 @@
     },
     {
         "id": "46",
+        "importid": "10046",
         "name": "マシロ",
         "image": "https://static.wikitide.net/bluearchivewiki/0/06/Mashiro.png",
         "attackType": "爆発",
@@ -974,6 +1020,7 @@
     },
     {
         "id": "47",
+        "importid": "10047",
         "name": "イズナ",
         "image": "https://static.wikitide.net/bluearchivewiki/5/54/Izuna.png",
         "attackType": "神秘",
@@ -995,6 +1042,7 @@
     },
     {
         "id": "48",
+        "importid": "10048",
         "name": "シズコ",
         "image": "https://static.wikitide.net/bluearchivewiki/7/77/Shizuko.png",
         "attackType": "神秘",
@@ -1016,6 +1064,7 @@
     },
     {
         "id": "49",
+        "importid": "10049",
         "name": "アリス",
         "image": "https://static.wikitide.net/bluearchivewiki/0/0f/Arisu.png",
         "attackType": "神秘",
@@ -1037,6 +1086,7 @@
     },
     {
         "id": "50",
+        "importid": "10050",
         "name": "ミドリ",
         "image": "https://static.wikitide.net/bluearchivewiki/e/ee/Midori.png",
         "attackType": "貫通",
@@ -1058,6 +1108,7 @@
     },
     {
         "id": "51",
+        "importid": "10051",
         "name": "モモイ",
         "image": "https://static.wikitide.net/bluearchivewiki/1/18/Momoi.png",
         "attackType": "貫通",
@@ -1079,6 +1130,7 @@
     },
     {
         "id": "52",
+        "importid": "10052",
         "name": "チェリノ",
         "image": "https://static.wikitide.net/bluearchivewiki/7/7c/Cherino.png",
         "attackType": "貫通",
@@ -1100,6 +1152,7 @@
     },
     {
         "id": "53",
+        "importid": "10053",
         "name": "ノドカ",
         "image": "https://static.wikitide.net/bluearchivewiki/e/e1/Nodoka.png",
         "attackType": "爆発",
@@ -1121,6 +1174,7 @@
     },
     {
         "id": "54",
+        "importid": "10054",
         "name": "ユズ",
         "image": "https://static.wikitide.net/bluearchivewiki/7/71/Yuzu.png",
         "attackType": "貫通",
@@ -1142,6 +1196,7 @@
     },
     {
         "id": "55",
+        "importid": "10055",
         "name": "アズサ",
         "image": "https://static.wikitide.net/bluearchivewiki/8/86/Azusa.png",
         "attackType": "爆発",
@@ -1163,6 +1218,7 @@
     },
     {
         "id": "56",
+        "importid": "10056",
         "name": "ハナコ",
         "image": "https://static.wikitide.net/bluearchivewiki/9/9c/Hanako.png",
         "attackType": "貫通",
@@ -1184,6 +1240,7 @@
     },
     {
         "id": "57",
+        "importid": "10057",
         "name": "コハル",
         "image": "https://static.wikitide.net/bluearchivewiki/c/c3/Koharu.png",
         "attackType": "爆発",
@@ -1205,6 +1262,7 @@
     },
     {
         "id": "58",
+        "importid": "10058",
         "name": "アズサ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/a/a4/Azusa_%28Swimsuit%29.png",
         "attackType": "神秘",
@@ -1226,6 +1284,7 @@
     },
     {
         "id": "59",
+        "importid": "10059",
         "name": "マシロ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/2/20/Mashiro_%28Swimsuit%29.png",
         "attackType": "神秘",
@@ -1247,6 +1306,7 @@
     },
     {
         "id": "60",
+        "importid": "10060",
         "name": "ツルギ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/e/e6/Tsurugi_%28Swimsuit%29.png",
         "attackType": "神秘",
@@ -1268,6 +1328,7 @@
     },
     {
         "id": "61",
+        "importid": "10061",
         "name": "ヒフミ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/3/32/Hifumi_%28Swimsuit%29.png",
         "attackType": "貫通",
@@ -1289,6 +1350,7 @@
     },
     {
         "id": "62",
+        "importid": "10062",
         "name": "ヒナ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/4/44/Hina_%28Swimsuit%29.png",
         "attackType": "爆発",
@@ -1310,6 +1372,7 @@
     },
     {
         "id": "63",
+        "importid": "10063",
         "name": "イオリ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/5/53/Iori_%28Swimsuit%29.png",
         "attackType": "爆発",
@@ -1331,6 +1394,7 @@
     },
     {
         "id": "64",
+        "importid": "10064",
         "name": "イズミ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/b/b0/Izumi_%28Swimsuit%29.png",
         "attackType": "爆発",
@@ -1352,6 +1416,7 @@
     },
     {
         "id": "65",
+        "importid": "10065",
         "name": "シロコ(ライディング)",
         "image": "https://static.wikitide.net/bluearchivewiki/a/a0/Shiroko_%28Riding%29.png",
         "attackType": "神秘",
@@ -1373,6 +1438,7 @@
     },
     {
         "id": "66",
+        "importid": "10066",
         "name": "シュン(幼女)",
         "image": "https://static.wikitide.net/bluearchivewiki/5/53/Shun_%28Kid%29.png",
         "attackType": "爆発",
@@ -1394,6 +1460,7 @@
     },
     {
         "id": "67",
+        "importid": "10067",
         "name": "キリノ",
         "image": "https://static.wikitide.net/bluearchivewiki/8/85/Kirino.png",
         "attackType": "爆発",
@@ -1415,6 +1482,7 @@
     },
     {
         "id": "68",
+        "importid": "10068",
         "name": "サヤ(私服)",
         "image": "https://static.wikitide.net/bluearchivewiki/e/e2/Saya_%28Casual%29.png",
         "attackType": "貫通",
@@ -1436,6 +1504,7 @@
     },
     {
         "id": "69",
+        "importid": "10069",
         "name": "ネル(バニーガール)",
         "image": "https://static.wikitide.net/bluearchivewiki/7/78/Neru_%28Bunny_Girl%29.png",
         "attackType": "爆発",
@@ -1457,6 +1526,7 @@
     },
     {
         "id": "70",
+        "importid": "10070",
         "name": "カリン(バニーガール)",
         "image": "https://static.wikitide.net/bluearchivewiki/b/bd/Karin_%28Bunny_Girl%29.png",
         "attackType": "神秘",
@@ -1478,6 +1548,7 @@
     },
     {
         "id": "71",
+        "importid": "10071",
         "name": "アスナ(バニーガール)",
         "image": "https://static.wikitide.net/bluearchivewiki/a/a4/Asuna_%28Bunny_Girl%29.png",
         "attackType": "神秘",
@@ -1499,6 +1570,7 @@
     },
     {
         "id": "72",
+        "importid": "10072",
         "name": "ナツ",
         "image": "https://static.wikitide.net/bluearchivewiki/9/90/Natsu.png",
         "attackType": "神秘",
@@ -1520,6 +1592,7 @@
     },
     {
         "id": "73",
+        "importid": "10073",
         "name": "マリー",
         "image": "https://static.wikitide.net/bluearchivewiki/4/4f/Mari.png",
         "attackType": "神秘",
@@ -1541,6 +1614,7 @@
     },
     {
         "id": "74",
+        "importid": "10074",
         "name": "初音ミク",
         "image": "https://static.wikitide.net/bluearchivewiki/9/93/Hatsune_Miku.png",
         "attackType": "爆発",
@@ -1561,6 +1635,7 @@
     },
     {
         "id": "75",
+        "importid": "10075",
         "name": "アコ",
         "image": "https://static.wikitide.net/bluearchivewiki/7/72/Ako.png",
         "attackType": "神秘",
@@ -1584,6 +1659,7 @@
     },
     {
         "id": "76",
+        "importid": "10076",
         "name": "チェリノ(温泉)",
         "image": "https://static.wikitide.net/bluearchivewiki/9/95/Cherino_%28Hot_Spring%29.png",
         "attackType": "爆発",
@@ -1605,6 +1681,7 @@
     },
     {
         "id": "77",
+        "importid": "10077",
         "name": "チナツ(温泉)",
         "image": "https://static.wikitide.net/bluearchivewiki/b/b1/Chinatsu_%28Hot_Spring%29.png",
         "attackType": "神秘",
@@ -1626,6 +1703,7 @@
     },
     {
         "id": "78",
+        "importid": "10078",
         "name": "トモエ",
         "image": "https://static.wikitide.net/bluearchivewiki/0/0a/Tomoe.png",
         "attackType": "貫通",
@@ -1647,6 +1725,7 @@
     },
     {
         "id": "79",
+        "importid": "10079",
         "name": "ノドカ(温泉)",
         "image": "https://static.wikitide.net/bluearchivewiki/3/3f/Nodoka_%28Hot_Spring%29.png",
         "attackType": "爆発",
@@ -1668,6 +1747,7 @@
     },
     {
         "id": "80",
+        "importid": "10080",
         "name": "アル(正月)",
         "image": "https://static.wikitide.net/bluearchivewiki/6/60/Aru_%28New_Year%29.png",
         "attackType": "貫通",
@@ -1689,6 +1769,7 @@
     },
     {
         "id": "81",
+        "importid": "10081",
         "name": "ムツキ(正月)",
         "image": "https://static.wikitide.net/bluearchivewiki/c/c2/Mutsuki_%28New_Year%29.png",
         "attackType": "神秘",
@@ -1710,6 +1791,7 @@
     },
     {
         "id": "82",
+        "importid": "10082",
         "name": "セリカ(正月)",
         "image": "https://static.wikitide.net/bluearchivewiki/6/61/Serika_%28New_Year%29.png",
         "attackType": "貫通",
@@ -1731,6 +1813,7 @@
     },
     {
         "id": "83",
+        "importid": "10083",
         "name": "ワカモ",
         "image": "https://static.wikitide.net/bluearchivewiki/a/a7/Wakamo.png",
         "attackType": "神秘",
@@ -1754,6 +1837,7 @@
     },
     {
         "id": "84",
+        "importid": "10084",
         "name": "フブキ",
         "image": "https://static.wikitide.net/bluearchivewiki/c/cd/Fubuki.png",
         "attackType": "貫通",
@@ -1775,6 +1859,7 @@
     },
     {
         "id": "85",
+        "importid": "10085",
         "name": "セナ",
         "image": "https://static.wikitide.net/bluearchivewiki/f/f4/Sena.png",
         "attackType": "神秘",
@@ -1796,6 +1881,7 @@
     },
     {
         "id": "86",
+        "importid": "10086",
         "name": "チヒロ",
         "image": "https://static.wikitide.net/bluearchivewiki/a/a7/Chihiro.png",
         "attackType": "貫通",
@@ -1816,6 +1902,7 @@
     },
     {
         "id": "87",
+        "importid": "10087",
         "name": "ミモリ",
         "image": "https://static.wikitide.net/bluearchivewiki/8/82/Mimori.png",
         "attackType": "神秘",
@@ -1837,6 +1924,7 @@
     },
     {
         "id": "88",
+        "importid": "10088",
         "name": "ウイ",
         "image": "https://static.wikitide.net/bluearchivewiki/1/18/Ui.png",
         "attackType": "爆発",
@@ -1858,6 +1946,7 @@
     },
     {
         "id": "89",
+        "importid": "10089",
         "name": "ヒナタ",
         "image": "https://static.wikitide.net/bluearchivewiki/9/97/Hinata.png",
         "attackType": "神秘",
@@ -1879,6 +1968,7 @@
     },
     {
         "id": "90",
+        "importid": "10090",
         "name": "マリナ",
         "image": "https://static.wikitide.net/bluearchivewiki/9/9d/Marina.png",
         "attackType": "貫通",
@@ -1900,6 +1990,7 @@
     },
     {
         "id": "91",
+        "importid": "10091",
         "name": "ミヤコ",
         "image": "https://static.wikitide.net/bluearchivewiki/3/3e/Miyako.png",
         "attackType": "貫通",
@@ -1921,6 +2012,7 @@
     },
     {
         "id": "92",
+        "importid": "10092",
         "name": "サキ",
         "image": "https://static.wikitide.net/bluearchivewiki/d/d0/Saki.png",
         "attackType": "貫通",
@@ -1942,6 +2034,7 @@
     },
     {
         "id": "93",
+        "importid": "10093",
         "name": "ミユ",
         "image": "https://static.wikitide.net/bluearchivewiki/a/ac/Miyu.png",
         "attackType": "貫通",
@@ -1963,6 +2056,7 @@
     },
     {
         "id": "94",
+        "importid": "10094",
         "name": "カエデ",
         "image": "https://static.wikitide.net/bluearchivewiki/f/f0/Kaede.png",
         "attackType": "爆発",
@@ -1983,6 +2077,7 @@
     },
     {
         "id": "95",
+        "importid": "10095",
         "name": "イロハ",
         "image": "https://static.wikitide.net/bluearchivewiki/b/bf/Iroha.png",
         "attackType": "神秘",
@@ -2003,6 +2098,7 @@
     },
     {
         "id": "96",
+        "importid": "10096",
         "name": "ミチル",
         "image": "https://static.wikitide.net/bluearchivewiki/e/e6/Michiru.png",
         "attackType": "神秘",
@@ -2024,6 +2120,7 @@
     },
     {
         "id": "97",
+        "importid": "10097",
         "name": "ツクヨ",
         "image": "https://static.wikitide.net/bluearchivewiki/c/ce/Tsukuyo.png",
         "attackType": "神秘",
@@ -2045,6 +2142,7 @@
     },
     {
         "id": "98",
+        "importid": "10098",
         "name": "ミサキ",
         "image": "https://static.wikitide.net/bluearchivewiki/a/ae/Misaki.png",
         "attackType": "爆発",
@@ -2066,6 +2164,7 @@
     },
     {
         "id": "99",
+        "importid": "10099",
         "name": "ヒヨリ",
         "image": "https://static.wikitide.net/bluearchivewiki/7/76/Hiyori.png",
         "attackType": "爆発",
@@ -2087,6 +2186,7 @@
     },
     {
         "id": "100",
+        "importid": "10100",
         "name": "アツコ",
         "image": "https://static.wikitide.net/bluearchivewiki/c/c7/Atsuko.png",
         "attackType": "爆発",
@@ -2108,6 +2208,7 @@
     },
     {
         "id": "101",
+        "importid": "10101",
         "name": "ワカモ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/e/e2/Wakamo_%28Swimsuit%29.png",
         "attackType": "貫通",
@@ -2129,6 +2230,7 @@
     },
     {
         "id": "102",
+        "importid": "10102",
         "name": "ノノミ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/9/98/Nonomi_%28Swimsuit%29.png",
         "attackType": "爆発",
@@ -2150,6 +2252,7 @@
     },
     {
         "id": "103",
+        "importid": "10103",
         "name": "アヤネ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/f/f6/Ayane_%28Swimsuit%29.png",
         "attackType": "貫通",
@@ -2171,6 +2274,7 @@
     },
     {
         "id": "104",
+        "importid": "10104",
         "name": "ホシノ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/c/c2/Hoshino_%28Swimsuit%29.png",
         "attackType": "爆発",
@@ -2194,6 +2298,7 @@
     },
     {
         "id": "105",
+        "importid": "10105",
         "name": "シズコ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/f/f2/Shizuko_%28Swimsuit%29.png",
         "attackType": "神秘",
@@ -2215,6 +2320,7 @@
     },
     {
         "id": "106",
+        "importid": "10106",
         "name": "イズナ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/3/37/Izuna_%28Swimsuit%29.png",
         "attackType": "神秘",
@@ -2236,6 +2342,7 @@
     },
     {
         "id": "107",
+        "importid": "10107",
         "name": "チセ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/1/1e/Chise_%28Swimsuit%29.png",
         "attackType": "神秘",
@@ -2257,6 +2364,7 @@
     },
     {
         "id": "108",
+        "importid": "10108",
         "name": "サオリ",
         "image": "https://static.wikitide.net/bluearchivewiki/4/46/Saori.png",
         "attackType": "爆発",
@@ -2278,6 +2386,7 @@
     },
     {
         "id": "109",
+        "importid": "10109",
         "name": "モエ",
         "image": "https://static.wikitide.net/bluearchivewiki/c/cc/Moe.png",
         "attackType": "貫通",
@@ -2299,6 +2408,7 @@
     },
     {
         "id": "110",
+        "importid": "10110",
         "name": "カズサ",
         "image": "https://static.wikitide.net/bluearchivewiki/b/b3/Kazusa.png",
         "attackType": "貫通",
@@ -2320,6 +2430,7 @@
     },
     {
         "id": "111",
+        "importid": "10111",
         "name": "ココナ",
         "image": "https://static.wikitide.net/bluearchivewiki/8/83/Kokona.png",
         "attackType": "貫通",
@@ -2342,6 +2453,7 @@
     },
     {
         "id": "112",
+        "importid": "10112",
         "name": "ウタハ(応援団)",
         "image": "https://static.wikitide.net/bluearchivewiki/7/7b/Utaha_%28Cheerleader%29.png",
         "attackType": "神秘",
@@ -2363,6 +2475,7 @@
     },
     {
         "id": "113",
+        "importid": "10113",
         "name": "ノア",
         "image": "https://static.wikitide.net/bluearchivewiki/2/23/Noa.png",
         "attackType": "神秘",
@@ -2384,6 +2497,7 @@
     },
     {
         "id": "114",
+        "importid": "10114",
         "name": "ヒビキ(応援団)",
         "image": "https://static.wikitide.net/bluearchivewiki/b/bf/Hibiki_%28Cheerleader%29.png",
         "attackType": "爆発",
@@ -2405,6 +2519,7 @@
     },
     {
         "id": "115",
+        "importid": "10115",
         "name": "アカネ(バニーガール)",
         "image": "https://static.wikitide.net/bluearchivewiki/9/99/Akane_%28Bunny_Girl%29.png",
         "attackType": "神秘",
@@ -2426,6 +2541,7 @@
     },
     {
         "id": "116",
+        "importid": "10116",
         "name": "ユウカ(体操服)",
         "image": "https://static.wikitide.net/bluearchivewiki/6/60/Yuuka_%28Sportswear%29.png",
         "attackType": "神秘",
@@ -2447,6 +2563,7 @@
     },
     {
         "id": "117",
+        "importid": "10117",
         "name": "マリー(体操服)",
         "image": "https://static.wikitide.net/bluearchivewiki/8/88/Mari_%28Sportswear%29.png",
         "attackType": "神秘",
@@ -2468,6 +2585,7 @@
     },
     {
         "id": "118",
+        "importid": "10118",
         "name": "ハスミ(体操服)",
         "image": "https://static.wikitide.net/bluearchivewiki/8/80/Hasumi_%28Sportswear%29.png",
         "attackType": "神秘",
@@ -2489,6 +2607,7 @@
     },
     {
         "id": "119",
+        "importid": "10119",
         "name": "ヒマリ",
         "image": "https://static.wikitide.net/bluearchivewiki/5/5a/Himari.png",
         "attackType": "貫通",
@@ -2511,6 +2630,7 @@
     },
     {
         "id": "120",
+        "importid": "10120",
         "name": "シグレ",
         "image": "https://static.wikitide.net/bluearchivewiki/d/da/Shigure.png",
         "attackType": "爆発",
@@ -2532,6 +2652,7 @@
     },
     {
         "id": "121",
+        "importid": "10121",
         "name": "セリナ(クリスマス)",
         "image": "https://static.wikitide.net/bluearchivewiki/1/19/Serina_%28Christmas%29.png",
         "attackType": "貫通",
@@ -2553,6 +2674,7 @@
     },
     {
         "id": "122",
+        "importid": "10122",
         "name": "ハナエ(クリスマス)",
         "image": "https://static.wikitide.net/bluearchivewiki/1/1a/Hanae_%28Christmas%29.png",
         "attackType": "神秘",
@@ -2574,6 +2696,7 @@
     },
     {
         "id": "123",
+        "importid": "10123",
         "name": "ハルナ(正月)",
         "image": "https://static.wikitide.net/bluearchivewiki/b/b3/Haruna_%28New_Year%29.png",
         "attackType": "爆発",
@@ -2595,6 +2718,7 @@
     },
     {
         "id": "124",
+        "importid": "10124",
         "name": "フウカ(正月)",
         "image": "https://static.wikitide.net/bluearchivewiki/1/13/Fuuka_%28New_Year%29.png",
         "attackType": "貫通",
@@ -2618,6 +2742,7 @@
     },
     {
         "id": "125",
+        "importid": "10125",
         "name": "ジュンコ(正月)",
         "image": "https://static.wikitide.net/bluearchivewiki/d/d0/Junko_%28New_Year%29.png",
         "attackType": "神秘",
@@ -2639,6 +2764,7 @@
     },
     {
         "id": "126",
+        "importid": "10126",
         "name": "ミネ",
         "image": "https://static.wikitide.net/bluearchivewiki/a/a0/Mine.png",
         "attackType": "爆発",
@@ -2660,6 +2786,7 @@
     },
     {
         "id": "127",
+        "importid": "10127",
         "name": "ミカ",
         "image": "https://static.wikitide.net/bluearchivewiki/c/c8/Mika.png",
         "attackType": "貫通",
@@ -2681,6 +2808,7 @@
     },
     {
         "id": "128",
+        "importid": "10128",
         "name": "メグ",
         "image": "https://static.wikitide.net/bluearchivewiki/d/d4/Megu.png",
         "attackType": "爆発",
@@ -2701,6 +2829,7 @@
     },
     {
         "id": "129",
+        "importid": "10129",
         "name": "カンナ",
         "image": "https://static.wikitide.net/bluearchivewiki/4/47/Kanna.png",
         "attackType": "貫通",
@@ -2722,6 +2851,7 @@
     },
     {
         "id": "130",
+        "importid": "10130",
         "name": "サクラコ",
         "image": "https://static.wikitide.net/bluearchivewiki/f/f0/Sakurako.png",
         "attackType": "神秘",
@@ -2743,6 +2873,7 @@
     },
     {
         "id": "131",
+        "importid": "10131",
         "name": "トキ",
         "image": "https://static.wikitide.net/bluearchivewiki/e/e4/Toki.png",
         "attackType": "爆発",
@@ -2764,6 +2895,7 @@
     },
     {
         "id": "132",
+        "importid": "10132",
         "name": "ナギサ",
         "image": "https://static.wikitide.net/bluearchivewiki/6/6a/Nagisa.png",
         "attackType": "爆発",
@@ -2787,6 +2919,7 @@
     },
     {
         "id": "133",
+        "importid": "10133",
         "name": "コユキ",
         "image": "https://static.wikitide.net/bluearchivewiki/a/af/Koyuki.png",
         "attackType": "神秘",
@@ -2807,6 +2940,7 @@
     },
     {
         "id": "134",
+        "importid": "10134",
         "name": "カヨコ(正月)",
         "image": "https://static.wikitide.net/bluearchivewiki/0/0d/Kayoko_%28New_Year%29.png",
         "attackType": "神秘",
@@ -2830,6 +2964,7 @@
     },
     {
         "id": "135",
+        "importid": "10135",
         "name": "ハルカ(正月)",
         "image": "https://static.wikitide.net/bluearchivewiki/d/d9/Haruka_%28New_Year%29.png",
         "attackType": "爆発",
@@ -2851,6 +2986,7 @@
     },
     {
         "id": "136",
+        "importid": "10136",
         "name": "カホ",
         "image": "https://static.wikitide.net/bluearchivewiki/6/63/Kaho.png",
         "attackType": "神秘",
@@ -2871,6 +3007,7 @@
     },
     {
         "id": "137",
+        "importid": "10137",
         "name": "アリス(メイド)",
         "image": "https://static.wikitide.net/bluearchivewiki/b/b4/Arisu_%28Maid%29.png",
         "attackType": "神秘",
@@ -2893,6 +3030,7 @@
     },
     {
         "id": "138",
+        "importid": "10138",
         "name": "トキ(バニーガール)",
         "image": "https://static.wikitide.net/bluearchivewiki/8/83/Toki_%28Bunny_Girl%29.png",
         "attackType": "爆発",
@@ -2914,6 +3052,7 @@
     },
     {
         "id": "139",
+        "importid": "10139",
         "name": "ユズ(メイド)",
         "image": "https://static.wikitide.net/bluearchivewiki/1/17/Yuzu_%28Maid%29.png",
         "attackType": "爆発",
@@ -2935,6 +3074,7 @@
     },
     {
         "id": "140",
+        "importid": "10140",
         "name": "レイサ",
         "image": "https://static.wikitide.net/bluearchivewiki/3/34/Reisa.png",
         "attackType": "貫通",
@@ -2956,6 +3096,7 @@
     },
     {
         "id": "141",
+        "importid": "10141",
         "name": "ルミ",
         "image": "https://static.wikitide.net/bluearchivewiki/7/7d/Rumi.png",
         "attackType": "爆発",
@@ -2976,6 +3117,7 @@
     },
     {
         "id": "142",
+        "importid": "10142",
         "name": "ミナ",
         "image": "https://static.wikitide.net/bluearchivewiki/6/6b/Mina.png",
         "attackType": "爆発",
@@ -2996,6 +3138,7 @@
     },
     {
         "id": "143",
+        "importid": "10143",
         "name": "ミノリ",
         "image": "https://static.wikitide.net/bluearchivewiki/1/1a/Minori.png",
         "attackType": "爆発",
@@ -3016,6 +3159,7 @@
     },
     {
         "id": "144",
+        "importid": "10144",
         "name": "ミヤコ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/9/97/Miyako_%28Swimsuit%29.png",
         "attackType": "爆発",
@@ -3037,6 +3181,7 @@
     },
     {
         "id": "145",
+        "importid": "10145",
         "name": "サキ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/1/13/Saki_%28Swimsuit%29.png",
         "attackType": "爆発",
@@ -3058,6 +3203,7 @@
     },
     {
         "id": "146",
+        "importid": "10146",
         "name": "ミユ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/d/d1/Miyu_%28Swimsuit%29.png",
         "attackType": "爆発",
@@ -3079,6 +3225,7 @@
     },
     {
         "id": "147",
+        "importid": "10147",
         "name": "シロコ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/4/4e/Shiroko_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/5/5d/Shiroko_%28Swimsuit%29_00.png",
@@ -3102,6 +3249,7 @@
     },
     {
         "id": "148",
+        "importid": "10148",
         "name": "ウイ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/6/60/Ui_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/d/d2/Ui_%28Swimsuit%29_diorama_00.png",
@@ -3124,6 +3272,7 @@
     },
     {
         "id": "149",
+        "importid": "10149",
         "name": "ヒナタ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/0/08/Hinata_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/6/6f/Hinata_%28Swimsuit%29_00.png",
@@ -3146,6 +3295,7 @@
     },
     {
         "id": "150",
+        "importid": "10150",
         "name": "コハル(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/d/df/Koharu_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/8/86/Koharu_%28Swimsuit%29_00.png",
@@ -3168,6 +3318,7 @@
     },
     {
         "id": "151",
+        "importid": "10151",
         "name": "ハナコ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/c/c5/Hanako_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/b/bd/Hanako_%28Swimsuit%29_00.png",
@@ -3190,6 +3341,7 @@
     },
     {
         "id": "152",
+        "importid": "10152",
         "name": "ミモリ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/2/22/Mimori_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/f/fb/Mimori_%28Swimsuit%29_diorama_00.png",
@@ -3212,6 +3364,7 @@
     },
     {
         "id": "153",
+        "importid": "10153",
         "name": "メル",
         "image": "https://static.wikitide.net/bluearchivewiki/4/4f/Meru.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/a/a7/Meru_00.png",
@@ -3233,6 +3386,7 @@
     },
     {
         "id": "154",
+        "importid": "10154",
         "name": "モミジ",
         "image": "https://static.wikitide.net/bluearchivewiki/5/53/Momiji.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/4/45/Momiji_00.png",
@@ -3254,6 +3408,7 @@
     },
     {
         "id": "155",
+        "importid": "10155",
         "name": "コトリ(応援団)",
         "image": "https://static.wikitide.net/bluearchivewiki/8/89/Kotori_%28Cheerleader%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/2/25/Kotori_%28Cheerleader%29_diorama_00.png",
@@ -3276,6 +3431,7 @@
     },
     {
         "id": "156",
+        "importid": "10156",
         "name": "ハルナ(体操服)",
         "image": "https://static.wikitide.net/bluearchivewiki/a/af/Haruna_%28Sportswear%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/0/0a/Haruna_%28Sportswear%29_diorama_00.png",
@@ -3298,6 +3454,7 @@
     },
     {
         "id": "157",
+        "importid": "10157",
         "name": "イチカ",
         "image": "https://static.wikitide.net/bluearchivewiki/b/b3/Ichika.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/e/e1/Ichika_00.png",
@@ -3320,6 +3477,7 @@
     },
     {
         "id": "158",
+        "importid": "10158",
         "name": "カスミ",
         "image": "https://static.wikitide.net/bluearchivewiki/6/6b/Kasumi.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/8/8a/Kasumi_00.png",
@@ -3341,6 +3499,7 @@
     },
     {
         "id": "159",
+        "importid": "10159",
         "name": "シグレ(温泉)",
         "image": "https://static.wikitide.net/bluearchivewiki/d/da/Shigure_%28Hot_Spring%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/2/26/Shigure_%28Hot_Spring%29_diorama_00.png",
@@ -3363,6 +3522,7 @@
     },
     {
         "id": "160",
+        "importid": "10160",
         "name": "御坂美琴",
         "image": "https://static.wikitide.net/bluearchivewiki/7/76/Misaka_Mikoto.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/a/ad/Misaka_Mikoto_00.png",
@@ -3384,6 +3544,7 @@
     },
     {
         "id": "161",
+        "importid": "10161",
         "name": "食蜂操祈",
         "image": "https://static.wikitide.net/bluearchivewiki/6/66/Shokuhou_Misaki.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/f/f7/Shokuhou_Misaki_00.png",
@@ -3405,6 +3566,7 @@
     },
     {
         "id": "162",
+        "importid": "10162",
         "name": "佐天涙子",
         "image": "https://static.wikitide.net/bluearchivewiki/b/b0/Saten_Ruiko.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/3/33/Saten_Ruiko_00.png",
@@ -3426,6 +3588,7 @@
     },
     {
         "id": "163",
+        "importid": "10163",
         "name": "ユカリ",
         "image": "https://static.wikitide.net/bluearchivewiki/2/2b/Yukari.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/5/52/Yukari_00.png",
@@ -3448,6 +3611,7 @@
     },
     {
         "id": "164",
+        "importid": "10164",
         "name": "レンゲ",
         "image": "https://static.wikitide.net/bluearchivewiki/e/e4/Renge.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/a/a1/Renge_00.png",
@@ -3470,6 +3634,7 @@
     },
     {
         "id": "165",
+        "importid": "10165",
         "name": "キキョウ",
         "image": "https://static.wikitide.net/bluearchivewiki/6/62/Kikyou.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/6/6c/Kikyou_00.png",
@@ -3492,6 +3657,7 @@
     },
     {
         "id": "166",
+        "importid": "10166",
         "name": "エイミ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/c/ce/Eimi_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/f/fc/Eimi_%28Swimsuit%29_diorama_00.png",
@@ -3514,6 +3680,7 @@
     },
     {
         "id": "167",
+        "importid": "10167",
         "name": "コタマ(キャンプ)",
         "image": "https://static.wikitide.net/bluearchivewiki/1/19/Kotama_%28Camping%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/0/05/Kotama_%28Camping%29_00.png",
@@ -3536,6 +3703,7 @@
     },
     {
         "id": "168",
+        "importid": "10168",
         "name": "ハレ(キャンプ)",
         "image": "https://static.wikitide.net/bluearchivewiki/a/a2/Hare_%28Camping%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/d/d5/Hare_%28Camping%29_00.png",
@@ -3560,6 +3728,7 @@
     },
     {
         "id": "169",
+        "importid": "10169",
         "name": "アコ(ドレス)",
         "image": "https://static.wikitide.net/bluearchivewiki/f/fc/Ako_%28Dress%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/4/4f/Ako_%28Dress%29_00.png",
@@ -3584,6 +3753,7 @@
     },
     {
         "id": "170",
+        "importid": "10170",
         "name": "イブキ",
         "image": "https://static.wikitide.net/bluearchivewiki/7/75/Ibuki.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/9/90/Ibuki_00.png",
@@ -3605,6 +3775,7 @@
     },
     {
         "id": "171",
+        "importid": "10171",
         "name": "マコト",
         "image": "https://static.wikitide.net/bluearchivewiki/2/20/Makoto.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/7/73/Makoto_00.png",
@@ -3626,6 +3797,7 @@
     },
     {
         "id": "172",
+        "importid": "10172",
         "name": "ヒナ(ドレス)",
         "image": "https://static.wikitide.net/bluearchivewiki/2/20/Hina_%28Dress%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/3/34/Hina_%28Dress%29_00.png",
@@ -3648,6 +3820,7 @@
     },
     {
         "id": "173",
+        "importid": "10173",
         "name": "カヨコ(ドレス)",
         "image": "https://static.wikitide.net/bluearchivewiki/9/9b/Kayoko_%28Dress%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/c/cf/Kayoko_%28Dress%29_00.png",
@@ -3670,6 +3843,7 @@
     },
     {
         "id": "174",
+        "importid": "10174",
         "name": "アル(ドレス)",
         "image": "https://static.wikitide.net/bluearchivewiki/1/1f/Aru_%28Dress%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/a/a3/Aru_%28Dress%29_00.png",
@@ -3694,6 +3868,7 @@
     },
     {
         "id": "175",
+        "importid": "10175",
         "name": "アカリ(正月)",
         "image": "https://static.wikitide.net/bluearchivewiki/a/ae/Akari_%28New_Year%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/8/84/Akari_%28New_Year%29_diorama_00.png",
@@ -3716,6 +3891,7 @@
     },
     {
         "id": "176",
+        "importid": "10176",
         "name": "ウミカ",
         "image": "https://static.wikitide.net/bluearchivewiki/e/e2/Umika.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/8/82/Umika_00.png",
@@ -3737,6 +3913,7 @@
     },
     {
         "id": "177",
+        "importid": "10177",
         "name": "ツバキ(ガイド)",
         "image": "https://static.wikitide.net/bluearchivewiki/e/ef/Tsubaki_%28Guide%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/3/32/Tsubaki_%28Guide%29_00.png",
@@ -3759,6 +3936,7 @@
     },
     {
         "id": "178",
+        "importid": "10178",
         "name": "カズサ(バンド)",
         "image": "https://static.wikitide.net/bluearchivewiki/3/36/Kazusa_%28Band%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/8/8c/Kazusa_%28Band%29_00.png",
@@ -3781,6 +3959,7 @@
     },
     {
         "id": "179",
+        "importid": "10179",
         "name": "ヨシミ(バンド)",
         "image": "https://static.wikitide.net/bluearchivewiki/c/ca/Yoshimi_%28Band%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/8/80/Yoshimi_%28Band%29_00.png",
@@ -3803,6 +3982,7 @@
     },
     {
         "id": "180",
+        "importid": "10180",
         "name": "アイリ(バンド)",
         "image": "https://static.wikitide.net/bluearchivewiki/c/c5/Airi_%28Band%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/f/fc/Airi_%28Band%29_00.png",
@@ -3825,6 +4005,7 @@
     },
     {
         "id": "181",
+        "importid": "10181",
         "name": "キララ",
         "image": "https://static.wikitide.net/bluearchivewiki/3/3f/Kirara.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/f/ff/Kirara_00.png",
@@ -3846,6 +4027,7 @@
     },
     {
         "id": "182",
+        "importid": "10182",
         "name": "モモイ(メイド)",
         "image": "https://static.wikitide.net/bluearchivewiki/3/31/Momoi_%28Maid%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/3/3e/Momoi_%28Maid%29_diorama_00.png",
@@ -3868,6 +4050,7 @@
     },
     {
         "id": "183",
+        "importid": "10183",
         "name": "ミドリ(メイド)",
         "image": "https://static.wikitide.net/bluearchivewiki/2/29/Midori_%28Maid%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/7/73/Midori_%28Maid%29_00.png",
@@ -3890,6 +4073,7 @@
     },
     {
         "id": "184",
+        "importid": "10184",
         "name": "セリカ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/0/0f/Serika_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/0/0c/Serika_%28Swimsuit%29_00.png",
@@ -3912,6 +4096,7 @@
     },
     {
         "id": "185",
+        "importid": "10185",
         "name": "カンナ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/8/83/Kanna_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/e/e7/Kanna_%28Swimsuit%29_00.png",
@@ -3936,6 +4121,7 @@
     },
     {
         "id": "186",
+        "importid": "10186",
         "name": "フブキ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/3/34/Fubuki_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/d/d5/Fubuki_%28Swimsuit%29_diorama_00.png",
@@ -3958,6 +4144,7 @@
     },
     {
         "id": "187",
+        "importid": "10187",
         "name": "キリノ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/c/cc/Kirino_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/e/e0/Kirino_%28Swimsuit%29_00.png",
@@ -3980,6 +4167,7 @@
     },
     {
         "id": "188",
+        "importid": "10188",
         "name": "モエ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/7/77/Moe_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/0/04/Moe_%28Swimsuit%29_00.png",
@@ -4002,6 +4190,7 @@
     },
     {
         "id": "189",
+        "importid": "10189",
         "name": "ホシノ(臨戦)1",
         "image": "https://static.wikitide.net/bluearchivewiki/a/a2/Hoshino_%28Battle%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/5/50/Hoshino_%28Battle%29_00.png",
@@ -4027,6 +4216,7 @@
     },
     {
         "id": "190",
+        "importid": "10190",
         "name": "ホシノ(臨戦)2",
         "image": "https://static.wikitide.net/bluearchivewiki/a/a2/Hoshino_%28Battle%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/d/de/Hoshino_%28Battle%2C_shotgun%29_00.png",
@@ -4049,6 +4239,7 @@
     },
     {
         "id": "191",
+        "importid": "10191",
         "name": "シロコ＊テラー",
         "image": "https://static.wikitide.net/bluearchivewiki/f/f9/Shiroko%EF%BC%8ATerror.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/6/69/Shiroko%EF%BC%8ATerror_00.png",
@@ -4071,6 +4262,7 @@
     },
     {
         "id": "192",
+        "importid": "10192",
         "name": "アツコ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/1/1b/Atsuko_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/9/91/Atsuko_%28Swimsuit%29_00.png",
@@ -4095,6 +4287,7 @@
     },
     {
         "id": "193",
+        "importid": "10193",
         "name": "サオリ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/5/54/Saori_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/9/9f/Saori_%28Swimsuit%29_00.png",
@@ -4117,6 +4310,7 @@
     },
     {
         "id": "194",
+        "importid": "10194",
         "name": "ヒヨリ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/5/53/Hiyori_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/3/3f/Hiyori_%28Swimsuit%29_00.png",
@@ -4139,6 +4333,7 @@
     },
     {
         "id": "195",
+        "importid": "10195",
         "name": "マリナ(チーパオ)",
         "image": "https://static.wikitide.net/bluearchivewiki/6/6a/Marina_%28Qipao%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/b/bb/Marina_%28Qipao%29_00.png",
@@ -4161,6 +4356,7 @@
     },
     {
         "id": "196",
+        "importid": "10196",
         "name": "トモエ(チーパオ)",
         "image": "https://static.wikitide.net/bluearchivewiki/2/2d/Tomoe_%28Qipao%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/7/73/Tomoe_%28Qipao%29_00.png",
@@ -4183,6 +4379,7 @@
     },
     {
         "id": "197",
+        "importid": "10197",
         "name": "レイジョ",
         "image": "https://static.wikitide.net/bluearchivewiki/4/4d/Reijo.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/8/8b/Reijo_00.png",
@@ -4206,6 +4403,7 @@
     },
     {
         "id": "198",
+        "importid": "10198",
         "name": "キサキ",
         "image": "https://static.wikitide.net/bluearchivewiki/5/55/Kisaki.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/0/0b/Kisaki_00.png",
@@ -4229,6 +4427,7 @@
     },
     {
         "id": "199",
+        "importid": "10199",
         "name": "マリー(アイドル)",
         "image": "https://static.wikitide.net/bluearchivewiki/f/f6/Mari_%28Idol%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/0/00/Mari_%28Idol%29_00.png",
@@ -4253,6 +4452,7 @@
     },
     {
         "id": "200",
+        "importid": "10200",
         "name": "サクラコ(アイドル)",
         "image": "https://static.wikitide.net/bluearchivewiki/2/27/Sakurako_%28Idol%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/e/e5/Sakurako_%28Idol%29_00.png",
@@ -4277,6 +4477,7 @@
     },
     {
         "id": "201",
+        "importid": "10201",
         "name": "ミネ(アイドル)",
         "image": "https://static.wikitide.net/bluearchivewiki/2/29/Mine_%28Idol%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/8/82/Mine_%28Idol%29_00.png",
@@ -4299,6 +4500,7 @@
     },
     {
         "id": "202",
+        "importid": "10202",
         "name": "チアキ",
         "image": "https://static.wikitide.net/bluearchivewiki/a/a4/Chiaki.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/2/21/Chiaki_00.png",
@@ -4320,6 +4522,7 @@
     },
     {
         "id": "203",
+        "importid": "10203",
         "name": "サツキ",
         "image": "https://static.wikitide.net/bluearchivewiki/e/e9/Satsuki.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/d/dd/Satsuki_00.png",
@@ -4341,6 +4544,7 @@
     },
     {
         "id": "204",
+        "importid": "10204",
         "name": "ユウカ(パジャマ)",
         "image": "https://static.wikitide.net/bluearchivewiki/a/ad/Yuuka_%28Pajama%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/d/dd/Yuuka_%28Pajama%29_00.png",
@@ -4363,6 +4567,7 @@
     },
     {
         "id": "205",
+        "importid": "10205",
         "name": "ノア(パジャマ)",
         "image": "https://static.wikitide.net/bluearchivewiki/1/14/Noa_%28Pajama%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/5/5d/Noa_%28Pajama%29_00.png",
@@ -4385,6 +4590,7 @@
     },
     {
         "id": "206",
+        "importid": "10206",
         "name": "セイア",
         "image": "https://static.wikitide.net/bluearchivewiki/4/46/Seia.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/7/74/Seia_00.png",
@@ -4407,6 +4613,7 @@
     },
     {
         "id": "207",
+        "importid": "10207",
         "name": "アスナ(制服)",
         "image": "https://static.wikitide.net/bluearchivewiki/0/01/Asuna_%28School_Uniform%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/7/78/Asuna_%28School_Uniform%29_00.png",
@@ -4431,6 +4638,7 @@
     },
     {
         "id": "208",
+        "importid": "10208",
         "name": "カリン(制服)",
         "image": "https://static.wikitide.net/bluearchivewiki/d/d1/Karin_%28School_Uniform%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/6/6d/Karin_%28School_Uniform%29_00.png",
@@ -4453,6 +4661,7 @@
     },
     {
         "id": "209",
+        "importid": "10209",
         "name": "ネル(制服)",
         "image": "https://static.wikitide.net/bluearchivewiki/1/16/Neru_%28School_Uniform%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/5/54/Neru_%28School_Uniform%29_00.png",
@@ -4475,6 +4684,7 @@
     },
     {
         "id": "210",
+        "importid": "10210",
         "name": "リオ",
         "image": "https://static.wikitide.net/bluearchivewiki/4/4a/Rio.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/b/b2/Rio_00.png",
@@ -4498,6 +4708,7 @@
     },
     {
         "id": "211",
+        "importid": "10211",
         "name": "マキ(キャンプ)",
         "image": "https://static.wikitide.net/bluearchivewiki/2/21/Maki_%28Camping%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/2/26/Maki_%28Camping%29_00.png",
@@ -4520,6 +4731,7 @@
     },
     {
         "id": "212",
+        "importid": "10212",
         "name": "セナ(私服)",
         "image": "https://static.wikitide.net/bluearchivewiki/b/b4/Sena_%28Casual%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/8/81/Sena_%28Casual%29_diorama_00.png",
@@ -4543,6 +4755,7 @@
     },
     {
         "id": "213",
+        "importid": "10213",
         "name": "ジュリ(アルバイト)",
         "image": "https://static.wikitide.net/bluearchivewiki/3/33/Juri_%28Part-Timer%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/e/ed/Juri_%28Part-Timer%29_00.png",
@@ -4565,6 +4778,7 @@
     },
     {
         "id": "214",
+        "importid": "10214",
         "name": "イズミ(正月)",
         "image": "https://static.wikitide.net/bluearchivewiki/e/e3/Izumi_%28New_Year%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/b/b0/Izumi_%28New_Year%29_00.png",
@@ -4586,6 +4800,7 @@
     },
     {
         "id": "215",
+        "importid": "10215",
         "name": "レイ",
         "image": "https://static.wikitide.net/bluearchivewiki/a/a3/Rei.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/e/e3/Rei_00.png",
@@ -4607,6 +4822,7 @@
     },
     {
         "id": "216",
+        "importid": "10216",
         "name": "スミレ(アルバイト)",
         "image": "https://static.wikitide.net/bluearchivewiki/6/66/Sumire_%28Part-Timer%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/5/5e/Sumire_%28Part-Timer%29_00.png",
@@ -4629,6 +4845,7 @@
     },
     {
         "id": "217",
+        "importid": "10217",
         "name": "サオリ(ドレス)",
         "image": "https://static.wikitide.net/bluearchivewiki/e/e4/Saori_%28Dress%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/f/ff/Saori_%28Dress%29_00.png",
@@ -4651,6 +4868,7 @@
     },
     {
         "id": "218",
+        "importid": "10218",
         "name": "ヒカリ",
         "image": "https://static.wikitide.net/bluearchivewiki/e/ee/Hikari.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/7/7b/Hikari_00.png",
@@ -4673,6 +4891,7 @@
     },
     {
         "id": "219",
+        "importid": "10219",
         "name": "ノゾミ",
         "image": "https://static.wikitide.net/bluearchivewiki/0/0b/Nozomi.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/8/87/Nozomi_00.png",
@@ -4694,6 +4913,7 @@
     },
     {
         "id": "220",
+        "importid": "10220",
         "name": "アオバ",
         "image": "https://static.wikitide.net/bluearchivewiki/4/42/Aoba.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/4/45/Aoba_00.png",
@@ -4715,6 +4935,7 @@
     },
     {
         "id": "221",
+        "importid": "10221",
         "name": "フィーナ(ガイド)",
         "image": "https://static.wikitide.net/bluearchivewiki/e/e5/Pina_%28Guide%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/e/e6/Pina_%28Guide%29_00.png",
@@ -4737,6 +4958,7 @@
     },
     {
         "id": "222",
+        "importid": "10222",
         "name": "ナグサ",
         "image": "https://static.wikitide.net/bluearchivewiki/b/bb/Nagusa.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/4/4f/Nagusa_diorama_00.png",
@@ -4758,6 +4980,7 @@
     },
     {
         "id": "223",
+        "importid": "10223",
         "name": "ニヤ",
         "image": "https://static.wikitide.net/bluearchivewiki/0/07/Niya.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/0/06/Niya_00.png",
@@ -4779,6 +5002,7 @@
     },
     {
         "id": "224",
+        "importid": "10224",
         "name": "ナツ(バンド)",
         "image": "https://static.wikitide.net/bluearchivewiki/0/0a/Natsu_%28Band%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/3/30/Natsu_%28Band%29_00.png",
@@ -4801,6 +5025,7 @@
     },
     {
         "id": "225",
+        "importid": "10225",
         "name": "ユカリ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/c/c9/Yukari_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/5/57/Yukari_%28Swimsuit%29_00.png",
@@ -4823,6 +5048,7 @@
     },
     {
         "id": "226",
+        "importid": "10226",
         "name": "レンゲ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/2/2f/Renge_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/7/79/Renge_%28Swimsuit%29_00.png",
@@ -4845,6 +5071,7 @@
     },
     {
         "id": "227",
+        "importid": "10227",
         "name": "キキョウ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/4/49/Kikyou_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/c/c5/Kikyou_%28Swimsuit%29_00.png",
@@ -4867,6 +5094,7 @@
     },
     {
         "id": "228",
+        "importid": "10228",
         "name": "セイア(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/f/f5/Seia_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/7/79/Seia_%28Swimsuit%29_00.png",
@@ -4890,6 +5118,7 @@
     },
     {
         "id": "229",
+        "importid": "10229",
         "name": "ハスミ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/6/62/Hasumi_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/b/b6/Hasumi_%28Swimsuit%29_00.png",
@@ -4912,6 +5141,7 @@
     },
     {
         "id": "230",
+        "importid": "10230",
         "name": "イチカ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/2/24/Ichika_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/6/6f/Ichika_%28Swimsuit%29_00.png",
@@ -4934,6 +5164,7 @@
     },
     {
         "id": "231",
+        "importid": "10231",
         "name": "ナギサ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/d/d4/Nagisa_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/b/b0/Nagisa_%28Swimsuit%29_00.png",
@@ -4957,6 +5188,7 @@
     },
     {
         "id": "232",
+        "importid": "10232",
         "name": "ミカ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/6/6e/Mika_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/3/33/Mika_%28Swimsuit%29_00.png",
@@ -4979,6 +5211,7 @@
     },
     {
         "id": "233",
+        "importid": "10233",
         "name": "エリ",
         "image": "https://static.wikitide.net/bluearchivewiki/d/da/Eri.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/0/00/Eri_00.png",
@@ -5000,6 +5233,7 @@
     },
     {
         "id": "234",
+        "importid": "10234",
         "name": "カノエ",
         "image": "https://static.wikitide.net/bluearchivewiki/a/a7/Kanoe.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/4/42/Kanoe_00.png",
@@ -5021,6 +5255,7 @@
     },
     {
         "id": "235",
+        "importid": "10235",
         "name": "ミサキ(水着)",
         "image": "https://static.wikitide.net/bluearchivewiki/2/2b/Misaki_%28Swimsuit%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/3/30/Misaki_%28Swimsuit%29_00.png",
@@ -5043,6 +5278,7 @@
     },
     {
         "id": "236",
+        "importid": "10236",
         "name": "ミヨ",
         "image": "https://static.wikitide.net/bluearchivewiki/7/7b/Miyo.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/e/ee/Miyo_00.png",
@@ -5064,6 +5300,7 @@
     },
     {
         "id": "237",
+        "importid": "10237",
         "name": "フユ",
         "image": "https://static.wikitide.net/bluearchivewiki/a/a9/Fuyu.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/6/6f/Fuyu_00.png",
@@ -5085,6 +5322,7 @@
     },
     {
         "id": "238",
+        "importid": "10238",
         "name": "リツ",
         "image": "https://static.wikitide.net/bluearchivewiki/c/c8/Ritsu.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/4/4f/Ritsu_00.png",
@@ -5106,6 +5344,7 @@
     },
     {
         "id": "239",
+        "importid": "10239",
         "name": "レイサ(マジカル)",
         "image": "https://static.wikitide.net/bluearchivewiki/6/67/Reisa_%28Magical%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/d/da/Reisa_%28Magical%29_00.png",
@@ -5128,6 +5367,7 @@
     },
     {
         "id": "240",
+        "importid": "10240",
         "name": "スズミ(マジカル)",
         "image": "https://static.wikitide.net/bluearchivewiki/5/54/Suzumi_%28Magical%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/6/6e/Suzumi_%28Magical%29_00.png",
@@ -5152,6 +5392,7 @@
     },
     {
         "id": "241",
+        "importid": "10241",
         "name": "ラブ",
         "image": "https://static.wikitide.net/bluearchivewiki/0/09/Rabu.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/6/6a/Rabu_00.png",
@@ -5173,6 +5414,7 @@
     },
     {
         "id": "242",
+        "importid": "10242",
         "name": "スバル",
         "image": "https://static.wikitide.net/bluearchivewiki/c/c3/Subaru.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/b/b2/Subaru_00.png",
@@ -5194,6 +5436,7 @@
     },
     {
         "id": "243",
+        "importid": "10243",
         "name": "タカネ",
         "image": "https://static.wikitide.net/bluearchivewiki/0/0a/Takane.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/3/3f/Takane_00.png",
@@ -5215,6 +5458,7 @@
     },
     {
         "id": "244",
+        "importid": "10244",
         "name": "ヤクモ",
         "image": "https://static.wikitide.net/bluearchivewiki/b/ba/Yakumo.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/1/13/Yakumo_00.png",
@@ -5236,6 +5480,7 @@
     },
     {
         "id": "245",
+        "importid": "10245",
         "name": "ツクヨ(ドレス)",
         "image": "https://static.wikitide.net/bluearchivewiki/e/ef/Tsukuyo_%28Dress%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/c/ca/Tsukuyo_%28Dress%29_00.png",
@@ -5260,6 +5505,7 @@
     },
     {
         "id": "246",
+        "importid": "10246",
         "name": "ミチル(ドレス)",
         "image": "https://static.wikitide.net/bluearchivewiki/3/32/Michiru_%28Dress%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/a/a5/Michiru_%28Dress%29_00.png",
@@ -5282,6 +5528,7 @@
     },
     {
         "id": "247",
+        "importid": "10247",
         "name": "リオ(臨戦)",
         "image": "https://static.wikitide.net/bluearchivewiki/5/5b/Rio_%28Battle%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/f/f5/Rio_%28Battle%29_00.png",
@@ -5304,6 +5551,7 @@
     },
     {
         "id": "248",
+        "importid": "10248",
         "name": "ヒマリ(臨戦)",
         "image": "https://static.wikitide.net/bluearchivewiki/e/ef/Himari_%28Battle%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/b/b9/Himari_%28Battle%29_00.png",
@@ -5326,6 +5574,7 @@
     },
     {
         "id": "249",
+        "importid": "10249",
         "name": "ケイ",
         "image": "https://static.wikitide.net/bluearchivewiki/3/32/Michiru_%28Dress%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/a/a5/Michiru_%28Dress%29_00.png",
@@ -5347,6 +5596,7 @@
     },
     {
         "id": "250",
+        "importid": "10250",
         "name": "アリス(臨戦)",
         "image": "https://static.wikitide.net/bluearchivewiki/3/32/Michiru_%28Dress%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/a/a5/Michiru_%28Dress%29_00.png",
@@ -5369,6 +5619,7 @@
     },
     {
         "id": "251",
+        "importid": "10251",
         "name": "ユズ(臨戦)",
         "image": "https://static.wikitide.net/bluearchivewiki/3/32/Michiru_%28Dress%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/a/a5/Michiru_%28Dress%29_00.png",
@@ -5390,6 +5641,7 @@
     },
     {
         "id": "252",
+        "importid": "10252",
         "name": "エイミ(臨戦)",
         "image": "https://static.wikitide.net/bluearchivewiki/3/32/Michiru_%28Dress%29.png",
         "imageFull": "https://static.wikitide.net/bluearchivewiki/a/a5/Michiru_%28Dress%29_00.png",

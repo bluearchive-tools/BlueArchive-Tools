@@ -146,7 +146,7 @@ export default function StudentUserData({
   }, [])
   const loadData = async () => {
     const student = students.find((s) => s.id === studentId)
-    const mainId = student?.styleOf || student?.altOf || studentId
+    const mainId = student?.styleOf || studentId
     if (session) {
       let { data } = await supabase
         .from('user_students')
@@ -199,7 +199,7 @@ export default function StudentUserData({
 
   const student = students.find((s) => s.id === studentId)
 
-  const baseId = student?.styleOf || student?.altOf || studentId
+  const baseId = student?.styleOf || studentId
 
   const isRegistered = !!data
 

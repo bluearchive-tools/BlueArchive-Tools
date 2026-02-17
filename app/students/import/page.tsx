@@ -8,6 +8,7 @@ import PageHelpButton from '../../../components/PageHelpButton'
 interface Student {
   id: string
   name: string
+  importid?: string
 }
 
 interface MatchedStudent extends Student {
@@ -62,6 +63,59 @@ const emptyStats = {
   item_tier: 0,
   alt_bonds: {},
 }
+
+type SchaleStudentRecord = Record<string, number | boolean | null>
+
+type SchalePayload = Record<string, SchaleStudentRecord>
+
+const decodeSchalePayload = (raw: string): SchalePayload => {
+  const trimmed = raw.trim()
+  if (!trimmed) throw new Error('文字列を入力してください。')
+
+  try {
+    return JSON.parse(trimmed) as SchalePayload
+  } catch {
+    // base64 fallback
+  }
+
+  const normalized = trimmed.replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/')
+  const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4)
+  const decoded = atob(padded)
+  return JSON.parse(decoded) as SchalePayload
+}
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, value))
+
+const toSchaleEntry = (
+  student: Student,
+  sourceId: string,
+  row: SchaleStudentRecord
+): ExtractedStudent => ({
+  studentId: student.id,
+  name: student.name,
+  level: Number(row.l ?? 1),
+  star: Number(row.s ?? 1),
+  bond: Number(row.b ?? 0),
+  hp: null,
+  hpWb: Number(row.ph ?? 0),
+  attack: null,
+  attackWb: Number(row.pa ?? 0),
+  defense: null,
+  heal: null,
+  healWb: Number(row.pm ?? 0),
+  exSkill: Number(row.s1 ?? 1),
+  normalSkill: Number(row.s2 ?? 1),
+  passiveSkill: Number(row.s3 ?? 1),
+  subSkill: Number(row.s4 ?? 1),
+  weaponLevel: Number(row.wl ?? 0),
+  weaponStar: clamp(Number(row.ws ?? 0), 0, 5),
+  equip1: Number(row.e1 ?? 1),
+  equip2: Number(row.e2 ?? 1),
+  equip3: Number(row.e3 ?? 1),
+  loveTier: Number(row.e4 ?? 0),
+  source: `SchaleDB:${sourceId}`,
+})
 
 const parseNumber = (line: string, patterns: RegExp[]) => {
   const normalized = normalizeOcrNumber(line)
@@ -605,6 +659,8 @@ export default function StudentImportPage() {
     'deepseek-v1' | 'deepseek-v2'
   >('deepseek-v1')
   const [saving, setSaving] = useState(false)
+  const [schaleInput, setSchaleInput] = useState('')
+  const [schaleMessage, setSchaleMessage] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -620,6 +676,54 @@ export default function StudentImportPage() {
     }
     load()
   }, [])
+
+  const handleSchaleImport = useCallback(() => {
+    if (students.length === 0) {
+      setError('生徒データの読み込みが完了していません。少し待ってから再試行してください。')
+      return
+    }
+    setError(null)
+    setSchaleMessage(null)
+
+    try {
+      const payload = decodeSchalePayload(schaleInput)
+      const byImportId = new Map(
+        students
+          .filter((student) => !!student.importid)
+          .map((student) => [student.importid as string, student] as const)
+      )
+
+      const imported: ExtractedStudent[] = []
+      let skipped = 0
+
+      for (const [importId, row] of Object.entries(payload)) {
+        const student = byImportId.get(importId)
+        if (!student) {
+          skipped += 1
+          continue
+        }
+        imported.push(toSchaleEntry(student, importId, row))
+      }
+
+      if (imported.length === 0) {
+        setError('一致する生徒が見つかりませんでした。importid を確認してください。')
+        return
+      }
+
+      const dedup = new Map(imported.map((entry) => [entry.studentId, entry]))
+      setEntries(Array.from(dedup.values()))
+      setRawTexts([])
+      setStatus('done')
+      setProgress(0)
+      setSchaleMessage(
+        skipped > 0
+          ? `SchaleDBデータを ${dedup.size} 件取り込みました（未対応ID ${skipped} 件をスキップ）。`
+          : `SchaleDBデータを ${dedup.size} 件取り込みました。`
+      )
+    } catch {
+      setError('SchaleDBの文字列を読み取れませんでした。JSONまたはBase64文字列を確認してください。')
+    }
+  }, [schaleInput, students])
 
   const handleFiles = useCallback(
     async (files: FileList | null) => {
@@ -884,6 +988,31 @@ export default function StudentImportPage() {
         </p>
         <p className="text-xs text-gray-500 whitespace-pre-line">{splitNote}</p>
       </div>
+      <div className="border rounded p-4 space-y-3">
+        <h3 className="text-base font-semibold">SchaleDBインポート</h3>
+        <p className="text-sm text-gray-600">
+          SchaleDBのエクスポート文字列（JSONまたはBase64）を貼り付けると、生徒データへ変換して下の表に展開します。
+        </p>
+        <textarea
+          value={schaleInput}
+          onChange={(e) => setSchaleInput(e.target.value)}
+          placeholder="ここにSchaleDBのエクスポート文字列を貼り付け"
+          className="w-full min-h-28 border rounded p-2"
+          disabled={isProcessing || saving}
+        />
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleSchaleImport}
+            disabled={isProcessing || saving}
+            className="border rounded px-3 py-1 bg-blue-600 text-white disabled:opacity-50"
+          >
+            SchaleDB文字列を取り込み
+          </button>
+          {schaleMessage && <span className="text-sm text-gray-600">{schaleMessage}</span>}
+        </div>
+      </div>
+
       <div className="border rounded p-4 space-y-3">
         <div className="space-y-2">
           <p className="text-sm font-medium text-gray-700">OCRエンジン</p>
