@@ -890,6 +890,16 @@
       "endDate": "2026-01-07"
     },
     {
+      "number": "S86",
+      "boss": "ビナー",
+      "terrain": "屋外",
+      "type": "総力戦",
+      "defenseArmors": ["重装甲"],
+      "maxDifficulty": "Lunatic",
+      "startDate": "2026-02-18",
+      "endDate": "2026-02-25"
+    },
+    {
       "number": "BD1",
       "boss": "ビナー",
       "terrain": "市街地",
