@@ -57,12 +57,37 @@
     }
   },
   "trainingPlanning": {
-    "description": "育成に必要な3つの計算機へすぐにアクセスできます。",
-    "starCalcTitle": "星上げ計算機",
-    "starCalcDescription": "神名文字計算機で、目標到達までの必要素材を確認します。",
-    "bondCalcTitle": "絆上げ計算機",
-    "bondCalcDescription": "絆レベル上げに必要な素材と不足分を試算します。",
-    "levelCalcTitle": "レベル上げ計算機",
-    "levelCalcDescription": "経験値不足分と活動報告書の周回目安を確認します。"
+    "description": "生徒の現在ステータスと目標ステータスを比較し、必要素材を自動計算します。",
+    "studentLabel": "対象生徒",
+    "currentStatusTitle": "現在ステータス（保存データ）",
+    "targetStatusTitle": "目標ステータス（自由入力）",
+    "resultTitle": "必要素材の計算結果",
+    "sections": {
+      "star": "星上げ",
+      "level": "レベル上げ",
+      "bond": "絆上げ",
+      "skill": "スキル強化",
+      "equipment": "装備強化"
+    },
+    "starRequired": "必要神名文字: {value}",
+    "levelRequiredExp": "必要経験値: {value}",
+    "levelRuns": "推奨周回: {stage} を約 {value} 周",
+    "bondRequiredPoint": "必要絆ポイント: {value}",
+    "bondRuns": "推奨周回: {stage} を約 {value} 周",
+    "skillRequiredExp": "必要スキル経験値: {value}",
+    "equipRequiredExp": "必要装備経験値: {value}",
+    "materialsLine": "目安素材(T1/T2/T3/T4): {t1} / {t2} / {t3} / {t4}",
+    "labels": {
+      "star": "星",
+      "level": "レベル",
+      "bond": "絆",
+      "equip1": "装備1",
+      "equip2": "装備2",
+      "equip3": "装備3",
+      "exSkill": "EXスキル",
+      "normalSkill": "ノーマルスキル",
+      "passiveSkill": "パッシブスキル",
+      "subSkill": "サブスキル"
+    }
   }
 }

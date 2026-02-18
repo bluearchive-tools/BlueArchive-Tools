@@ -57,12 +57,37 @@
     }
   },
   "trainingPlanning": {
-    "description": "Quickly access three calculators for student growth planning.",
-    "starCalcTitle": "Star calculator",
-    "starCalcDescription": "Use the Eleph calculator to check required materials toward your goal.",
-    "bondCalcTitle": "Bond calculator",
-    "bondCalcDescription": "Estimate bond materials and shortages for your target level.",
-    "levelCalcTitle": "Level calculator",
-    "levelCalcDescription": "Check EXP shortages and report farming estimates."
+    "description": "Compare current and target status, then automatically estimate required materials.",
+    "studentLabel": "Student",
+    "currentStatusTitle": "Current status (saved data)",
+    "targetStatusTitle": "Target status (editable)",
+    "resultTitle": "Required materials",
+    "sections": {
+      "star": "Star",
+      "level": "Level",
+      "bond": "Bond",
+      "skill": "Skill",
+      "equipment": "Equipment"
+    },
+    "starRequired": "Required Eleph: {value}",
+    "levelRequiredExp": "Required EXP: {value}",
+    "levelRuns": "Recommended runs: about {value} at {stage}",
+    "bondRequiredPoint": "Required bond points: {value}",
+    "bondRuns": "Recommended runs: about {value} at {stage}",
+    "skillRequiredExp": "Required skill EXP: {value}",
+    "equipRequiredExp": "Required equipment EXP: {value}",
+    "materialsLine": "Estimated materials (T1/T2/T3/T4): {t1} / {t2} / {t3} / {t4}",
+    "labels": {
+      "star": "Star",
+      "level": "Level",
+      "bond": "Bond",
+      "equip1": "Equipment 1",
+      "equip2": "Equipment 2",
+      "equip3": "Equipment 3",
+      "exSkill": "EX Skill",
+      "normalSkill": "Normal Skill",
+      "passiveSkill": "Passive Skill",
+      "subSkill": "Sub Skill"
+    }
   }
 }
