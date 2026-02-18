@@ -63,7 +63,15 @@
         },
         "bondCalc": {
           "title": "絆上げ計算機",
-          "description": "絆レベル上げに必要なアイテム数を計算します"
+          "description": "絆上げに必要量・不足量・推奨周回を計算します"
+        },
+        "trainingPlanning": {
+          "title": "育成プランニング",
+          "description": "星上げ・絆上げ・レベル上げ計算機をまとめて利用できます"
+        },
+        "levelCalc": {
+          "title": "レベル上げ計算機",
+          "description": "レベル上げに必要なレポート数と周回目安を計算します"
         }
       }
     },

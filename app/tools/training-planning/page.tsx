@@ -1,0 +1,574 @@
+'use client'
+
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
+import { useTranslations } from 'next-intl'
+import StudentSelect from '../../../components/StudentSelect'
+import PageHelpButton from '../../../components/PageHelpButton'
+import {
+  calculateElephExchange,
+  calculateTrainingPlan,
+  maxTargetStatus,
+  normalizeStatus,
+  type TrainingStatus,
+} from '../../../lib/training-planning'
+
+type Student = {
+  id: string
+  name: string
+  image: string
+  imageFull?: string
+  attackType: string
+  defenseType: string
+  hasAccessory?: boolean
+  styleIds?: string[]
+  styleOf?: string
+  altIds?: string[]
+  altOf?: string
+  initialStars: number
+  role: string
+  characterType: string
+  position: string
+}
+
+type DetailSetting = {
+  ownedEleph: number
+  rate: number
+  remaining: number
+}
+
+type PlanRow = {
+  id: string
+  studentId: string
+  studentName: string
+  current: TrainingStatus
+  target: TrainingStatus
+  detail: DetailSetting
+}
+
+const LS_KEY = 'training-planning.v2'
+
+const INPUT_ROWS: Array<{ key: keyof TrainingStatus; min: number; max: number; label: string }> = [
+  { key: 'star', min: 1, max: 5, label: 'star' },
+  { key: 'uniqueStar', min: 0, max: 4, label: 'uniqueStar' },
+  { key: 'level', min: 1, max: 90, label: 'level' },
+  { key: 'bond', min: 1, max: 100, label: 'bond' },
+  { key: 'equip1', min: 1, max: 70, label: 'equip1' },
+  { key: 'equip2', min: 1, max: 70, label: 'equip2' },
+  { key: 'equip3', min: 1, max: 70, label: 'equip3' },
+  { key: 'exSkill', min: 1, max: 5, label: 'exSkill' },
+  { key: 'normalSkill', min: 1, max: 10, label: 'normalSkill' },
+  { key: 'passiveSkill', min: 1, max: 10, label: 'passiveSkill' },
+  { key: 'subSkill', min: 1, max: 10, label: 'subSkill' },
+]
+
+function parseJson(raw: string | null) {
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as unknown
+  } catch {
+    return null
+  }
+}
+
+function toNum(v: unknown, fallback: number) {
+  return typeof v === 'number' && Number.isFinite(v) ? v : fallback
+}
+
+function toInt(v: number) {
+  return Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0
+}
+
+function statusFromRow(row: Record<string, unknown>): Partial<TrainingStatus> {
+  return {
+    star: toNum(row.star, 1),
+    uniqueStar: toNum(row.unique_star, 0),
+    level: toNum(row.level, 1),
+    bond: toNum(row.bond, 1),
+    equip1: toNum(row.equip1, 1),
+    equip2: toNum(row.equip2, 1),
+    equip3: toNum(row.equip3, 1),
+    exSkill: toNum(row.ex_skill, 1),
+    normalSkill: toNum(row.normal_skill, 1),
+    passiveSkill: toNum(row.passive_skill, 1),
+    subSkill: toNum(row.sub_skill, 1),
+  }
+}
+
+export default function TrainingPlanningPage() {
+  const tHome = useTranslations('home')
+  const t = useTranslations('common.trainingPlanning')
+  const session = useSession()
+  const supabase = useSupabaseClient()
+
+  const [students, setStudents] = useState<Student[]>([])
+  const [plans, setPlans] = useState<PlanRow[]>([])
+  const [editingPlanId, setEditingPlanId] = useState<string | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [addOpen, setAddOpen] = useState(false)
+  const [addingStudentId, setAddingStudentId] = useState('')
+
+  const editingPlan = useMemo(() => plans.find((p) => p.id === editingPlanId) ?? null, [plans, editingPlanId])
+
+  const loadStudentStatus = useCallback(
+    async (studentId: string, initialStars: number): Promise<TrainingStatus> => {
+      const apply = (row: Record<string, unknown>) => normalizeStatus(statusFromRow(row))
+
+      if (session) {
+        const { data } = await supabase
+          .from('user_students')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('student_id', studentId)
+          .maybeSingle()
+        if (data && typeof data === 'object') return apply(data as Record<string, unknown>)
+      }
+
+      const raw = parseJson(localStorage.getItem(`userStudent:${studentId}`))
+      if (raw && typeof raw === 'object') return apply(raw as Record<string, unknown>)
+
+      return normalizeStatus({ star: Math.max(1, initialStars), uniqueStar: 0, level: 1, bond: 1 })
+    },
+    [session, supabase]
+  )
+
+  useEffect(() => {
+    const run = async () => {
+      const res = await fetch('/api/students')
+      if (!res.ok) return
+      const json: unknown = await res.json()
+      if (!Array.isArray(json)) return
+      const list: Student[] = json.map((s) => ({
+        id: String(s.id ?? ''),
+        name: String(s.name ?? ''),
+        image: typeof s.image === 'string' ? s.image : '',
+        imageFull: typeof s.imageFull === 'string' ? s.imageFull : undefined,
+        attackType: typeof s.attackType === 'string' ? s.attackType : '',
+        defenseType: typeof s.defenseType === 'string' ? s.defenseType : '',
+        hasAccessory: typeof s.hasAccessory === 'boolean' ? s.hasAccessory : undefined,
+        styleIds: Array.isArray(s.styleIds) ? (s.styleIds as string[]) : undefined,
+        styleOf: typeof s.styleOf === 'string' ? s.styleOf : undefined,
+        altIds: Array.isArray(s.altIds) ? (s.altIds as string[]) : undefined,
+        altOf: typeof s.altOf === 'string' ? s.altOf : undefined,
+        initialStars: typeof s.initialStars === 'number' ? s.initialStars : 1,
+        role: typeof s.role === 'string' ? s.role : '',
+        characterType: typeof s.characterType === 'string' ? s.characterType : '',
+        position: typeof s.position === 'string' ? s.position : '',
+      }))
+      setStudents(list)
+
+      const saved = parseJson(localStorage.getItem(LS_KEY))
+      if (saved && typeof saved === 'object') {
+        const obj = saved as Record<string, unknown>
+        const rawPlans = Array.isArray(obj.plans) ? obj.plans : []
+        const restored: PlanRow[] = rawPlans
+          .filter((v): v is Record<string, unknown> => !!v && typeof v === 'object')
+          .map((v) => ({
+            id: String(v.id ?? crypto.randomUUID()),
+            studentId: String(v.studentId ?? ''),
+            studentName: String(v.studentName ?? ''),
+            current: normalizeStatus((v.current ?? {}) as Partial<TrainingStatus>),
+            target: normalizeStatus((v.target ?? {}) as Partial<TrainingStatus>),
+            detail: {
+              ownedEleph: toInt(toNum((v.detail as Record<string, unknown> | undefined)?.ownedEleph, 0)),
+              rate: Math.min(5, Math.max(1, toInt(toNum((v.detail as Record<string, unknown> | undefined)?.rate, 1)))),
+              remaining: Math.min(200, Math.max(1, toInt(toNum((v.detail as Record<string, unknown> | undefined)?.remaining, 20)))),
+            },
+          }))
+          .filter((v) => v.studentId)
+        setPlans(restored)
+      }
+    }
+    run()
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem(LS_KEY, JSON.stringify({ plans }))
+  }, [plans])
+
+  const plansWithCalc = useMemo(
+    () => plans.map((plan) => ({ ...plan, calc: calculateTrainingPlan(plan.current, plan.target) })),
+    [plans]
+  )
+
+  const totals = useMemo(() => {
+    let totalEleph = 0
+    let totalDivine = 0
+    let totalLevelExp = 0
+    let totalBondPoint = 0
+    let totalSkillExp = 0
+    let totalSkillT1 = 0
+    let totalSkillT2 = 0
+    let totalSkillT3 = 0
+    let totalSkillT4 = 0
+    let totalEquipExp = 0
+    let totalEquipT1 = 0
+    let totalEquipT2 = 0
+    let totalEquipT3 = 0
+    let totalEquipT4 = 0
+    for (const p of plansWithCalc) {
+      const ex = calculateElephExchange({
+        neededEleph: p.calc.star.requiredTotalEleph,
+        ownedEleph: p.detail.ownedEleph,
+        rate: p.detail.rate,
+        remaining: p.detail.remaining,
+      })
+      totalEleph += p.calc.star.requiredTotalEleph
+      totalDivine += ex.requiredDivine
+      totalLevelExp += p.calc.level.requiredExp
+      totalBondPoint += p.calc.bond.requiredBondPoint
+      totalSkillExp += p.calc.skill.totalExp
+      totalSkillT1 += p.calc.skill.t1
+      totalSkillT2 += p.calc.skill.t2
+      totalSkillT3 += p.calc.skill.t3
+      totalSkillT4 += p.calc.skill.t4
+      totalEquipExp += p.calc.equipment.totalExp
+      totalEquipT1 += p.calc.equipment.t1
+      totalEquipT2 += p.calc.equipment.t2
+      totalEquipT3 += p.calc.equipment.t3
+      totalEquipT4 += p.calc.equipment.t4
+    }
+    return {
+      totalEleph,
+      totalDivine,
+      totalLevelExp,
+      totalBondPoint,
+      totalSkillExp,
+      totalSkillT1,
+      totalSkillT2,
+      totalSkillT3,
+      totalSkillT4,
+      totalEquipExp,
+      totalEquipT1,
+      totalEquipT2,
+      totalEquipT3,
+      totalEquipT4,
+    }
+  }, [plansWithCalc])
+
+  const updatePlan = (id: string, patch: Partial<PlanRow>) => {
+    setPlans((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)))
+  }
+
+  const createPlan = async () => {
+    if (!addingStudentId) return
+    const student = students.find((s) => s.id === addingStudentId)
+    if (!student) return
+
+    const existing = plans.find((p) => p.studentId === addingStudentId)
+    if (existing) {
+      setEditingPlanId(existing.id)
+      setAddOpen(false)
+      return
+    }
+
+    const current = await loadStudentStatus(addingStudentId, student.initialStars)
+    const row: PlanRow = {
+      id: crypto.randomUUID(),
+      studentId: addingStudentId,
+      studentName: student.name,
+      current,
+      target: current,
+      detail: { ownedEleph: 0, rate: 1, remaining: 20 },
+    }
+    setPlans((prev) => [...prev, row])
+    setEditingPlanId(row.id)
+    setAddingStudentId('')
+    setAddOpen(false)
+  }
+
+  const renderInputs = (
+    status: TrainingStatus,
+    onChange: (next: TrainingStatus) => void,
+    readOnly = false
+  ) => (
+    <div className="grid grid-cols-2 gap-2 text-sm">
+      {INPUT_ROWS.map((row) => (
+        <label key={row.key} className="space-y-1 rounded border p-2 dark:border-gray-700">
+          <span className="text-xs text-gray-500 dark:text-gray-300">{t(`labels.${row.label}`)}</span>
+          {readOnly ? (
+            <p className="font-semibold">{status[row.key]}</p>
+          ) : (
+            <input
+              type="number"
+              min={row.min}
+              max={row.max}
+              value={status[row.key]}
+              onChange={(e) => onChange(normalizeStatus({ ...status, [row.key]: Number(e.target.value) }))}
+              className="w-full rounded border p-1 dark:border-gray-700 dark:bg-gray-800"
+            />
+          )}
+        </label>
+      ))}
+    </div>
+  )
+
+  return (
+    <main className="space-y-4 p-4">
+      <div className="mb-2 flex items-center gap-2">
+        <h1 className="text-lg font-bold">{tHome('sections.tools.actions.trainingPlanning.title')}</h1>
+        <PageHelpButton pageKey="tools-training-planning" />
+      </div>
+
+      <p className="text-sm text-gray-600 dark:text-gray-300">{t('description')}</p>
+
+      {!editingPlan ? (
+        <>
+          <section className="space-y-2 rounded border p-4 dark:border-gray-700 dark:bg-gray-900">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold">{t('dashboardTitle')}</h2>
+              <button
+                type="button"
+                onClick={() => setAddOpen(true)}
+                className="rounded border px-3 py-1 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+              >
+                ＋ {t('addPlanButton')}
+              </button>
+            </div>
+            <div className="space-y-1 text-sm">
+              {totals.totalEleph > 0 && <p>{t('multiPlanElephTotal', { value: totals.totalEleph })}</p>}
+              {totals.totalDivine > 0 && <p>{t('dashboardTotalDivine', { value: totals.totalDivine })}</p>}
+              {totals.totalLevelExp > 0 && <p>{t('levelRequiredExp', { value: totals.totalLevelExp })}</p>}
+              {totals.totalBondPoint > 0 && <p>{t('bondRequiredPoint', { value: totals.totalBondPoint })}</p>}
+              {totals.totalSkillExp > 0 && <p>{t('skillRequiredExp', { value: totals.totalSkillExp })}</p>}
+              {(totals.totalSkillT1 > 0 || totals.totalSkillT2 > 0 || totals.totalSkillT3 > 0 || totals.totalSkillT4 > 0) && (
+                <p>{t('materialsLine', { t1: totals.totalSkillT1, t2: totals.totalSkillT2, t3: totals.totalSkillT3, t4: totals.totalSkillT4 })}</p>
+              )}
+              {totals.totalEquipExp > 0 && <p>{t('equipRequiredExp', { value: totals.totalEquipExp })}</p>}
+              {(totals.totalEquipT1 > 0 || totals.totalEquipT2 > 0 || totals.totalEquipT3 > 0 || totals.totalEquipT4 > 0) && (
+                <p>{t('materialsLine', { t1: totals.totalEquipT1, t2: totals.totalEquipT2, t3: totals.totalEquipT3, t4: totals.totalEquipT4 })}</p>
+              )}
+            </div>
+          </section>
+
+          <section className="space-y-2">
+            {plansWithCalc.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-300">{t('noPlan')}</p>
+            ) : (
+              plansWithCalc.map((plan) => (
+                <div key={plan.id} className="flex items-center justify-between rounded border p-3 text-sm dark:border-gray-700">
+                  <div>
+                    <p className="font-semibold">{plan.studentName}</p>
+                    {(() => {
+                      const ex = calculateElephExchange({
+                        neededEleph: plan.calc.star.requiredTotalEleph,
+                        ownedEleph: plan.detail.ownedEleph,
+                        rate: plan.detail.rate,
+                        remaining: plan.detail.remaining,
+                      })
+                      if (plan.calc.star.requiredTotalEleph <= 0 && ex.requiredDivine <= 0) return null
+                      return <p>{t('planElephLine', { student: plan.studentName, value: plan.calc.star.requiredTotalEleph, divine: ex.requiredDivine })}</p>
+                    })()}
+                    {plan.calc.level.requiredExp > 0 && <p>{t('levelRequiredExp', { value: plan.calc.level.requiredExp })}</p>}
+                    {plan.calc.bond.requiredBondPoint > 0 && <p>{t('bondRequiredPoint', { value: plan.calc.bond.requiredBondPoint })}</p>}
+                    {plan.calc.skill.totalExp > 0 && <p>{t('skillRequiredExp', { value: plan.calc.skill.totalExp })}</p>}
+                    {(plan.calc.skill.t1 > 0 || plan.calc.skill.t2 > 0 || plan.calc.skill.t3 > 0 || plan.calc.skill.t4 > 0) && (
+                      <p>{t('materialsLine', { t1: plan.calc.skill.t1, t2: plan.calc.skill.t2, t3: plan.calc.skill.t3, t4: plan.calc.skill.t4 })}</p>
+                    )}
+                    {plan.calc.equipment.totalExp > 0 && <p>{t('equipRequiredExp', { value: plan.calc.equipment.totalExp })}</p>}
+                    {(plan.calc.equipment.t1 > 0 || plan.calc.equipment.t2 > 0 || plan.calc.equipment.t3 > 0 || plan.calc.equipment.t4 > 0) && (
+                      <p>{t('materialsLine', { t1: plan.calc.equipment.t1, t2: plan.calc.equipment.t2, t3: plan.calc.equipment.t3, t4: plan.calc.equipment.t4 })}</p>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditingPlanId(plan.id)}
+                      className="rounded border px-2 py-1 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                    >
+                      {t('editPlanButton')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPlans((prev) => prev.filter((x) => x.id !== plan.id))}
+                      className="rounded border px-2 py-1 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                    >
+                      {t('removePlanButton')}
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </section>
+        </>
+      ) : (
+        editingPlan && (
+          <>
+            <section className="rounded border p-4 dark:border-gray-700 dark:bg-gray-900">
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="text-base font-bold">{editingPlan.studentName}</h2>
+                <button
+                  type="button"
+                  onClick={() => setEditingPlanId(null)}
+                  className="rounded border px-2 py-1 text-xs hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                >
+                  {t('backToDashboard')}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <section>
+                  <h3 className="mb-2 font-semibold">{t('currentStatusTitle')}</h3>
+                  {renderInputs(editingPlan.current, (next) => updatePlan(editingPlan.id, { current: next }))}
+                </section>
+                <section>
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="font-semibold">{t('targetStatusTitle')}</h3>
+                    <button
+                      type="button"
+                      onClick={(e) => updatePlan(editingPlan.id, { target: maxTargetStatus(editingPlan.current, e.metaKey || e.ctrlKey) })}
+                      className="rounded border px-2 py-1 text-xs hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                    >
+                      {t('setMaxButton')}
+                    </button>
+                  </div>
+                  {renderInputs(editingPlan.target, (next) => updatePlan(editingPlan.id, { target: next }))}
+                </section>
+              </div>
+            </section>
+
+            <section className="space-y-3 rounded border p-4 dark:border-gray-700 dark:bg-gray-900">
+              <h2 className="text-base font-bold">{t('resultTitle')}</h2>
+              {(() => {
+                const calc = calculateTrainingPlan(editingPlan.current, editingPlan.target)
+                return (
+                  <>
+                    <div className="rounded border p-3 text-sm dark:border-gray-700">
+                      <h3 className="font-semibold">{t('sections.star')}</h3>
+                      <p>{t('totalElephRequired', { value: calc.star.requiredTotalEleph })}</p>
+                      <button
+                        type="button"
+                        onClick={() => setDetailOpen(true)}
+                        className="mt-2 rounded border px-2 py-1 text-xs hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                      >
+                        {t('detailButton')}
+                      </button>
+                    </div>
+                    <div className="rounded border p-3 text-sm dark:border-gray-700">
+                      <h3 className="font-semibold">{t('sections.level')}</h3>
+                      <p>{t('levelRequiredExp', { value: calc.level.requiredExp })}</p>
+                    </div>
+                    <div className="rounded border p-3 text-sm dark:border-gray-700">
+                      <h3 className="font-semibold">{t('sections.bond')}</h3>
+                      <p>{t('bondRequiredPoint', { value: calc.bond.requiredBondPoint })}</p>
+                    </div>
+                    <div className="rounded border p-3 text-sm dark:border-gray-700">
+                      <h3 className="font-semibold">{t('sections.skill')}</h3>
+                      <p>{t('skillRequiredExp', { value: calc.skill.totalExp })}</p>
+                      <p>{t('materialsLine', { t1: calc.skill.t1, t2: calc.skill.t2, t3: calc.skill.t3, t4: calc.skill.t4 })}</p>
+                    </div>
+                    <div className="rounded border p-3 text-sm dark:border-gray-700">
+                      <h3 className="font-semibold">{t('sections.equipment')}</h3>
+                      <p>{t('equipRequiredExp', { value: calc.equipment.totalExp })}</p>
+                      <p>{t('materialsLine', { t1: calc.equipment.t1, t2: calc.equipment.t2, t3: calc.equipment.t3, t4: calc.equipment.t4 })}</p>
+                    </div>
+                  </>
+                )
+              })()}
+            </section>
+          </>
+        )
+      )}
+
+      {addOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setAddOpen(false)}>
+          <div className="w-full max-w-xl rounded bg-white p-4 dark:bg-gray-900" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="font-semibold">{t('addPlanModalTitle')}</h3>
+            </div>
+            <StudentSelect students={students} value={addingStudentId} onChange={setAddingStudentId} />
+            <div className="mt-3 text-right">
+              <button type="button" onClick={createPlan} className="rounded border px-3 py-1 text-sm">
+                {t('addPlanButton')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {detailOpen && editingPlan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDetailOpen(false)}>
+          <div className="w-full max-w-2xl rounded bg-white p-4 dark:bg-gray-900" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-base font-bold">{t('detailModalTitle')}</h3>
+            </div>
+
+            {(() => {
+              const calc = calculateTrainingPlan(editingPlan.current, editingPlan.target)
+              const ex = calculateElephExchange({
+                neededEleph: calc.star.requiredTotalEleph,
+                ownedEleph: editingPlan.detail.ownedEleph,
+                rate: editingPlan.detail.rate,
+                remaining: editingPlan.detail.remaining,
+              })
+              return (
+                <div className="rounded border p-3 text-sm dark:border-gray-700">
+                  <p className="mb-2 font-semibold">{editingPlan.studentName}</p>
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+                    <label className="space-y-1">
+                      <span>{t('detailOwnedEleph')}</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={editingPlan.detail.ownedEleph}
+                        onChange={(e) =>
+                          updatePlan(editingPlan.id, {
+                            detail: { ...editingPlan.detail, ownedEleph: toInt(Number(e.target.value)) },
+                          })
+                        }
+                        className="w-full rounded border p-1 dark:border-gray-700 dark:bg-gray-800"
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span>{t('detailRate')}</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={5}
+                        value={editingPlan.detail.rate}
+                        onChange={(e) =>
+                          updatePlan(editingPlan.id, {
+                            detail: {
+                              ...editingPlan.detail,
+                              rate: Math.min(5, Math.max(1, toInt(Number(e.target.value)))),
+                            },
+                          })
+                        }
+                        className="w-full rounded border p-1 dark:border-gray-700 dark:bg-gray-800"
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span>{t('detailRemaining')}</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={200}
+                        value={editingPlan.detail.remaining}
+                        onChange={(e) =>
+                          updatePlan(editingPlan.id, {
+                            detail: {
+                              ...editingPlan.detail,
+                              remaining: Math.min(200, Math.max(1, toInt(Number(e.target.value)))),
+                            },
+                          })
+                        }
+                        className="w-full rounded border p-1 dark:border-gray-700 dark:bg-gray-800"
+                      />
+                    </label>
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    <p>{t('detailNeededEleph', { value: ex.totalNeededEleph })}</p>
+                    <p>{t('detailOwnedUsedEleph', { value: ex.usableOwnedEleph })}</p>
+                    <p>{t('detailExchangeNeededEleph', { value: ex.exchangeNeededEleph })}</p>
+                    <p>{t('detailRequiredDivine', { value: ex.requiredDivine })}</p>
+                    <p>{t('detailUnexchangeableEleph', { value: ex.unexchangeableEleph })}</p>
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+        </div>
+      )}
+    </main>
+  )
+}
