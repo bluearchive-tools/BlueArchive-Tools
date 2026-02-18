@@ -38,10 +38,20 @@ export type BondCalculationResult = {
 
 export const BOND_MAX_LEVEL = 100
 
-const BOND_LEVEL_EXP_TABLE = Array.from({ length: BOND_MAX_LEVEL + 1 }, (_, level) => {
-  if (level <= 1) return 0
-  return Math.floor(18 * (level - 1) + 12 * Math.pow(level - 1, 1.15))
-})
+// Lvごとの累計必要絆ポイント（Lv1始点）。
+// 画像で提示された表の Total 列に合わせる。
+const BOND_LEVEL_TOTAL_TABLE = [
+  0, 15, 45, 75, 110, 145, 180, 220, 260, 300,
+  360, 450, 555, 675, 815, 975, 1155, 1360, 1590, 1845,
+  2130, 2445, 2790, 3165, 3575, 4020, 4500, 5020, 5580, 6180,
+  6825, 7515, 8250, 9030, 9860, 10740, 11670, 12655, 13695, 14790,
+  15945, 17160, 18435, 19770, 21170, 22635, 24165, 25765, 27435, 29175,
+  30990, 32880, 34845, 36885, 39005, 41205, 43485, 45850, 48300, 50835,
+  53460, 56175, 58980, 61875, 64865, 67950, 71130, 74410, 77790, 81270,
+  84855, 88545, 92340, 96240, 100250, 104370, 108600, 112945, 117405, 121980,
+  126675, 131490, 136425, 141480, 146660, 151965, 157395, 162955, 168645, 174465,
+  180420, 186510, 192735, 199095, 205595, 212235, 219015, 225940, 233010, 240225,
+] as const
 
 export const BOND_MATERIALS: BondMaterial[] = [
   {
@@ -83,11 +93,9 @@ function getRequiredBondPoint(currentBond: number, targetBond: number) {
 
   if (to <= from) return 0
 
-  let total = 0
-  for (let level = from; level < to; level++) {
-    total += BOND_LEVEL_EXP_TABLE[level + 1]
-  }
-  return total
+  const fromTotal = BOND_LEVEL_TOTAL_TABLE[from - 1] ?? 0
+  const toTotal = BOND_LEVEL_TOTAL_TABLE[to - 1] ?? fromTotal
+  return Math.max(0, toTotal - fromTotal)
 }
 
 export function calculateBondPlan(input: BondCalculationInput): BondCalculationResult {
