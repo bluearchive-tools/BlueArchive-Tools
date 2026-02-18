@@ -3,7 +3,7 @@
 - The top page works as a dashboard.
 - Use the "+" button to add a student, then open the student editor.
 - In the editor, both current status and target status are editable.
-- When you go back, dashboard totals are automatically aggregated across students.
+- When you go back, dashboard results are automatically aggregated across students.
 
 ## Bulk setup
 - "Set all to max"
@@ -16,3 +16,4 @@
   - exchange rate
   - remaining exchange count
   to check required exchange currency.
+- Click outside the modal to close it.

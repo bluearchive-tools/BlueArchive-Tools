@@ -234,6 +234,7 @@ export default function TrainingPlanningPage() {
     }
     setPlans((prev) => [...prev, row])
     setEditingPlanId(row.id)
+    setAddingStudentId('')
     setAddOpen(false)
   }
 
@@ -285,7 +286,6 @@ export default function TrainingPlanningPage() {
                 ＋ {t('addPlanButton')}
               </button>
             </div>
-            <p className="text-sm">{t('multiPlanElephTotal', { value: totals.totalEleph })}</p>
             <p className="text-sm">{t('dashboardTotalDivine', { value: totals.totalDivine })}</p>
           </section>
 
@@ -297,7 +297,13 @@ export default function TrainingPlanningPage() {
                 <div key={plan.id} className="flex items-center justify-between rounded border p-3 text-sm dark:border-gray-700">
                   <div>
                     <p className="font-semibold">{plan.studentName}</p>
-                    <p>{t('totalElephRequired', { value: plan.calc.star.requiredTotalEleph })}</p>
+                    <p>{t('planElephLine', { student: plan.studentName, value: plan.calc.star.requiredTotalEleph })}</p>
+                    <p>{t('levelRequiredExp', { value: plan.calc.level.requiredExp })}</p>
+                    <p>{t('bondRequiredPoint', { value: plan.calc.bond.requiredBondPoint })}</p>
+                    <p>{t('skillRequiredExp', { value: plan.calc.skill.totalExp })}</p>
+                    <p>{t('materialsLine', { t1: plan.calc.skill.t1, t2: plan.calc.skill.t2, t3: plan.calc.skill.t3, t4: plan.calc.skill.t4 })}</p>
+                    <p>{t('equipRequiredExp', { value: plan.calc.equipment.totalExp })}</p>
+                    <p>{t('materialsLine', { t1: plan.calc.equipment.t1, t2: plan.calc.equipment.t2, t3: plan.calc.equipment.t3, t4: plan.calc.equipment.t4 })}</p>
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -381,6 +387,16 @@ export default function TrainingPlanningPage() {
                       <h3 className="font-semibold">{t('sections.bond')}</h3>
                       <p>{t('bondRequiredPoint', { value: calc.bond.requiredBondPoint })}</p>
                     </div>
+                    <div className="rounded border p-3 text-sm dark:border-gray-700">
+                      <h3 className="font-semibold">{t('sections.skill')}</h3>
+                      <p>{t('skillRequiredExp', { value: calc.skill.totalExp })}</p>
+                      <p>{t('materialsLine', { t1: calc.skill.t1, t2: calc.skill.t2, t3: calc.skill.t3, t4: calc.skill.t4 })}</p>
+                    </div>
+                    <div className="rounded border p-3 text-sm dark:border-gray-700">
+                      <h3 className="font-semibold">{t('sections.equipment')}</h3>
+                      <p>{t('equipRequiredExp', { value: calc.equipment.totalExp })}</p>
+                      <p>{t('materialsLine', { t1: calc.equipment.t1, t2: calc.equipment.t2, t3: calc.equipment.t3, t4: calc.equipment.t4 })}</p>
+                    </div>
                   </>
                 )
               })()}
@@ -390,13 +406,10 @@ export default function TrainingPlanningPage() {
       )}
 
       {addOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-xl rounded bg-white p-4 dark:bg-gray-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setAddOpen(false)}>
+          <div className="w-full max-w-xl rounded bg-white p-4 dark:bg-gray-900" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
               <h3 className="font-semibold">{t('addPlanModalTitle')}</h3>
-              <button type="button" onClick={() => setAddOpen(false)} className="rounded border px-2 py-1 text-xs">
-                {t('close')}
-              </button>
             </div>
             <StudentSelect students={students} value={addingStudentId} onChange={setAddingStudentId} />
             <div className="mt-3 text-right">
@@ -409,13 +422,10 @@ export default function TrainingPlanningPage() {
       )}
 
       {detailOpen && editingPlan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-2xl rounded bg-white p-4 dark:bg-gray-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDetailOpen(false)}>
+          <div className="w-full max-w-2xl rounded bg-white p-4 dark:bg-gray-900" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-base font-bold">{t('detailModalTitle')}</h3>
-              <button type="button" onClick={() => setDetailOpen(false)} className="rounded border px-2 py-1 text-xs">
-                {t('close')}
-              </button>
             </div>
 
             {(() => {

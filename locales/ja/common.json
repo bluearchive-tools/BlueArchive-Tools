@@ -79,7 +79,7 @@
     "equipRequiredExp": "必要装備経験値: {value}",
     "materialsLine": "目安素材(T1/T2/T3/T4): {t1} / {t2} / {t3} / {t4}",
     "multiPlanTitle": "複数生徒プラン",
-    "addPlanButton": "この生徒をプランに追加/更新",
+    "addPlanButton": "生徒を追加",
     "removePlanButton": "削除",
     "detailButton": "計算結果の詳細",
     "multiPlanElephTotal": "全プラン必要生徒神名文字(合計): {value}",
@@ -111,6 +111,7 @@
     "dashboardTotalDivine": "全プラン必要神名文字（交換通貨）: {value}",
     "editPlanButton": "編集",
     "backToDashboard": "ダッシュボードへ戻る",
-    "addPlanModalTitle": "育成する生徒を追加"
+    "addPlanModalTitle": "育成する生徒を追加",
+    "planElephLine": "必要: {student}の神名文字 x{value}(神名文字 x{value})"
   }
 }
