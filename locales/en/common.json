@@ -112,6 +112,6 @@
     "editPlanButton": "Edit",
     "backToDashboard": "Back to dashboard",
     "addPlanModalTitle": "Add a student to plan",
-    "planElephLine": "Need: {student} Eleph x{value} (Eleph x{value})"
+    "planElephLine": "Need: {student} Eleph x{value} (exchange currency x{divine})"
   }
 }

@@ -111,7 +111,7 @@ export default function TrainingPlanningPage() {
   const editingPlan = useMemo(() => plans.find((p) => p.id === editingPlanId) ?? null, [plans, editingPlanId])
 
   const loadStudentStatus = useCallback(
-    async (studentId: string): Promise<TrainingStatus> => {
+    async (studentId: string, initialStars: number): Promise<TrainingStatus> => {
       const apply = (row: Record<string, unknown>) => normalizeStatus(statusFromRow(row))
 
       if (session) {
@@ -127,7 +127,7 @@ export default function TrainingPlanningPage() {
       const raw = parseJson(localStorage.getItem(`userStudent:${studentId}`))
       if (raw && typeof raw === 'object') return apply(raw as Record<string, unknown>)
 
-      return normalizeStatus({ star: 1, uniqueStar: 0, level: 1, bond: 1 })
+      return normalizeStatus({ star: Math.max(1, initialStars), uniqueStar: 0, level: 1, bond: 1 })
     },
     [session, supabase]
   )
@@ -223,7 +223,7 @@ export default function TrainingPlanningPage() {
       return
     }
 
-    const current = await loadStudentStatus(addingStudentId)
+    const current = await loadStudentStatus(addingStudentId, student.initialStars)
     const row: PlanRow = {
       id: crypto.randomUUID(),
       studentId: addingStudentId,
@@ -297,7 +297,15 @@ export default function TrainingPlanningPage() {
                 <div key={plan.id} className="flex items-center justify-between rounded border p-3 text-sm dark:border-gray-700">
                   <div>
                     <p className="font-semibold">{plan.studentName}</p>
-                    <p>{t('planElephLine', { student: plan.studentName, value: plan.calc.star.requiredTotalEleph })}</p>
+                    {(() => {
+                      const ex = calculateElephExchange({
+                        neededEleph: plan.calc.star.requiredTotalEleph,
+                        ownedEleph: plan.detail.ownedEleph,
+                        rate: plan.detail.rate,
+                        remaining: plan.detail.remaining,
+                      })
+                      return <p>{t('planElephLine', { student: plan.studentName, value: plan.calc.star.requiredTotalEleph, divine: ex.requiredDivine })}</p>
+                    })()}
                     <p>{t('levelRequiredExp', { value: plan.calc.level.requiredExp })}</p>
                     <p>{t('bondRequiredPoint', { value: plan.calc.bond.requiredBondPoint })}</p>
                     <p>{t('skillRequiredExp', { value: plan.calc.skill.totalExp })}</p>

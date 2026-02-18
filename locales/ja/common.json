@@ -112,6 +112,6 @@
     "editPlanButton": "編集",
     "backToDashboard": "ダッシュボードへ戻る",
     "addPlanModalTitle": "育成する生徒を追加",
-    "planElephLine": "必要: {student}の神名文字 x{value}(神名文字 x{value})"
+    "planElephLine": "必要: {student}の神名文字 x{value}(交換通貨 x{divine})"
   }
 }
