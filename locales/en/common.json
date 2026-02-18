@@ -57,7 +57,7 @@
     }
   },
   "trainingPlanning": {
-    "description": "Compare current and target status, then automatically estimate required materials.",
+    "description": "Show current status on the left, edit target status on the right, and auto-calculate required materials. Target fields are reset to current values when switching students.",
     "studentLabel": "Student",
     "currentStatusTitle": "Current status (saved data)",
     "targetStatusTitle": "Target status (editable)",
@@ -81,13 +81,16 @@
       "star": "Star",
       "level": "Level",
       "bond": "Bond",
-      "equip1": "Equipment 1",
-      "equip2": "Equipment 2",
-      "equip3": "Equipment 3",
+      "equip1": "Equipment 1 Lv",
+      "equip2": "Equipment 2 Lv",
+      "equip3": "Equipment 3 Lv",
       "exSkill": "EX Skill",
       "normalSkill": "Normal Skill",
       "passiveSkill": "Passive Skill",
-      "subSkill": "Sub Skill"
-    }
+      "subSkill": "Sub Skill",
+      "uniqueStar": "Unique ★"
+    },
+    "uniqueStarRequired": "Required unique weapon Eleph: {value}",
+    "totalElephRequired": "Total Eleph required (star + unique): {value}"
   }
 }

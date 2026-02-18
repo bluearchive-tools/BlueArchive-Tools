@@ -57,7 +57,7 @@
     }
   },
   "trainingPlanning": {
-    "description": "生徒の現在ステータスと目標ステータスを比較し、必要素材を自動計算します。",
+    "description": "生徒の現在ステータスを左に表示し、右で目標を編集して必要素材を自動計算します。生徒切替時は右側も現在値に同期されます。",
     "studentLabel": "対象生徒",
     "currentStatusTitle": "現在ステータス（保存データ）",
     "targetStatusTitle": "目標ステータス（自由入力）",
@@ -81,13 +81,16 @@
       "star": "星",
       "level": "レベル",
       "bond": "絆",
-      "equip1": "装備1",
-      "equip2": "装備2",
-      "equip3": "装備3",
+      "equip1": "装備1Lv",
+      "equip2": "装備2Lv",
+      "equip3": "装備3Lv",
       "exSkill": "EXスキル",
       "normalSkill": "ノーマルスキル",
       "passiveSkill": "パッシブスキル",
-      "subSkill": "サブスキル"
-    }
+      "subSkill": "サブスキル",
+      "uniqueStar": "固有★"
+    },
+    "uniqueStarRequired": "必要固有武器神名文字: {value}",
+    "totalElephRequired": "神名文字合計必要数(星+固有): {value}"
   }
 }

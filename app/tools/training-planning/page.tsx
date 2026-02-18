@@ -44,6 +44,7 @@ function toNumber(value: unknown, fallback: number) {
 function statusFromRow(row: Record<string, unknown>): Partial<TrainingStatus> {
   return {
     star: toNumber(row.star, 1),
+    uniqueStar: toNumber(row.unique_star, 0),
     level: toNumber(row.level, 1),
     bond: toNumber(row.bond, 1),
     equip1: toNumber(row.equip1, 1),
@@ -58,11 +59,12 @@ function statusFromRow(row: Record<string, unknown>): Partial<TrainingStatus> {
 
 const INPUT_ROWS: Array<{ key: keyof TrainingStatus; min: number; max: number; label: string }> = [
   { key: 'star', min: 1, max: 5, label: 'star' },
+  { key: 'uniqueStar', min: 0, max: 4, label: 'uniqueStar' },
   { key: 'level', min: 1, max: 90, label: 'level' },
   { key: 'bond', min: 1, max: 100, label: 'bond' },
-  { key: 'equip1', min: 1, max: 10, label: 'equip1' },
-  { key: 'equip2', min: 1, max: 10, label: 'equip2' },
-  { key: 'equip3', min: 1, max: 10, label: 'equip3' },
+  { key: 'equip1', min: 1, max: 70, label: 'equip1' },
+  { key: 'equip2', min: 1, max: 70, label: 'equip2' },
+  { key: 'equip3', min: 1, max: 70, label: 'equip3' },
   { key: 'exSkill', min: 1, max: 5, label: 'exSkill' },
   { key: 'normalSkill', min: 1, max: 10, label: 'normalSkill' },
   { key: 'passiveSkill', min: 1, max: 10, label: 'passiveSkill' },
@@ -121,13 +123,8 @@ export default function TrainingPlanningPage() {
     const apply = (row: Record<string, unknown>) => {
       const current = normalizeStatus(statusFromRow(row))
       setCurrentStatus(current)
-
-      const saved = parseJson(localStorage.getItem(`${LS_KEY}:${studentId}`))
-      if (saved && typeof saved === 'object') {
-        setTargetStatus(normalizeStatus(saved as Partial<TrainingStatus>))
-      } else {
-        setTargetStatus(current)
-      }
+      // ユーザー要望: 生徒データがセットされたら右側も同値に自動同期
+      setTargetStatus(current)
     }
 
     if (session) {
@@ -149,7 +146,7 @@ export default function TrainingPlanningPage() {
       return
     }
 
-    const fallback = normalizeStatus({ star: 1, level: 1, bond: 1 })
+    const fallback = normalizeStatus({ star: 1, uniqueStar: 0, level: 1, bond: 1 })
     setCurrentStatus(fallback)
     setTargetStatus(fallback)
   }, [session, supabase])
@@ -159,11 +156,6 @@ export default function TrainingPlanningPage() {
     localStorage.setItem(LS_KEY, JSON.stringify({ selectedStudentId }))
     loadStudentData(selectedStudentId)
   }, [loadStudentData, selectedStudentId])
-
-  useEffect(() => {
-    if (!selectedStudentId) return
-    localStorage.setItem(`${LS_KEY}:${selectedStudentId}`, JSON.stringify(targetStatus))
-  }, [selectedStudentId, targetStatus])
 
   const result = useMemo(() => calculateTrainingPlan(currentStatus, targetStatus), [currentStatus, targetStatus])
 
@@ -223,18 +215,18 @@ export default function TrainingPlanningPage() {
         <div className="rounded border p-3 text-sm dark:border-gray-700">
           <h3 className="font-semibold">{t('sections.star')}</h3>
           <p>{t('starRequired', { value: result.star.requiredEleph })}</p>
+          <p>{t('uniqueStarRequired', { value: result.star.requiredUniqueEleph })}</p>
+          <p>{t('totalElephRequired', { value: result.star.requiredTotalEleph })}</p>
         </div>
 
         <div className="rounded border p-3 text-sm dark:border-gray-700">
           <h3 className="font-semibold">{t('sections.level')}</h3>
           <p>{t('levelRequiredExp', { value: result.level.requiredExp })}</p>
-          <p>{t('levelRuns', { value: result.level.bestRunPlan?.runs ?? 0, stage: result.level.bestRunPlan?.stage ?? '-' })}</p>
         </div>
 
         <div className="rounded border p-3 text-sm dark:border-gray-700">
           <h3 className="font-semibold">{t('sections.bond')}</h3>
           <p>{t('bondRequiredPoint', { value: result.bond.requiredBondPoint })}</p>
-          <p>{t('bondRuns', { value: result.bond.bestRunPlan?.runs ?? 0, stage: result.bond.bestRunPlan?.stage ?? '-' })}</p>
         </div>
 
         <div className="rounded border p-3 text-sm dark:border-gray-700">
