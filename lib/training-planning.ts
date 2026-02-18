@@ -14,6 +14,22 @@ export type TrainingStatus = {
   subSkill: number
 }
 
+export type ElephExchangeInput = {
+  neededEleph: number
+  ownedEleph: number
+  rate: number
+  remaining: number
+}
+
+export type ElephExchangeResult = {
+  totalNeededEleph: number
+  usableOwnedEleph: number
+  exchangeNeededEleph: number
+  purchasableEleph: number
+  requiredDivine: number
+  unexchangeableEleph: number
+}
+
 export type TrainingPlanResult = {
   level: {
     requiredExp: number
@@ -40,7 +56,6 @@ export type TrainingPlanResult = {
   }
 }
 
-// 添付いただいた「生徒（キャラクター）経験値テーブル」の Total 列（Lv1..90）
 const STUDENT_LEVEL_TOTAL_EXP = [
   0, 10, 35, 75, 130, 200, 275, 355, 445, 540,
   645, 760, 890, 1035, 1195, 1370, 1555, 1755, 1970, 2200,
@@ -53,7 +68,6 @@ const STUDENT_LEVEL_TOTAL_EXP = [
   653215, 692600, 731985, 771370, 814665, 866930, 936130, 1020550, 1123540, 1249185,
 ]
 
-// 添付いただいた「装備経験値テーブル」の Total 列（Lv1..70）
 const EQUIPMENT_LEVEL_TOTAL_EXP = [
   0, 25, 52, 82, 116, 155, 200, 252, 312, 381,
   461, 553, 658, 777, 911, 1061, 1228, 1413, 1617, 1841,
@@ -72,7 +86,6 @@ const STAR_TOTAL_ELEPH: Record<number, number> = {
   5: 330,
 }
 
-// 固有武器の星段階（0=未解放）に必要な神名文字累積（簡易モデル）
 const UNIQUE_STAR_TOTAL_ELEPH: Record<number, number> = {
   0: 0,
   1: 120,
@@ -97,6 +110,10 @@ const SKILL_EXP_PER_LEVEL: Record<number, number> = {
 function clamp(value: number, min: number, max: number) {
   if (!Number.isFinite(value)) return min
   return Math.min(max, Math.max(min, Math.floor(value)))
+}
+
+function nonNegInt(value: number) {
+  return Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0
 }
 
 function cumulative(table: Record<number, number>, from: number, to: number) {
@@ -132,6 +149,40 @@ function splitByTier(totalExp: number, values: [number, number, number, number])
   return { t1, t2, t3, t4 }
 }
 
+function rateAtByOffset(baseRate: number, within: number, offset: number) {
+  if (baseRate >= 5) return 5
+  return Math.min(5, baseRate + Math.floor((within + offset) / 20))
+}
+
+export function calculateElephExchange(input: ElephExchangeInput): ElephExchangeResult {
+  const totalNeededEleph = nonNegInt(input.neededEleph)
+  const usableOwnedEleph = Math.min(totalNeededEleph, nonNegInt(input.ownedEleph))
+  const exchangeNeededEleph = Math.max(0, totalNeededEleph - usableOwnedEleph)
+
+  const rate = clamp(input.rate, 1, 5)
+  const remMax = rate < 5 ? 20 : 200
+  const rem = clamp(input.remaining, 1, remMax)
+  const within = rate < 5 ? clamp(20 - rem, 0, 19) : 0
+  const tierBase = rate < 5 ? (rate - 1) * 20 : 80
+  const alreadyBought = rate < 5 ? tierBase + within : 80
+  const totalRemaining = rate < 5 ? clamp(200 - alreadyBought, 0, 200) : rem
+
+  const purchasableEleph = Math.min(exchangeNeededEleph, totalRemaining)
+  let requiredDivine = 0
+  for (let i = 0; i < purchasableEleph; i++) {
+    requiredDivine += rateAtByOffset(rate, within, i)
+  }
+
+  return {
+    totalNeededEleph,
+    usableOwnedEleph,
+    exchangeNeededEleph,
+    purchasableEleph,
+    requiredDivine,
+    unexchangeableEleph: Math.max(0, exchangeNeededEleph - purchasableEleph),
+  }
+}
+
 export function normalizeStatus(input: Partial<TrainingStatus>): TrainingStatus {
   return {
     star: clamp(input.star ?? 1, 1, 5),
@@ -145,6 +196,23 @@ export function normalizeStatus(input: Partial<TrainingStatus>): TrainingStatus 
     normalSkill: clamp(input.normalSkill ?? 1, 1, 10),
     passiveSkill: clamp(input.passiveSkill ?? 1, 1, 10),
     subSkill: clamp(input.subSkill ?? 1, 1, 10),
+  }
+}
+
+export function maxTargetStatus(current: TrainingStatus, includeBond = false): TrainingStatus {
+  return {
+    ...current,
+    star: 5,
+    uniqueStar: 4,
+    level: 90,
+    bond: includeBond ? 50 : current.bond,
+    equip1: 70,
+    equip2: 70,
+    equip3: 70,
+    exSkill: 5,
+    normalSkill: 10,
+    passiveSkill: 10,
+    subSkill: 10,
   }
 }
 

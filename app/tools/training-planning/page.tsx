@@ -5,7 +5,13 @@ import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useTranslations } from 'next-intl'
 import StudentSelect from '../../../components/StudentSelect'
 import PageHelpButton from '../../../components/PageHelpButton'
-import { calculateTrainingPlan, normalizeStatus, type TrainingStatus } from '../../../lib/training-planning'
+import {
+  calculateElephExchange,
+  calculateTrainingPlan,
+  maxTargetStatus,
+  normalizeStatus,
+  type TrainingStatus,
+} from '../../../lib/training-planning'
 
 type Student = {
   id: string
@@ -25,7 +31,21 @@ type Student = {
   position: string
 }
 
+type PlanRow = {
+  studentId: string
+  studentName: string
+  current: TrainingStatus
+  target: TrainingStatus
+}
+
+type DetailSetting = {
+  ownedEleph: number
+  rate: number
+  remaining: number
+}
+
 const LS_KEY = 'training-planning.v1'
+const LS_SETTINGS_KEY = 'training-planning.detail-settings.v1'
 
 function parseJson(raw: string | null) {
   if (!raw) return null
@@ -39,6 +59,11 @@ function parseJson(raw: string | null) {
 function toNumber(value: unknown, fallback: number) {
   if (typeof value !== 'number' || !Number.isFinite(value)) return fallback
   return value
+}
+
+function toNonNegInt(value: number) {
+  if (!Number.isFinite(value)) return 0
+  return Math.max(0, Math.floor(value))
 }
 
 function statusFromRow(row: Record<string, unknown>): Partial<TrainingStatus> {
@@ -81,6 +106,14 @@ export default function TrainingPlanningPage() {
   const [selectedStudentId, setSelectedStudentId] = useState('')
   const [currentStatus, setCurrentStatus] = useState<TrainingStatus>(normalizeStatus({}))
   const [targetStatus, setTargetStatus] = useState<TrainingStatus>(normalizeStatus({ level: 30, bond: 20 }))
+  const [plans, setPlans] = useState<PlanRow[]>([])
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [detailSettings, setDetailSettings] = useState<Record<string, DetailSetting>>({})
+
+  const selectedStudent = useMemo(
+    () => students.find((student) => student.id === selectedStudentId),
+    [students, selectedStudentId]
+  )
 
   useEffect(() => {
     const run = async () => {
@@ -108,10 +141,37 @@ export default function TrainingPlanningPage() {
       setStudents(list)
       const saved = parseJson(localStorage.getItem(LS_KEY))
       if (saved && typeof saved === 'object') {
-        const id = (saved as Record<string, unknown>).selectedStudentId
-        if (typeof id === 'string') setSelectedStudentId(id)
+        const obj = saved as Record<string, unknown>
+        if (typeof obj.selectedStudentId === 'string') setSelectedStudentId(obj.selectedStudentId)
+        if (Array.isArray(obj.plans)) {
+          const nextPlans: PlanRow[] = obj.plans
+            .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+            .map((item) => ({
+              studentId: String(item.studentId ?? ''),
+              studentName: String(item.studentName ?? ''),
+              current: normalizeStatus((item.current ?? {}) as Partial<TrainingStatus>),
+              target: normalizeStatus((item.target ?? {}) as Partial<TrainingStatus>),
+            }))
+            .filter((item) => item.studentId)
+          setPlans(nextPlans)
+        }
       } else if (list[0]?.id) {
         setSelectedStudentId(list[0].id)
+      }
+
+      const settingsRaw = parseJson(localStorage.getItem(LS_SETTINGS_KEY))
+      if (settingsRaw && typeof settingsRaw === 'object') {
+        const mapped: Record<string, DetailSetting> = {}
+        for (const [k, v] of Object.entries(settingsRaw as Record<string, unknown>)) {
+          if (!v || typeof v !== 'object') continue
+          const o = v as Record<string, unknown>
+          mapped[k] = {
+            ownedEleph: toNonNegInt(toNumber(o.ownedEleph, 0)),
+            rate: Math.min(5, Math.max(1, toNonNegInt(toNumber(o.rate, 1)))),
+            remaining: toNonNegInt(toNumber(o.remaining, 20)),
+          }
+        }
+        setDetailSettings(mapped)
       }
     }
     run()
@@ -123,7 +183,6 @@ export default function TrainingPlanningPage() {
     const apply = (row: Record<string, unknown>) => {
       const current = normalizeStatus(statusFromRow(row))
       setCurrentStatus(current)
-      // ユーザー要望: 生徒データがセットされたら右側も同値に自動同期
       setTargetStatus(current)
     }
 
@@ -153,11 +212,28 @@ export default function TrainingPlanningPage() {
 
   useEffect(() => {
     if (!selectedStudentId) return
-    localStorage.setItem(LS_KEY, JSON.stringify({ selectedStudentId }))
     loadStudentData(selectedStudentId)
   }, [loadStudentData, selectedStudentId])
 
-  const result = useMemo(() => calculateTrainingPlan(currentStatus, targetStatus), [currentStatus, targetStatus])
+  useEffect(() => {
+    localStorage.setItem(LS_KEY, JSON.stringify({ selectedStudentId, plans }))
+  }, [selectedStudentId, plans])
+
+  useEffect(() => {
+    localStorage.setItem(LS_SETTINGS_KEY, JSON.stringify(detailSettings))
+  }, [detailSettings])
+
+  const currentCalc = useMemo(() => calculateTrainingPlan(currentStatus, targetStatus), [currentStatus, targetStatus])
+
+  const plansWithCalc = useMemo(
+    () => plans.map((plan) => ({ ...plan, calc: calculateTrainingPlan(plan.current, plan.target) })),
+    [plans]
+  )
+
+  const totalElephNeeded = useMemo(
+    () => plansWithCalc.reduce((sum, plan) => sum + plan.calc.star.requiredTotalEleph, 0),
+    [plansWithCalc]
+  )
 
   return (
     <main className="space-y-4 p-4">
@@ -187,7 +263,16 @@ export default function TrainingPlanningPage() {
         </section>
 
         <section className="rounded border p-4 dark:border-gray-700 dark:bg-gray-900">
-          <h2 className="mb-3 text-base font-bold">{t('targetStatusTitle')}</h2>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="text-base font-bold">{t('targetStatusTitle')}</h2>
+            <button
+              type="button"
+              onClick={(e) => setTargetStatus(maxTargetStatus(currentStatus, e.metaKey || e.ctrlKey))}
+              className="rounded border px-2 py-1 text-xs hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+            >
+              {t('setMaxButton')}
+            </button>
+          </div>
           <div className="grid grid-cols-2 gap-2 text-sm">
             {INPUT_ROWS.map((row) => (
               <label key={row.key} className="space-y-1 rounded border p-2 dark:border-gray-700">
@@ -214,33 +299,187 @@ export default function TrainingPlanningPage() {
 
         <div className="rounded border p-3 text-sm dark:border-gray-700">
           <h3 className="font-semibold">{t('sections.star')}</h3>
-          <p>{t('starRequired', { value: result.star.requiredEleph })}</p>
-          <p>{t('uniqueStarRequired', { value: result.star.requiredUniqueEleph })}</p>
-          <p>{t('totalElephRequired', { value: result.star.requiredTotalEleph })}</p>
+          <p>{t('starRequired', { value: currentCalc.star.requiredEleph })}</p>
+          <p>{t('uniqueStarRequired', { value: currentCalc.star.requiredUniqueEleph })}</p>
+          <p>{t('totalElephRequired', { value: currentCalc.star.requiredTotalEleph })}</p>
         </div>
 
         <div className="rounded border p-3 text-sm dark:border-gray-700">
           <h3 className="font-semibold">{t('sections.level')}</h3>
-          <p>{t('levelRequiredExp', { value: result.level.requiredExp })}</p>
+          <p>{t('levelRequiredExp', { value: currentCalc.level.requiredExp })}</p>
         </div>
 
         <div className="rounded border p-3 text-sm dark:border-gray-700">
           <h3 className="font-semibold">{t('sections.bond')}</h3>
-          <p>{t('bondRequiredPoint', { value: result.bond.requiredBondPoint })}</p>
+          <p>{t('bondRequiredPoint', { value: currentCalc.bond.requiredBondPoint })}</p>
         </div>
 
         <div className="rounded border p-3 text-sm dark:border-gray-700">
           <h3 className="font-semibold">{t('sections.skill')}</h3>
-          <p>{t('skillRequiredExp', { value: result.skill.totalExp })}</p>
-          <p>{t('materialsLine', { t1: result.skill.t1, t2: result.skill.t2, t3: result.skill.t3, t4: result.skill.t4 })}</p>
+          <p>{t('skillRequiredExp', { value: currentCalc.skill.totalExp })}</p>
+          <p>{t('materialsLine', { t1: currentCalc.skill.t1, t2: currentCalc.skill.t2, t3: currentCalc.skill.t3, t4: currentCalc.skill.t4 })}</p>
         </div>
 
         <div className="rounded border p-3 text-sm dark:border-gray-700">
           <h3 className="font-semibold">{t('sections.equipment')}</h3>
-          <p>{t('equipRequiredExp', { value: result.equipment.totalExp })}</p>
-          <p>{t('materialsLine', { t1: result.equipment.t1, t2: result.equipment.t2, t3: result.equipment.t3, t4: result.equipment.t4 })}</p>
+          <p>{t('equipRequiredExp', { value: currentCalc.equipment.totalExp })}</p>
+          <p>{t('materialsLine', { t1: currentCalc.equipment.t1, t2: currentCalc.equipment.t2, t3: currentCalc.equipment.t3, t4: currentCalc.equipment.t4 })}</p>
         </div>
       </section>
+
+      <section className="space-y-3 rounded border p-4 dark:border-gray-700 dark:bg-gray-900">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-base font-bold">{t('multiPlanTitle')}</h2>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (!selectedStudentId || !selectedStudent) return
+                setPlans((prev) => {
+                  const next = prev.filter((p) => p.studentId !== selectedStudentId)
+                  next.push({
+                    studentId: selectedStudentId,
+                    studentName: selectedStudent.name,
+                    current: currentStatus,
+                    target: targetStatus,
+                  })
+                  return next
+                })
+              }}
+              className="rounded border px-2 py-1 text-xs hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+            >
+              {t('addPlanButton')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setDetailOpen(true)}
+              className="rounded border px-2 py-1 text-xs hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+            >
+              {t('detailButton')}
+            </button>
+          </div>
+        </div>
+
+        <p className="text-sm font-medium">{t('multiPlanElephTotal', { value: totalElephNeeded })}</p>
+
+        {plansWithCalc.length === 0 ? (
+          <p className="text-sm text-gray-500 dark:text-gray-300">{t('noPlan')}</p>
+        ) : (
+          <ul className="space-y-2">
+            {plansWithCalc.map((plan) => (
+              <li key={plan.studentId} className="flex items-center justify-between rounded border p-2 text-sm dark:border-gray-700">
+                <div>
+                  <p className="font-medium">{plan.studentName}</p>
+                  <p>{t('totalElephRequired', { value: plan.calc.star.requiredTotalEleph })}</p>
+                </div>
+                <button
+                  type="button"
+                  className="rounded border px-2 py-1 text-xs hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                  onClick={() => setPlans((prev) => prev.filter((p) => p.studentId !== plan.studentId))}
+                >
+                  {t('removePlanButton')}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {detailOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded bg-white p-4 dark:bg-gray-900">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-base font-bold">{t('detailModalTitle')}</h3>
+              <button type="button" onClick={() => setDetailOpen(false)} className="rounded border px-2 py-1 text-xs">
+                {t('close')}
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {plansWithCalc.map((plan) => {
+                const setting = detailSettings[plan.studentId] ?? { ownedEleph: 0, rate: 1, remaining: 20 }
+                const exchange = calculateElephExchange({
+                  neededEleph: plan.calc.star.requiredTotalEleph,
+                  ownedEleph: setting.ownedEleph,
+                  rate: setting.rate,
+                  remaining: setting.remaining,
+                })
+
+                return (
+                  <div key={plan.studentId} className="rounded border p-3 text-sm dark:border-gray-700">
+                    <p className="mb-2 font-semibold">{plan.studentName}</p>
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+                      <label className="space-y-1">
+                        <span>{t('detailOwnedEleph')}</span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={setting.ownedEleph}
+                          onChange={(e) =>
+                            setDetailSettings((prev) => ({
+                              ...prev,
+                              [plan.studentId]: {
+                                ...setting,
+                                ownedEleph: toNonNegInt(Number(e.target.value)),
+                              },
+                            }))
+                          }
+                          className="w-full rounded border p-1 dark:border-gray-700 dark:bg-gray-800"
+                        />
+                      </label>
+                      <label className="space-y-1">
+                        <span>{t('detailRate')}</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={5}
+                          value={setting.rate}
+                          onChange={(e) =>
+                            setDetailSettings((prev) => ({
+                              ...prev,
+                              [plan.studentId]: {
+                                ...setting,
+                                rate: Math.min(5, Math.max(1, toNonNegInt(Number(e.target.value)))),
+                              },
+                            }))
+                          }
+                          className="w-full rounded border p-1 dark:border-gray-700 dark:bg-gray-800"
+                        />
+                      </label>
+                      <label className="space-y-1">
+                        <span>{t('detailRemaining')}</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={200}
+                          value={setting.remaining}
+                          onChange={(e) =>
+                            setDetailSettings((prev) => ({
+                              ...prev,
+                              [plan.studentId]: {
+                                ...setting,
+                                remaining: Math.min(200, Math.max(1, toNonNegInt(Number(e.target.value)))),
+                              },
+                            }))
+                          }
+                          className="w-full rounded border p-1 dark:border-gray-700 dark:bg-gray-800"
+                        />
+                      </label>
+                    </div>
+                    <div className="mt-2 space-y-1">
+                      <p>{t('detailNeededEleph', { value: exchange.totalNeededEleph })}</p>
+                      <p>{t('detailOwnedUsedEleph', { value: exchange.usableOwnedEleph })}</p>
+                      <p>{t('detailExchangeNeededEleph', { value: exchange.exchangeNeededEleph })}</p>
+                      <p>{t('detailRequiredDivine', { value: exchange.requiredDivine })}</p>
+                      <p>{t('detailUnexchangeableEleph', { value: exchange.unexchangeableEleph })}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
