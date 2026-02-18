@@ -64,6 +64,14 @@
         "bondCalc": {
           "title": "Bond calculator",
           "description": "Calculate required materials, shortages, and suggested runs for bond leveling"
+        },
+        "trainingPlanning": {
+          "title": "Training planning",
+          "description": "Access star, bond, and level planning calculators in one place"
+        },
+        "levelCalc": {
+          "title": "Level calculator",
+          "description": "Calculate required reports and run estimates for leveling"
         }
       }
     },

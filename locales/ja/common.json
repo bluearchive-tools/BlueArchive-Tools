@@ -33,5 +33,36 @@
       "advanced": "上級ギフト",
       "premium": "特級ギフト"
     }
+  },
+  "levelCalc": {
+    "description": "現在レベル・目標レベル・所持レポートから、必要経験値と不足量、周回目安を計算します。",
+    "currentLevelLabel": "現在レベル",
+    "targetLevelLabel": "目標レベル",
+    "ownedMaterialsLabel": "所持レポート（任意）",
+    "resultTitle": "計算結果",
+    "requiredExp": "必要経験値: {value}",
+    "ownedExp": "所持レポート経験値換算: {value}",
+    "shortageExp": "不足経験値: {value}",
+    "materialBreakdownTitle": "レポートごとの必要量・不足量",
+    "requiredCount": "必要量: {value} 個",
+    "shortageCount": "不足量: {value} 個",
+    "runRecommendationTitle": "推奨周回情報",
+    "runLine": "{material}: {stage} を約 {runs} 周",
+    "bestRunPlan": "最短目安: {material} ({stage}) を約 {runs} 周",
+    "materials": {
+      "reportT1": "初級活動報告書",
+      "reportT2": "中級活動報告書",
+      "reportT3": "上級活動報告書",
+      "reportT4": "最上級活動報告書"
+    }
+  },
+  "trainingPlanning": {
+    "description": "育成に必要な3つの計算機へすぐにアクセスできます。",
+    "starCalcTitle": "星上げ計算機",
+    "starCalcDescription": "神名文字計算機で、目標到達までの必要素材を確認します。",
+    "bondCalcTitle": "絆上げ計算機",
+    "bondCalcDescription": "絆レベル上げに必要な素材と不足分を試算します。",
+    "levelCalcTitle": "レベル上げ計算機",
+    "levelCalcDescription": "経験値不足分と活動報告書の周回目安を確認します。"
   }
 }

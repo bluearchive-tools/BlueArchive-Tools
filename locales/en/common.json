@@ -33,5 +33,36 @@
       "advanced": "Advanced gift",
       "premium": "Premium gift"
     }
+  },
+  "levelCalc": {
+    "description": "Estimate required EXP, shortages, and farming runs from current/target level and owned reports.",
+    "currentLevelLabel": "Current level",
+    "targetLevelLabel": "Target level",
+    "ownedMaterialsLabel": "Owned reports (optional)",
+    "resultTitle": "Calculation result",
+    "requiredExp": "Required EXP: {value}",
+    "ownedExp": "Owned report EXP: {value}",
+    "shortageExp": "Shortage EXP: {value}",
+    "materialBreakdownTitle": "Required & shortage by report",
+    "requiredCount": "Required: {value}",
+    "shortageCount": "Shortage: {value}",
+    "runRecommendationTitle": "Recommended farming runs",
+    "runLine": "{material}: about {runs} runs at {stage}",
+    "bestRunPlan": "Fastest estimate: about {runs} runs with {material} at {stage}",
+    "materials": {
+      "reportT1": "Beginner report",
+      "reportT2": "Intermediate report",
+      "reportT3": "Advanced report",
+      "reportT4": "Superior report"
+    }
+  },
+  "trainingPlanning": {
+    "description": "Quickly access three calculators for student growth planning.",
+    "starCalcTitle": "Star calculator",
+    "starCalcDescription": "Use the Eleph calculator to check required materials toward your goal.",
+    "bondCalcTitle": "Bond calculator",
+    "bondCalcDescription": "Estimate bond materials and shortages for your target level.",
+    "levelCalcTitle": "Level calculator",
+    "levelCalcDescription": "Check EXP shortages and report farming estimates."
   }
 }

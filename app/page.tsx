@@ -82,6 +82,12 @@ export default function Home() {
         description={t('tools.description')}
       >
         <div className="space-y-2">
+          <Link href="/tools/training-planning">
+            <FeatureItem
+              title={t('tools.actions.trainingPlanning.title')}
+              description={t('tools.actions.trainingPlanning.description')}
+            />
+          </Link>
           <Link href="/tools/event-schedule">
             <FeatureItem
               title={t('tools.actions.eventSchedule.title')}
@@ -92,6 +98,18 @@ export default function Home() {
             <FeatureItem
               title={t('tools.actions.divineCalc.title')}
               description={t('tools.actions.divineCalc.description')}
+            />
+          </Link>
+          <Link href="/tools/bond-calc">
+            <FeatureItem
+              title={t('tools.actions.bondCalc.title')}
+              description={t('tools.actions.bondCalc.description')}
+            />
+          </Link>
+          <Link href="/tools/level-calc">
+            <FeatureItem
+              title={t('tools.actions.levelCalc.title')}
+              description={t('tools.actions.levelCalc.description')}
             />
           </Link>
           <Link href="/tools/bgm-player">
@@ -107,17 +125,6 @@ export default function Home() {
             />
           </Link>
         </div>
-        <div
-  aria-disabled="true"
-  className="opacity-50 grayscale cursor-not-allowed select-none"
->
-  <div className="pointer-events-none">
-    <FeatureItem
-      title={t('tools.actions.bondCalc.title')}
-      description={t('tools.actions.bondCalc.description')}
-    />
-  </div>
-</div>
       </CollapsibleBox>
 
       <CollapsibleBox
