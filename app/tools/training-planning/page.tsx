@@ -299,9 +299,14 @@ export default function TrainingPlanningPage() {
 
         <div className="rounded border p-3 text-sm dark:border-gray-700">
           <h3 className="font-semibold">{t('sections.star')}</h3>
-          <p>{t('starRequired', { value: currentCalc.star.requiredEleph })}</p>
-          <p>{t('uniqueStarRequired', { value: currentCalc.star.requiredUniqueEleph })}</p>
           <p>{t('totalElephRequired', { value: currentCalc.star.requiredTotalEleph })}</p>
+          <button
+            type="button"
+            onClick={() => setDetailOpen(true)}
+            className="mt-2 rounded border px-2 py-1 text-xs hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+          >
+            {t('detailButton')}
+          </button>
         </div>
 
         <div className="rounded border p-3 text-sm dark:border-gray-700">
@@ -349,13 +354,6 @@ export default function TrainingPlanningPage() {
               className="rounded border px-2 py-1 text-xs hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
             >
               {t('addPlanButton')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setDetailOpen(true)}
-              className="rounded border px-2 py-1 text-xs hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
-            >
-              {t('detailButton')}
             </button>
           </div>
         </div>

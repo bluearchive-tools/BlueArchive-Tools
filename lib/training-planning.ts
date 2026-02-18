@@ -88,10 +88,11 @@ const STAR_TOTAL_ELEPH: Record<number, number> = {
 
 const UNIQUE_STAR_TOTAL_ELEPH: Record<number, number> = {
   0: 0,
-  1: 120,
-  2: 240,
-  3: 360,
-  4: 480,
+  // 星5到達時点を固有1相当として扱う
+  1: 0,
+  2: 120,
+  3: 240,
+  4: 360,
 }
 
 const SKILL_EXP_PER_LEVEL: Record<number, number> = {
@@ -184,9 +185,13 @@ export function calculateElephExchange(input: ElephExchangeInput): ElephExchange
 }
 
 export function normalizeStatus(input: Partial<TrainingStatus>): TrainingStatus {
+  const star = clamp(input.star ?? 1, 1, 5)
+  const rawUnique = clamp(input.uniqueStar ?? 0, 0, 4)
+  const uniqueStar = star >= 5 ? Math.max(1, rawUnique) : 0
+
   return {
-    star: clamp(input.star ?? 1, 1, 5),
-    uniqueStar: clamp(input.uniqueStar ?? 0, 0, 4),
+    star,
+    uniqueStar,
     level: clamp(input.level ?? 1, 1, 90),
     bond: clamp(input.bond ?? 1, 1, 100),
     equip1: clamp(input.equip1 ?? 1, 1, 70),
