@@ -78,21 +78,18 @@ const EQUIPMENT_LEVEL_TOTAL_EXP = [
   42241, 44318, 46463, 48677, 50961, 53316, 55743, 58243, 60817, 63466,
 ]
 
-const STAR_TOTAL_ELEPH: Record<number, number> = {
-  1: 0,
-  2: 30,
-  3: 110,
-  4: 210,
-  5: 330,
-}
+// 神名文字計算機と同じ段階計算
+// tier: 0=星3以下, 1=星4, 2=星5(固有1相当), 3=固有2, 4=固有3, 5=固有4
+// 累計: 星3→4:+100, →固有1:+120, 固有1→2:+120, 固有2→3:+180, 固有3→4:+200
+const ELEPH_CUM_BY_TIER = [0, 100, 220, 340, 520, 720] as const
 
-const UNIQUE_STAR_TOTAL_ELEPH: Record<number, number> = {
-  0: 0,
-  // 星5到達時点を固有1相当として扱う
-  1: 0,
-  2: 120,
-  3: 240,
-  4: 360,
+function tierFrom(star: number, uniqueStar: number) {
+  if (star >= 5 && uniqueStar >= 4) return 5
+  if (star >= 5 && uniqueStar >= 3) return 4
+  if (star >= 5 && uniqueStar >= 2) return 3
+  if (star >= 5 && uniqueStar >= 1) return 2
+  if (star >= 4) return 1
+  return 0
 }
 
 const SKILL_EXP_PER_LEVEL: Record<number, number> = {
@@ -228,11 +225,8 @@ export function calculateTrainingPlan(currentRaw: Partial<TrainingStatus>, targe
   const levelRequiredExp = getRequiredExp(STUDENT_LEVEL_TOTAL_EXP, current.level, target.level)
   const bond = calculateBondPlan({ currentBond: current.bond, targetBond: target.bond })
 
-  const currentEleph = STAR_TOTAL_ELEPH[current.star] ?? 0
-  const targetEleph = STAR_TOTAL_ELEPH[target.star] ?? 0
-
-  const currentUniqueEleph = UNIQUE_STAR_TOTAL_ELEPH[current.uniqueStar] ?? 0
-  const targetUniqueEleph = UNIQUE_STAR_TOTAL_ELEPH[target.uniqueStar] ?? 0
+  const currentTier = tierFrom(current.star, current.uniqueStar)
+  const targetTier = tierFrom(target.star, target.uniqueStar)
 
   const exExp = cumulative(SKILL_EXP_PER_LEVEL, current.exSkill, target.exSkill)
   const nExp = cumulative(SKILL_EXP_PER_LEVEL, current.normalSkill, target.normalSkill)
@@ -245,8 +239,7 @@ export function calculateTrainingPlan(currentRaw: Partial<TrainingStatus>, targe
   const eq3 = getRequiredExp(EQUIPMENT_LEVEL_TOTAL_EXP, current.equip3, target.equip3)
   const equipmentTotalExp = eq1 + eq2 + eq3
 
-  const requiredEleph = Math.max(0, targetEleph - currentEleph)
-  const requiredUniqueEleph = Math.max(0, targetUniqueEleph - currentUniqueEleph)
+  const requiredTotalEleph = Math.max(0, ELEPH_CUM_BY_TIER[targetTier] - ELEPH_CUM_BY_TIER[currentTier])
 
   return {
     level: {
@@ -254,9 +247,9 @@ export function calculateTrainingPlan(currentRaw: Partial<TrainingStatus>, targe
     },
     bond,
     star: {
-      requiredEleph,
-      requiredUniqueEleph,
-      requiredTotalEleph: requiredEleph + requiredUniqueEleph,
+      requiredEleph: 0,
+      requiredUniqueEleph: 0,
+      requiredTotalEleph,
     },
     skill: {
       totalExp: skillTotalExp,
