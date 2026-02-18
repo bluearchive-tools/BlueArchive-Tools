@@ -11,5 +11,27 @@
   },
   "messages": {
     "loginPrompt": "Sign in to get the most out of BlueArchive Tools!"
+  },
+  "bondCalc": {
+    "description": "Estimate required amount, shortage, and farming runs from current/target bond and owned materials.",
+    "studentLabel": "Student",
+    "currentBondLabel": "Current bond",
+    "targetBondLabel": "Target bond",
+    "ownedMaterialsLabel": "Owned materials (optional)",
+    "resultTitle": "Calculation result",
+    "requiredBondPoint": "Required bond points: {value}",
+    "ownedBondPoint": "Owned material bond points: {value}",
+    "shortageBondPoint": "Shortage bond points: {value}",
+    "materialBreakdownTitle": "Required & shortage by material",
+    "requiredCount": "Required: {value}",
+    "shortageCount": "Shortage: {value}",
+    "runRecommendationTitle": "Recommended farming runs",
+    "runLine": "{material}: about {runs} runs at {stage}",
+    "bestRunPlan": "Fastest estimate: about {runs} runs with {material} at {stage}",
+    "materials": {
+      "basic": "Basic gift",
+      "advanced": "Advanced gift",
+      "premium": "Premium gift"
+    }
   }
 }

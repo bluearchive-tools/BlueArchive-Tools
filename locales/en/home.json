@@ -63,7 +63,7 @@
         },
         "bondCalc": {
           "title": "Bond calculator",
-          "description": "Estimate items needed for bond levels"
+          "description": "Calculate required materials, shortages, and suggested runs for bond leveling"
         }
       }
     },

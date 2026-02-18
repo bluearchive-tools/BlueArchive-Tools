@@ -11,5 +11,27 @@
   },
   "messages": {
     "loginPrompt": "ログインするともっと便利に利用できます！"
+  },
+  "bondCalc": {
+    "description": "現在絆・目標絆・所持素材から、必要量と不足量、周回目安を計算します。",
+    "studentLabel": "対象生徒",
+    "currentBondLabel": "現在絆",
+    "targetBondLabel": "目標絆",
+    "ownedMaterialsLabel": "所持素材（任意）",
+    "resultTitle": "計算結果",
+    "requiredBondPoint": "必要絆ポイント: {value}",
+    "ownedBondPoint": "所持素材の絆ポイント換算: {value}",
+    "shortageBondPoint": "不足絆ポイント: {value}",
+    "materialBreakdownTitle": "素材ごとの必要量・不足量",
+    "requiredCount": "必要量: {value} 個",
+    "shortageCount": "不足量: {value} 個",
+    "runRecommendationTitle": "推奨周回情報",
+    "runLine": "{material}: {stage} を約 {runs} 周",
+    "bestRunPlan": "最短目安: {material} ({stage}) を約 {runs} 周",
+    "materials": {
+      "basic": "基礎ギフト",
+      "advanced": "上級ギフト",
+      "premium": "特級ギフト"
+    }
   }
 }
