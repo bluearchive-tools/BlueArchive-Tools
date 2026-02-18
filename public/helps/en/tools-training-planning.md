@@ -1,21 +1,18 @@
 # Training planning
 
-- Select a student to load current status from saved data (if available).
-- Current status is shown on the left, and editable target status on the right.
-- Use "Set all to max" to quickly apply:
+- The top page works as a dashboard.
+- Use the "+" button to add a student, then open the student editor.
+- In the editor, both current status and target status are editable.
+- When you go back, dashboard totals are automatically aggregated across students.
+
+## Bulk setup
+- "Set all to max"
   - Star 5 / Unique ★4 / Level 90 / Equipment 70 / Skills max
   - Bond stays as-is by default, and becomes 50 only with Ctrl/Cmd + click.
-- Required student Eleph is shown as the sum of star + unique requirements.
 
-## Multi-student plans
-- Use "Add/Update this student plan" to keep multiple students.
-- Total required student Eleph is aggregated across all plans.
-- Open "Calculation details" to configure per-student:
+## Eleph details
+- Open the detail modal from the star section and set:
   - owned student Eleph
   - exchange rate
   - remaining exchange count
-  and see required exchange currency.
-
-## Notes
-- Level EXP uses the student EXP table (Lv1-90).
-- Equipment EXP uses a separate equipment EXP table (Lv1-70).
+  to check required exchange currency.
