@@ -161,11 +161,9 @@ export function calculateElephExchange(input: ElephExchangeInput): ElephExchange
   const remMax = rate < 5 ? 20 : 200
   const rem = clamp(input.remaining, 1, remMax)
   const within = rate < 5 ? clamp(20 - rem, 0, 19) : 0
-  const tierBase = rate < 5 ? (rate - 1) * 20 : 80
-  const alreadyBought = rate < 5 ? tierBase + within : 80
-  const totalRemaining = rate < 5 ? clamp(200 - alreadyBought, 0, 200) : rem
 
-  const purchasableEleph = Math.min(exchangeNeededEleph, totalRemaining)
+  // 育成プランニングでは交換上限(200)で打ち切らず、必要数までの総コストを計算する
+  const purchasableEleph = exchangeNeededEleph
   let requiredDivine = 0
   for (let i = 0; i < purchasableEleph; i++) {
     requiredDivine += rateAtByOffset(rate, within, i)
@@ -177,7 +175,7 @@ export function calculateElephExchange(input: ElephExchangeInput): ElephExchange
     exchangeNeededEleph,
     purchasableEleph,
     requiredDivine,
-    unexchangeableEleph: Math.max(0, exchangeNeededEleph - purchasableEleph),
+    unexchangeableEleph: 0,
   }
 }
 
