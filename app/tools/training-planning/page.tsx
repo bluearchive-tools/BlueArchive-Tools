@@ -194,6 +194,18 @@ export default function TrainingPlanningPage() {
   const totals = useMemo(() => {
     let totalEleph = 0
     let totalDivine = 0
+    let totalLevelExp = 0
+    let totalBondPoint = 0
+    let totalSkillExp = 0
+    let totalSkillT1 = 0
+    let totalSkillT2 = 0
+    let totalSkillT3 = 0
+    let totalSkillT4 = 0
+    let totalEquipExp = 0
+    let totalEquipT1 = 0
+    let totalEquipT2 = 0
+    let totalEquipT3 = 0
+    let totalEquipT4 = 0
     for (const p of plansWithCalc) {
       const ex = calculateElephExchange({
         neededEleph: p.calc.star.requiredTotalEleph,
@@ -203,8 +215,35 @@ export default function TrainingPlanningPage() {
       })
       totalEleph += p.calc.star.requiredTotalEleph
       totalDivine += ex.requiredDivine
+      totalLevelExp += p.calc.level.requiredExp
+      totalBondPoint += p.calc.bond.requiredBondPoint
+      totalSkillExp += p.calc.skill.totalExp
+      totalSkillT1 += p.calc.skill.t1
+      totalSkillT2 += p.calc.skill.t2
+      totalSkillT3 += p.calc.skill.t3
+      totalSkillT4 += p.calc.skill.t4
+      totalEquipExp += p.calc.equipment.totalExp
+      totalEquipT1 += p.calc.equipment.t1
+      totalEquipT2 += p.calc.equipment.t2
+      totalEquipT3 += p.calc.equipment.t3
+      totalEquipT4 += p.calc.equipment.t4
     }
-    return { totalEleph, totalDivine }
+    return {
+      totalEleph,
+      totalDivine,
+      totalLevelExp,
+      totalBondPoint,
+      totalSkillExp,
+      totalSkillT1,
+      totalSkillT2,
+      totalSkillT3,
+      totalSkillT4,
+      totalEquipExp,
+      totalEquipT1,
+      totalEquipT2,
+      totalEquipT3,
+      totalEquipT4,
+    }
   }, [plansWithCalc])
 
   const updatePlan = (id: string, patch: Partial<PlanRow>) => {
@@ -286,7 +325,20 @@ export default function TrainingPlanningPage() {
                 ＋ {t('addPlanButton')}
               </button>
             </div>
-            <p className="text-sm">{t('dashboardTotalDivine', { value: totals.totalDivine })}</p>
+            <div className="space-y-1 text-sm">
+              {totals.totalEleph > 0 && <p>{t('multiPlanElephTotal', { value: totals.totalEleph })}</p>}
+              {totals.totalDivine > 0 && <p>{t('dashboardTotalDivine', { value: totals.totalDivine })}</p>}
+              {totals.totalLevelExp > 0 && <p>{t('levelRequiredExp', { value: totals.totalLevelExp })}</p>}
+              {totals.totalBondPoint > 0 && <p>{t('bondRequiredPoint', { value: totals.totalBondPoint })}</p>}
+              {totals.totalSkillExp > 0 && <p>{t('skillRequiredExp', { value: totals.totalSkillExp })}</p>}
+              {(totals.totalSkillT1 > 0 || totals.totalSkillT2 > 0 || totals.totalSkillT3 > 0 || totals.totalSkillT4 > 0) && (
+                <p>{t('materialsLine', { t1: totals.totalSkillT1, t2: totals.totalSkillT2, t3: totals.totalSkillT3, t4: totals.totalSkillT4 })}</p>
+              )}
+              {totals.totalEquipExp > 0 && <p>{t('equipRequiredExp', { value: totals.totalEquipExp })}</p>}
+              {(totals.totalEquipT1 > 0 || totals.totalEquipT2 > 0 || totals.totalEquipT3 > 0 || totals.totalEquipT4 > 0) && (
+                <p>{t('materialsLine', { t1: totals.totalEquipT1, t2: totals.totalEquipT2, t3: totals.totalEquipT3, t4: totals.totalEquipT4 })}</p>
+              )}
+            </div>
           </section>
 
           <section className="space-y-2">
@@ -304,14 +356,19 @@ export default function TrainingPlanningPage() {
                         rate: plan.detail.rate,
                         remaining: plan.detail.remaining,
                       })
+                      if (plan.calc.star.requiredTotalEleph <= 0 && ex.requiredDivine <= 0) return null
                       return <p>{t('planElephLine', { student: plan.studentName, value: plan.calc.star.requiredTotalEleph, divine: ex.requiredDivine })}</p>
                     })()}
-                    <p>{t('levelRequiredExp', { value: plan.calc.level.requiredExp })}</p>
-                    <p>{t('bondRequiredPoint', { value: plan.calc.bond.requiredBondPoint })}</p>
-                    <p>{t('skillRequiredExp', { value: plan.calc.skill.totalExp })}</p>
-                    <p>{t('materialsLine', { t1: plan.calc.skill.t1, t2: plan.calc.skill.t2, t3: plan.calc.skill.t3, t4: plan.calc.skill.t4 })}</p>
-                    <p>{t('equipRequiredExp', { value: plan.calc.equipment.totalExp })}</p>
-                    <p>{t('materialsLine', { t1: plan.calc.equipment.t1, t2: plan.calc.equipment.t2, t3: plan.calc.equipment.t3, t4: plan.calc.equipment.t4 })}</p>
+                    {plan.calc.level.requiredExp > 0 && <p>{t('levelRequiredExp', { value: plan.calc.level.requiredExp })}</p>}
+                    {plan.calc.bond.requiredBondPoint > 0 && <p>{t('bondRequiredPoint', { value: plan.calc.bond.requiredBondPoint })}</p>}
+                    {plan.calc.skill.totalExp > 0 && <p>{t('skillRequiredExp', { value: plan.calc.skill.totalExp })}</p>}
+                    {(plan.calc.skill.t1 > 0 || plan.calc.skill.t2 > 0 || plan.calc.skill.t3 > 0 || plan.calc.skill.t4 > 0) && (
+                      <p>{t('materialsLine', { t1: plan.calc.skill.t1, t2: plan.calc.skill.t2, t3: plan.calc.skill.t3, t4: plan.calc.skill.t4 })}</p>
+                    )}
+                    {plan.calc.equipment.totalExp > 0 && <p>{t('equipRequiredExp', { value: plan.calc.equipment.totalExp })}</p>}
+                    {(plan.calc.equipment.t1 > 0 || plan.calc.equipment.t2 > 0 || plan.calc.equipment.t3 > 0 || plan.calc.equipment.t4 > 0) && (
+                      <p>{t('materialsLine', { t1: plan.calc.equipment.t1, t2: plan.calc.equipment.t2, t3: plan.calc.equipment.t3, t4: plan.calc.equipment.t4 })}</p>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <button

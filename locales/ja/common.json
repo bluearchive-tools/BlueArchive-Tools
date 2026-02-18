@@ -91,7 +91,7 @@
     "detailNeededEleph": "必要生徒神名文字: {value}",
     "detailOwnedUsedEleph": "所持分で充当: {value}",
     "detailExchangeNeededEleph": "交換必要数: {value}",
-    "detailRequiredDivine": "必要神名文字（交換通貨）: {value}",
+    "detailRequiredDivine": "必要神名文字（神名のカケラ）: {value}",
     "detailUnexchangeableEleph": "交換上限超過分: {value}",
     "close": "閉じる",
     "labels": {
@@ -108,10 +108,10 @@
       "subSkill": "サブスキル"
     },
     "dashboardTitle": "育成プランニングダッシュボード",
-    "dashboardTotalDivine": "全プラン必要神名文字（交換通貨）: {value}",
+    "dashboardTotalDivine": "全プラン必要神名文字（神名のカケラ）: {value}",
     "editPlanButton": "編集",
     "backToDashboard": "ダッシュボードへ戻る",
     "addPlanModalTitle": "育成する生徒を追加",
-    "planElephLine": "必要: {student}の神名文字 x{value}(交換通貨 x{divine})"
+    "planElephLine": "必要: {student}の神名文字 x{value}(神名のカケラ x{divine})"
   }
 }
