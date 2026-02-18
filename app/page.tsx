@@ -94,12 +94,6 @@ export default function Home() {
               description={t('tools.actions.eventSchedule.description')}
             />
           </Link>
-          <Link href="/tools/divine-calc">
-            <FeatureItem
-              title={t('tools.actions.divineCalc.title')}
-              description={t('tools.actions.divineCalc.description')}
-            />
-          </Link>
           <Link href="/tools/bgm-player">
             <FeatureItem
               title={t('tools.actions.bgmPlayer.title')}
