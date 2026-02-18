@@ -100,18 +100,6 @@ export default function Home() {
               description={t('tools.actions.divineCalc.description')}
             />
           </Link>
-          <Link href="/tools/bond-calc">
-            <FeatureItem
-              title={t('tools.actions.bondCalc.title')}
-              description={t('tools.actions.bondCalc.description')}
-            />
-          </Link>
-          <Link href="/tools/level-calc">
-            <FeatureItem
-              title={t('tools.actions.levelCalc.title')}
-              description={t('tools.actions.levelCalc.description')}
-            />
-          </Link>
           <Link href="/tools/bgm-player">
             <FeatureItem
               title={t('tools.actions.bgmPlayer.title')}
