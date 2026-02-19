@@ -516,7 +516,7 @@ export default function TLSearchPage() {
 
   useEffect(() => {
     const loadOwnedStudents = async () => {
-      if (!openTl || !session?.user) {
+      if (!openTl) {
         setOwnedStudentStats({})
         return
       }
@@ -526,6 +526,33 @@ export default function TLSearchPage() {
         setOwnedStudentStats({})
         return
       }
+
+      if (!session?.user) {
+        const next: Record<string, OwnedStudentStats> = {}
+        ids.forEach((id) => {
+          const student = students.find((s) => s.id === id)
+          const mainId = student?.styleOf || id
+          const raw =
+            localStorage.getItem(`userStudent:${id}`) ||
+            (mainId !== id ? localStorage.getItem(`userStudent:${mainId}`) : null)
+          if (!raw) return
+          try {
+            const parsed = JSON.parse(raw) as Record<string, unknown>
+            next[id] = {
+              level: Number(parsed.level ?? 0),
+              ex_skill: Number(parsed.ex_skill ?? 0),
+              normal_skill: Number(parsed.normal_skill ?? 0),
+              passive_skill: Number(parsed.passive_skill ?? 0),
+              sub_skill: Number(parsed.sub_skill ?? 0),
+            }
+          } catch {
+            // ignore
+          }
+        })
+        setOwnedStudentStats(next)
+        return
+      }
+
       const { data, error } = await supabase
         .from('user_students')
         .select('student_id, level, ex_skill, normal_skill, passive_skill, sub_skill')
@@ -548,7 +575,7 @@ export default function TLSearchPage() {
       setOwnedStudentStats(next)
     }
     loadOwnedStudents()
-  }, [openTl, session, supabase])
+  }, [openTl, session, students, supabase])
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -2009,8 +2036,8 @@ export default function TLSearchPage() {
                     <h4 className="font-semibold text-sm">概要</h4>
                     <div className="mt-2 rounded border border-gray-200 bg-gray-50 p-3 space-y-2">
                       <h5 className="font-semibold text-xs text-gray-600">再現可否</h5>
-                      {!session?.user ? (
-                        <p className="text-xs text-gray-600">手持ち未連携（ログインで判定できます）</p>
+                      {!session?.user && Object.keys(ownedStudentStats).length === 0 ? (
+                        <p className="text-xs text-gray-600">手持ち未連携（ローカル保存データがある場合は判定されます）</p>
                       ) : openTlFormationMembers.length === 0 ? (
                         <p className="text-xs text-gray-600">編成情報がないため判定できません</p>
                       ) : (
