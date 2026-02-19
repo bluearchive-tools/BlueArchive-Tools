@@ -8,6 +8,11 @@ import { faBilibili, faYoutube } from '@fortawesome/free-brands-svg-icons'
 import { Timeline } from '../../../types/timeline'
 import PageHelpButton from '../../../components/PageHelpButton'
 import StudentSelect from '../../../components/StudentSelect'
+import {
+  compareTlCompatibility,
+  parseTlFormation,
+  type OwnedStudentStats,
+} from '../../../lib/tl-compatibility'
 
 interface Student {
   id: string
@@ -219,6 +224,7 @@ export default function TLSearchPage() {
       platform: 'youtube' | 'bilibili'
     }>
   >([])
+  const [ownedStudentStats, setOwnedStudentStats] = useState<Record<string, OwnedStudentStats>>({})
 
   const loadingToastCss = useMemo(
     () => `
@@ -507,6 +513,42 @@ export default function TLSearchPage() {
     }
     checkAdmin()
   }, [session, supabase])
+
+  useEffect(() => {
+    const loadOwnedStudents = async () => {
+      if (!openTl || !session?.user) {
+        setOwnedStudentStats({})
+        return
+      }
+      const members = parseTlFormation(openTl.formation)
+      const ids = Array.from(new Set(members.map((member) => member.id).filter(Boolean))) as string[]
+      if (ids.length === 0) {
+        setOwnedStudentStats({})
+        return
+      }
+      const { data, error } = await supabase
+        .from('user_students')
+        .select('student_id, level, ex_skill, normal_skill, passive_skill, sub_skill')
+        .eq('user_id', session.user.id)
+        .in('student_id', ids)
+      if (error || !data) {
+        setOwnedStudentStats({})
+        return
+      }
+      const next: Record<string, OwnedStudentStats> = {}
+      data.forEach((row) => {
+        next[row.student_id as string] = {
+          level: row.level as number,
+          ex_skill: row.ex_skill as number,
+          normal_skill: row.normal_skill as number,
+          passive_skill: row.passive_skill as number,
+          sub_skill: row.sub_skill as number,
+        }
+      })
+      setOwnedStudentStats(next)
+    }
+    loadOwnedStudents()
+  }, [openTl, session, supabase])
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -1363,6 +1405,21 @@ export default function TLSearchPage() {
         .filter(Boolean)
     )
   )
+  const openTlFormationMembers = useMemo(
+    () => (openTl ? parseTlFormation(openTl.formation) : []),
+    [openTl]
+  )
+  const studentNameMap = useMemo(() => {
+    const map: Record<string, string> = {}
+    students.forEach((student) => {
+      map[student.id] = student.name
+    })
+    return map
+  }, [students])
+  const tlCompatibility = useMemo(
+    () => compareTlCompatibility(openTlFormationMembers, ownedStudentStats, studentNameMap),
+    [openTlFormationMembers, ownedStudentStats, studentNameMap]
+  )
 
   const visibleTimelines = timelines.filter((t) => {
     const settings = videoSettingsMap[t.videoid]
@@ -1950,6 +2007,77 @@ export default function TLSearchPage() {
                 {activeSection === 'overview' && (
                   <div id="section-overview">
                     <h4 className="font-semibold text-sm">概要</h4>
+                    <div className="mt-2 rounded border border-gray-200 bg-gray-50 p-3 space-y-2">
+                      <h5 className="font-semibold text-xs text-gray-600">再現可否</h5>
+                      {!session?.user ? (
+                        <p className="text-xs text-gray-600">手持ち未連携（ログインで判定できます）</p>
+                      ) : openTlFormationMembers.length === 0 ? (
+                        <p className="text-xs text-gray-600">編成情報がないため判定できません</p>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                                tlCompatibility.status === 'reproducible'
+                                  ? 'bg-green-100 text-green-700'
+                                  : tlCompatibility.status === 'conditional'
+                                    ? 'bg-yellow-100 text-yellow-700'
+                                    : 'bg-red-100 text-red-700'
+                              }`}
+                            >
+                              {tlCompatibility.status === 'reproducible'
+                                ? '再現可能'
+                                : tlCompatibility.status === 'conditional'
+                                  ? '条件付き'
+                                  : '不可'}
+                            </span>
+                            <span className="text-xs text-gray-600">一致率: {tlCompatibility.matchRate}%</span>
+                          </div>
+
+                          {tlCompatibility.missingCharacters.length > 0 && (
+                            <div className="space-y-1">
+                              <p className="text-xs font-semibold text-gray-600">不足キャラ</p>
+                              <ul className="space-y-1">
+                                {tlCompatibility.missingCharacters.map((item) => (
+                                  <li key={item.id} className="text-xs text-gray-700">
+                                    {item.name}{' '}
+                                    <a
+                                      href={item.searchUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 underline"
+                                    >
+                                      代替候補を探す
+                                    </a>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {tlCompatibility.missingTraining.length > 0 && (
+                            <div className="space-y-1">
+                              <p className="text-xs font-semibold text-gray-600">不足育成（Lv/スキル）</p>
+                              <ul className="space-y-1">
+                                {tlCompatibility.missingTraining.map((item) => (
+                                  <li key={item.id} className="text-xs text-gray-700">
+                                    {item.name}: {item.shortages.join(' / ')}{' '}
+                                    <a
+                                      href={item.searchUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 underline"
+                                    >
+                                      代替候補を探す
+                                    </a>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                     {openTl.formation &&
                       openTl.formation !== '[]' &&
                       students.length > 0 && (
