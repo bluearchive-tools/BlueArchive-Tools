@@ -7,10 +7,7 @@
   "attackType": "爆発",
   "defenseType": "軽装備",
   "hasAccessory": true,
-  "altIds": [
-    "80",
-    "174"
-  ],
+  "altIds": ["80","174"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -38,9 +35,7 @@
   "attackType": "貫通",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "63"
-  ],
+  "altIds": ["63"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -67,9 +62,7 @@
   "attackType": "爆発",
   "defenseType": "軽装備",
   "hasAccessory": true,
-  "altIds": [
-    "64"
-  ],
+  "altIds": ["64"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -96,10 +89,7 @@
   "attackType": "爆発",
   "defenseType": "軽装備",
   "hasAccessory": true,
-  "altIds": [
-    "166",
-    "252"
-  ],
+  "altIds": ["166","252"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "タンク",
@@ -126,10 +116,7 @@
   "attackType": "貫通",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "70",
-    "208"
-  ],
+  "altIds": ["70","208"],
   "initialStars": 3,
   "role": "SPECIAL",
   "characterType": "アタッカー",
@@ -156,9 +143,7 @@
   "attackType": "爆発",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "68"
-  ],
+  "altIds": ["68"],
   "initialStars": 3,
   "role": "SPECIAL",
   "characterType": "アタッカー",
@@ -185,9 +170,7 @@
   "attackType": "爆発",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "66"
-  ],
+  "altIds": ["66"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -214,10 +197,7 @@
   "attackType": "爆発",
   "defenseType": "軽装備",
   "hasAccessory": true,
-  "altIds": [
-    "65",
-    "147"
-  ],
+  "altIds": ["65","147"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -244,9 +224,7 @@
   "attackType": "貫通",
   "defenseType": "特殊装甲",
   "hasAccessory": true,
-  "altIds": [
-    "216"
-  ],
+  "altIds": ["216"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -273,9 +251,7 @@
   "attackType": "貫通",
   "defenseType": "重装甲",
   "hasAccessory": true,
-  "altIds": [
-    "60"
-  ],
+  "altIds": ["60"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -302,10 +278,7 @@
   "attackType": "貫通",
   "defenseType": "軽装備",
   "hasAccessory": true,
-  "altIds": [
-    "69",
-    "209"
-  ],
+  "altIds": ["69","209"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -332,10 +305,7 @@
   "attackType": "神秘",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "123",
-    "156"
-  ],
+  "altIds": ["123","156"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -362,10 +332,7 @@
   "attackType": "爆発",
   "defenseType": "重装甲",
   "hasAccessory": true,
-  "altIds": [
-    "62",
-    "172"
-  ],
+  "altIds": ["62","172"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -392,9 +359,7 @@
   "attackType": "爆発",
   "defenseType": "重装甲",
   "hasAccessory": true,
-  "altIds": [
-    "114"
-  ],
+  "altIds": ["114"],
   "initialStars": 3,
   "role": "SPECIAL",
   "characterType": "アタッカー",
@@ -421,9 +386,7 @@
   "attackType": "貫通",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "61"
-  ],
+  "altIds": ["61"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "サポーター",
@@ -450,10 +413,7 @@
   "attackType": "貫通",
   "defenseType": "重装甲",
   "hasAccessory": true,
-  "altIds": [
-    "104",
-    "189"
-  ],
+  "altIds": ["104","189"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "タンク",
@@ -480,9 +440,7 @@
   "attackType": "貫通",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "211"
-  ],
+  "altIds": ["211"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -509,9 +467,7 @@
   "attackType": "爆発",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "180"
-  ],
+  "altIds": ["180"],
   "initialStars": 2,
   "role": "SPECIAL",
   "characterType": "アタッカー",
@@ -538,9 +494,7 @@
   "attackType": "貫通",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "115"
-  ],
+  "altIds": ["115"],
   "initialStars": 2,
   "role": "STRIKER",
   "characterType": "サポーター",
@@ -567,9 +521,7 @@
   "attackType": "爆発",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "175"
-  ],
+  "altIds": ["175"],
   "initialStars": 2,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -596,9 +548,7 @@
   "attackType": "貫通",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "103"
-  ],
+  "altIds": ["103"],
   "initialStars": 2,
   "role": "SPECIAL",
   "characterType": "ヒーラー",
@@ -625,9 +575,7 @@
   "attackType": "貫通",
   "defenseType": "重装甲",
   "hasAccessory": true,
-  "altIds": [
-    "112"
-  ],
+  "altIds": ["112"],
   "initialStars": 2,
   "role": "SPECIAL",
   "characterType": "アタッカー",
@@ -654,10 +602,7 @@
   "attackType": "爆発",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "134",
-    "173"
-  ],
+  "altIds": ["134","173"],
   "initialStars": 2,
   "role": "STRIKER",
   "characterType": "サポーター",
@@ -684,9 +629,7 @@
   "attackType": "貫通",
   "defenseType": "軽装備",
   "hasAccessory": true,
-  "altIds": [
-    "125"
-  ],
+  "altIds": ["125"],
   "initialStars": 2,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -713,10 +656,7 @@
   "attackType": "爆発",
   "defenseType": "軽装備",
   "hasAccessory": true,
-  "altIds": [
-    "82",
-    "184"
-  ],
+  "altIds": ["82","184"],
   "initialStars": 2,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -743,9 +683,7 @@
   "attackType": "神秘",
   "defenseType": "重装甲",
   "hasAccessory": true,
-  "altIds": [
-    "107"
-  ],
+  "altIds": ["107"],
   "initialStars": 2,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -772,9 +710,7 @@
   "attackType": "貫通",
   "defenseType": "特殊装甲",
   "hasAccessory": false,
-  "altIds": [
-    "177"
-  ],
+  "altIds": ["177"],
   "initialStars": 2,
   "role": "STRIKER",
   "characterType": "タンク",
@@ -801,9 +737,7 @@
   "attackType": "貫通",
   "defenseType": "軽装備",
   "hasAccessory": true,
-  "altIds": [
-    "102"
-  ],
+  "altIds": ["102"],
   "initialStars": 2,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -830,10 +764,7 @@
   "attackType": "貫通",
   "defenseType": "重装甲",
   "hasAccessory": true,
-  "altIds": [
-    "118",
-    "229"
-  ],
+  "altIds": ["118","229"],
   "initialStars": 2,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -860,9 +791,7 @@
   "attackType": "爆発",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "122"
-  ],
+  "altIds": ["122"],
   "initialStars": 2,
   "role": "SPECIAL",
   "characterType": "ヒーラー",
@@ -889,9 +818,7 @@
   "attackType": "爆発",
   "defenseType": "軽装備",
   "hasAccessory": true,
-  "altIds": [
-    "168"
-  ],
+  "altIds": ["168"],
   "initialStars": 2,
   "role": "SPECIAL",
   "characterType": "サポーター",
@@ -918,9 +845,7 @@
   "attackType": "爆発",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "124"
-  ],
+  "altIds": ["124"],
   "initialStars": 2,
   "role": "SPECIAL",
   "characterType": "ヒーラー",
@@ -947,9 +872,7 @@
   "attackType": "爆発",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "81"
-  ],
+  "altIds": ["81"],
   "initialStars": 2,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -976,10 +899,7 @@
   "attackType": "爆発",
   "defenseType": "重装甲",
   "hasAccessory": true,
-  "altIds": [
-    "116",
-    "204"
-  ],
+  "altIds": ["116","204"],
   "initialStars": 2,
   "role": "STRIKER",
   "characterType": "タンク",
@@ -1006,10 +926,7 @@
   "attackType": "神秘",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "71",
-    "207"
-  ],
+  "altIds": ["71","207"],
   "initialStars": 1,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -1036,9 +953,7 @@
   "attackType": "爆発",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "167"
-  ],
+  "altIds": ["167"],
   "initialStars": 1,
   "role": "SPECIAL",
   "characterType": "サポーター",
@@ -1065,9 +980,7 @@
   "attackType": "貫通",
   "defenseType": "軽装備",
   "hasAccessory": true,
-  "altIds": [
-    "155"
-  ],
+  "altIds": ["155"],
   "initialStars": 1,
   "role": "STRIKER",
   "characterType": "サポーター",
@@ -1120,9 +1033,7 @@
   "attackType": "爆発",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "213"
-  ],
+  "altIds": ["213"],
   "initialStars": 1,
   "role": "SPECIAL",
   "characterType": "アタッカー",
@@ -1149,9 +1060,7 @@
   "attackType": "爆発",
   "defenseType": "重装甲",
   "hasAccessory": true,
-  "altIds": [
-    "240"
-  ],
+  "altIds": ["240"],
   "initialStars": 1,
   "role": "STRIKER",
   "characterType": "サポーター",
@@ -1178,9 +1087,7 @@
   "attackType": "神秘",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "121"
-  ],
+  "altIds": ["121"],
   "initialStars": 1,
   "role": "SPECIAL",
   "characterType": "ヒーラー",
@@ -1207,9 +1114,7 @@
   "attackType": "貫通",
   "defenseType": "軽装備",
   "hasAccessory": true,
-  "altIds": [
-    "77"
-  ],
+  "altIds": ["77"],
   "initialStars": 1,
   "role": "SPECIAL",
   "characterType": "ヒーラー",
@@ -1236,9 +1141,7 @@
   "attackType": "爆発",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "135"
-  ],
+  "altIds": ["135"],
   "initialStars": 1,
   "role": "STRIKER",
   "characterType": "タンク",
@@ -1265,9 +1168,7 @@
   "attackType": "貫通",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "221"
-  ],
+  "altIds": ["221"],
   "initialStars": 1,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -1294,9 +1195,7 @@
   "attackType": "貫通",
   "defenseType": "重装甲",
   "hasAccessory": true,
-  "altIds": [
-    "179"
-  ],
+  "altIds": ["179"],
   "initialStars": 1,
   "role": "SPECIAL",
   "characterType": "アタッカー",
@@ -1323,9 +1222,7 @@
   "attackType": "爆発",
   "defenseType": "重装甲",
   "hasAccessory": true,
-  "altIds": [
-    "59"
-  ],
+  "altIds": ["59"],
   "initialStars": 3,
   "role": "SPECIAL",
   "characterType": "アタッカー",
@@ -1352,9 +1249,7 @@
   "attackType": "神秘",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "106"
-  ],
+  "altIds": ["106"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -1381,9 +1276,7 @@
   "attackType": "神秘",
   "defenseType": "特殊装甲",
   "hasAccessory": true,
-  "altIds": [
-    "105"
-  ],
+  "altIds": ["105"],
   "initialStars": 2,
   "role": "SPECIAL",
   "characterType": "サポーター",
@@ -1410,9 +1303,7 @@
   "attackType": "神秘",
   "defenseType": "特殊装甲",
   "hasAccessory": true,
-  "altIds": [
-    "137"
-  ],
+  "altIds": ["137"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -1439,9 +1330,7 @@
   "attackType": "貫通",
   "defenseType": "軽装備",
   "hasAccessory": true,
-  "altIds": [
-    "183"
-  ],
+  "altIds": ["183"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -1468,9 +1357,7 @@
   "attackType": "貫通",
   "defenseType": "軽装備",
   "hasAccessory": true,
-  "altIds": [
-    "182"
-  ],
+  "altIds": ["182"],
   "initialStars": 2,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -1497,9 +1384,7 @@
   "attackType": "貫通",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "76"
-  ],
+  "altIds": ["76"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -1526,9 +1411,7 @@
   "attackType": "爆発",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "79"
-  ],
+  "altIds": ["79"],
   "initialStars": 1,
   "role": "SPECIAL",
   "characterType": "サポーター",
@@ -1555,9 +1438,7 @@
   "attackType": "貫通",
   "defenseType": "特殊装甲",
   "hasAccessory": true,
-  "altIds": [
-    "139"
-  ],
+  "altIds": ["139"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -1584,9 +1465,7 @@
   "attackType": "爆発",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "58"
-  ],
+  "altIds": ["58"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -1613,9 +1492,7 @@
   "attackType": "貫通",
   "defenseType": "特殊装甲",
   "hasAccessory": true,
-  "altIds": [
-    "151"
-  ],
+  "altIds": ["151"],
   "initialStars": 2,
   "role": "SPECIAL",
   "characterType": "ヒーラー",
@@ -1642,9 +1519,7 @@
   "attackType": "爆発",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "150"
-  ],
+  "altIds": ["150"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "ヒーラー",
@@ -1914,9 +1789,7 @@
   "attackType": "爆発",
   "defenseType": "特殊装甲",
   "hasAccessory": false,
-  "altIds": [
-    "187"
-  ],
+  "altIds": ["187"],
   "initialStars": 2,
   "role": "STRIKER",
   "characterType": "サポーター",
@@ -2051,9 +1924,7 @@
   "attackType": "神秘",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "224"
-  ],
+  "altIds": ["224"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "タンク",
@@ -2080,10 +1951,7 @@
   "attackType": "神秘",
   "defenseType": "特殊装甲",
   "hasAccessory": true,
-  "altIds": [
-    "117",
-    "199"
-  ],
+  "altIds": ["117","199"],
   "initialStars": 1,
   "role": "SPECIAL",
   "characterType": "サポーター",
@@ -2136,9 +2004,7 @@
   "attackType": "神秘",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "169"
-  ],
+  "altIds": ["169"],
   "initialStars": 3,
   "role": "SPECIAL",
   "characterType": "サポーター",
@@ -2221,9 +2087,7 @@
   "attackType": "貫通",
   "defenseType": "特殊装甲",
   "hasAccessory": false,
-  "altIds": [
-    "196"
-  ],
+  "altIds": ["196"],
   "initialStars": 1,
   "role": "STRIKER",
   "characterType": "サポーター",
@@ -2358,9 +2222,7 @@
   "attackType": "神秘",
   "defenseType": "軽装備",
   "hasAccessory": true,
-  "altIds": [
-    "101"
-  ],
+  "altIds": ["101"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -2389,9 +2251,7 @@
   "attackType": "貫通",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "186"
-  ],
+  "altIds": ["186"],
   "initialStars": 1,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -2418,9 +2278,7 @@
   "attackType": "神秘",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "212"
-  ],
+  "altIds": ["212"],
   "initialStars": 3,
   "role": "SPECIAL",
   "characterType": "T.S.",
@@ -2473,9 +2331,7 @@
   "attackType": "神秘",
   "defenseType": "軽装備",
   "hasAccessory": true,
-  "altIds": [
-    "152"
-  ],
+  "altIds": ["152"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "サポーター",
@@ -2502,9 +2358,7 @@
   "attackType": "爆発",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "148"
-  ],
+  "altIds": ["148"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "サポーター",
@@ -2531,9 +2385,7 @@
   "attackType": "神秘",
   "defenseType": "重装甲",
   "hasAccessory": true,
-  "altIds": [
-    "149"
-  ],
+  "altIds": ["149"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -2560,9 +2412,7 @@
   "attackType": "貫通",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "195"
-  ],
+  "altIds": ["195"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "タンク",
@@ -2589,9 +2439,7 @@
   "attackType": "貫通",
   "defenseType": "重装甲",
   "hasAccessory": true,
-  "altIds": [
-    "144"
-  ],
+  "altIds": ["144"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "タンク",
@@ -2618,9 +2466,7 @@
   "attackType": "貫通",
   "defenseType": "特殊装甲",
   "hasAccessory": true,
-  "altIds": [
-    "145"
-  ],
+  "altIds": ["145"],
   "initialStars": 3,
   "role": "SPECIAL",
   "characterType": "アタッカー",
@@ -2647,9 +2493,7 @@
   "attackType": "貫通",
   "defenseType": "軽装備",
   "hasAccessory": true,
-  "altIds": [
-    "146"
-  ],
+  "altIds": ["146"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "サポーター",
@@ -2728,9 +2572,7 @@
   "attackType": "神秘",
   "defenseType": "軽装備",
   "hasAccessory": true,
-  "altIds": [
-    "246"
-  ],
+  "altIds": ["246"],
   "initialStars": 1,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -2757,9 +2599,7 @@
   "attackType": "神秘",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "245"
-  ],
+  "altIds": ["245"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "タンク",
@@ -2786,9 +2626,7 @@
   "attackType": "爆発",
   "defenseType": "特殊装甲",
   "hasAccessory": true,
-  "altIds": [
-    "235"
-  ],
+  "altIds": ["235"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -2815,9 +2653,7 @@
   "attackType": "爆発",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "194"
-  ],
+  "altIds": ["194"],
   "initialStars": 3,
   "role": "SPECIAL",
   "characterType": "サポーター",
@@ -2844,9 +2680,7 @@
   "attackType": "爆発",
   "defenseType": "特殊装甲",
   "hasAccessory": false,
-  "altIds": [
-    "192"
-  ],
+  "altIds": ["192"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "タンク",
@@ -3064,10 +2898,7 @@
   "attackType": "爆発",
   "defenseType": "特殊装甲",
   "hasAccessory": true,
-  "altIds": [
-    "193",
-    "217"
-  ],
+  "altIds": ["193","217"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -3094,9 +2925,7 @@
   "attackType": "貫通",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "188"
-  ],
+  "altIds": ["188"],
   "initialStars": 3,
   "role": "SPECIAL",
   "characterType": "アタッカー",
@@ -3123,9 +2952,7 @@
   "attackType": "貫通",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "178"
-  ],
+  "altIds": ["178"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -3207,9 +3034,7 @@
   "attackType": "神秘",
   "defenseType": "特殊装甲",
   "hasAccessory": false,
-  "altIds": [
-    "205"
-  ],
+  "altIds": ["205"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "サポーター",
@@ -3399,9 +3224,7 @@
   "attackType": "爆発",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "159"
-  ],
+  "altIds": ["159"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -3565,9 +3388,7 @@
   "attackType": "爆発",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "201"
-  ],
+  "altIds": ["201"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "タンク",
@@ -3594,9 +3415,7 @@
   "attackType": "貫通",
   "defenseType": "軽装備",
   "hasAccessory": false,
-  "altIds": [
-    "232"
-  ],
+  "altIds": ["232"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -3649,9 +3468,7 @@
   "attackType": "貫通",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "185"
-  ],
+  "altIds": ["185"],
   "initialStars": 3,
   "role": "SPECIAL",
   "characterType": "アタッカー",
@@ -3678,9 +3495,7 @@
   "attackType": "神秘",
   "defenseType": "特殊装甲",
   "hasAccessory": false,
-  "altIds": [
-    "200"
-  ],
+  "altIds": ["200"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -3707,9 +3522,7 @@
   "attackType": "爆発",
   "defenseType": "弾力装甲",
   "hasAccessory": true,
-  "altIds": [
-    "138"
-  ],
+  "altIds": ["138"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -3736,9 +3549,7 @@
   "attackType": "爆発",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "231"
-  ],
+  "altIds": ["231"],
   "initialStars": 3,
   "role": "SPECIAL",
   "characterType": "アタッカー",
@@ -3957,9 +3768,7 @@
   "attackType": "貫通",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "239"
-  ],
+  "altIds": ["239"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "タンク",
@@ -4425,9 +4234,7 @@
   "attackType": "振動",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "230"
-  ],
+  "altIds": ["230"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -4591,9 +4398,7 @@
   "attackType": "振動",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "225"
-  ],
+  "altIds": ["225"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -4621,9 +4426,7 @@
   "attackType": "振動",
   "defenseType": "重装甲",
   "hasAccessory": true,
-  "altIds": [
-    "226"
-  ],
+  "altIds": ["226"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "アタッカー",
@@ -4651,9 +4454,7 @@
   "attackType": "振動",
   "defenseType": "重装甲",
   "hasAccessory": false,
-  "altIds": [
-    "227"
-  ],
+  "altIds": ["227"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "サポーター",
@@ -5816,9 +5617,7 @@
   "attackType": "貫通",
   "defenseType": "弾力装甲",
   "hasAccessory": false,
-  "altIds": [
-    "228"
-  ],
+  "altIds": ["228"],
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "サポーター",
