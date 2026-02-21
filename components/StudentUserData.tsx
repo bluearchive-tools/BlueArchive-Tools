@@ -10,7 +10,7 @@ import EditBondsModal from './EditBondsModal'
 import SkillDetailModal from './SkillDetailModal'
 import EquipmentDetailModal from './EquipmentDetailModal'
 import UniqueWeaponDetailModal from './UniqueWeaponDetailModal'
-import { calculateStatFromBase } from '../lib/student-status'
+import { calculateStatFromBase, getStatCalculationFormula } from '../lib/student-status'
 
 function attrBg(attr?: string) {
   switch (attr) {
@@ -348,7 +348,14 @@ export default function StudentUserData({
         label,
         total: studentValue,
         formula: `${studentValue} (生徒本体)`,
-        hoverFormula: `${studentValue}`,
+        hoverFormula: getStatCalculationFormula({
+          base,
+          statType: field,
+          level: display.level,
+          range: student.range,
+          star: display.star,
+          initialStars: student.initialStars,
+        }).formula,
         lines: [
           `生徒本体: ${studentValue}`,
           '防御力には能力解放/固有武器の加算はありません。',
@@ -375,7 +382,14 @@ export default function StudentUserData({
       label,
       total,
       formula: `${studentValue} + ${abilityReleaseBonus} + ${uniqueWeaponBonus} = ${total}`,
-      hoverFormula: `${studentValue}+${abilityReleaseBonus}+${uniqueWeaponBonus}=${total}`,
+      hoverFormula: `${getStatCalculationFormula({
+        base,
+        statType: field,
+        level: display.level,
+        range: student.range,
+        star: display.star,
+        initialStars: student.initialStars,
+      }).formula}+${abilityReleaseBonus}+${uniqueWeaponBonus}=${total}`,
       lines: [
         `生徒本体: ${studentValue}`,
         `能力解放: round(★1基準 ${starOneValue} × WB Lv.${wbLevel} × 0.002) = ${abilityReleaseBonus}`,

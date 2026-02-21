@@ -30,6 +30,52 @@ const getStarMultiplier = (type: StatType, star: number) => {
   return STAR_MULTIPLIERS[type][index]
 }
 
+const resolveStatCalculationBreakdown = ({
+  base,
+  statType,
+  level,
+  range = 550,
+  star,
+  initialStars,
+}: {
+  base: number
+  statType: StatType
+  level: number
+  range?: number
+  star: number
+  initialStars: number
+}) => {
+  const currentLevel = Math.max(1, Math.floor(level || 1))
+  const baseStar = Math.max(1, Math.min(5, Math.floor(initialStars || 1)))
+  const currentStar = Math.max(1, Math.min(5, Math.floor(star || baseStar)))
+
+  const baseMultiplier = getStarMultiplier(statType, baseStar)
+  const currentMultiplier = getStarMultiplier(statType, currentStar)
+  const adjustedBase = base * (currentMultiplier / baseMultiplier)
+
+  const growth = LEVEL_GROWTH_MULTIPLIERS[statType]
+  const hpRangeMultiplier =
+    statType === 'hp' ? (HP_RANGE_MULTIPLIERS[range] ?? HP_RANGE_MULTIPLIERS[550]) : 1
+
+  const growthTerm = ((adjustedBase * growth) / 99) * (currentLevel - 1) * hpRangeMultiplier
+  const rawValue = adjustedBase + growthTerm
+
+  return {
+    base,
+    currentLevel,
+    baseStar,
+    currentStar,
+    baseMultiplier,
+    currentMultiplier,
+    adjustedBase,
+    growth,
+    hpRangeMultiplier,
+    growthTerm,
+    rawValue,
+    roundedValue: Math.max(1, Math.round(rawValue)),
+  }
+}
+
 export const calculateStatFromBase = ({
   base,
   statType,
@@ -46,21 +92,52 @@ export const calculateStatFromBase = ({
   initialStars: number
 }) => {
   if (!Number.isFinite(base) || base <= 0) return 0
+  return resolveStatCalculationBreakdown({
+    base,
+    statType,
+    level,
+    range,
+    star,
+    initialStars,
+  }).roundedValue
+}
 
-  const currentLevel = Math.max(1, Math.floor(level || 1))
-  const baseStar = Math.max(1, Math.min(5, Math.floor(initialStars || 1)))
-  const currentStar = Math.max(1, Math.min(5, Math.floor(star || baseStar)))
+export const getStatCalculationFormula = ({
+  base,
+  statType,
+  level,
+  range = 550,
+  star,
+  initialStars,
+}: {
+  base: number
+  statType: StatType
+  level: number
+  range?: number
+  star: number
+  initialStars: number
+}) => {
+  if (!Number.isFinite(base) || base <= 0) {
+    return {
+      formula: '0',
+      roundedValue: 0,
+    }
+  }
 
-  const baseMultiplier = getStarMultiplier(statType, baseStar)
-  const currentMultiplier = getStarMultiplier(statType, currentStar)
-  const adjustedBase = base * (currentMultiplier / baseMultiplier)
+  const d = resolveStatCalculationBreakdown({
+    base,
+    statType,
+    level,
+    range,
+    star,
+    initialStars,
+  })
 
-  const growth = LEVEL_GROWTH_MULTIPLIERS[statType]
-  const hpRangeMultiplier =
-    statType === 'hp' ? (HP_RANGE_MULTIPLIERS[range] ?? HP_RANGE_MULTIPLIERS[550]) : 1
+  const adjustedBaseExpr = `${d.base}*(${d.currentMultiplier}/${d.baseMultiplier})`
+  const growthExpr = `((${adjustedBaseExpr}*${d.growth})/99)*${d.currentLevel - 1}*${d.hpRangeMultiplier}`
 
-  const value =
-    adjustedBase + ((adjustedBase * growth) / 99) * (currentLevel - 1) * hpRangeMultiplier
-
-  return Math.max(1, Math.round(value))
+  return {
+    formula: `round(${adjustedBaseExpr}+${growthExpr})`,
+    roundedValue: d.roundedValue,
+  }
 }
