@@ -64,12 +64,20 @@ interface Student {
   skills?: Record<string, SkillDefinition>
   equipmentSlots?: Record<string, string[]>
   accessory?: { tiers: { tier: number; name: string; description: string }[] }
+  uniqueWeapon?: UniqueWeapon
 }
 
 interface Skill {
   title: string
   text: string
   values: Record<string, number[]>
+}
+
+interface UniqueWeapon {
+  name: string
+  hp: number
+  attack: number
+  heal: number
 }
 
 interface UserStudent {
@@ -257,20 +265,39 @@ export default function StudentUserData({
 
   const display = data || (previewMax ? placeholderMax : placeholderMin)
 
+  const resolveUniqueWeaponStat = (field: 'hp' | 'attack' | 'heal') => {
+    if (!student?.uniqueWeapon) return 0
+    if (display.unique_star < 1 || display.unique_level <= 0) return 0
+    const base = student.uniqueWeapon[field]
+    if (!base || base <= 0) return 0
+    return calculateStatFromBase({
+      base,
+      statType: field,
+      level: display.unique_level,
+      star: 1,
+      initialStars: 1,
+    })
+  }
+
   const resolveDisplayedStat = (field: 'hp' | 'attack' | 'defense' | 'heal') => {
     const raw = display[field]
     if (raw > 0) return raw
     if (!student) return 0
     const base = student[field]
-    if (!base || base <= 0) return 0
-    return calculateStatFromBase({
-      base,
-      statType: field,
-      level: display.level,
-      range: student.range,
-      star: display.star,
-      initialStars: student.initialStars,
-    })
+    const studentValue =
+      base && base > 0
+        ? calculateStatFromBase({
+            base,
+            statType: field,
+            level: display.level,
+            range: student.range,
+            star: display.star,
+            initialStars: student.initialStars,
+          })
+        : 0
+
+    if (field === 'defense') return studentValue
+    return studentValue + resolveUniqueWeaponStat(field)
   }
 
   const hpValue = resolveDisplayedStat('hp')
