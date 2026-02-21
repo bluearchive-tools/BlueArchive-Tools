@@ -279,25 +279,46 @@ export default function StudentUserData({
     })
   }
 
+  const resolveAbilityReleaseBonus = (
+    field: 'hp' | 'attack' | 'heal',
+    starOneValue: number
+  ) => {
+    const wbLevelRaw =
+      field === 'hp' ? display.hp_wb : field === 'attack' ? display.attack_wb : display.heal_wb
+    const wbLevel = Math.max(0, Math.min(25, Math.floor(wbLevelRaw || 0)))
+    if (display.star < 5 || wbLevel <= 0) return 0
+    return Math.round(starOneValue * wbLevel * 0.002)
+  }
+
   const resolveDisplayedStat = (field: 'hp' | 'attack' | 'defense' | 'heal') => {
     const raw = display[field]
     if (raw > 0) return raw
     if (!student) return 0
     const base = student[field]
-    const studentValue =
-      base && base > 0
-        ? calculateStatFromBase({
-            base,
-            statType: field,
-            level: display.level,
-            range: student.range,
-            star: display.star,
-            initialStars: student.initialStars,
-          })
-        : 0
+    if (!base || base <= 0) return 0
+
+    const studentValue = calculateStatFromBase({
+      base,
+      statType: field,
+      level: display.level,
+      range: student.range,
+      star: display.star,
+      initialStars: student.initialStars,
+    })
 
     if (field === 'defense') return studentValue
-    return studentValue + resolveUniqueWeaponStat(field)
+
+    const starOneValue = calculateStatFromBase({
+      base,
+      statType: field,
+      level: display.level,
+      range: student.range,
+      star: 1,
+      initialStars: student.initialStars,
+    })
+
+    const abilityReleaseBonus = resolveAbilityReleaseBonus(field, starOneValue)
+    return studentValue + abilityReleaseBonus + resolveUniqueWeaponStat(field)
   }
 
   const hpValue = resolveDisplayedStat('hp')
