@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useTheme } from './ThemeProvider'
+import { calculateStatFromBase } from '../lib/student-status'
 
 interface UniqueWeapon {
   name: string
@@ -26,6 +27,11 @@ export default function UniqueWeaponDetailModal({
     setVisible(true)
   }, [])
 
+  const calcWeaponStat = (field: 'hp' | 'attack' | 'heal', base: number) => {
+    if (level <= 0 || base <= 0) return 0
+    return calculateStatFromBase({ base, statType: field, level, star: 1, initialStars: 1 })
+  }
+
   const handleClose = () => {
     setVisible(false)
     setTimeout(onClose, 200)
@@ -44,9 +50,9 @@ export default function UniqueWeaponDetailModal({
         <p className="text-sm">名称: {weapon.name}</p>
         <p className="text-sm">現在Lv: {level}</p>
         <hr className="border-gray-400/40" />
-        <p className="text-sm">基礎HP: {weapon.hp}</p>
-        <p className="text-sm">基礎攻撃力: {weapon.attack}</p>
-        <p className="text-sm">基礎治癒力: {weapon.heal}</p>
+        <p className="text-sm">HP: {calcWeaponStat('hp', weapon.hp)}</p>
+        <p className="text-sm">攻撃力: {calcWeaponStat('attack', weapon.attack)}</p>
+        <p className="text-sm">治癒力: {calcWeaponStat('heal', weapon.heal)}</p>
         <button type="button" onClick={handleClose} className="underline text-sm block ml-auto">
           閉じる
         </button>

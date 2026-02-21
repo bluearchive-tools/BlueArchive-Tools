@@ -308,6 +308,7 @@ export default function StudentUserData({
         label,
         total: raw,
         formula: `手動入力値: ${raw}`,
+        hoverFormula: `${raw}`,
         lines: ['手動入力された値をそのまま表示しています。'],
       }
     }
@@ -317,6 +318,7 @@ export default function StudentUserData({
         label,
         total: 0,
         formula: '生徒データ未読み込み',
+        hoverFormula: '-',
         lines: ['生徒データの取得後に計算式を確認できます。'],
       }
     }
@@ -327,6 +329,7 @@ export default function StudentUserData({
         label,
         total: 0,
         formula: '基礎値なし',
+        hoverFormula: '-',
         lines: ['この項目の基礎値が未設定です。'],
       }
     }
@@ -345,6 +348,7 @@ export default function StudentUserData({
         label,
         total: studentValue,
         formula: `${studentValue} (生徒本体)`,
+        hoverFormula: `${studentValue}`,
         lines: [
           `生徒本体: ${studentValue}`,
           '防御力には能力解放/固有武器の加算はありません。',
@@ -364,19 +368,14 @@ export default function StudentUserData({
     const uniqueWeaponBonus = resolveUniqueWeaponStat(field)
     const total = studentValue + abilityReleaseBonus + uniqueWeaponBonus
 
-    const formulaParts = [
-      `生徒本体 ${studentValue}`,
-      `能力解放 ${abilityReleaseBonus}`,
-      `固有武器 ${uniqueWeaponBonus}`,
-    ]
-
     const wbLevel =
       field === 'hp' ? display.hp_wb : field === 'attack' ? display.attack_wb : display.heal_wb
 
     return {
       label,
       total,
-      formula: `${formulaParts.join(' + ')} = ${total}`,
+      formula: `${studentValue} + ${abilityReleaseBonus} + ${uniqueWeaponBonus} = ${total}`,
+      hoverFormula: `${studentValue}+${abilityReleaseBonus}+${uniqueWeaponBonus}=${total}`,
       lines: [
         `生徒本体: ${studentValue}`,
         `能力解放: round(★1基準 ${starOneValue} × WB Lv.${wbLevel} × 0.002) = ${abilityReleaseBonus}`,
@@ -390,6 +389,29 @@ export default function StudentUserData({
   const attackCalc = getStatCalculationDetail('attack')
   const defenseCalc = getStatCalculationDetail('defense')
   const healCalc = getStatCalculationDetail('heal')
+
+  const renderStatValue = (calc: {
+    label: string
+    total: number
+    formula: string
+    hoverFormula: string
+    lines: string[]
+  }) => (
+    <span
+      onClick={(e) => {
+        e.stopPropagation()
+        setCalcDetail({ label: calc.label, formula: calc.formula, lines: calc.lines })
+      }}
+      className="relative inline-flex items-center group"
+    >
+      <span className="underline decoration-dotted cursor-help">{calc.total > 0 ? calc.total : '-'}</span>
+      <span
+        className={`pointer-events-none absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 whitespace-nowrap rounded px-2 py-1 text-xs ${dark ? 'bg-gray-900 text-white border border-gray-700' : 'bg-white text-gray-900 border border-gray-300'} opacity-0 shadow transition-opacity group-hover:opacity-100`}
+      >
+        {calc.hoverFormula}
+      </span>
+    </span>
+  )
 
   const bondEntries = Object.entries(
     (isRegistered ? data.alt_bonds ?? { [baseId]: data.bond } : { [baseId]: display.bond })
@@ -499,7 +521,7 @@ export default function StudentUserData({
               }
               className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              HP <span title={hpCalc.formula} onClick={(e) => { e.stopPropagation(); setCalcDetail({ label: hpCalc.label, formula: hpCalc.formula, lines: hpCalc.lines }) }} className="underline decoration-dotted cursor-help">{hpCalc.total > 0 ? hpCalc.total : '-'}</span>{' '}
+              HP {renderStatValue(hpCalc)}{' '}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
@@ -523,7 +545,7 @@ export default function StudentUserData({
               }
               className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              攻撃力 <span title={attackCalc.formula} onClick={(e) => { e.stopPropagation(); setCalcDetail({ label: attackCalc.label, formula: attackCalc.formula, lines: attackCalc.lines }) }} className="underline decoration-dotted cursor-help">{attackCalc.total > 0 ? attackCalc.total : '-'}</span>{' '}
+              攻撃力 {renderStatValue(attackCalc)}{' '}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
@@ -555,7 +577,7 @@ export default function StudentUserData({
               }
               className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              防御力 <span title={defenseCalc.formula} onClick={(e) => { e.stopPropagation(); setCalcDetail({ label: defenseCalc.label, formula: defenseCalc.formula, lines: defenseCalc.lines }) }} className="underline decoration-dotted cursor-help">{defenseCalc.total > 0 ? defenseCalc.total : '-'}</span>
+              防御力 {renderStatValue(defenseCalc)}
             </div>
             <div
               onClick={() =>
@@ -563,7 +585,7 @@ export default function StudentUserData({
               }
               className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              治癒力 <span title={healCalc.formula} onClick={(e) => { e.stopPropagation(); setCalcDetail({ label: healCalc.label, formula: healCalc.formula, lines: healCalc.lines }) }} className="underline decoration-dotted cursor-help">{healCalc.total > 0 ? healCalc.total : '-'}</span>{' '}
+              治癒力 {renderStatValue(healCalc)}{' '}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
