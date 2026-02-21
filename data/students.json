@@ -1,7 +1,7 @@
 [
 {
   "id": "1",
-  "importid": "10001",
+  "importid": "10000",
   "name": "アル",
   "image": "https://static.wikitide.net/bluearchivewiki/d/db/Aru.png",
   "attackType": "爆発",
@@ -29,7 +29,7 @@
 },
 {
   "id": "2",
-  "importid": "10002",
+  "importid": "10006",
   "name": "イオリ",
   "image": "https://static.wikitide.net/bluearchivewiki/2/26/Iori.png",
   "attackType": "貫通",
@@ -56,7 +56,7 @@
 },
 {
   "id": "3",
-  "importid": "10003",
+  "importid": "10009",
   "name": "イズミ",
   "image": "https://static.wikitide.net/bluearchivewiki/1/10/Izumi.png",
   "attackType": "爆発",
@@ -83,7 +83,7 @@
 },
 {
   "id": "4",
-  "importid": "10004",
+  "importid": "10001",
   "name": "エイミ",
   "image": "https://static.wikitide.net/bluearchivewiki/e/ed/Eimi.png",
   "attackType": "爆発",
@@ -110,7 +110,7 @@
 },
 {
   "id": "5",
-  "importid": "10005",
+  "importid": "20001",
   "name": "カリン",
   "image": "https://static.wikitide.net/bluearchivewiki/5/50/Karin.png",
   "attackType": "貫通",
@@ -137,7 +137,7 @@
 },
 {
   "id": "6",
-  "importid": "10006",
+  "importid": "20002",
   "name": "サヤ",
   "image": "https://static.wikitide.net/bluearchivewiki/c/ce/Saya.png",
   "attackType": "爆発",
@@ -164,7 +164,7 @@
 },
 {
   "id": "7",
-  "importid": "10007",
+  "importid": "10011",
   "name": "シュン",
   "image": "https://static.wikitide.net/bluearchivewiki/1/17/Shun.png",
   "attackType": "爆発",
@@ -191,7 +191,7 @@
 },
 {
   "id": "8",
-  "importid": "10008",
+  "importid": "10010",
   "name": "シロコ",
   "image": "https://static.wikitide.net/bluearchivewiki/6/63/Shiroko.png",
   "attackType": "爆発",
@@ -218,7 +218,7 @@
 },
 {
   "id": "9",
-  "importid": "10009",
+  "importid": "10012",
   "name": "スミレ",
   "image": "https://static.wikitide.net/bluearchivewiki/d/d6/Sumire.png",
   "attackType": "貫通",
@@ -245,7 +245,7 @@
 },
 {
   "id": "10",
-  "importid": "10010",
+  "importid": "10013",
   "name": "ツルギ",
   "image": "https://static.wikitide.net/bluearchivewiki/c/c1/Tsurugi.png",
   "attackType": "貫通",
@@ -272,7 +272,7 @@
 },
 {
   "id": "11",
-  "importid": "10011",
+  "importid": "10008",
   "name": "ネル",
   "image": "https://static.wikitide.net/bluearchivewiki/2/24/Neru.png",
   "attackType": "貫通",
@@ -299,7 +299,7 @@
 },
 {
   "id": "12",
-  "importid": "10012",
+  "importid": "10002",
   "name": "ハルナ",
   "image": "https://static.wikitide.net/bluearchivewiki/a/a6/Haruna.png",
   "attackType": "神秘",
@@ -326,7 +326,7 @@
 },
 {
   "id": "13",
-  "importid": "10013",
+  "importid": "10004",
   "name": "ヒナ",
   "image": "https://static.wikitide.net/bluearchivewiki/8/83/Hina.png",
   "attackType": "爆発",
@@ -353,7 +353,7 @@
 },
 {
   "id": "14",
-  "importid": "10014",
+  "importid": "20000",
   "name": "ヒビキ",
   "image": "https://static.wikitide.net/bluearchivewiki/b/bc/Hibiki.png",
   "attackType": "爆発",
@@ -380,7 +380,7 @@
 },
 {
   "id": "15",
-  "importid": "10015",
+  "importid": "10003",
   "name": "ヒフミ",
   "image": "https://static.wikitide.net/bluearchivewiki/3/3b/Hifumi.png",
   "attackType": "貫通",
@@ -407,7 +407,7 @@
 },
 {
   "id": "16",
-  "importid": "10016",
+  "importid": "10005",
   "name": "ホシノ",
   "image": "https://static.wikitide.net/bluearchivewiki/a/a9/Hoshino.png",
   "attackType": "貫通",
@@ -434,7 +434,7 @@
 },
 {
   "id": "17",
-  "importid": "10017",
+  "importid": "10007",
   "name": "マキ",
   "image": "https://static.wikitide.net/bluearchivewiki/2/21/Maki.png",
   "attackType": "貫通",
@@ -461,7 +461,7 @@
 },
 {
   "id": "18",
-  "importid": "10018",
+  "importid": "23000",
   "name": "アイリ",
   "image": "https://static.wikitide.net/bluearchivewiki/9/96/Airi.png",
   "attackType": "爆発",
@@ -488,7 +488,7 @@
 },
 {
   "id": "19",
-  "importid": "10019",
+  "importid": "13000",
   "name": "アカネ",
   "image": "https://static.wikitide.net/bluearchivewiki/a/aa/Akane.png",
   "attackType": "貫通",
@@ -515,7 +515,7 @@
 },
 {
   "id": "20",
-  "importid": "10020",
+  "importid": "13002",
   "name": "アカリ",
   "image": "https://static.wikitide.net/bluearchivewiki/7/7d/Akari.png",
   "attackType": "爆発",
@@ -542,7 +542,7 @@
 },
 {
   "id": "21",
-  "importid": "10021",
+  "importid": "23005",
   "name": "アヤネ",
   "image": "https://static.wikitide.net/bluearchivewiki/a/a7/Ayane.png",
   "attackType": "貫通",
@@ -569,7 +569,7 @@
 },
 {
   "id": "22",
-  "importid": "10022",
+  "importid": "23004",
   "name": "ウタハ",
   "image": "https://static.wikitide.net/bluearchivewiki/3/37/Utaha.png",
   "attackType": "貫通",
@@ -596,7 +596,7 @@
 },
 {
   "id": "23",
-  "importid": "10023",
+  "importid": "13005",
   "name": "カヨコ",
   "image": "https://static.wikitide.net/bluearchivewiki/a/a5/Kayoko.png",
   "attackType": "爆発",
@@ -623,7 +623,7 @@
 },
 {
   "id": "24",
-  "importid": "10024",
+  "importid": "13007",
   "name": "ジュンコ",
   "image": "https://static.wikitide.net/bluearchivewiki/3/3c/Junko.png",
   "attackType": "貫通",
@@ -650,7 +650,7 @@
 },
 {
   "id": "25",
-  "importid": "10025",
+  "importid": "13008",
   "name": "セリカ",
   "image": "https://static.wikitide.net/bluearchivewiki/c/c8/Serika.png",
   "attackType": "爆発",
@@ -677,7 +677,7 @@
 },
 {
   "id": "26",
-  "importid": "10026",
+  "importid": "13001",
   "name": "チセ",
   "image": "https://static.wikitide.net/bluearchivewiki/d/d0/Chise.png",
   "attackType": "神秘",
@@ -704,7 +704,7 @@
 },
 {
   "id": "27",
-  "importid": "10027",
+  "importid": "13009",
   "name": "ツバキ",
   "image": "https://static.wikitide.net/bluearchivewiki/6/6a/Tsubaki.png",
   "attackType": "貫通",
@@ -731,7 +731,7 @@
 },
 {
   "id": "28",
-  "importid": "10028",
+  "importid": "13004",
   "name": "ノノミ",
   "image": "https://static.wikitide.net/bluearchivewiki/a/ad/Nonomi.png",
   "attackType": "貫通",
@@ -758,7 +758,7 @@
 },
 {
   "id": "29",
-  "importid": "10029",
+  "importid": "13003",
   "name": "ハスミ",
   "image": "https://static.wikitide.net/bluearchivewiki/8/84/Hasumi.png",
   "attackType": "貫通",
@@ -785,7 +785,7 @@
 },
 {
   "id": "30",
-  "importid": "10030",
+  "importid": "23002",
   "name": "ハナエ",
   "image": "https://static.wikitide.net/bluearchivewiki/7/72/Hanae.png",
   "attackType": "爆発",
@@ -812,7 +812,7 @@
 },
 {
   "id": "31",
-  "importid": "10031",
+  "importid": "23003",
   "name": "ハレ",
   "image": "https://static.wikitide.net/bluearchivewiki/4/47/Hare.png",
   "attackType": "爆発",
@@ -839,7 +839,7 @@
 },
 {
   "id": "32",
-  "importid": "10032",
+  "importid": "23001",
   "name": "フウカ",
   "image": "https://static.wikitide.net/bluearchivewiki/1/1f/Fuuka.png",
   "attackType": "爆発",
@@ -866,7 +866,7 @@
 },
 {
   "id": "33",
-  "importid": "10033",
+  "importid": "13006",
   "name": "ムツキ",
   "image": "https://static.wikitide.net/bluearchivewiki/0/0b/Mutsuki.png",
   "attackType": "爆発",
@@ -893,7 +893,7 @@
 },
 {
   "id": "34",
-  "importid": "10034",
+  "importid": "13010",
   "name": "ユウカ",
   "image": "https://static.wikitide.net/bluearchivewiki/3/3e/Yuuka.png",
   "attackType": "爆発",
@@ -920,7 +920,7 @@
 },
 {
   "id": "35",
-  "importid": "10035",
+  "importid": "16001",
   "name": "アスナ",
   "image": "https://static.wikitide.net/bluearchivewiki/9/9f/Asuna.png",
   "attackType": "神秘",
@@ -947,7 +947,7 @@
 },
 {
   "id": "36",
-  "importid": "10036",
+  "importid": "26001",
   "name": "コタマ",
   "image": "https://static.wikitide.net/bluearchivewiki/9/94/Kotama.png",
   "attackType": "爆発",
@@ -974,7 +974,7 @@
 },
 {
   "id": "37",
-  "importid": "10037",
+  "importid": "16002",
   "name": "コトリ",
   "image": "https://static.wikitide.net/bluearchivewiki/a/ab/Kotori.png",
   "attackType": "貫通",
@@ -1001,7 +1001,7 @@
 },
 {
   "id": "38",
-  "importid": "10038",
+  "importid": "26004",
   "name": "シミコ",
   "image": "https://static.wikitide.net/bluearchivewiki/f/f4/Shimiko.png",
   "attackType": "爆発",
@@ -1027,7 +1027,7 @@
 },
 {
   "id": "39",
-  "importid": "10039",
+  "importid": "26002",
   "name": "ジュリ",
   "image": "https://static.wikitide.net/bluearchivewiki/3/37/Juri.png",
   "attackType": "爆発",
@@ -1054,7 +1054,7 @@
 },
 {
   "id": "40",
-  "importid": "10040",
+  "importid": "16003",
   "name": "スズミ",
   "image": "https://static.wikitide.net/bluearchivewiki/0/07/Suzumi.png",
   "attackType": "爆発",
@@ -1081,7 +1081,7 @@
 },
 {
   "id": "41",
-  "importid": "10041",
+  "importid": "26003",
   "name": "セリナ",
   "image": "https://static.wikitide.net/bluearchivewiki/4/41/Serina.png",
   "attackType": "神秘",
@@ -1108,7 +1108,7 @@
 },
 {
   "id": "42",
-  "importid": "10042",
+  "importid": "26000",
   "name": "チナツ",
   "image": "https://static.wikitide.net/bluearchivewiki/b/b6/Chinatsu.png",
   "attackType": "貫通",
@@ -1135,7 +1135,7 @@
 },
 {
   "id": "43",
-  "importid": "10043",
+  "importid": "16000",
   "name": "ハルカ",
   "image": "https://static.wikitide.net/bluearchivewiki/b/b1/Haruka.png",
   "attackType": "爆発",
@@ -1162,7 +1162,7 @@
 },
 {
   "id": "44",
-  "importid": "10044",
+  "importid": "16004",
   "name": "フィーナ",
   "image": "https://static.wikitide.net/bluearchivewiki/9/96/Pina.png",
   "attackType": "貫通",
@@ -1189,7 +1189,7 @@
 },
 {
   "id": "45",
-  "importid": "10045",
+  "importid": "26005",
   "name": "ヨシミ",
   "image": "https://static.wikitide.net/bluearchivewiki/c/c2/Yoshimi.png",
   "attackType": "貫通",
@@ -1216,7 +1216,7 @@
 },
 {
   "id": "46",
-  "importid": "10046",
+  "importid": "20003",
   "name": "マシロ",
   "image": "https://static.wikitide.net/bluearchivewiki/0/06/Mashiro.png",
   "attackType": "爆発",
@@ -1243,7 +1243,7 @@
 },
 {
   "id": "47",
-  "importid": "10047",
+  "importid": "10014",
   "name": "イズナ",
   "image": "https://static.wikitide.net/bluearchivewiki/5/54/Izuna.png",
   "attackType": "神秘",
@@ -1270,7 +1270,7 @@
 },
 {
   "id": "48",
-  "importid": "10048",
+  "importid": "23006",
   "name": "シズコ",
   "image": "https://static.wikitide.net/bluearchivewiki/7/77/Shizuko.png",
   "attackType": "神秘",
@@ -1297,7 +1297,7 @@
 },
 {
   "id": "49",
-  "importid": "10049",
+  "importid": "10015",
   "name": "アリス",
   "image": "https://static.wikitide.net/bluearchivewiki/0/0f/Arisu.png",
   "attackType": "神秘",
@@ -1324,7 +1324,7 @@
 },
 {
   "id": "50",
-  "importid": "10050",
+  "importid": "10016",
   "name": "ミドリ",
   "image": "https://static.wikitide.net/bluearchivewiki/e/ee/Midori.png",
   "attackType": "貫通",
@@ -1351,7 +1351,7 @@
 },
 {
   "id": "51",
-  "importid": "10051",
+  "importid": "13011",
   "name": "モモイ",
   "image": "https://static.wikitide.net/bluearchivewiki/1/18/Momoi.png",
   "attackType": "貫通",
