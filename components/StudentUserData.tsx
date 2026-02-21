@@ -9,6 +9,7 @@ import EditValueModal from './EditValueModal'
 import EditBondsModal from './EditBondsModal'
 import SkillDetailModal from './SkillDetailModal'
 import EquipmentDetailModal from './EquipmentDetailModal'
+import { calculateStatFromBase } from '../lib/student-status'
 
 function attrBg(attr?: string) {
   switch (attr) {
@@ -55,6 +56,11 @@ interface Student {
   position: string
   exHitDelay?: number
   normalHitDelay?: number
+  hp?: number
+  attack?: number
+  defense?: number
+  heal?: number
+  range?: number
   skills?: Record<string, SkillDefinition>
   equipmentSlots?: Record<string, string[]>
   accessory?: { tiers: { tier: number; name: string; description: string }[] }
@@ -251,6 +257,27 @@ export default function StudentUserData({
 
   const display = data || (previewMax ? placeholderMax : placeholderMin)
 
+  const resolveDisplayedStat = (field: 'hp' | 'attack' | 'defense' | 'heal') => {
+    const raw = display[field]
+    if (raw > 0) return raw
+    if (!student) return 0
+    const base = student[field]
+    if (!base || base <= 0) return 0
+    return calculateStatFromBase({
+      base,
+      statType: field,
+      level: display.level,
+      range: student.range,
+      star: display.star,
+      initialStars: student.initialStars,
+    })
+  }
+
+  const hpValue = resolveDisplayedStat('hp')
+  const attackValue = resolveDisplayedStat('attack')
+  const defenseValue = resolveDisplayedStat('defense')
+  const healValue = resolveDisplayedStat('heal')
+
   const bondEntries = Object.entries(
     (isRegistered ? data.alt_bonds ?? { [baseId]: data.bond } : { [baseId]: display.bond })
   )
@@ -359,7 +386,7 @@ export default function StudentUserData({
               }
               className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              HP {isRegistered ? display.hp : '-'}{' '}
+              HP {hpValue > 0 ? hpValue : '-'}{' '}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
@@ -383,7 +410,7 @@ export default function StudentUserData({
               }
               className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              攻撃力 {isRegistered ? display.attack : '-'}{' '}
+              攻撃力 {attackValue > 0 ? attackValue : '-'}{' '}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
@@ -415,7 +442,7 @@ export default function StudentUserData({
               }
               className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              防御力 {isRegistered ? display.defense : '-'}
+              防御力 {defenseValue > 0 ? defenseValue : '-'}
             </div>
             <div
               onClick={() =>
@@ -423,7 +450,7 @@ export default function StudentUserData({
               }
               className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              治癒力 {isRegistered ? display.heal : '-'}{' '}
+              治癒力 {healValue > 0 ? healValue : '-'}{' '}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
