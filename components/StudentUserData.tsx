@@ -9,6 +9,7 @@ import EditValueModal from './EditValueModal'
 import EditBondsModal from './EditBondsModal'
 import SkillDetailModal from './SkillDetailModal'
 import EquipmentDetailModal from './EquipmentDetailModal'
+import UniqueWeaponDetailModal from './UniqueWeaponDetailModal'
 import { calculateStatFromBase } from '../lib/student-status'
 
 function attrBg(attr?: string) {
@@ -129,6 +130,8 @@ export default function StudentUserData({
   const [equipment, setEquipment] = useState<Record<string, { tiers: { tier: number; name: string; description: string }[] }>>({})
   const [skillDetail, setSkillDetail] = useState<{ entries: SkillEntry[]; level: number } | null>(null)
   const [gearDetail, setGearDetail] = useState<{ type: string; tier: number; equipment?: Record<string, { tiers: { tier: number; name: string; description: string }[] }> } | null>(null)
+  const [calcDetail, setCalcDetail] = useState<{ label: string; formula: string; lines: string[] } | null>(null)
+  const [uniqueWeaponDetail, setUniqueWeaponDetail] = useState<UniqueWeapon | null>(null)
 
   const getSkillEntries = (target?: SkillDefinition): SkillEntry[] => {
     if (!target) return []
@@ -290,12 +293,43 @@ export default function StudentUserData({
     return Math.round(starOneValue * wbLevel * 0.002)
   }
 
-  const resolveDisplayedStat = (field: 'hp' | 'attack' | 'defense' | 'heal') => {
+  const getStatCalculationDetail = (field: 'hp' | 'attack' | 'defense' | 'heal') => {
+    const labelMap = {
+      hp: 'HP',
+      attack: '攻撃力',
+      defense: '防御力',
+      heal: '治癒力',
+    } as const
+    const label = labelMap[field]
     const raw = display[field]
-    if (raw > 0) return raw
-    if (!student) return 0
+
+    if (raw > 0) {
+      return {
+        label,
+        total: raw,
+        formula: `手動入力値: ${raw}`,
+        lines: ['手動入力された値をそのまま表示しています。'],
+      }
+    }
+
+    if (!student) {
+      return {
+        label,
+        total: 0,
+        formula: '生徒データ未読み込み',
+        lines: ['生徒データの取得後に計算式を確認できます。'],
+      }
+    }
+
     const base = student[field]
-    if (!base || base <= 0) return 0
+    if (!base || base <= 0) {
+      return {
+        label,
+        total: 0,
+        formula: '基礎値なし',
+        lines: ['この項目の基礎値が未設定です。'],
+      }
+    }
 
     const studentValue = calculateStatFromBase({
       base,
@@ -306,7 +340,17 @@ export default function StudentUserData({
       initialStars: student.initialStars,
     })
 
-    if (field === 'defense') return studentValue
+    if (field === 'defense') {
+      return {
+        label,
+        total: studentValue,
+        formula: `${studentValue} (生徒本体)`,
+        lines: [
+          `生徒本体: ${studentValue}`,
+          '防御力には能力解放/固有武器の加算はありません。',
+        ],
+      }
+    }
 
     const starOneValue = calculateStatFromBase({
       base,
@@ -316,15 +360,36 @@ export default function StudentUserData({
       star: 1,
       initialStars: student.initialStars,
     })
-
     const abilityReleaseBonus = resolveAbilityReleaseBonus(field, starOneValue)
-    return studentValue + abilityReleaseBonus + resolveUniqueWeaponStat(field)
+    const uniqueWeaponBonus = resolveUniqueWeaponStat(field)
+    const total = studentValue + abilityReleaseBonus + uniqueWeaponBonus
+
+    const formulaParts = [
+      `生徒本体 ${studentValue}`,
+      `能力解放 ${abilityReleaseBonus}`,
+      `固有武器 ${uniqueWeaponBonus}`,
+    ]
+
+    const wbLevel =
+      field === 'hp' ? display.hp_wb : field === 'attack' ? display.attack_wb : display.heal_wb
+
+    return {
+      label,
+      total,
+      formula: `${formulaParts.join(' + ')} = ${total}`,
+      lines: [
+        `生徒本体: ${studentValue}`,
+        `能力解放: round(★1基準 ${starOneValue} × WB Lv.${wbLevel} × 0.002) = ${abilityReleaseBonus}`,
+        `固有武器: ${uniqueWeaponBonus}`,
+        `合計: ${total}`,
+      ],
+    }
   }
 
-  const hpValue = resolveDisplayedStat('hp')
-  const attackValue = resolveDisplayedStat('attack')
-  const defenseValue = resolveDisplayedStat('defense')
-  const healValue = resolveDisplayedStat('heal')
+  const hpCalc = getStatCalculationDetail('hp')
+  const attackCalc = getStatCalculationDetail('attack')
+  const defenseCalc = getStatCalculationDetail('defense')
+  const healCalc = getStatCalculationDetail('heal')
 
   const bondEntries = Object.entries(
     (isRegistered ? data.alt_bonds ?? { [baseId]: data.bond } : { [baseId]: display.bond })
@@ -434,7 +499,7 @@ export default function StudentUserData({
               }
               className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              HP {hpValue > 0 ? hpValue : '-'}{' '}
+              HP <span title={hpCalc.formula} onClick={(e) => { e.stopPropagation(); setCalcDetail({ label: hpCalc.label, formula: hpCalc.formula, lines: hpCalc.lines }) }} className="underline decoration-dotted cursor-help">{hpCalc.total > 0 ? hpCalc.total : '-'}</span>{' '}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
@@ -458,7 +523,7 @@ export default function StudentUserData({
               }
               className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              攻撃力 {attackValue > 0 ? attackValue : '-'}{' '}
+              攻撃力 <span title={attackCalc.formula} onClick={(e) => { e.stopPropagation(); setCalcDetail({ label: attackCalc.label, formula: attackCalc.formula, lines: attackCalc.lines }) }} className="underline decoration-dotted cursor-help">{attackCalc.total > 0 ? attackCalc.total : '-'}</span>{' '}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
@@ -490,7 +555,7 @@ export default function StudentUserData({
               }
               className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              防御力 {defenseValue > 0 ? defenseValue : '-'}
+              防御力 <span title={defenseCalc.formula} onClick={(e) => { e.stopPropagation(); setCalcDetail({ label: defenseCalc.label, formula: defenseCalc.formula, lines: defenseCalc.lines }) }} className="underline decoration-dotted cursor-help">{defenseCalc.total > 0 ? defenseCalc.total : '-'}</span>
             </div>
             <div
               onClick={() =>
@@ -498,7 +563,7 @@ export default function StudentUserData({
               }
               className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              治癒力 {healValue > 0 ? healValue : '-'}{' '}
+              治癒力 <span title={healCalc.formula} onClick={(e) => { e.stopPropagation(); setCalcDetail({ label: healCalc.label, formula: healCalc.formula, lines: healCalc.lines }) }} className="underline decoration-dotted cursor-help">{healCalc.total > 0 ? healCalc.total : '-'}</span>{' '}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
@@ -584,10 +649,13 @@ export default function StudentUserData({
           <div className="skew-x-12">
             <div
               className={`-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1 space-y-1 cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
-              onClick={() =>
-                editMode && isRegistered &&
-                setEditField({ field: 'unique_level', label: '固有武器Lv', value: display.unique_level, min: 0 })
-              }
+              onClick={() => {
+                if (editMode && isRegistered) {
+                  setEditField({ field: 'unique_level', label: '固有武器Lv', value: display.unique_level, min: 0 })
+                } else if (student?.uniqueWeapon) {
+                  setUniqueWeaponDetail(student.uniqueWeapon)
+                }
+              }}
             >
               <span className="text-sm">固有武器</span>
               <span>Lv. {display.unique_level}</span>
@@ -738,6 +806,34 @@ export default function StudentUserData({
           }}
         />
       )}
+
+      {calcDetail && (
+        <div
+          className={`fixed inset-0 z-20 flex items-center justify-center transition-opacity duration-200 ${dark ? 'bg-black/50' : 'bg-black/20'}`}
+          onClick={() => setCalcDetail(null)}
+        >
+          <div
+            className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 rounded space-y-2 w-[min(90vw,32rem)] transform transition-all`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-bold text-lg">{calcDetail.label} の計算詳細</h3>
+            <p className="text-sm break-words">{calcDetail.formula}</p>
+            <ul className="list-disc pl-5 space-y-1 text-sm">
+              {calcDetail.lines.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => setCalcDetail(null)}
+              className="underline text-sm block ml-auto"
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
+
       {skillDetail && (
         <SkillDetailModal
           entries={skillDetail.entries}
@@ -745,6 +841,14 @@ export default function StudentUserData({
           onClose={() => setSkillDetail(null)}
         />
       )}
+      {uniqueWeaponDetail && (
+        <UniqueWeaponDetailModal
+          weapon={uniqueWeaponDetail}
+          level={display.unique_level}
+          onClose={() => setUniqueWeaponDetail(null)}
+        />
+      )}
+
       {gearDetail && (
         <EquipmentDetailModal
           type={gearDetail.type}
