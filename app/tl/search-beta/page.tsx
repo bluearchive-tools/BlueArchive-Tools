@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { Timeline } from '../../../types/timeline'
 import { parseTlFormation } from '../../../lib/tl-compatibility'
 
@@ -12,6 +11,8 @@ type Season = {
   terrain: string
   type: string
   defenseArmors: string[]
+  startDate: string
+  endDate: string
 }
 
 type RaidData = {
@@ -26,11 +27,6 @@ type Student = {
   id: string
   name: string
   image: string
-}
-
-type VideoSettingsRow = {
-  videoid: string
-  owner_user_id?: string | null
 }
 
 type ProfileRow = {
@@ -64,7 +60,6 @@ const splitSquads = (formation: string) => {
 }
 
 export default function TLSearchBetaPage() {
-  const supabase = useSupabaseClient()
   const [raidData, setRaidData] = useState<RaidData | null>(null)
   const [students, setStudents] = useState<Student[]>([])
   const [timelines, setTimelines] = useState<Timeline[]>([])
@@ -96,37 +91,24 @@ export default function TLSearchBetaPage() {
       return
     }
 
-    const { data: settingsData } = await supabase
-      .from('tl_video_settings')
-      .select('videoid, owner_user_id')
-      .in('videoid', videoIds)
-
-    const byVideo: Record<string, string> = {}
-    const ownerIds = new Set<string>()
-    ;((settingsData ?? []) as VideoSettingsRow[]).forEach((row) => {
-      if (row.videoid && row.owner_user_id) {
-        byVideo[row.videoid] = row.owner_user_id
-        ownerIds.add(row.owner_user_id)
+    try {
+      const res = await fetch('/api/tl-owner-profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoIds }),
+      })
+      if (!res.ok) throw new Error('owner profiles fetch failed')
+      const json = (await res.json()) as {
+        ownerByVideo?: Record<string, string>
+        profiles?: Record<string, ProfileRow>
       }
-    })
-    setOwnerByVideo(byVideo)
-
-    if (ownerIds.size === 0) {
+      setOwnerByVideo(json.ownerByVideo ?? {})
+      setOwnerMap(json.profiles ?? {})
+    } catch {
+      setOwnerByVideo({})
       setOwnerMap({})
-      return
     }
-
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, username, nickname, icon_student_id')
-      .in('id', Array.from(ownerIds))
-
-    const map: Record<string, ProfileRow> = {}
-    ;((profiles ?? []) as ProfileRow[]).forEach((p) => {
-      map[p.id] = p
-    })
-    setOwnerMap(map)
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     const run = async () => {
@@ -136,7 +118,7 @@ export default function TLSearchBetaPage() {
         const [raidRes, stuRes] = await Promise.all([fetch('/api/raids'), fetch('/api/students')])
         if (!raidRes.ok) throw new Error('raid fetch failed')
         const data: RaidData = await raidRes.json()
-        data.seasons.sort((a, b) => Number(b.number) - Number(a.number))
+        data.seasons.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
         setRaidData(data)
         if (stuRes.ok) {
           const stuData: Student[] = await stuRes.json()
