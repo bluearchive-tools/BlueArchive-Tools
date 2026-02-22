@@ -306,7 +306,7 @@ export default function Header() {
 
       {mobileToolsOpen && (
         <div className="md:hidden mt-3 border-t pt-3 space-y-3">
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-3">
             <button onClick={openNotice} aria-label={t('actions.notices')} className="border rounded px-3 py-1">
               <FontAwesomeIcon icon={faBell} />
             </button>
@@ -320,7 +320,7 @@ export default function Header() {
               <FontAwesomeIcon icon={dark ? faSun : faMoon} />
             </button>
           </div>
-          <div className="flex justify-start">{accountButton}</div>
+          <div className="flex justify-end">{accountButton}</div>
         </div>
       )}
 

@@ -51,6 +51,12 @@ export default function Home() {
               description={t('tlTools.actions.search.description')}
             />
           </Link>
+          <Link href="/tl/search-beta">
+            <FeatureItem
+              title="TL検索β"
+              description="β版の総力戦/大決戦検索UIです"
+            />
+          </Link>
           <Link href="/tl/maker">
             <FeatureItem
               title={t('tlTools.actions.maker.title')}
