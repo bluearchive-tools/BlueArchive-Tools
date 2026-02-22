@@ -358,9 +358,9 @@ export async function fetchYouTubeVideos(
   const difficultyQueries = [
     ['Hardcore'],
     ['Extreme'],
-    ['Insane', 'INS'],
-    ['Torment', 'TMT', 'TM'],
-    ['Lunatic', 'LUNA', 'LU'],
+    ['Insane'],
+    ['Torment', 'TMT'],
+    ['Lunatic'],
   ]
   for (const s of seasons) {
     const bossTerms = getBossQueryVariants(s.boss)
