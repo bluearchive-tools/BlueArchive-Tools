@@ -10,6 +10,7 @@ import EditBondsModal from './EditBondsModal'
 import SkillDetailModal from './SkillDetailModal'
 import EquipmentDetailModal from './EquipmentDetailModal'
 import UniqueWeaponDetailModal from './UniqueWeaponDetailModal'
+import CalculationDetailModal from './CalculationDetailModal'
 import { calculateStatFromBase, getStatCalculationFormula } from '../lib/student-status'
 
 function attrBg(attr?: string) {
@@ -334,7 +335,7 @@ export default function StudentUserData({
       }
     }
 
-    const studentValue = calculateStatFromBase({
+    const studentStatFormula = getStatCalculationFormula({
       base,
       statType: field,
       level: display.level,
@@ -342,28 +343,22 @@ export default function StudentUserData({
       star: display.star,
       initialStars: student.initialStars,
     })
+    const studentValue = studentStatFormula.roundedValue
 
     if (field === 'defense') {
       return {
         label,
         total: studentValue,
-        formula: `${studentValue} (生徒本体)`,
-        hoverFormula: getStatCalculationFormula({
-          base,
-          statType: field,
-          level: display.level,
-          range: student.range,
-          star: display.star,
-          initialStars: student.initialStars,
-        }).formula,
+        formula: `${studentStatFormula.formula} = ${studentValue}`,
+        hoverFormula: studentStatFormula.formula,
         lines: [
-          `生徒本体: ${studentValue}`,
+          `生徒本体: ${studentStatFormula.formula} = ${studentValue}`,
           '防御力には能力解放/固有武器の加算はありません。',
         ],
       }
     }
 
-    const starOneValue = calculateStatFromBase({
+    const starOneStatFormula = getStatCalculationFormula({
       base,
       statType: field,
       level: display.level,
@@ -371,6 +366,7 @@ export default function StudentUserData({
       star: 1,
       initialStars: student.initialStars,
     })
+    const starOneValue = starOneStatFormula.roundedValue
     const abilityReleaseBonus = resolveAbilityReleaseBonus(field, starOneValue)
     const uniqueWeaponBonus = resolveUniqueWeaponStat(field)
     const total = studentValue + abilityReleaseBonus + uniqueWeaponBonus
@@ -381,20 +377,13 @@ export default function StudentUserData({
     return {
       label,
       total,
-      formula: `${studentValue} + ${abilityReleaseBonus} + ${uniqueWeaponBonus} = ${total}`,
-      hoverFormula: `${getStatCalculationFormula({
-        base,
-        statType: field,
-        level: display.level,
-        range: student.range,
-        star: display.star,
-        initialStars: student.initialStars,
-      }).formula}+${abilityReleaseBonus}+${uniqueWeaponBonus}=${total}`,
+      formula: `${studentStatFormula.formula} + round(${starOneStatFormula.formula}*${wbLevel}*0.002) + ${uniqueWeaponBonus} = ${total}`,
+      hoverFormula: `${studentStatFormula.formula}+${abilityReleaseBonus}+${uniqueWeaponBonus}=${total}`,
       lines: [
-        `生徒本体: ${studentValue}`,
-        `能力解放: round(★1基準 ${starOneValue} × WB Lv.${wbLevel} × 0.002) = ${abilityReleaseBonus}`,
+        `生徒本体: ${studentStatFormula.formula} = ${studentValue}`,
+        `能力解放: round(${starOneStatFormula.formula}*${wbLevel}*0.002) = ${abilityReleaseBonus}`,
         `固有武器: ${uniqueWeaponBonus}`,
-        `合計: ${total}`,
+        `合計: ${studentValue} + ${abilityReleaseBonus} + ${uniqueWeaponBonus} = ${total}`,
       ],
     }
   }
@@ -844,30 +833,12 @@ export default function StudentUserData({
       )}
 
       {calcDetail && (
-        <div
-          className={`fixed inset-0 z-20 flex items-center justify-center transition-opacity duration-200 ${dark ? 'bg-black/50' : 'bg-black/20'}`}
-          onClick={() => setCalcDetail(null)}
-        >
-          <div
-            className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 rounded space-y-2 w-[min(90vw,32rem)] transform transition-all`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="font-bold text-lg">{calcDetail.label} の計算詳細</h3>
-            <p className="text-sm break-words">{calcDetail.formula}</p>
-            <ul className="list-disc pl-5 space-y-1 text-sm">
-              {calcDetail.lines.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-            <button
-              type="button"
-              onClick={() => setCalcDetail(null)}
-              className="underline text-sm block ml-auto"
-            >
-              閉じる
-            </button>
-          </div>
-        </div>
+        <CalculationDetailModal
+          label={calcDetail.label}
+          formula={calcDetail.formula}
+          lines={calcDetail.lines}
+          onClose={() => setCalcDetail(null)}
+        />
       )}
 
       {skillDetail && (
