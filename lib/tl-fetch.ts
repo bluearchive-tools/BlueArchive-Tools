@@ -8,6 +8,9 @@ export interface TLSeason {
   endDate: string
   boss?: string
   terrain?: string
+  type?: string
+  maxDifficulty?: string
+  maxDifficultyArmors?: string[]
   defenseArmors?: string[]
 }
 
@@ -137,6 +140,7 @@ const bossAliases: Record<string, string[]> = {
 
 const getBossQueryVariants = (boss?: string) => {
   if (!boss) return []
+  if (boss === 'シロ&クロ') return ['シロクロ']
   const variants = [boss, ...(bossAliases[boss] ?? [])]
   return Array.from(new Set(variants.filter((value) => value.trim().length > 0)))
 }
@@ -161,6 +165,36 @@ const getBossTerrainMap = async () => {
 
 const shouldIncludeArmor = (seasonNumber: string) =>
   !seasonNumber.toUpperCase().startsWith('S')
+
+const difficultyOrder = ['Hardcore', 'Extreme', 'Insane', 'Torment', 'Lunatic'] as const
+
+const buildDifficultyQueries = (season: TLSeason, armor: string) => {
+  const aliases: Record<string, string[]> = {
+    Hardcore: ['Hardcore'],
+    Extreme: ['Extreme'],
+    Insane: ['Insane'],
+    Torment: ['Torment', 'TMT'],
+    Lunatic: ['Lunatic'],
+  }
+
+  const availableOrder =
+    season.type === '大決戦'
+      ? difficultyOrder.filter((d) => d !== 'Lunatic')
+      : [...difficultyOrder]
+
+  const maxDifficulty = season.maxDifficulty || (season.type === '大決戦' ? 'Torment' : 'Lunatic')
+  const maxIndex = availableOrder.indexOf(maxDifficulty as (typeof availableOrder)[number])
+  let allowedIndex = maxIndex >= 0 ? maxIndex : availableOrder.length - 1
+
+  if (season.type === '大決戦' && armor) {
+    const unlocked = season.maxDifficultyArmors?.includes(armor)
+    if (!unlocked) allowedIndex = Math.max(0, allowedIndex - 1)
+  }
+
+  const difficulties = availableOrder.slice(0, allowedIndex + 1)
+  return difficulties.flatMap((d) => aliases[d] ?? [d])
+}
+
 
 export function guessSeason(snippet: Snippet, seasons: TLSeason[]): string | null {
   const { title = '', description = '', publishedAt } = snippet
@@ -355,13 +389,6 @@ export async function fetchYouTubeVideos(
   const results: YouTubeVideoItem[] = []
   const seen = new Set<string>()
   const bossTerrainMap = await getBossTerrainMap()
-  const difficultyQueries = [
-    ['Hardcore'],
-    ['Extreme'],
-    ['Insane'],
-    ['Torment', 'TMT'],
-    ['Lunatic'],
-  ]
   for (const s of seasons) {
     const bossTerms = getBossQueryVariants(s.boss)
     if (bossTerms.length === 0) continue
@@ -375,25 +402,24 @@ export async function fetchYouTubeVideos(
         : ['']
     for (const boss of bossTerms) {
       for (const armor of armors) {
-        for (const variants of difficultyQueries) {
-          for (const difficulty of variants) {
-            const query = [boss, terrain, armor, difficulty].filter(Boolean).join(' ')
-            if (!query) continue
-            log?.(`YouTube検索クエリ: ${query}`)
-            for (const key of apiKeys) {
-              const res = await fetch(`${base}&q=${encodeURIComponent(query)}&key=${key}`)
-              if (res.ok) {
-                const data = await res.json()
-                for (const item of data.items as YouTubeVideoItem[]) {
-                  const vid = item?.id?.videoId
-                  if (!vid) continue
-                  if (!seen.has(vid)) {
-                    seen.add(vid)
-                    results.push(item)
-                  }
+        const difficulties = buildDifficultyQueries(s, armor)
+        for (const difficulty of difficulties) {
+          const query = [boss, terrain, armor, difficulty].filter(Boolean).join(' ')
+          if (!query) continue
+          log?.(`YouTube検索クエリ: ${query}`)
+          for (const key of apiKeys) {
+            const res = await fetch(`${base}&q=${encodeURIComponent(query)}&key=${key}`)
+            if (res.ok) {
+              const data = await res.json()
+              for (const item of data.items as YouTubeVideoItem[]) {
+                const vid = item?.id?.videoId
+                if (!vid) continue
+                if (!seen.has(vid)) {
+                  seen.add(vid)
+                  results.push(item)
                 }
-                break
               }
+              break
             }
           }
         }
