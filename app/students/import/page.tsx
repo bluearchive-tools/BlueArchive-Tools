@@ -98,12 +98,12 @@ const toSchaleEntry = (
   star: Number(row.s ?? 1),
   bond: Number(row.b ?? 0),
   hp: null,
-  hpWb: Number(row.ph ?? 0),
+  hpWb: Number(row.pm ?? 0),
   attack: null,
   attackWb: Number(row.pa ?? 0),
   defense: null,
   heal: null,
-  healWb: Number(row.pm ?? 0),
+  healWb: Number(row.ph ?? 0),
   exSkill: Number(row.s1 ?? 1),
   normalSkill: Number(row.s2 ?? 1),
   passiveSkill: Number(row.s3 ?? 1),
@@ -717,8 +717,8 @@ export default function StudentImportPage() {
       setProgress(0)
       setSchaleMessage(
         skipped > 0
-          ? `SchaleDBデータを ${dedup.size} 件取り込みました（未対応ID ${skipped} 件をスキップ）。`
-          : `SchaleDBデータを ${dedup.size} 件取り込みました。`
+          ? `SchaleDBデータを ${dedup.size} 件取り込みました（未対応ID ${skipped} 件をスキップ）。下の「保存」を押すと反映されます。`
+          : `SchaleDBデータを ${dedup.size} 件取り込みました。下の「保存」を押すと反映されます。`
       )
     } catch {
       setError('SchaleDBの文字列を読み取れませんでした。JSONまたはBase64文字列を確認してください。')

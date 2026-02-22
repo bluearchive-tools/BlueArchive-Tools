@@ -1868,9 +1868,17 @@ export default function TLSearchPage() {
           onClick={closeModal}
         >
           <div
-            className={`bg-white rounded w-full max-w-5xl h-[80vh] max-h-[80vh] flex flex-col overflow-hidden transition-all duration-200 ${modalClosing ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
+            className={`bg-white rounded-xl w-[92vw] max-w-5xl h-[72vh] sm:h-[80vh] max-h-[80vh] flex flex-col overflow-hidden transition-all duration-200 ${modalClosing ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
             onClick={(e) => e.stopPropagation()}
           >
+            <button
+              type="button"
+              onClick={closeModal}
+              className="absolute right-3 top-3 z-10 rounded border border-gray-300 bg-white/90 px-2 py-1 text-sm"
+              aria-label="閉じる"
+            >
+              ×
+            </button>
             <div className="flex flex-col md:flex-row h-full">
               <div className="flex-1 min-h-0 md:flex-none md:w-5/12 border-b md:border-b-0 md:border-r p-4 space-y-3 overflow-y-auto">
                 <a

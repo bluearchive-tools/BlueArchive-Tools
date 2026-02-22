@@ -9,7 +9,9 @@ import EditValueModal from './EditValueModal'
 import EditBondsModal from './EditBondsModal'
 import SkillDetailModal from './SkillDetailModal'
 import EquipmentDetailModal from './EquipmentDetailModal'
-import { calculateStatFromBase } from '../lib/student-status'
+import UniqueWeaponDetailModal from './UniqueWeaponDetailModal'
+import CalculationDetailModal from './CalculationDetailModal'
+import { calculateStatFromBase, getStatCalculationFormula } from '../lib/student-status'
 
 function attrBg(attr?: string) {
   switch (attr) {
@@ -64,12 +66,20 @@ interface Student {
   skills?: Record<string, SkillDefinition>
   equipmentSlots?: Record<string, string[]>
   accessory?: { tiers: { tier: number; name: string; description: string }[] }
+  uniqueWeapon?: UniqueWeapon
 }
 
 interface Skill {
   title: string
   text: string
   values: Record<string, number[]>
+}
+
+interface UniqueWeapon {
+  name: string
+  hp: number
+  attack: number
+  heal: number
 }
 
 interface UserStudent {
@@ -121,6 +131,8 @@ export default function StudentUserData({
   const [equipment, setEquipment] = useState<Record<string, { tiers: { tier: number; name: string; description: string }[] }>>({})
   const [skillDetail, setSkillDetail] = useState<{ entries: SkillEntry[]; level: number } | null>(null)
   const [gearDetail, setGearDetail] = useState<{ type: string; tier: number; equipment?: Record<string, { tiers: { tier: number; name: string; description: string }[] }> } | null>(null)
+  const [calcDetail, setCalcDetail] = useState<{ label: string; formula: string; lines: string[] } | null>(null)
+  const [uniqueWeaponDetail, setUniqueWeaponDetail] = useState<UniqueWeapon | null>(null)
 
   const getSkillEntries = (target?: SkillDefinition): SkillEntry[] => {
     if (!target) return []
@@ -257,13 +269,73 @@ export default function StudentUserData({
 
   const display = data || (previewMax ? placeholderMax : placeholderMin)
 
-  const resolveDisplayedStat = (field: 'hp' | 'attack' | 'defense' | 'heal') => {
-    const raw = display[field]
-    if (raw > 0) return raw
-    if (!student) return 0
-    const base = student[field]
+  const resolveUniqueWeaponStat = (field: 'hp' | 'attack' | 'heal') => {
+    if (!student?.uniqueWeapon) return 0
+    if (display.unique_star < 1 || display.unique_level <= 0) return 0
+    const base = student.uniqueWeapon[field]
     if (!base || base <= 0) return 0
     return calculateStatFromBase({
+      base,
+      statType: field,
+      level: display.unique_level,
+      star: 1,
+      initialStars: 1,
+    })
+  }
+
+  const resolveAbilityReleaseBonus = (
+    field: 'hp' | 'attack' | 'heal',
+    starOneValue: number
+  ) => {
+    const wbLevelRaw =
+      field === 'hp' ? display.hp_wb : field === 'attack' ? display.attack_wb : display.heal_wb
+    const wbLevel = Math.max(0, Math.min(25, Math.floor(wbLevelRaw || 0)))
+    if (display.star < 5 || wbLevel <= 0) return 0
+    return Math.round(starOneValue * wbLevel * 0.002)
+  }
+
+  const getStatCalculationDetail = (field: 'hp' | 'attack' | 'defense' | 'heal') => {
+    const labelMap = {
+      hp: 'HP',
+      attack: '攻撃力',
+      defense: '防御力',
+      heal: '治癒力',
+    } as const
+    const label = labelMap[field]
+    const raw = display[field]
+
+    if (raw > 0) {
+      return {
+        label,
+        total: raw,
+        formula: `手動入力値: ${raw}`,
+        hoverFormula: `${raw}`,
+        lines: ['手動入力された値をそのまま表示しています。'],
+      }
+    }
+
+    if (!student) {
+      return {
+        label,
+        total: 0,
+        formula: '生徒データ未読み込み',
+        hoverFormula: '-',
+        lines: ['生徒データの取得後に計算式を確認できます。'],
+      }
+    }
+
+    const base = student[field]
+    if (!base || base <= 0) {
+      return {
+        label,
+        total: 0,
+        formula: '基礎値なし',
+        hoverFormula: '-',
+        lines: ['この項目の基礎値が未設定です。'],
+      }
+    }
+
+    const studentStatFormula = getStatCalculationFormula({
       base,
       statType: field,
       level: display.level,
@@ -271,12 +343,78 @@ export default function StudentUserData({
       star: display.star,
       initialStars: student.initialStars,
     })
+    const studentValue = studentStatFormula.roundedValue
+
+    if (field === 'defense') {
+      return {
+        label,
+        total: studentValue,
+        formula: `${studentStatFormula.formula} = ${studentValue}`,
+        hoverFormula: studentStatFormula.formula,
+        lines: [
+          `生徒本体: ${studentStatFormula.formula} = ${studentValue}`,
+          '防御力には能力解放/固有武器の加算はありません。',
+        ],
+      }
+    }
+
+    const starOneStatFormula = getStatCalculationFormula({
+      base,
+      statType: field,
+      level: display.level,
+      range: student.range,
+      star: 1,
+      initialStars: student.initialStars,
+    })
+    const starOneValue = starOneStatFormula.roundedValue
+    const abilityReleaseBonus = resolveAbilityReleaseBonus(field, starOneValue)
+    const uniqueWeaponBonus = resolveUniqueWeaponStat(field)
+    const total = studentValue + abilityReleaseBonus + uniqueWeaponBonus
+
+    const wbLevel =
+      field === 'hp' ? display.hp_wb : field === 'attack' ? display.attack_wb : display.heal_wb
+
+    return {
+      label,
+      total,
+      formula: `${studentStatFormula.formula} + round(${starOneStatFormula.formula}*${wbLevel}*0.002) + ${uniqueWeaponBonus} = ${total}`,
+      hoverFormula: `${studentStatFormula.formula}+${abilityReleaseBonus}+${uniqueWeaponBonus}=${total}`,
+      lines: [
+        `生徒本体: ${studentStatFormula.formula} = ${studentValue}`,
+        `能力解放: round(${starOneStatFormula.formula}*${wbLevel}*0.002) = ${abilityReleaseBonus}`,
+        `固有武器: ${uniqueWeaponBonus}`,
+        `合計: ${studentValue} + ${abilityReleaseBonus} + ${uniqueWeaponBonus} = ${total}`,
+      ],
+    }
   }
 
-  const hpValue = resolveDisplayedStat('hp')
-  const attackValue = resolveDisplayedStat('attack')
-  const defenseValue = resolveDisplayedStat('defense')
-  const healValue = resolveDisplayedStat('heal')
+  const hpCalc = getStatCalculationDetail('hp')
+  const attackCalc = getStatCalculationDetail('attack')
+  const defenseCalc = getStatCalculationDetail('defense')
+  const healCalc = getStatCalculationDetail('heal')
+
+  const renderStatValue = (calc: {
+    label: string
+    total: number
+    formula: string
+    hoverFormula: string
+    lines: string[]
+  }) => (
+    <span
+      onClick={(e) => {
+        e.stopPropagation()
+        setCalcDetail({ label: calc.label, formula: calc.formula, lines: calc.lines })
+      }}
+      className="relative inline-flex items-center group"
+    >
+      <span className="underline decoration-dotted cursor-help">{calc.total > 0 ? calc.total : '-'}</span>
+      <span
+        className={`pointer-events-none absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 whitespace-nowrap rounded px-2 py-1 text-xs ${dark ? 'bg-gray-900 text-white border border-gray-700' : 'bg-white text-gray-900 border border-gray-300'} opacity-0 shadow transition-opacity group-hover:opacity-100`}
+      >
+        {calc.hoverFormula}
+      </span>
+    </span>
+  )
 
   const bondEntries = Object.entries(
     (isRegistered ? data.alt_bonds ?? { [baseId]: data.bond } : { [baseId]: display.bond })
@@ -386,7 +524,7 @@ export default function StudentUserData({
               }
               className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              HP {hpValue > 0 ? hpValue : '-'}{' '}
+              HP {renderStatValue(hpCalc)}{' '}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
@@ -410,7 +548,7 @@ export default function StudentUserData({
               }
               className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              攻撃力 {attackValue > 0 ? attackValue : '-'}{' '}
+              攻撃力 {renderStatValue(attackCalc)}{' '}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
@@ -442,7 +580,7 @@ export default function StudentUserData({
               }
               className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              防御力 {defenseValue > 0 ? defenseValue : '-'}
+              防御力 {renderStatValue(defenseCalc)}
             </div>
             <div
               onClick={() =>
@@ -450,7 +588,7 @@ export default function StudentUserData({
               }
               className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
             >
-              治癒力 {healValue > 0 ? healValue : '-'}{' '}
+              治癒力 {renderStatValue(healCalc)}{' '}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
@@ -536,10 +674,13 @@ export default function StudentUserData({
           <div className="skew-x-12">
             <div
               className={`-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1 space-y-1 cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
-              onClick={() =>
-                editMode && isRegistered &&
-                setEditField({ field: 'unique_level', label: '固有武器Lv', value: display.unique_level, min: 0 })
-              }
+              onClick={() => {
+                if (editMode && isRegistered) {
+                  setEditField({ field: 'unique_level', label: '固有武器Lv', value: display.unique_level, min: 0 })
+                } else if (student?.uniqueWeapon) {
+                  setUniqueWeaponDetail(student.uniqueWeapon)
+                }
+              }}
             >
               <span className="text-sm">固有武器</span>
               <span>Lv. {display.unique_level}</span>
@@ -690,6 +831,16 @@ export default function StudentUserData({
           }}
         />
       )}
+
+      {calcDetail && (
+        <CalculationDetailModal
+          label={calcDetail.label}
+          formula={calcDetail.formula}
+          lines={calcDetail.lines}
+          onClose={() => setCalcDetail(null)}
+        />
+      )}
+
       {skillDetail && (
         <SkillDetailModal
           entries={skillDetail.entries}
@@ -697,6 +848,14 @@ export default function StudentUserData({
           onClose={() => setSkillDetail(null)}
         />
       )}
+      {uniqueWeaponDetail && (
+        <UniqueWeaponDetailModal
+          weapon={uniqueWeaponDetail}
+          level={display.unique_level}
+          onClose={() => setUniqueWeaponDetail(null)}
+        />
+      )}
+
       {gearDetail && (
         <EquipmentDetailModal
           type={gearDetail.type}
