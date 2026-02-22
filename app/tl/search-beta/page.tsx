@@ -52,15 +52,57 @@ export default function TLSearchBetaPage() {
   const [season, setSeason] = useState('')
   const [openRow, setOpenRow] = useState<BetaRow | null>(null)
   const [openArmorTab, setOpenArmorTab] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     const run = async () => {
-      const [raidRes, tlRes] = await Promise.all([fetch('/data/raid.json'), fetch('/api/timelines')])
-      if (raidRes.ok) setRaidData(await raidRes.json())
-      if (tlRes.ok) setTimelines(await tlRes.json())
+      setLoading(true)
+      setError('')
+      try {
+        const raidRes = await fetch('/api/raids')
+        if (!raidRes.ok) throw new Error('raid fetch failed')
+        const data: RaidData = await raidRes.json()
+        data.seasons.sort((a, b) => Number(b.number) - Number(a.number))
+        setRaidData(data)
+
+        const latest = data.seasons[0]
+        if (latest) {
+          setSeason(latest.number)
+          setBoss(latest.boss)
+          setTerrain(latest.terrain)
+          const tlRes = await fetch(`/api/timelines?season=${latest.number}`)
+          if (!tlRes.ok) throw new Error('timelines fetch failed')
+          const tlData: Timeline[] = await tlRes.json()
+          setTimelines(tlData)
+        }
+      } catch {
+        setError('データ取得に失敗しました。時間をおいて再度お試しください。')
+      } finally {
+        setLoading(false)
+      }
     }
     run()
   }, [])
+
+  const handleSearch = async () => {
+    if (!season) {
+      setError('シーズンを選択してください。')
+      return
+    }
+    setLoading(true)
+    setError('')
+    try {
+      const tlRes = await fetch(`/api/timelines?season=${season}`)
+      if (!tlRes.ok) throw new Error('timelines fetch failed')
+      const data: Timeline[] = await tlRes.json()
+      setTimelines(data)
+    } catch {
+      setError('TLデータ取得に失敗しました。時間をおいて再度お試しください。')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const selectedSeason = useMemo(() => raidData?.seasons.find((s) => s.number === season), [raidData, season])
 
@@ -149,8 +191,16 @@ export default function TLSearchBetaPage() {
         <Link href="/tl/search" className="underline text-sm">通常版へ</Link>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <select className="border rounded px-2 py-2" value={season} onChange={(e) => setSeason(e.target.value)}>
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <select className="border rounded px-2 py-2" value={season} onChange={(e) => {
+          const nextSeason = e.target.value
+          setSeason(nextSeason)
+          const selected = raidData?.seasons.find((s) => s.number === nextSeason)
+          if (selected) {
+            setBoss(selected.boss)
+            setTerrain(selected.terrain)
+          }
+        }}>
           <option value="">シーズン</option>
           {raidData?.seasons.map((s) => <option key={s.number} value={s.number}>{s.number}</option>)}
         </select>
@@ -162,8 +212,12 @@ export default function TLSearchBetaPage() {
           <option value="">地形</option>
           {raidData?.terrains.map((v) => <option key={v} value={v}>{v}</option>)}
         </select>
+        <button className="border rounded px-2 py-2 bg-cyan-100 font-semibold" onClick={handleSearch} disabled={loading}>
+          {loading ? '取得中...' : '検索'}
+        </button>
         <div className="rounded bg-white border px-2 py-2 text-sm">件数: {rows.length}</div>
       </div>
+      {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="rounded-xl border bg-white overflow-hidden">
         {rows.slice(0, 30).map((row) => (
