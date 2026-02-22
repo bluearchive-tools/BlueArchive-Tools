@@ -15,6 +15,7 @@ interface Snippet {
   title?: string
   description?: string
   publishedAt?: string
+  channelId?: string
   thumbnails?: {
     medium?: { url?: string }
     default?: { url?: string }
@@ -68,6 +69,52 @@ interface UserStudent {
   equip3: number
   item_tier: number
   alt_bonds?: Record<string, number>
+}
+
+
+type SocialLink = {
+  service?: string
+  verified?: boolean
+  channelId?: string | null
+  biliUid?: string | null
+}
+
+type OwnerIndex = {
+  youtube: Map<string, string>
+  bilibili: Map<string, string>
+}
+
+const parseSocialLinks = (raw: unknown): SocialLink[] => {
+  if (!raw) return []
+  if (Array.isArray(raw)) return raw as SocialLink[]
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw)
+      return Array.isArray(parsed) ? (parsed as SocialLink[]) : []
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
+async function loadOwnerIndex(supabase: SupabaseClient): Promise<OwnerIndex> {
+  const youtube = new Map<string, string>()
+  const bilibili = new Map<string, string>()
+  const { data } = await supabase.from('profiles').select('id, social_links')
+  for (const row of (data ?? []) as Array<{ id: string; social_links?: unknown }>) {
+    const links = parseSocialLinks(row.social_links)
+    for (const link of links) {
+      if (link?.verified !== true) continue
+      if (link.service === 'youtube' && typeof link.channelId === 'string' && link.channelId) {
+        youtube.set(link.channelId, row.id)
+      }
+      if (link.service === 'bilibili' && typeof link.biliUid === 'string' && link.biliUid) {
+        bilibili.set(link.biliUid, row.id)
+      }
+    }
+  }
+  return { youtube, bilibili }
 }
 
 const getYouTubeApiKeys = () => {
@@ -463,6 +510,7 @@ export async function fetchBilibiliVideos(
     description: string
     publishedAt?: string
     thumbnail?: string
+    uploaderMid?: string
   }> = []
   const seen = new Set<string>()
   const config = await loadBilibiliKeywordConfig()
@@ -497,6 +545,7 @@ export async function fetchBilibiliVideos(
               description?: string
               pubdate?: number
               pic?: string
+              mid?: string | number
             }>
           }
         }
@@ -511,6 +560,7 @@ export async function fetchBilibiliVideos(
             description: stripHtml(item.description ?? ''),
             publishedAt: item.pubdate ? new Date(item.pubdate * 1000).toISOString() : undefined,
             thumbnail: normalizeBilibiliThumbnail(item.pic),
+            uploaderMid: item.mid != null ? String(item.mid) : undefined,
           })
         }
       }
@@ -525,12 +575,12 @@ async function fetchBilibiliDetails(
 ): Promise<
   Record<
     string,
-    { title?: string; description?: string; publishedAt?: string; thumbnail?: string }
+    { title?: string; description?: string; publishedAt?: string; thumbnail?: string; ownerMid?: string }
   >
 > {
   const out: Record<
     string,
-    { title?: string; description?: string; publishedAt?: string; thumbnail?: string }
+    { title?: string; description?: string; publishedAt?: string; thumbnail?: string; ownerMid?: string }
   > = {}
   for (const bvid of bvids) {
     try {
@@ -544,6 +594,9 @@ async function fetchBilibiliDetails(
           desc?: string
           pubdate?: number
           pic?: string
+          owner?: {
+            mid?: string | number
+          }
         }
       }
       if (!json.data) continue
@@ -560,6 +613,7 @@ async function fetchBilibiliDetails(
           ? new Date(json.data.pubdate * 1000).toISOString()
           : undefined,
         thumbnail: normalizeBilibiliThumbnail(json.data.pic),
+        ownerMid: json.data.owner?.mid != null ? String(json.data.owner.mid) : undefined,
       }
     } catch {
       log?.(`Bilibili ${bvid}: 詳細取得に失敗`)
@@ -641,12 +695,29 @@ export async function upsertTimelines(params: {
     pushLog(`更新保護: ${lockedVideoIds.size}件`)
   }
 
+  const ownerIndex = await loadOwnerIndex(supabase)
+  const existingOwnerMap = new Map<string, string | null>()
+  if (allVideoIds.length > 0) {
+    const { data: currentOwners } = await supabase
+      .from('tl_video_settings')
+      .select('videoid, owner_user_id')
+      .in('videoid', allVideoIds)
+    for (const row of (currentOwners || []) as Array<{ videoid: string; owner_user_id?: string | null }>) {
+      if (!row?.videoid) continue
+      existingOwnerMap.set(row.videoid, row.owner_user_id ?? null)
+    }
+  }
+  const ownerAssignments = new Map<string, string>()
+
   for (const info of ytVideos) {
     const vid = info?.id?.videoId
     if (!vid) continue
     const storedId = toStoredVideoId('youtube', vid)
     const full = ytSnippets[vid]
-    const snippet = full || info.snippet
+    const sourceSnippet = full || info.snippet
+    const ownerByChannel = sourceSnippet?.channelId ? ownerIndex.youtube.get(sourceSnippet.channelId) : undefined
+    if (ownerByChannel) ownerAssignments.set(storedId, ownerByChannel)
+    const snippet = sourceSnippet
     const targetSeasonStart = season ? seasonStartMap.get(season) : undefined
     if (isTooEarlyForSeason(snippet, targetSeasonStart)) {
       pushLog(
@@ -750,6 +821,12 @@ export async function upsertTimelines(params: {
   for (const info of biliVideos) {
     const storedId = toStoredVideoId('bilibili', info.bvid)
     const detail = biliDetails[info.bvid]
+    const ownerByBili = detail?.ownerMid
+      ? ownerIndex.bilibili.get(detail.ownerMid)
+      : info.uploaderMid
+        ? ownerIndex.bilibili.get(info.uploaderMid)
+        : undefined
+    if (ownerByBili) ownerAssignments.set(storedId, ownerByBili)
     const snippet: Snippet = {
       title: detail?.title ?? info.title,
       description: detail?.description ?? info.description,
@@ -852,6 +929,17 @@ export async function upsertTimelines(params: {
       } else {
         pushLog(`Bilibili ${info.bvid}: 更新なし`)
       }
+    }
+  }
+
+  for (const [videoid, ownerUserId] of ownerAssignments) {
+    const existingOwner = existingOwnerMap.get(videoid)
+    if (existingOwner) continue
+    const { error } = await supabase
+      .from('tl_video_settings')
+      .upsert({ videoid, owner_user_id: ownerUserId }, { onConflict: 'videoid' })
+    if (!error) {
+      pushLog(`owner紐付け: ${videoid} -> ${ownerUserId}`)
     }
   }
 
