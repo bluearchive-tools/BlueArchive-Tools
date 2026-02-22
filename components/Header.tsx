@@ -10,11 +10,18 @@ import AboutModal from './AboutModal'
 import DiscordSignInButton from './DiscordSignInButton'
 import type { NextRouter } from 'next/router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBell, faCog, faChevronDown, faCircleQuestion, faMoon, faShop, faSun } from '@fortawesome/free-solid-svg-icons'
 import {
-  useSession,
-  useSupabaseClient,
-} from '@supabase/auth-helpers-react'
+  faBars,
+  faBell,
+  faChevronDown,
+  faCircleQuestion,
+  faCog,
+  faMoon,
+  faShop,
+  faSun,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons'
+import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useTheme } from './ThemeProvider'
 import { useLocale, useTranslations } from 'next-intl'
@@ -35,6 +42,7 @@ export default function Header() {
   const [accountOpen, setAccountOpen] = useState(false)
   const [hideHeader, setHideHeader] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false)
   const { dark, toggle } = useTheme()
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -65,8 +73,6 @@ export default function Header() {
     document.addEventListener('click', handleClick)
     return () => document.removeEventListener('click', handleClick)
   }, [accountOpen])
-
-
 
   useEffect(() => {
     const read = () => {
@@ -109,12 +115,10 @@ export default function Header() {
       }
     }
   }, [])
+
   const signOut = async () => {
     if (session) {
-      const { data } = await supabase
-        .from('user_students')
-        .select('*')
-        .eq('user_id', session.user.id)
+      const { data } = await supabase.from('user_students').select('*').eq('user_id', session.user.id)
       if (data) {
         for (const row of data) {
           const key = `userStudent:${row.student_id}`
@@ -125,6 +129,7 @@ export default function Header() {
     }
     await supabase.auth.signOut()
     setAccountOpen(false)
+    setMobileToolsOpen(false)
     router.push('/')
   }
 
@@ -184,18 +189,62 @@ export default function Header() {
   const isMakerPage = (pathname ?? '').startsWith('/tl/maker')
   if (isMakerPage && hideHeader) return null
 
+  const accountButton = (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setAccountOpen(!accountOpen)}
+        className="cursor-pointer min-w-[8rem] whitespace-nowrap text-center flex items-center justify-center gap-1"
+      >
+        {session && username ? username : t('account.label')}
+        <FontAwesomeIcon icon={faChevronDown} />
+      </button>
+      {accountOpen && (
+        <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 dark:text-white text-black shadow p-2 z-10">
+          {session ? (
+            <>
+              {username && (
+                <Link href={`/users/${username}`} className="block px-2 py-1" onClick={() => setAccountOpen(false)}>
+                  {t('account.userProfile')}
+                </Link>
+              )}
+              <Link href="/mypage" className="block px-2 py-1" onClick={() => setAccountOpen(false)}>
+                {t('account.mypage')}
+              </Link>
+              <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
+              <button onClick={signOut} className="block w-full text-left px-2 py-1">
+                {t('account.signOut')}
+              </button>
+            </>
+          ) : (
+            <div className="flex flex-col gap-2 px-2 py-1">
+              <GoogleSignInButton
+                width={220}
+                theme="outline"
+                size="medium"
+                text="continue_with"
+                className="flex justify-center"
+              />
+              <DiscordSignInButton label={t('account.signInWithDiscord')} className="w-full" />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+
   return (
-    <header className="sticky top-0 inset-x-0 z-10 w-full flex justify-between items-center border-b dark:bg-black dark:text-white dark:border-gray-700 transition-colors p-4 h-16 relative">
-      <div className="flex items-center gap-2">
-        <h1 className="text-lg font-bold">
-          <Link href="/">{t('brand')}</Link>
-        </h1>
-        <button onClick={() => setAboutOpen(true)} aria-label={t('actions.about')} className="text-base">
-          <FontAwesomeIcon icon={faCircleQuestion} />
-        </button>
-      </div>
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
+    <header className="sticky top-0 inset-x-0 z-10 w-full border-b dark:bg-black dark:text-white dark:border-gray-700 transition-colors px-4 py-3 relative">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <h1 className="text-lg font-bold leading-tight">
+            <Link href="/">{t('brand')}</Link>
+          </h1>
+          <button onClick={() => setAboutOpen(true)} aria-label={t('actions.about')} className="text-base shrink-0">
+            <FontAwesomeIcon icon={faCircleQuestion} />
+          </button>
+        </div>
+
+        <div className="hidden md:flex items-center gap-4">
           <label htmlFor="locale-select" className="sr-only">
             {t('locale.label')}
           </label>
@@ -212,54 +261,69 @@ export default function Header() {
               </option>
             ))}
           </select>
-        </div>
-        <button onClick={openNotice} aria-label={t('actions.notices')}>
-          <FontAwesomeIcon icon={faBell} />
-        </button>
-        <Link href="/decorations" aria-label="デコレーションショップ" className="text-lg">
-          <FontAwesomeIcon icon={faShop} />
-        </Link>
-        <Link href="/mypage" aria-label={t('actions.settings')}>
-          <FontAwesomeIcon icon={faCog} />
-        </Link>
-        <button onClick={toggleTheme} aria-label={t('actions.toggleTheme')}>
-          <FontAwesomeIcon icon={dark ? faSun : faMoon} />
-        </button>
-        <div className="relative" ref={dropdownRef}>
-          <button
-            onClick={() => setAccountOpen(!accountOpen)}
-            className="cursor-pointer min-w-[8rem] whitespace-nowrap text-center flex items-center justify-center gap-1"
-          >
-            {session && username ? username : t('account.label')}
-            <FontAwesomeIcon icon={faChevronDown} />
+          <button onClick={openNotice} aria-label={t('actions.notices')}>
+            <FontAwesomeIcon icon={faBell} />
           </button>
-              {accountOpen && (
-                <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 dark:text-white text-black shadow p-2 z-10">
-                  {session ? (
-                    <>
-                  {username && (
-                    <Link href={`/users/${username}`} className="block px-2 py-1">
-                      {t('account.userProfile')}
-                    </Link>
-                  )}
-                  <Link href="/mypage" className="block px-2 py-1">
-                    {t('account.mypage')}
-                  </Link>
-                  <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
-                      <button onClick={signOut} className="block w-full text-left px-2 py-1">
-                        {t('account.signOut')}
-                      </button>
-                    </>
-                  ) : (
-                <div className="flex flex-col gap-2 px-2 py-1">
-                  <GoogleSignInButton width={220} theme="outline" size="medium" text="continue_with" className="flex justify-center" />
-                  <DiscordSignInButton label={t('account.signInWithDiscord')} className="w-full" />
-                </div>
-              )}
-            </div>
-          )}
+          <Link href="/decorations" aria-label="デコレーションショップ" className="text-lg">
+            <FontAwesomeIcon icon={faShop} />
+          </Link>
+          <Link href="/mypage" aria-label={t('actions.settings')}>
+            <FontAwesomeIcon icon={faCog} />
+          </Link>
+          <button onClick={toggleTheme} aria-label={t('actions.toggleTheme')}>
+            <FontAwesomeIcon icon={dark ? faSun : faMoon} />
+          </button>
+          {accountButton}
+        </div>
+
+        <div className="md:hidden flex items-center gap-2 shrink-0">
+          <label htmlFor="locale-select-mobile" className="sr-only">
+            {t('locale.label')}
+          </label>
+          <select
+            id="locale-select-mobile"
+            aria-label={t('locale.ariaLabel')}
+            value={locale}
+            onChange={(e) => changeLocale(e.target.value as Locale)}
+            className="border rounded px-2 py-1 text-sm bg-white dark:bg-gray-800 dark:text-white dark:border-gray-700"
+          >
+            {SUPPORTED_LOCALES.map((code) => (
+              <option key={code} value={code}>
+                {t(`locale.${code}`)}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => setMobileToolsOpen((prev) => !prev)}
+            aria-label={mobileToolsOpen ? 'ツールを閉じる' : 'ツールを開く'}
+            className="border rounded px-2 py-1"
+          >
+            <FontAwesomeIcon icon={mobileToolsOpen ? faXmark : faBars} />
+          </button>
         </div>
       </div>
+
+      {mobileToolsOpen && (
+        <div className="md:hidden mt-3 border-t pt-3 space-y-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <button onClick={openNotice} aria-label={t('actions.notices')} className="border rounded px-3 py-1">
+              <FontAwesomeIcon icon={faBell} />
+            </button>
+            <Link href="/decorations" aria-label="デコレーションショップ" className="border rounded px-3 py-1">
+              <FontAwesomeIcon icon={faShop} />
+            </Link>
+            <Link href="/mypage" aria-label={t('actions.settings')} className="border rounded px-3 py-1">
+              <FontAwesomeIcon icon={faCog} />
+            </Link>
+            <button onClick={toggleTheme} aria-label={t('actions.toggleTheme')} className="border rounded px-3 py-1">
+              <FontAwesomeIcon icon={dark ? faSun : faMoon} />
+            </button>
+          </div>
+          <div className="flex justify-start">{accountButton}</div>
+        </div>
+      )}
+
       <div className={`absolute bottom-0 left-0 h-1 bg-blue-500 transition-all duration-300 ${loading ? 'w-full' : 'w-0'}`}></div>
       <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} currentPath={currentPath} />
       <NoticeModal />
