@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { Timeline } from '../../../types/timeline'
 import { parseTlFormation } from '../../../lib/tl-compatibility'
 
@@ -19,6 +20,24 @@ type RaidData = {
   armors: string[]
   types: string[]
   seasons: Season[]
+}
+
+type Student = {
+  id: string
+  name: string
+  image: string
+}
+
+type VideoSettingsRow = {
+  videoid: string
+  owner_user_id?: string | null
+}
+
+type ProfileRow = {
+  id: string
+  username?: string | null
+  nickname?: string | null
+  icon_student_id?: string | null
 }
 
 type BetaRow = {
@@ -39,14 +58,18 @@ const splitSquads = (formation: string) => {
   const members = parseTlFormation(formation)
   const squads: string[][] = []
   for (let i = 0; i < members.length; i += 6) {
-    squads.push(members.slice(i, i + 6).map((m) => m.name || m.id || '?'))
+    squads.push(members.slice(i, i + 6).map((m) => m.id || ''))
   }
   return squads.length ? squads : [[]]
 }
 
 export default function TLSearchBetaPage() {
+  const supabase = useSupabaseClient()
   const [raidData, setRaidData] = useState<RaidData | null>(null)
+  const [students, setStudents] = useState<Student[]>([])
   const [timelines, setTimelines] = useState<Timeline[]>([])
+  const [ownerMap, setOwnerMap] = useState<Record<string, ProfileRow>>({})
+  const [ownerByVideo, setOwnerByVideo] = useState<Record<string, string>>({})
   const [boss, setBoss] = useState('')
   const [terrain, setTerrain] = useState('')
   const [season, setSeason] = useState('')
@@ -54,17 +77,71 @@ export default function TLSearchBetaPage() {
   const [openArmorTab, setOpenArmorTab] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [visibleCount, setVisibleCount] = useState(30)
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
+
+  const studentMap = useMemo(() => {
+    const map: Record<string, Student> = {}
+    students.forEach((s) => {
+      map[s.id] = s
+    })
+    return map
+  }, [students])
+
+  const loadOwnerProfiles = useCallback(async (data: Timeline[]) => {
+    const videoIds = Array.from(new Set(data.map((t) => t.videoid).filter(Boolean)))
+    if (videoIds.length === 0) {
+      setOwnerByVideo({})
+      setOwnerMap({})
+      return
+    }
+
+    const { data: settingsData } = await supabase
+      .from('tl_video_settings')
+      .select('videoid, owner_user_id')
+      .in('videoid', videoIds)
+
+    const byVideo: Record<string, string> = {}
+    const ownerIds = new Set<string>()
+    ;((settingsData ?? []) as VideoSettingsRow[]).forEach((row) => {
+      if (row.videoid && row.owner_user_id) {
+        byVideo[row.videoid] = row.owner_user_id
+        ownerIds.add(row.owner_user_id)
+      }
+    })
+    setOwnerByVideo(byVideo)
+
+    if (ownerIds.size === 0) {
+      setOwnerMap({})
+      return
+    }
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, nickname, icon_student_id')
+      .in('id', Array.from(ownerIds))
+
+    const map: Record<string, ProfileRow> = {}
+    ;((profiles ?? []) as ProfileRow[]).forEach((p) => {
+      map[p.id] = p
+    })
+    setOwnerMap(map)
+  }, [supabase])
 
   useEffect(() => {
     const run = async () => {
       setLoading(true)
       setError('')
       try {
-        const raidRes = await fetch('/api/raids')
+        const [raidRes, stuRes] = await Promise.all([fetch('/api/raids'), fetch('/api/students')])
         if (!raidRes.ok) throw new Error('raid fetch failed')
         const data: RaidData = await raidRes.json()
         data.seasons.sort((a, b) => Number(b.number) - Number(a.number))
         setRaidData(data)
+        if (stuRes.ok) {
+          const stuData: Student[] = await stuRes.json()
+          setStudents(stuData)
+        }
 
         const latest = data.seasons[0]
         if (latest) {
@@ -75,6 +152,8 @@ export default function TLSearchBetaPage() {
           if (!tlRes.ok) throw new Error('timelines fetch failed')
           const tlData: Timeline[] = await tlRes.json()
           setTimelines(tlData)
+          setVisibleCount(30)
+          await loadOwnerProfiles(tlData)
         }
       } catch {
         setError('データ取得に失敗しました。時間をおいて再度お試しください。')
@@ -83,7 +162,7 @@ export default function TLSearchBetaPage() {
       }
     }
     run()
-  }, [])
+  }, [loadOwnerProfiles])
 
   const handleSearch = async () => {
     if (!season) {
@@ -97,6 +176,8 @@ export default function TLSearchBetaPage() {
       if (!tlRes.ok) throw new Error('timelines fetch failed')
       const data: Timeline[] = await tlRes.json()
       setTimelines(data)
+      setVisibleCount(30)
+      await loadOwnerProfiles(data)
     } catch {
       setError('TLデータ取得に失敗しました。時間をおいて再度お試しください。')
     } finally {
@@ -156,9 +237,9 @@ export default function TLSearchBetaPage() {
         })
       }
       const row = grouped.get(key)!
-      const armor = t.armor || '不明'
-      row.byArmor[armor] = Math.max(row.byArmor[armor] || 0, Number(t.score || 0))
-      row.sourceByArmor[armor] = t
+      const armorType = t.armor || '不明'
+      row.byArmor[armorType] = Math.max(row.byArmor[armorType] || 0, Number(t.score || 0))
+      row.sourceByArmor[armorType] = t
       row.totalScore = Object.values(row.byArmor).reduce((a, b) => a + b, 0)
     })
 
@@ -167,6 +248,19 @@ export default function TLSearchBetaPage() {
       .slice(0, 100)
       .map((r, idx) => ({ ...r, rank: idx + 1 }))
   }, [filtered, selectedSeason])
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      const [entry] = entries
+      if (entry?.isIntersecting) {
+        setVisibleCount((prev) => Math.min(prev + 20, rows.length))
+      }
+    }, { rootMargin: '300px 0px' })
+
+    const node = sentinelRef.current
+    if (node) observer.observe(node)
+    return () => observer.disconnect()
+  }, [rows.length])
 
   const armorTabs = selectedSeason?.defenseArmors?.length ? selectedSeason.defenseArmors : ['軽装備', '重装甲', '特殊装甲']
 
@@ -183,6 +277,13 @@ export default function TLSearchBetaPage() {
     const first = Object.keys(openRow.byArmor)[0] || ''
     setOpenArmorTab(first)
   }, [openRow])
+
+  const getDisplayTimeline = (row: BetaRow) => {
+    if (row.type === '大決戦') {
+      return Object.values(row.sourceByArmor).sort((a, b) => Number(b.score || 0) - Number(a.score || 0))[0]
+    }
+    return Object.values(row.sourceByArmor)[0]
+  }
 
   return (
     <main className="p-4 space-y-4 bg-[#edf4fb] min-h-screen">
@@ -220,27 +321,60 @@ export default function TLSearchBetaPage() {
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="rounded-xl border bg-white overflow-hidden">
-        {rows.slice(0, 30).map((row) => (
-          <div key={row.id} className="border-b p-2 sm:p-3 flex items-center gap-3">
-            <div className="w-16 text-center font-bold">{row.rank}位</div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold truncate">{row.title || row.videoid}</p>
-              {row.type === '大決戦' ? (
-                <div className="grid grid-cols-3 gap-1 text-xs mt-1">
-                  {armorTabs.map((a) => (
-                    <div key={a} className="rounded bg-gray-100 px-2 py-1 text-center">
-                      <div>{a}</div>
-                      <div className="font-semibold">{(row.byArmor[a] || 0).toLocaleString()}</div>
-                    </div>
-                  ))}
+        {rows.slice(0, visibleCount).map((row) => {
+          const timeline = getDisplayTimeline(row)
+          const ownerId = ownerByVideo[row.videoid]
+          const owner = ownerId ? ownerMap[ownerId] : null
+          const ownerName = owner?.nickname || owner?.username || '投稿者不明'
+          const iconStudent = owner?.icon_student_id ? studentMap[owner.icon_student_id] : null
+          const lastSquad = timeline ? splitSquads(timeline.formation).slice(-1)[0] || [] : []
+          return (
+            <div key={row.id} className="border-b p-2 sm:p-3 flex items-center gap-3 bg-gradient-to-r from-slate-100 to-slate-50">
+              <div className="w-14 text-center text-2xl font-bold">{row.rank}位</div>
+              <div className="w-16 h-16 rounded-xl bg-white border overflow-hidden flex items-center justify-center shrink-0">
+                {iconStudent?.image ? (
+                  <img src={iconStudent.image} alt={ownerName} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xs text-gray-500">ICON</span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0 space-y-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold truncate">{ownerName}</p>
+                  <p className="text-xs text-gray-500 truncate">{row.title || row.videoid}</p>
                 </div>
-              ) : (
-                <p className="text-xl font-bold mt-1">{row.totalScore.toLocaleString()}</p>
-              )}
+                {row.type === '大決戦' ? (
+                  <div className="grid grid-cols-3 gap-1 text-xs mt-1">
+                    {armorTabs.map((a) => (
+                      <div key={a} className="rounded bg-gray-100 px-2 py-1 text-center">
+                        <div>{a}</div>
+                        <div className="font-semibold">{(row.byArmor[a] || 0).toLocaleString()}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-2xl font-bold mt-1">{row.totalScore.toLocaleString()}</p>
+                )}
+                <div className="flex items-center gap-1 overflow-x-auto pb-1">
+                  {lastSquad.map((studentId, i) => {
+                    const member = studentMap[studentId]
+                    return (
+                      <div key={`${studentId}-${i}`} className="w-12 h-12 rounded-md border bg-white shrink-0 overflow-hidden">
+                        {member?.image ? (
+                          <img src={member.image} alt={member.name} className="w-full h-full object-cover" title={member.name} />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-500">?</div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+              <button className="border rounded px-3 py-2 bg-white" onClick={() => setOpenRow(row)}>詳細</button>
             </div>
-            <button className="border rounded px-3 py-2" onClick={() => setOpenRow(row)}>詳細</button>
-          </div>
-        ))}
+          )
+        })}
+        <div ref={sentinelRef} className="h-8" />
       </div>
 
       {openRow && (
@@ -270,7 +404,7 @@ export default function TLSearchBetaPage() {
                 <div key={i} className="rounded border bg-white p-2 flex items-center justify-between gap-2">
                   <div>
                     <div className="font-bold">部隊{i + 1}</div>
-                    <div className="text-sm text-gray-700">{sq.join(' / ') || '-'}</div>
+                    <div className="text-sm text-gray-700">{sq.map((id) => studentMap[id]?.name || id || '?').join(' / ') || '-'}</div>
                   </div>
                   <button className="rounded bg-cyan-300 px-4 py-2" onClick={() => navigator.clipboard?.writeText(sq.join(','))}>
                     コピー
