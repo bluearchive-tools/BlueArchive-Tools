@@ -12,6 +12,14 @@ type SocialLink = {
   biliUid?: string | null
 }
 
+type YouTubeFetchStats = {
+  targetCount: number
+  resolvedChannelCount: number
+  apiKeyCount: number
+  noKey: boolean
+  quotaLikely: boolean
+}
+
 const getYouTubeApiKeys = () => {
   const keys =
     process.env.YOUTUBE_API_KEYS?.split(',').map((k) => k.trim()).filter(Boolean) || []
@@ -38,17 +46,29 @@ const parseSocialLinks = (raw: unknown): SocialLink[] => {
 const toStoredVideoId = (platform: 'youtube' | 'bilibili', id: string) =>
   platform === 'bilibili' ? `bili:${id}` : id
 
-async function fetchYouTubeChannelMap(videoIds: string[]) {
+async function fetchYouTubeChannelMap(videoIds: string[]): Promise<{ map: Map<string, string>; stats: YouTubeFetchStats }> {
   const out = new Map<string, string>()
   const apiKeys = getYouTubeApiKeys()
-  if (apiKeys.length === 0 || videoIds.length === 0) return out
+  const stats: YouTubeFetchStats = {
+    targetCount: videoIds.length,
+    resolvedChannelCount: 0,
+    apiKeyCount: apiKeys.length,
+    noKey: apiKeys.length === 0,
+    quotaLikely: false,
+  }
+  if (apiKeys.length === 0 || videoIds.length === 0) return { map: out, stats }
+
   const base = 'https://www.googleapis.com/youtube/v3/videos?part=snippet&maxResults=50'
 
   for (let i = 0; i < videoIds.length; i += 50) {
     const chunk = videoIds.slice(i, i + 50)
+    let chunkFetched = false
     for (const key of apiKeys) {
       const res = await fetch(`${base}&id=${chunk.join(',')}&key=${key}`)
-      if (!res.ok) continue
+      if (!res.ok) {
+        if (res.status === 403 || res.status === 429) stats.quotaLikely = true
+        continue
+      }
       const json = (await res.json()) as {
         items?: Array<{ id?: string; snippet?: { channelId?: string } }>
       }
@@ -57,10 +77,15 @@ async function fetchYouTubeChannelMap(videoIds: string[]) {
           out.set(toStoredVideoId('youtube', item.id), item.snippet.channelId)
         }
       }
+      chunkFetched = true
       break
     }
+    if (!chunkFetched && apiKeys.length > 0) {
+      stats.quotaLikely = true
+    }
   }
-  return out
+  stats.resolvedChannelCount = out.size
+  return { map: out, stats }
 }
 
 async function fetchBilibiliMidMap(videoIds: string[]) {
@@ -112,12 +137,13 @@ export async function POST() {
     const youtubeIds = videoIds.filter((id) => !id.startsWith('bili:'))
     const bilibiliIds = videoIds.filter((id) => id.startsWith('bili:'))
 
-    const [ytMap, biliMap, profilesRes, settingsRes] = await Promise.all([
+    const [youtubeResult, biliMap, profilesRes, settingsRes] = await Promise.all([
       fetchYouTubeChannelMap(youtubeIds),
       fetchBilibiliMidMap(bilibiliIds),
       supabase.from('profiles').select('id, social_links'),
       supabase.from('tl_video_settings').select('videoid, owner_user_id').in('videoid', videoIds),
     ])
+    const ytMap = youtubeResult.map
 
     const youtubeOwnerIndex = new Map<string, string>()
     const bilibiliOwnerIndex = new Map<string, string>()
@@ -164,6 +190,17 @@ export async function POST() {
       resolved,
       updated,
       unresolved: videoIds.length - resolved,
+      diagnostics: {
+        youtubeTarget: youtubeIds.length,
+        youtubeChannelResolved: youtubeResult.stats.resolvedChannelCount,
+        youtubeApiKeyCount: youtubeResult.stats.apiKeyCount,
+        youtubeNoApiKey: youtubeResult.stats.noKey,
+        youtubeQuotaLikely: youtubeResult.stats.quotaLikely,
+        bilibiliTarget: bilibiliIds.length,
+        bilibiliMidResolved: biliMap.size,
+        youtubeProfilesLinked: youtubeOwnerIndex.size,
+        bilibiliProfilesLinked: bilibiliOwnerIndex.size,
+      },
     })
   } catch {
     return NextResponse.json({ success: false }, { status: 500 })

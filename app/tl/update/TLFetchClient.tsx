@@ -44,12 +44,33 @@ export default function TLFetchClient() {
         resolved?: number
         updated?: number
         unresolved?: number
+        diagnostics?: {
+          youtubeTarget?: number
+          youtubeChannelResolved?: number
+          youtubeApiKeyCount?: number
+          youtubeNoApiKey?: boolean
+          youtubeQuotaLikely?: boolean
+          bilibiliTarget?: number
+          bilibiliMidResolved?: number
+          youtubeProfilesLinked?: number
+          bilibiliProfilesLinked?: number
+        }
       }
       if (!res.ok || !json.success) {
         setMessage('投稿者紐付けに失敗しました')
         return
       }
-      setMessage(`投稿者紐付け完了: 対象${json.scanned ?? 0}件 / 解決${json.resolved ?? 0}件 / 新規反映${json.updated ?? 0}件`)
+      const diagnostics = json.diagnostics
+      const ytHint = diagnostics?.youtubeQuotaLikely
+        ? ' / YouTube API制限の可能性あり'
+        : diagnostics?.youtubeNoApiKey
+          ? ' / YouTube APIキー未設定'
+          : ''
+      setMessage(
+        `投稿者紐付け完了: 対象${json.scanned ?? 0}件 / 解決${json.resolved ?? 0}件 / 新規反映${json.updated ?? 0}件` +
+          ` (YT取得:${diagnostics?.youtubeChannelResolved ?? 0}/${diagnostics?.youtubeTarget ?? 0}, Bili取得:${diagnostics?.bilibiliMidResolved ?? 0}/${diagnostics?.bilibiliTarget ?? 0})` +
+          ytHint
+      )
     } catch {
       setMessage('投稿者紐付けに失敗しました')
     } finally {
