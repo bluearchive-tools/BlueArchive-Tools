@@ -15,6 +15,7 @@ export default function TLFetchClient() {
   const [platform, setPlatform] = useState<'all' | 'youtube' | 'bilibili'>('all')
   const [message, setMessage] = useState('')
   const [logs, setLogs] = useState<string[]>([])
+  const [backfillRunning, setBackfillRunning] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -31,6 +32,51 @@ export default function TLFetchClient() {
     load()
   }, [])
 
+
+  const handleOwnerBackfill = async () => {
+    setBackfillRunning(true)
+    setMessage('投稿者紐付けを実行中...')
+    try {
+      const res = await fetch('/api/tl-owner-backfill', { method: 'POST' })
+      const json = (await res.json()) as {
+        success?: boolean
+        scanned?: number
+        resolved?: number
+        updated?: number
+        unresolved?: number
+        diagnostics?: {
+          youtubeTarget?: number
+          youtubeChannelResolved?: number
+          youtubeApiKeyCount?: number
+          youtubeNoApiKey?: boolean
+          youtubeQuotaLikely?: boolean
+          bilibiliTarget?: number
+          bilibiliMidResolved?: number
+          youtubeProfilesLinked?: number
+          bilibiliProfilesLinked?: number
+        }
+      }
+      if (!res.ok || !json.success) {
+        setMessage('投稿者紐付けに失敗しました')
+        return
+      }
+      const diagnostics = json.diagnostics
+      const ytHint = diagnostics?.youtubeQuotaLikely
+        ? ' / YouTube API制限の可能性あり'
+        : diagnostics?.youtubeNoApiKey
+          ? ' / YouTube APIキー未設定'
+          : ''
+      setMessage(
+        `投稿者紐付け完了: 対象${json.scanned ?? 0}件 / 解決${json.resolved ?? 0}件 / 新規反映${json.updated ?? 0}件` +
+          ` (YT取得:${diagnostics?.youtubeChannelResolved ?? 0}/${diagnostics?.youtubeTarget ?? 0}, Bili取得:${diagnostics?.bilibiliMidResolved ?? 0}/${diagnostics?.bilibiliTarget ?? 0})` +
+          ytHint
+      )
+    } catch {
+      setMessage('投稿者紐付けに失敗しました')
+    } finally {
+      setBackfillRunning(false)
+    }
+  }
   const handleFetch = async () => {
     setMessage('取得中...')
     setLogs([])
@@ -111,12 +157,21 @@ export default function TLFetchClient() {
           <option value="bilibili">Bilibiliのみ</option>
         </select>
       </div>
-      <button
-        onClick={handleFetch}
-        className="bg-blue-500 text-white px-4 py-1 rounded"
-      >
-        取得
-      </button>
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={handleFetch}
+          className="bg-blue-500 text-white px-4 py-1 rounded"
+        >
+          取得
+        </button>
+        <button
+          onClick={handleOwnerBackfill}
+          className="bg-emerald-600 text-white px-4 py-1 rounded disabled:opacity-60"
+          disabled={backfillRunning}
+        >
+          {backfillRunning ? '投稿者紐付け中...' : '過去動画の投稿者紐付け'}
+        </button>
+      </div>
       <a
         href="/tl/pending"
         className="ml-2 inline-flex items-center rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-50"

@@ -8,6 +8,9 @@ export interface TLSeason {
   endDate: string
   boss?: string
   terrain?: string
+  type?: string
+  maxDifficulty?: string
+  maxDifficultyArmors?: string[]
   defenseArmors?: string[]
 }
 
@@ -15,6 +18,7 @@ interface Snippet {
   title?: string
   description?: string
   publishedAt?: string
+  channelId?: string
   thumbnails?: {
     medium?: { url?: string }
     default?: { url?: string }
@@ -36,6 +40,7 @@ interface Student {
   styleIds?: string[]
   styleOf?: string
   altIds?: string[]
+  aliases?: string[]
   altOf?: string
   initialStars: number
   role: string
@@ -70,6 +75,52 @@ interface UserStudent {
   alt_bonds?: Record<string, number>
 }
 
+
+type SocialLink = {
+  service?: string
+  verified?: boolean
+  channelId?: string | null
+  biliUid?: string | null
+}
+
+type OwnerIndex = {
+  youtube: Map<string, string>
+  bilibili: Map<string, string>
+}
+
+const parseSocialLinks = (raw: unknown): SocialLink[] => {
+  if (!raw) return []
+  if (Array.isArray(raw)) return raw as SocialLink[]
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw)
+      return Array.isArray(parsed) ? (parsed as SocialLink[]) : []
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
+async function loadOwnerIndex(supabase: SupabaseClient): Promise<OwnerIndex> {
+  const youtube = new Map<string, string>()
+  const bilibili = new Map<string, string>()
+  const { data } = await supabase.from('profiles').select('id, social_links')
+  for (const row of (data ?? []) as Array<{ id: string; social_links?: unknown }>) {
+    const links = parseSocialLinks(row.social_links)
+    for (const link of links) {
+      if (link?.verified !== true) continue
+      if (link.service === 'youtube' && typeof link.channelId === 'string' && link.channelId) {
+        youtube.set(link.channelId, row.id)
+      }
+      if (link.service === 'bilibili' && typeof link.biliUid === 'string' && link.biliUid) {
+        bilibili.set(link.biliUid, row.id)
+      }
+    }
+  }
+  return { youtube, bilibili }
+}
+
 const getYouTubeApiKeys = () => {
   const keys =
     process.env.YOUTUBE_API_KEYS?.split(',').map((k) => k.trim()).filter(Boolean) ||
@@ -90,6 +141,7 @@ const bossAliases: Record<string, string[]> = {
 
 const getBossQueryVariants = (boss?: string) => {
   if (!boss) return []
+  if (boss === 'シロ&クロ') return ['シロクロ']
   const variants = [boss, ...(bossAliases[boss] ?? [])]
   return Array.from(new Set(variants.filter((value) => value.trim().length > 0)))
 }
@@ -114,6 +166,36 @@ const getBossTerrainMap = async () => {
 
 const shouldIncludeArmor = (seasonNumber: string) =>
   !seasonNumber.toUpperCase().startsWith('S')
+
+const difficultyOrder = ['Hardcore', 'Extreme', 'Insane', 'Torment', 'Lunatic'] as const
+
+const buildDifficultyQueries = (season: TLSeason, armor: string) => {
+  const aliases: Record<string, string[]> = {
+    Hardcore: ['Hardcore'],
+    Extreme: ['Extreme'],
+    Insane: ['Insane'],
+    Torment: ['Torment', 'TMT'],
+    Lunatic: ['Lunatic'],
+  }
+
+  const availableOrder =
+    season.type === '大決戦'
+      ? difficultyOrder.filter((d) => d !== 'Lunatic')
+      : [...difficultyOrder]
+
+  const maxDifficulty = season.maxDifficulty || (season.type === '大決戦' ? 'Torment' : 'Lunatic')
+  const maxIndex = availableOrder.indexOf(maxDifficulty as (typeof availableOrder)[number])
+  let allowedIndex = maxIndex >= 0 ? maxIndex : availableOrder.length - 1
+
+  if (season.type === '大決戦' && armor) {
+    const unlocked = season.maxDifficultyArmors?.includes(armor)
+    if (!unlocked) allowedIndex = Math.max(0, allowedIndex - 1)
+  }
+
+  const difficulties = availableOrder.slice(0, allowedIndex + 1)
+  return difficulties.flatMap((d) => aliases[d] ?? [d])
+}
+
 
 export function guessSeason(snippet: Snippet, seasons: TLSeason[]): string | null {
   const { title = '', description = '', publishedAt } = snippet
@@ -229,6 +311,61 @@ export function extractGuide(text: string): boolean {
   return /解説/.test(text)
 }
 
+const normalizeForMatch = (value: string) =>
+  value
+    .replace(/[（【]/g, '(')
+    .replace(/[）】]/g, ')')
+    .replace(/\s+/g, '')
+
+const extractStudentsFromLine = (line: string, students: Student[]): Student[] => {
+  const left = line.split('|')[0] ?? line
+  const primary = (left.split(':')[0] ?? left).trim()
+  const normalized = normalizeForMatch(primary)
+  if (!normalized) return []
+
+  const styleHints: Array<[string, string]> = [
+    ['制服', '(制服)'],
+    ['水着', '(水着)'],
+    ['キャンプ', '(キャンプ)'],
+    ['臨戦', '(臨戦)'],
+  ]
+
+  const candidates = students
+    .map((student) => {
+      const names = [student.name, ...(student.aliases ?? [])]
+      let bestToken = ''
+      for (const candidateName of names) {
+        const token = normalizeForMatch(candidateName || '')
+        if (!token) continue
+        if (normalized.includes(token) && token.length > bestToken.length) {
+          bestToken = token
+        }
+      }
+      if (!bestToken) return null
+
+      let score = bestToken.length
+      for (const [hint, marker] of styleHints) {
+        if (normalized.includes(hint) && student.name?.includes(marker)) {
+          score += 100
+        }
+      }
+
+      return { student, token: bestToken, score }
+    })
+    .filter((item): item is { student: Student; token: string; score: number } => Boolean(item))
+    .sort((a, b) => b.score - a.score)
+
+  const selected: Student[] = []
+  const selectedTokens: string[] = []
+  for (const item of candidates) {
+    if (selectedTokens.some((picked) => picked.includes(item.token))) continue
+    selected.push(item.student)
+    selectedTokens.push(item.token)
+  }
+
+  return selected
+}
+
 export async function extractFormation(
   supabase: SupabaseClient,
   text: string
@@ -239,16 +376,42 @@ export async function extractFormation(
     const students = JSON.parse(raw) as Student[]
     const lines = text.split(/\r?\n/)
     const teams: Student[][] = []
+    let currentTeam: Student[] = []
     const ids = new Set<string>()
+    let startedByMarker = false
+
+    const flushCurrentTeam = () => {
+      if (currentTeam.length === 0) return
+      teams.push(currentTeam)
+      currentTeam.forEach((member) => ids.add(member.id))
+      currentTeam = []
+    }
+
     for (const line of lines) {
-      const members = students.filter((s) => line.includes(s.name))
-      if (members.length) {
-        teams.push(members)
-        members.forEach((m) => ids.add(m.id))
+      if (/^\s*(メモ書きTL|参考動画|使用端末|#)/.test(line)) {
+        flushCurrentTeam()
+        break
+      }
+      const members = extractStudentsFromLine(line, students)
+      const hasTeamMarker = /(^|\s)(\d+凸目|PT\s*\d+)(\s|$)/i.test(line)
+      if (hasTeamMarker) {
+        startedByMarker = true
+        if (members.length === 0) {
+          flushCurrentTeam()
+          continue
+        }
+      }
+      if (!startedByMarker) continue
+      if (members.length === 0) continue
+      for (const member of members) {
+        if (currentTeam.some((picked) => picked.id === member.id)) continue
+        currentTeam.push(member)
       }
     }
+    flushCurrentTeam()
+
     if (teams.length === 0) {
-      const members = students.filter((s) => text.includes(s.name))
+      const members = extractStudentsFromLine(text, students)
       if (members.length) {
         teams.push(members)
         members.forEach((m) => ids.add(m.id))
@@ -308,13 +471,6 @@ export async function fetchYouTubeVideos(
   const results: YouTubeVideoItem[] = []
   const seen = new Set<string>()
   const bossTerrainMap = await getBossTerrainMap()
-  const difficultyQueries = [
-    ['Hardcore'],
-    ['Extreme'],
-    ['Insane', 'INS'],
-    ['Torment', 'TMT', 'TM'],
-    ['Lunatic', 'LUNA', 'LU'],
-  ]
   for (const s of seasons) {
     const bossTerms = getBossQueryVariants(s.boss)
     if (bossTerms.length === 0) continue
@@ -328,25 +484,24 @@ export async function fetchYouTubeVideos(
         : ['']
     for (const boss of bossTerms) {
       for (const armor of armors) {
-        for (const variants of difficultyQueries) {
-          for (const difficulty of variants) {
-            const query = [boss, terrain, armor, difficulty].filter(Boolean).join(' ')
-            if (!query) continue
-            log?.(`YouTube検索クエリ: ${query}`)
-            for (const key of apiKeys) {
-              const res = await fetch(`${base}&q=${encodeURIComponent(query)}&key=${key}`)
-              if (res.ok) {
-                const data = await res.json()
-                for (const item of data.items as YouTubeVideoItem[]) {
-                  const vid = item?.id?.videoId
-                  if (!vid) continue
-                  if (!seen.has(vid)) {
-                    seen.add(vid)
-                    results.push(item)
-                  }
+        const difficulties = buildDifficultyQueries(s, armor)
+        for (const difficulty of difficulties) {
+          const query = [boss, terrain, armor, difficulty].filter(Boolean).join(' ')
+          if (!query) continue
+          log?.(`YouTube検索クエリ: ${query}`)
+          for (const key of apiKeys) {
+            const res = await fetch(`${base}&q=${encodeURIComponent(query)}&key=${key}`)
+            if (res.ok) {
+              const data = await res.json()
+              for (const item of data.items as YouTubeVideoItem[]) {
+                const vid = item?.id?.videoId
+                if (!vid) continue
+                if (!seen.has(vid)) {
+                  seen.add(vid)
+                  results.push(item)
                 }
-                break
               }
+              break
             }
           }
         }
@@ -463,6 +618,7 @@ export async function fetchBilibiliVideos(
     description: string
     publishedAt?: string
     thumbnail?: string
+    uploaderMid?: string
   }> = []
   const seen = new Set<string>()
   const config = await loadBilibiliKeywordConfig()
@@ -497,6 +653,7 @@ export async function fetchBilibiliVideos(
               description?: string
               pubdate?: number
               pic?: string
+              mid?: string | number
             }>
           }
         }
@@ -511,6 +668,7 @@ export async function fetchBilibiliVideos(
             description: stripHtml(item.description ?? ''),
             publishedAt: item.pubdate ? new Date(item.pubdate * 1000).toISOString() : undefined,
             thumbnail: normalizeBilibiliThumbnail(item.pic),
+            uploaderMid: item.mid != null ? String(item.mid) : undefined,
           })
         }
       }
@@ -525,12 +683,12 @@ async function fetchBilibiliDetails(
 ): Promise<
   Record<
     string,
-    { title?: string; description?: string; publishedAt?: string; thumbnail?: string }
+    { title?: string; description?: string; publishedAt?: string; thumbnail?: string; ownerMid?: string }
   >
 > {
   const out: Record<
     string,
-    { title?: string; description?: string; publishedAt?: string; thumbnail?: string }
+    { title?: string; description?: string; publishedAt?: string; thumbnail?: string; ownerMid?: string }
   > = {}
   for (const bvid of bvids) {
     try {
@@ -544,6 +702,9 @@ async function fetchBilibiliDetails(
           desc?: string
           pubdate?: number
           pic?: string
+          owner?: {
+            mid?: string | number
+          }
         }
       }
       if (!json.data) continue
@@ -560,6 +721,7 @@ async function fetchBilibiliDetails(
           ? new Date(json.data.pubdate * 1000).toISOString()
           : undefined,
         thumbnail: normalizeBilibiliThumbnail(json.data.pic),
+        ownerMid: json.data.owner?.mid != null ? String(json.data.owner.mid) : undefined,
       }
     } catch {
       log?.(`Bilibili ${bvid}: 詳細取得に失敗`)
@@ -641,12 +803,29 @@ export async function upsertTimelines(params: {
     pushLog(`更新保護: ${lockedVideoIds.size}件`)
   }
 
+  const ownerIndex = await loadOwnerIndex(supabase)
+  const existingOwnerMap = new Map<string, string | null>()
+  if (allVideoIds.length > 0) {
+    const { data: currentOwners } = await supabase
+      .from('tl_video_settings')
+      .select('videoid, owner_user_id')
+      .in('videoid', allVideoIds)
+    for (const row of (currentOwners || []) as Array<{ videoid: string; owner_user_id?: string | null }>) {
+      if (!row?.videoid) continue
+      existingOwnerMap.set(row.videoid, row.owner_user_id ?? null)
+    }
+  }
+  const ownerAssignments = new Map<string, string>()
+
   for (const info of ytVideos) {
     const vid = info?.id?.videoId
     if (!vid) continue
     const storedId = toStoredVideoId('youtube', vid)
     const full = ytSnippets[vid]
-    const snippet = full || info.snippet
+    const sourceSnippet = full || info.snippet
+    const ownerByChannel = sourceSnippet?.channelId ? ownerIndex.youtube.get(sourceSnippet.channelId) : undefined
+    if (ownerByChannel) ownerAssignments.set(storedId, ownerByChannel)
+    const snippet = sourceSnippet
     const targetSeasonStart = season ? seasonStartMap.get(season) : undefined
     if (isTooEarlyForSeason(snippet, targetSeasonStart)) {
       pushLog(
@@ -750,6 +929,12 @@ export async function upsertTimelines(params: {
   for (const info of biliVideos) {
     const storedId = toStoredVideoId('bilibili', info.bvid)
     const detail = biliDetails[info.bvid]
+    const ownerByBili = detail?.ownerMid
+      ? ownerIndex.bilibili.get(detail.ownerMid)
+      : info.uploaderMid
+        ? ownerIndex.bilibili.get(info.uploaderMid)
+        : undefined
+    if (ownerByBili) ownerAssignments.set(storedId, ownerByBili)
     const snippet: Snippet = {
       title: detail?.title ?? info.title,
       description: detail?.description ?? info.description,
@@ -852,6 +1037,17 @@ export async function upsertTimelines(params: {
       } else {
         pushLog(`Bilibili ${info.bvid}: 更新なし`)
       }
+    }
+  }
+
+  for (const [videoid, ownerUserId] of ownerAssignments) {
+    const existingOwner = existingOwnerMap.get(videoid)
+    if (existingOwner) continue
+    const { error } = await supabase
+      .from('tl_video_settings')
+      .upsert({ videoid, owner_user_id: ownerUserId }, { onConflict: 'videoid' })
+    if (!error) {
+      pushLog(`owner紐付け: ${videoid} -> ${ownerUserId}`)
     }
   }
 
