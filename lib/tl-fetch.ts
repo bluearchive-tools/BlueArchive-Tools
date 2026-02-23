@@ -310,6 +310,38 @@ export function extractGuide(text: string): boolean {
   return /解説/.test(text)
 }
 
+const normalizeForMatch = (value: string) =>
+  value
+    .replace(/[（【]/g, '(')
+    .replace(/[）】]/g, ')')
+    .replace(/\s+/g, '')
+
+const extractStudentsFromLine = (line: string, students: Student[]): Student[] => {
+  const left = line.split('|')[0] ?? line
+  const primary = (left.split(':')[0] ?? left).trim()
+  const normalized = normalizeForMatch(primary)
+  if (!normalized) return []
+
+  const candidates = students
+    .filter((student) => {
+      const name = normalizeForMatch(student.name || '')
+      return name.length > 0 && normalized.includes(name)
+    })
+    .sort((a, b) => (b.name?.length ?? 0) - (a.name?.length ?? 0))
+
+  const selected: Student[] = []
+  const selectedNames: string[] = []
+  for (const student of candidates) {
+    const name = normalizeForMatch(student.name || '')
+    if (!name) continue
+    if (selectedNames.some((picked) => picked.includes(name))) continue
+    selected.push(student)
+    selectedNames.push(name)
+  }
+
+  return selected
+}
+
 export async function extractFormation(
   supabase: SupabaseClient,
   text: string
@@ -320,16 +352,32 @@ export async function extractFormation(
     const students = JSON.parse(raw) as Student[]
     const lines = text.split(/\r?\n/)
     const teams: Student[][] = []
+    let currentTeam: Student[] = []
     const ids = new Set<string>()
+
+    const flushCurrentTeam = () => {
+      if (currentTeam.length === 0) return
+      teams.push(currentTeam)
+      currentTeam.forEach((member) => ids.add(member.id))
+      currentTeam = []
+    }
+
     for (const line of lines) {
-      const members = students.filter((s) => line.includes(s.name))
-      if (members.length) {
-        teams.push(members)
-        members.forEach((m) => ids.add(m.id))
+      if (/^\s*\d{1,2}:\d{2}\s+\d+凸目/.test(line)) {
+        flushCurrentTeam()
+        continue
+      }
+      const members = extractStudentsFromLine(line, students)
+      if (members.length === 0) continue
+      for (const member of members) {
+        if (currentTeam.some((picked) => picked.id === member.id)) continue
+        currentTeam.push(member)
       }
     }
+    flushCurrentTeam()
+
     if (teams.length === 0) {
-      const members = students.filter((s) => text.includes(s.name))
+      const members = extractStudentsFromLine(text, students)
       if (members.length) {
         teams.push(members)
         members.forEach((m) => ids.add(m.id))
