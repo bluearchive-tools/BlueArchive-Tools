@@ -363,11 +363,12 @@ export async function extractFormation(
     }
 
     for (const line of lines) {
-      if (/^\s*\d{1,2}:\d{2}\s+\d+凸目/.test(line)) {
+      const members = extractStudentsFromLine(line, students)
+      const hasTeamMarker = /(^|\s)\d+凸目(\s|$)/.test(line)
+      if (hasTeamMarker && members.length === 0) {
         flushCurrentTeam()
         continue
       }
-      const members = extractStudentsFromLine(line, students)
       if (members.length === 0) continue
       for (const member of members) {
         if (currentTeam.some((picked) => picked.id === member.id)) continue
