@@ -107,6 +107,7 @@ export default function TrainingPlanningPage() {
   const [detailOpen, setDetailOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [addingStudentId, setAddingStudentId] = useState('')
+  const [loadedFromStorage, setLoadedFromStorage] = useState(false)
 
   const editingPlan = useMemo(() => plans.find((p) => p.id === editingPlanId) ?? null, [plans, editingPlanId])
 
@@ -178,13 +179,15 @@ export default function TrainingPlanningPage() {
           .filter((v) => v.studentId)
         setPlans(restored)
       }
+      setLoadedFromStorage(true)
     }
     run()
   }, [])
 
   useEffect(() => {
+    if (!loadedFromStorage) return
     localStorage.setItem(LS_KEY, JSON.stringify({ plans }))
-  }, [plans])
+  }, [plans, loadedFromStorage])
 
   const plansWithCalc = useMemo(
     () => plans.map((plan) => ({ ...plan, calc: calculateTrainingPlan(plan.current, plan.target) })),
@@ -436,6 +439,58 @@ export default function TrainingPlanningPage() {
                     <div className="rounded border p-3 text-sm dark:border-gray-700">
                       <h3 className="font-semibold">{t('sections.star')}</h3>
                       <p>{t('totalElephRequired', { value: calc.star.requiredTotalEleph })}</p>
+                      <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-3">
+                        <label className="space-y-1">
+                          <span>{t('detailOwnedEleph')}</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={editingPlan.detail.ownedEleph}
+                            onChange={(e) =>
+                              updatePlan(editingPlan.id, {
+                                detail: { ...editingPlan.detail, ownedEleph: toInt(Number(e.target.value)) },
+                              })
+                            }
+                            className="w-full rounded border p-1 dark:border-gray-700 dark:bg-gray-800"
+                          />
+                        </label>
+                        <label className="space-y-1">
+                          <span>{t('detailRate')}</span>
+                          <input
+                            type="number"
+                            min={1}
+                            max={5}
+                            value={editingPlan.detail.rate}
+                            onChange={(e) =>
+                              updatePlan(editingPlan.id, {
+                                detail: {
+                                  ...editingPlan.detail,
+                                  rate: Math.min(5, Math.max(1, toInt(Number(e.target.value)))),
+                                },
+                              })
+                            }
+                            className="w-full rounded border p-1 dark:border-gray-700 dark:bg-gray-800"
+                          />
+                        </label>
+                        <label className="space-y-1">
+                          <span>{t('detailRemaining')}</span>
+                          <input
+                            type="number"
+                            min={1}
+                            max={200}
+                            value={editingPlan.detail.remaining}
+                            onChange={(e) =>
+                              updatePlan(editingPlan.id, {
+                                detail: {
+                                  ...editingPlan.detail,
+                                  remaining: Math.min(200, Math.max(1, toInt(Number(e.target.value)))),
+                                },
+                              })
+                            }
+                            className="w-full rounded border p-1 dark:border-gray-700 dark:bg-gray-800"
+                          />
+                        </label>
+                      </div>
                       <button
                         type="button"
                         onClick={() => setDetailOpen(true)}
