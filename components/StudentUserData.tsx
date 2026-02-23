@@ -467,7 +467,13 @@ export default function StudentUserData({
               </span>
             </button>
             <span className="flex-1 text-left text-2xl">{student?.name}</span>
-            <span className="flex items-center -space-x-1 justify-end">
+            <span
+              className={`flex items-center -space-x-1 justify-end ${canEditDirect ? 'cursor-pointer edit-highlight' : ''}`}
+              onClick={() => {
+                if (!canEditDirect) return
+                setEditField({ field: 'star', label: '星', value: display.star, min: 1, max: 5 })
+              }}
+            >
               {Array.from({ length: display.star }).map((_, i) => (
                 <FontAwesomeIcon key={i} icon={faStar} className="text-yellow-400" />
               ))}
