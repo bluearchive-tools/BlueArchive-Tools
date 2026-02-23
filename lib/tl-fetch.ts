@@ -378,6 +378,7 @@ export async function extractFormation(
     const teams: Student[][] = []
     let currentTeam: Student[] = []
     const ids = new Set<string>()
+    let startedByMarker = false
 
     const flushCurrentTeam = () => {
       if (currentTeam.length === 0) return
@@ -392,7 +393,7 @@ export async function extractFormation(
         break
       }
       const members = extractStudentsFromLine(line, students)
-      const hasTeamMarker = /(^|\s)\d+凸目(\s|$)/.test(line)
+      const hasTeamMarker = /(^|\s)(\d+凸目|PT\s*\d+)(\s|$)/i.test(line)
       if (hasTeamMarker) {
         startedByMarker = true
         if (members.length === 0) {
