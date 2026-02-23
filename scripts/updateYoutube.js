@@ -86,14 +86,29 @@ async function extractFormation(text) {
     const students = JSON.parse(raw)
     const lines = text.split(/\r?\n/)
     const teams = []
+    let currentTeam = []
     const ids = new Set()
+
+    const flushCurrentTeam = () => {
+      if (currentTeam.length === 0) return
+      teams.push(currentTeam)
+      currentTeam.forEach((m) => ids.add(m.id))
+      currentTeam = []
+    }
+
     for (const line of lines) {
+      if (line.trim() === '') {
+        flushCurrentTeam()
+        continue
+      }
       const members = students.filter((s) => line.includes(s.name))
-      if (members.length) {
-        teams.push(members)
-        members.forEach((m) => ids.add(m.id))
+      if (members.length === 0) continue
+      for (const member of members) {
+        if (currentTeam.some((m) => m.id === member.id)) continue
+        currentTeam.push(member)
       }
     }
+    flushCurrentTeam()
     if (teams.length === 0) {
       const members = students.filter((s) => text.includes(s.name))
       if (members.length) {
