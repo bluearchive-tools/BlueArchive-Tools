@@ -12,6 +12,7 @@ import {
   faList,
   faTableCells,
   faTableCellsLarge,
+  faDownload,
 } from '@fortawesome/free-solid-svg-icons'
 import FilterModal from '../../components/FilterModal'
 import AddStudentModal from '../../components/AddStudentModal'
@@ -238,6 +239,42 @@ export default function StudentsPage() {
   ]
   const gridIcons: IconDefinition[] = [faList, faTableCellsLarge, faTableCells]
 
+
+  const exportAllStudentsData = useCallback(async () => {
+    const output: Record<string, UserStudent> = {}
+    if (session) {
+      const { data } = await supabase
+        .from('user_students')
+        .select('*')
+        .eq('user_id', session.user.id)
+      for (const row of data || []) {
+        const studentId = String(row.student_id || '')
+        if (!studentId) continue
+        output[studentId] = row as UserStudent
+      }
+    } else {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (!key || !key.startsWith('userStudent:')) continue
+        const studentId = key.substring('userStudent:'.length)
+        const raw = localStorage.getItem(key)
+        if (!raw) continue
+        try {
+          output[studentId] = JSON.parse(raw) as UserStudent
+        } catch {
+          // ignore
+        }
+      }
+    }
+    const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'students-user-data.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [session, supabase])
+
   useEffect(() => {
     const opts = {
       sortKey,
@@ -300,7 +337,15 @@ export default function StudentsPage() {
           <h2 className="text-xl">生徒データ確認</h2>
           <PageHelpButton pageKey="students" />
         </div>
-        <div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={exportAllStudentsData}
+            aria-label="全生徒データをエクスポート"
+            className="border rounded p-2"
+            type="button"
+          >
+            <FontAwesomeIcon icon={faDownload} />
+          </button>
           <button
             onClick={() => setAddOpen(true)}
             aria-label="生徒データ登録"
