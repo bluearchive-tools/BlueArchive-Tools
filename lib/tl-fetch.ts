@@ -40,6 +40,7 @@ interface Student {
   styleIds?: string[]
   styleOf?: string
   altIds?: string[]
+  aliases?: string[]
   altOf?: string
   initialStars: number
   role: string
@@ -322,21 +323,44 @@ const extractStudentsFromLine = (line: string, students: Student[]): Student[] =
   const normalized = normalizeForMatch(primary)
   if (!normalized) return []
 
+  const styleHints: Array<[string, string]> = [
+    ['制服', '(制服)'],
+    ['水着', '(水着)'],
+    ['キャンプ', '(キャンプ)'],
+    ['臨戦', '(臨戦)'],
+  ]
+
   const candidates = students
-    .filter((student) => {
-      const name = normalizeForMatch(student.name || '')
-      return name.length > 0 && normalized.includes(name)
+    .map((student) => {
+      const names = [student.name, ...(student.aliases ?? [])]
+      let bestToken = ''
+      for (const candidateName of names) {
+        const token = normalizeForMatch(candidateName || '')
+        if (!token) continue
+        if (normalized.includes(token) && token.length > bestToken.length) {
+          bestToken = token
+        }
+      }
+      if (!bestToken) return null
+
+      let score = bestToken.length
+      for (const [hint, marker] of styleHints) {
+        if (normalized.includes(hint) && student.name?.includes(marker)) {
+          score += 100
+        }
+      }
+
+      return { student, token: bestToken, score }
     })
-    .sort((a, b) => (b.name?.length ?? 0) - (a.name?.length ?? 0))
+    .filter((item): item is { student: Student; token: string; score: number } => Boolean(item))
+    .sort((a, b) => b.score - a.score)
 
   const selected: Student[] = []
-  const selectedNames: string[] = []
-  for (const student of candidates) {
-    const name = normalizeForMatch(student.name || '')
-    if (!name) continue
-    if (selectedNames.some((picked) => picked.includes(name))) continue
-    selected.push(student)
-    selectedNames.push(name)
+  const selectedTokens: string[] = []
+  for (const item of candidates) {
+    if (selectedTokens.some((picked) => picked.includes(item.token))) continue
+    selected.push(item.student)
+    selectedTokens.push(item.token)
   }
 
   return selected
@@ -363,12 +387,20 @@ export async function extractFormation(
     }
 
     for (const line of lines) {
+      if (/^\s*(メモ書きTL|参考動画|使用端末|#)/.test(line)) {
+        flushCurrentTeam()
+        break
+      }
       const members = extractStudentsFromLine(line, students)
       const hasTeamMarker = /(^|\s)\d+凸目(\s|$)/.test(line)
-      if (hasTeamMarker && members.length === 0) {
-        flushCurrentTeam()
-        continue
+      if (hasTeamMarker) {
+        startedByMarker = true
+        if (members.length === 0) {
+          flushCurrentTeam()
+          continue
+        }
       }
+      if (!startedByMarker) continue
       if (members.length === 0) continue
       for (const member of members) {
         if (currentTeam.some((picked) => picked.id === member.id)) continue

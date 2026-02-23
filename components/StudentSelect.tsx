@@ -14,6 +14,7 @@ interface Student {
   styleIds?: string[]
   styleOf?: string
   altIds?: string[]
+  aliases?: string[]
   altOf?: string
   initialStars: number
   role: string
@@ -66,7 +67,8 @@ export default function StudentSelect({ students, value, onChange }: Props) {
 
   const filtered = students.filter((s) => {
     const q = toKatakana(query).toLowerCase()
-    const nameOk = toKatakana(s.name).toLowerCase().includes(q)
+    const aliasText = (s.aliases ?? []).map((a) => toKatakana(a)).join(' ')
+    const nameOk = toKatakana(s.name).toLowerCase().includes(q) || aliasText.toLowerCase().includes(q)
     const attackOk = attackFilter.length ? attackFilter.includes(s.attackType) : true
     const defenseOk = defenseFilter.length ? defenseFilter.includes(s.defenseType) : true
     const starOk = starFilter.length ? starFilter.includes(s.initialStars) : true
