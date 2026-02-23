@@ -226,7 +226,7 @@ export default function StudentUserData({
   const baseId = student?.styleOf || studentId
 
   const isRegistered = !!data
-  const canEditDirect = (editMode && isRegistered) || !!previewMode
+  const canEditDirect = !!editMode || !!previewMode
 
   const placeholderMin: UserStudent = {
     level: 1,
@@ -275,6 +275,34 @@ export default function StudentUserData({
   }
 
   const display = data || (previewMode ? (previewData || placeholderMin) : (previewMax ? placeholderMax : placeholderMin))
+
+  const clampValue = (field: string, value: number, current: UserStudent) => {
+    const intValue = Math.floor(Number.isFinite(value) ? value : 0)
+    const clamp = (min: number, max: number) => Math.max(min, Math.min(max, intValue))
+
+    switch (field) {
+      case 'level': return clamp(1, 90)
+      case 'star': return clamp(1, 5)
+      case 'unique_level': return clamp(0, 60)
+      case 'unique_star': return (current.star ?? 1) < 5 ? 0 : clamp(0, 4)
+      case 'equip1':
+      case 'equip2':
+      case 'equip3':
+      case 'item_tier':
+        return clamp(0, 10)
+      case 'hp_wb':
+      case 'attack_wb':
+      case 'heal_wb':
+        return clamp(0, 25)
+      case 'ex_skill': return clamp(1, 5)
+      case 'normal_skill':
+      case 'passive_skill':
+      case 'sub_skill':
+        return clamp(1, 10)
+      case 'bond': return clamp(0, 100)
+      default: return intValue
+    }
+  }
 
   const resolveUniqueWeaponStat = (field: 'hp' | 'attack' | 'heal') => {
     if (!student?.uniqueWeapon) return 0
@@ -706,9 +734,17 @@ export default function StudentUserData({
                   }
                 }}
               >
-                {Array.from({ length: display.unique_star }).map((_, i) => (
-                  <FontAwesomeIcon key={i} icon={faStar} className="text-sky-400" />
-                ))}
+                {display.unique_star > 0
+                  ? Array.from({ length: display.unique_star }).map((_, i) => (
+                      <FontAwesomeIcon key={i} icon={faStar} className="text-sky-400" />
+                    ))
+                  : display.star >= 5 && (
+                      <FontAwesomeIcon
+                        icon={faStar}
+                        className="text-white"
+                        style={{ color: 'white', stroke: '#38bdf8', strokeWidth: 1.6 }}
+                      />
+                    )}
               </div>
             </div>
           </div>
@@ -797,15 +833,20 @@ export default function StudentUserData({
           max={editField.max}
           onClose={() => setEditField(null)}
           onSave={async (v) => {
+            const normalized = clampValue(editField.field, v, display)
+            const patch: Partial<UserStudent> = { [editField.field]: normalized }
+            if (editField.field === 'star' && normalized < 5) {
+              patch.unique_star = 0
+            }
             if (previewMode && !isRegistered) {
-              onPreviewChange?.({ [editField.field]: v } as Partial<UserStudent>)
+              onPreviewChange?.(patch)
               setEditField(null)
               return
             }
             if (session) {
               await supabase
                 .from('user_students')
-                .update({ [editField.field]: v })
+                .update(patch)
                 .eq('user_id', session.user.id)
                 .eq('student_id', dataId ?? baseId)
               setEditField(null)
@@ -814,7 +855,7 @@ export default function StudentUserData({
               const key = `userStudent:${dataId ?? baseId}`
               const local = localStorage.getItem(key)
               const obj: UserStudent = local ? JSON.parse(local) : { ...placeholderMin }
-              const newObj = { ...obj, [editField.field]: v }
+              const newObj = { ...obj, ...patch }
               localStorage.setItem(key, JSON.stringify(newObj))
               setEditField(null)
               setData(newObj)
