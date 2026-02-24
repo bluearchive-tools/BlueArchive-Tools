@@ -12,13 +12,13 @@ export default function Home() {
 
   return (
     <>
-    <main className="p-4 space-y-4 pb-16">
+    <main data-tutorial="home-main" className="p-4 space-y-4 pb-16">
       <LoginPopup />
       <CollapsibleBox
         title={t('students.title')}
         description={t('students.description')}
       >
-        <div className="space-y-2">
+        <div data-tutorial="home-links" className="space-y-2">
           <Link href="/students">
             <FeatureItem
               title={t('students.actions.view.title')}
@@ -87,7 +87,7 @@ export default function Home() {
         title={t('tools.title')}
         description={t('tools.description')}
       >
-        <div className="space-y-2">
+        <div data-tutorial="tools-links" className="space-y-2">
           <Link href="/tools/training-planning">
             <FeatureItem
               title={t('tools.actions.trainingPlanning.title')}

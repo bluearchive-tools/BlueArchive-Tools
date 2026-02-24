@@ -5,18 +5,73 @@ import { useTranslations } from 'next-intl'
 
 const PROMPT_KEY = 'app:siteTutorialPrompted'
 const COMPLETED_KEY = 'app:siteTutorialCompleted'
+const CUSTOM_TUTORIAL_KEY = 'app:siteTutorialCustom'
+
+type TutorialStep = {
+  text: string
+  selector?: string
+  title?: string
+}
+
+type HighlightRect = {
+  top: number
+  left: number
+  width: number
+  height: number
+}
+
+const parseSteps = (value: unknown): TutorialStep[] => {
+  if (!value || typeof value !== 'object') return []
+  const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b))
+  return entries
+    .map(([, item]) => {
+      if (typeof item === 'string') return { text: item }
+      if (!item || typeof item !== 'object') return null
+      const data = item as Record<string, unknown>
+      if (typeof data.text !== 'string' || !data.text.trim()) return null
+      return {
+        text: data.text,
+        selector: typeof data.selector === 'string' && data.selector.trim() ? data.selector : undefined,
+        title: typeof data.title === 'string' && data.title.trim() ? data.title : undefined,
+      }
+    })
+    .filter((step): step is TutorialStep => !!step)
+}
 
 export default function SiteTutorial() {
   const t = useTranslations('site-tutorial')
-  const steps = useMemo(() => {
-    const raw = t.raw('steps') as Record<string, string>
-    return Object.keys(raw)
-      .sort()
-      .map((key) => raw[key])
-  }, [t])
+  const defaultSteps = useMemo(() => parseSteps(t.raw('steps')), [t])
+  const [steps, setSteps] = useState<TutorialStep[]>(defaultSteps)
   const [promptOpen, setPromptOpen] = useState(false)
   const [tutorialOpen, setTutorialOpen] = useState(false)
   const [stepIndex, setStepIndex] = useState(0)
+  const [highlightRect, setHighlightRect] = useState<HighlightRect | null>(null)
+  const [viewport, setViewport] = useState({ width: 1280, height: 800 })
+
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const updateViewport = () => setViewport({ width: window.innerWidth, height: window.innerHeight })
+    updateViewport()
+    window.addEventListener('resize', updateViewport)
+    return () => window.removeEventListener('resize', updateViewport)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const custom = localStorage.getItem(CUSTOM_TUTORIAL_KEY)
+      if (!custom) {
+        setSteps(defaultSteps)
+        return
+      }
+      const parsed: unknown = JSON.parse(custom)
+      const customSteps = parseSteps(parsed)
+      setSteps(customSteps.length ? customSteps : defaultSteps)
+    } catch {
+      setSteps(defaultSteps)
+    }
+  }, [defaultSteps])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -30,6 +85,41 @@ export default function SiteTutorial() {
       setPromptOpen(true)
     }
   }, [])
+
+  useEffect(() => {
+    if (!tutorialOpen) {
+      setHighlightRect(null)
+      return
+    }
+    const current = steps[stepIndex]
+    if (!current?.selector) {
+      setHighlightRect(null)
+      return
+    }
+
+    const updateRect = () => {
+      const element = document.querySelector(current.selector ?? '') as HTMLElement | null
+      if (!element) {
+        setHighlightRect(null)
+        return
+      }
+      const rect = element.getBoundingClientRect()
+      setHighlightRect({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+      })
+    }
+
+    updateRect()
+    window.addEventListener('resize', updateRect)
+    window.addEventListener('scroll', updateRect, true)
+    return () => {
+      window.removeEventListener('resize', updateRect)
+      window.removeEventListener('scroll', updateRect, true)
+    }
+  }, [tutorialOpen, stepIndex, steps])
 
   const closePrompt = (value: boolean) => {
     if (typeof window !== 'undefined') {
@@ -69,12 +159,14 @@ export default function SiteTutorial() {
     setStepIndex((prev) => Math.max(prev - 1, 0))
   }
 
-  if (!promptOpen && !tutorialOpen) return null
+  if ((!promptOpen && !tutorialOpen) || steps.length === 0) return null
+
+  const current = steps[stepIndex]
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4">
+    <div className="fixed inset-0 z-[80] bg-black/40 p-4">
       {promptOpen && (
-        <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+        <div className="mx-auto mt-24 w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
           <h2 className="text-lg font-semibold">{t('prompt.title')}</h2>
           <p className="mt-2 text-sm text-gray-600">{t('prompt.body')}</p>
           <div className="mt-4 flex justify-end gap-2">
@@ -97,39 +189,65 @@ export default function SiteTutorial() {
       )}
 
       {tutorialOpen && (
-        <div className="w-full max-w-xl rounded-lg bg-white p-6 shadow-lg">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">{t('tutorial.title')}</h2>
-            <button
-              type="button"
-              onClick={finishTutorial}
-              className="text-sm font-semibold text-gray-500 hover:text-gray-700"
-            >
-              {t('tutorial.skip')}
-            </button>
+        <>
+          {highlightRect && (
+            <>
+              <div
+                className="fixed z-[81] rounded-lg border-2 border-blue-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)] pointer-events-none"
+                style={{
+                  top: highlightRect.top - 6,
+                  left: highlightRect.left - 6,
+                  width: highlightRect.width + 12,
+                  height: highlightRect.height + 12,
+                }}
+              />
+            </>
+          )}
+          <div
+            className="fixed z-[82] w-full max-w-xl rounded-lg bg-white p-6 shadow-lg"
+            style={{
+              top: highlightRect ? Math.min(highlightRect.top + highlightRect.height + 18, viewport.height - 280) : undefined,
+              left: highlightRect ? Math.max(16, Math.min(highlightRect.left, viewport.width - 560)) : undefined,
+              right: highlightRect ? undefined : 16,
+              margin: highlightRect ? undefined : '0 auto',
+              insetInline: highlightRect ? undefined : 0,
+              marginTop: highlightRect ? undefined : '6rem',
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">{current.title ?? t('tutorial.title')}</h2>
+              <button
+                type="button"
+                onClick={finishTutorial}
+                className="text-sm font-semibold text-gray-500 hover:text-gray-700"
+              >
+                {t('tutorial.skip')}
+              </button>
+            </div>
+            <p className="mt-3 text-sm text-gray-600">
+              {t('tutorial.stepLabel', { current: stepIndex + 1, total: steps.length })}
+            </p>
+            <p className="mt-4 text-base text-gray-700">{current.text}</p>
+            {current.selector && <p className="mt-2 text-xs text-gray-500">target: {current.selector}</p>}
+            <div className="mt-6 flex justify-between">
+              <button
+                type="button"
+                onClick={prevStep}
+                disabled={stepIndex === 0}
+                className="rounded-md border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+              >
+                {t('tutorial.back')}
+              </button>
+              <button
+                type="button"
+                onClick={nextStep}
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                {stepIndex >= steps.length - 1 ? t('tutorial.finish') : t('tutorial.next')}
+              </button>
+            </div>
           </div>
-          <p className="mt-3 text-sm text-gray-600">
-            {t('tutorial.stepLabel', { current: stepIndex + 1, total: steps.length })}
-          </p>
-          <p className="mt-4 text-base text-gray-700">{steps[stepIndex]}</p>
-          <div className="mt-6 flex justify-between">
-            <button
-              type="button"
-              onClick={prevStep}
-              disabled={stepIndex === 0}
-              className="rounded-md border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-            >
-              {t('tutorial.back')}
-            </button>
-            <button
-              type="button"
-              onClick={nextStep}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-            >
-              {stepIndex >= steps.length - 1 ? t('tutorial.finish') : t('tutorial.next')}
-            </button>
-          </div>
-        </div>
+        </>
       )}
     </div>
   )
