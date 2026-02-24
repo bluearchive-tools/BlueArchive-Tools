@@ -8,6 +8,8 @@ import LoginPopup from '../components/LoginPopup'
 import { useTranslations } from 'next-intl'
 import { useEffect } from 'react'
 
+const PICK_RESULT_KEY = 'app:siteTutorialPickResult'
+
 const getSelector = (el: HTMLElement) => {
   const tutorial = el.getAttribute('data-tutorial')
   if (tutorial) return `[data-tutorial="${tutorial}"]`
@@ -48,8 +50,18 @@ export default function Home() {
       const target = e.target as HTMLElement | null
       if (!target) return
       const selector = getSelector(target)
+      try {
+        localStorage.setItem(PICK_RESULT_KEY, JSON.stringify({ selector, pickedAt: Date.now() }))
+      } catch {
+        /* ignore */
+      }
       window.opener?.postMessage({ type: 'tutorial-selector-picked', selector }, window.location.origin)
-      alert(`選択したセレクタ: ${selector}\nこのタブを閉じて編集画面に戻ってください。`)
+      alert(`選択したセレクタ: ${selector}\n編集画面に戻ると自動で反映されます。`)
+      try {
+        window.close()
+      } catch {
+        /* ignore */
+      }
     }
 
     document.addEventListener('mousemove', onMove)

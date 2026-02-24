@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 const CUSTOM_TUTORIAL_KEY = 'app:siteTutorialCustom'
 const PREVIEW_RETURN_KEY = 'app:siteTutorialPreviewReturnTo'
+const PICK_RESULT_KEY = 'app:siteTutorialPickResult'
 
 type StepItem = { key: string; text: string; selector: string; title: string }
-
 type PickerMessage = { type: 'tutorial-selector-picked'; selector: string }
+type PickResult = { selector: string; pickedAt: number }
 
 const defaultSteps: StepItem[] = [
   { key: 'step1', text: 'ホーム画面から、目的のツールやミニゲームを選択できます。', selector: '[data-tutorial="home-links"]', title: 'ホーム' },
@@ -21,6 +22,14 @@ export default function TutorialEditorPage() {
   const [status, setStatus] = useState('')
   const [previewStep, setPreviewStep] = useState(0)
   const [pickingIndex, setPickingIndex] = useState<number | null>(null)
+
+  const applyPickedSelector = useCallback((selector: string) => {
+    if (pickingIndex == null) return
+    setSteps((prev) => prev.map((step, index) => (index === pickingIndex ? { ...step, selector } : step)))
+    setStatus(`セレクタを設定しました: ${selector}`)
+    setPickingIndex(null)
+    setTimeout(() => setStatus(''), 2500)
+  }, [pickingIndex])
 
   useEffect(() => {
     try {
@@ -37,15 +46,36 @@ export default function TutorialEditorPage() {
   useEffect(() => {
     const handler = (event: MessageEvent<PickerMessage>) => {
       if (event.data?.type !== 'tutorial-selector-picked') return
-      if (pickingIndex == null) return
-      setSteps((prev) => prev.map((step, index) => (index === pickingIndex ? { ...step, selector: event.data.selector } : step)))
-      setStatus(`セレクタを設定しました: ${event.data.selector}`)
-      setPickingIndex(null)
-      setTimeout(() => setStatus(''), 2500)
+      applyPickedSelector(event.data.selector)
     }
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
-  }, [pickingIndex])
+  }, [applyPickedSelector])
+
+  useEffect(() => {
+    const readPickResult = () => {
+      try {
+        const raw = localStorage.getItem(PICK_RESULT_KEY)
+        if (!raw) return
+        const parsed = JSON.parse(raw) as PickResult
+        if (!parsed?.selector) return
+        localStorage.removeItem(PICK_RESULT_KEY)
+        applyPickedSelector(parsed.selector)
+      } catch {
+        // ignore
+      }
+    }
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === PICK_RESULT_KEY) readPickResult()
+    }
+    window.addEventListener('storage', onStorage)
+    window.addEventListener('focus', readPickResult)
+    readPickResult()
+    return () => {
+      window.removeEventListener('storage', onStorage)
+      window.removeEventListener('focus', readPickResult)
+    }
+  }, [applyPickedSelector])
 
   const jsonCode = useMemo(() => JSON.stringify(toJsonMap(steps), null, 2), [steps])
   const currentPreview = steps[Math.max(0, Math.min(previewStep, steps.length - 1))]
@@ -81,7 +111,7 @@ export default function TutorialEditorPage() {
   const pickSelectorOnHome = (index: number) => {
     localStorage.setItem(CUSTOM_TUTORIAL_KEY, jsonCode)
     setPickingIndex(index)
-    window.open('/?tutorial=pick', '_blank', 'noopener,noreferrer')
+    window.open('/?tutorial=pick', '_blank')
   }
 
   return (
