@@ -59,6 +59,19 @@ export default function StudentSelect({ students, value, onChange }: Props) {
     return () => document.removeEventListener('click', handle)
   }, [])
 
+  const normalizeForSearch = (text: string) => {
+    const normalized = text.normalize('NFKC').trim().toLowerCase()
+    return {
+      raw: normalized,
+      katakana: toKatakana(normalized),
+    }
+  }
+
+  const closeMenu = () => {
+    setOpen(false)
+    resetFilters()
+  }
+
   const attackTypes = Array.from(new Set(students.map((s) => s.attackType)))
   const defenseTypes = Array.from(new Set(students.map((s) => s.defenseType)))
   const starOptions = Array.from(new Set(students.map((s) => s.initialStars))).sort()
@@ -66,9 +79,15 @@ export default function StudentSelect({ students, value, onChange }: Props) {
   const typeOptions = Array.from(new Set(students.map((s) => s.characterType)))
 
   const filtered = students.filter((s) => {
-    const q = toKatakana(query).toLowerCase()
-    const aliasText = (s.aliases ?? []).map((a) => toKatakana(a)).join(' ')
-    const nameOk = toKatakana(s.name).toLowerCase().includes(q) || aliasText.toLowerCase().includes(q)
+    const q = normalizeForSearch(query)
+    const searchTargets = [
+      s.name,
+      ...(s.aliases ?? []),
+      ...(s.altIds ?? []),
+    ].map((text) => normalizeForSearch(text))
+    const nameOk =
+      q.raw.length === 0 ||
+      searchTargets.some((target) => target.raw.includes(q.raw) || target.katakana.includes(q.katakana))
     const attackOk = attackFilter.length ? attackFilter.includes(s.attackType) : true
     const defenseOk = defenseFilter.length ? defenseFilter.includes(s.defenseType) : true
     const starOk = starFilter.length ? starFilter.includes(s.initialStars) : true
@@ -83,7 +102,13 @@ export default function StudentSelect({ students, value, onChange }: Props) {
     <div className="relative" ref={ref}>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          if (open) {
+            closeMenu()
+            return
+          }
+          setOpen(true)
+        }}
         className="border rounded w-full p-1 text-left dark:bg-gray-800 dark:border-gray-700 dark:text-white"
       >
         {selected ? selected.name : '生徒選択'}
@@ -193,7 +218,7 @@ export default function StudentSelect({ students, value, onChange }: Props) {
                   type="button"
                   onClick={() => {
                     onChange(s.id)
-                    setOpen(false)
+                    closeMenu()
                   }}
                   className="w-full text-left hover:bg-gray-100 dark:hover:bg-gray-700 rounded p-1"
                 >
