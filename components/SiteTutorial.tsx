@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import tutorialSteps from '../data/site-tutorial-steps.json'
 
@@ -59,6 +59,32 @@ export default function SiteTutorial() {
   const [highlightRect, setHighlightRect] = useState<HighlightRect | null>(null)
   const [viewport, setViewport] = useState({ width: 1280, height: 800 })
   const [previewMode, setPreviewMode] = useState(false)
+  const expandedButtonsRef = useRef<HTMLButtonElement[]>([])
+
+  const collapseExpanded = () => {
+    const buttons = expandedButtonsRef.current.splice(0)
+    for (const button of buttons.reverse()) {
+      if (!document.contains(button)) continue
+      button.click()
+    }
+  }
+
+  const expandAncestorsIfHidden = (target: HTMLElement) => {
+    const expanded: HTMLButtonElement[] = []
+    let node: HTMLElement | null = target
+    while (node) {
+      const isCollapsed = node.classList.contains('max-h-0')
+      if (isCollapsed) {
+        const toggle = node.previousElementSibling
+        if (toggle instanceof HTMLButtonElement) {
+          toggle.click()
+          expanded.push(toggle)
+        }
+      }
+      node = node.parentElement
+    }
+    return expanded
+  }
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -110,6 +136,7 @@ export default function SiteTutorial() {
   useEffect(() => {
     if (!tutorialOpen) {
       setHighlightRect(null)
+      collapseExpanded()
       return
     }
     const current = steps[stepIndex]
@@ -119,13 +146,26 @@ export default function SiteTutorial() {
     }
 
     const updateRect = () => {
+      collapseExpanded()
+
       const element = document.querySelector(current.selector ?? '') as HTMLElement | null
       if (!element) {
         setHighlightRect(null)
         return
       }
-      const rect = element.getBoundingClientRect()
-      setHighlightRect({ top: rect.top, left: rect.left, width: rect.width, height: rect.height })
+
+      expandedButtonsRef.current = expandAncestorsIfHidden(element)
+
+      const setRect = () => {
+        const rect = element.getBoundingClientRect()
+        setHighlightRect({ top: rect.top, left: rect.left, width: rect.width, height: rect.height })
+      }
+
+      setRect()
+
+      if (expandedButtonsRef.current.length > 0) {
+        window.setTimeout(setRect, 320)
+      }
     }
 
     updateRect()
@@ -134,6 +174,7 @@ export default function SiteTutorial() {
     return () => {
       window.removeEventListener('resize', updateRect)
       window.removeEventListener('scroll', updateRect, true)
+      collapseExpanded()
     }
   }, [tutorialOpen, stepIndex, steps])
 
@@ -161,6 +202,7 @@ export default function SiteTutorial() {
       }
     }
     setTutorialOpen(false)
+    collapseExpanded()
 
     if (typeof window !== 'undefined' && previewMode) {
       const returnTo = localStorage.getItem(PREVIEW_RETURN_KEY)
