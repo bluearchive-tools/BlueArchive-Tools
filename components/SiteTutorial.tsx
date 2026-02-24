@@ -145,30 +145,31 @@ export default function SiteTutorial() {
       return
     }
 
-    const updateRect = () => {
-      collapseExpanded()
+    collapseExpanded()
 
+    const initialElement = document.querySelector(current.selector ?? '') as HTMLElement | null
+    if (!initialElement) {
+      setHighlightRect(null)
+      return
+    }
+
+    expandedButtonsRef.current = expandAncestorsIfHidden(initialElement)
+
+    const updateRect = () => {
       const element = document.querySelector(current.selector ?? '') as HTMLElement | null
       if (!element) {
         setHighlightRect(null)
         return
       }
-
-      expandedButtonsRef.current = expandAncestorsIfHidden(element)
-
-      const setRect = () => {
-        const rect = element.getBoundingClientRect()
-        setHighlightRect({ top: rect.top, left: rect.left, width: rect.width, height: rect.height })
-      }
-
-      setRect()
-
-      if (expandedButtonsRef.current.length > 0) {
-        window.setTimeout(setRect, 320)
-      }
+      const rect = element.getBoundingClientRect()
+      setHighlightRect({ top: rect.top, left: rect.left, width: rect.width, height: rect.height })
     }
 
     updateRect()
+
+    if (expandedButtonsRef.current.length > 0) {
+      window.setTimeout(updateRect, 320)
+    }
     window.addEventListener('resize', updateRect)
     window.addEventListener('scroll', updateRect, true)
     return () => {
