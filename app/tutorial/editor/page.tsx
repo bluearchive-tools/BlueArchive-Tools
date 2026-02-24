@@ -11,8 +11,11 @@ type PickerMessage = { type: 'tutorial-selector-picked'; selector: string }
 type PickResult = { selector: string; pickedAt: number }
 
 const defaultSteps: StepItem[] = [
-  { key: 'step1', text: 'ホーム画面から、目的のツールやミニゲームを選択できます。', selector: '[data-tutorial="home-links"]', title: 'ホーム' },
-  { key: 'step2', text: '各ツールは「計算ツール」セクションから選べます。', selector: '[data-tutorial="tools-links"]', title: '計算ツール' },
+  { key: 'step1', text: 'ホーム画面から、目的のツールやミニゲームを選択できます。', selector: '[data-tutorial="home-main"]', title: 'ホーム' },
+  { key: 'step2', text: '生徒管理系の機能はこのセクションから使えます。', selector: '[data-tutorial="home-links"]', title: '生徒関連' },
+  { key: 'step3', text: '育成計画やイベントスケジュール等のツールはここにあります。', selector: '[data-tutorial="tools-links"]', title: '計算ツール' },
+  { key: 'step4', text: 'BGM DJでは2デッキやクロスフェーダーを使ったミックスが体験できます。', selector: '', title: 'BGM DJ' },
+  { key: 'step5', text: 'ミニゲームのBGMクイズで耳トレとして遊んでみましょう。', selector: '', title: 'ミニゲーム' },
 ]
 
 const toJsonMap = (steps: StepItem[]) => Object.fromEntries(steps.map((step) => [step.key, { text: step.text, selector: step.selector || undefined, title: step.title || undefined }]))
