@@ -1,6 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useLocale } from 'next-intl'
+import tutorialSteps from '../../../data/site-tutorial-steps.json'
 
 const CUSTOM_TUTORIAL_KEY = 'app:siteTutorialCustom'
 const PREVIEW_RETURN_KEY = 'app:siteTutorialPreviewReturnTo'
@@ -9,42 +11,51 @@ const PICK_RESULT_KEY = 'app:siteTutorialPickResult'
 type StepItem = { key: string; text: string; selector: string; title: string }
 type PickerMessage = { type: 'tutorial-selector-picked'; selector: string }
 type PickResult = { selector: string; pickedAt: number }
+type LocaleKey = 'ja' | 'en'
 
-const defaultSteps: StepItem[] = [
-  { key: 'step1', text: 'ホーム画面から、目的のツールやミニゲームを選択できます。', selector: '[data-tutorial="home-main"]', title: 'ホーム' },
-  { key: 'step2', text: '生徒管理系の機能はこのセクションから使えます。', selector: '[data-tutorial="home-links"]', title: '生徒関連' },
-  { key: 'step3', text: '育成計画やイベントスケジュール等のツールはここにあります。', selector: '[data-tutorial="tools-links"]', title: '計算ツール' },
-  { key: 'step4', text: 'BGM DJでは2デッキやクロスフェーダーを使ったミックスが体験できます。', selector: '', title: 'BGM DJ' },
-  { key: 'step5', text: 'ミニゲームのBGMクイズで耳トレとして遊んでみましょう。', selector: '', title: 'ミニゲーム' },
-]
+const getDefaultSteps = (locale: LocaleKey): StepItem[] => {
+  const map = (tutorialSteps as Record<LocaleKey, Record<string, { text?: string; selector?: string; title?: string }>>)[locale]
+  return Object.entries(map)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => ({ key, text: value.text ?? '', selector: value.selector ?? '', title: value.title ?? '' }))
+}
 
-const toJsonMap = (steps: StepItem[]) => Object.fromEntries(steps.map((step) => [step.key, { text: step.text, selector: step.selector || undefined, title: step.title || undefined }]))
+const toJsonMap = (steps: StepItem[]) =>
+  Object.fromEntries(steps.map((step) => [step.key, { text: step.text, selector: step.selector || undefined, title: step.title || undefined }]))
 
 export default function TutorialEditorPage() {
+  const locale = (useLocale() as LocaleKey) || 'ja'
+  const defaultSteps = useMemo(() => getDefaultSteps(locale), [locale])
   const [steps, setSteps] = useState<StepItem[]>(defaultSteps)
   const [status, setStatus] = useState('')
   const [previewStep, setPreviewStep] = useState(0)
   const [pickingIndex, setPickingIndex] = useState<number | null>(null)
 
-  const applyPickedSelector = useCallback((selector: string) => {
-    if (pickingIndex == null) return
-    setSteps((prev) => prev.map((step, index) => (index === pickingIndex ? { ...step, selector } : step)))
-    setStatus(`セレクタを設定しました: ${selector}`)
-    setPickingIndex(null)
-    setTimeout(() => setStatus(''), 2500)
-  }, [pickingIndex])
+  const applyPickedSelector = useCallback(
+    (selector: string) => {
+      if (pickingIndex == null) return
+      setSteps((prev) => prev.map((step, index) => (index === pickingIndex ? { ...step, selector } : step)))
+      setStatus(`セレクタを設定しました: ${selector}`)
+      setPickingIndex(null)
+      setTimeout(() => setStatus(''), 2500)
+    },
+    [pickingIndex]
+  )
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(CUSTOM_TUTORIAL_KEY)
-      if (!raw) return
+      if (!raw) {
+        setSteps(defaultSteps)
+        return
+      }
       const parsed = JSON.parse(raw) as Record<string, { text?: string; selector?: string; title?: string }>
       const restored = Object.entries(parsed).map(([key, value]) => ({ key, text: value?.text ?? '', selector: value?.selector ?? '', title: value?.title ?? '' }))
       if (restored.length) setSteps(restored)
     } catch {
-      // ignore
+      setSteps(defaultSteps)
     }
-  }, [])
+  }, [defaultSteps])
 
   useEffect(() => {
     const handler = (event: MessageEvent<PickerMessage>) => {
@@ -101,7 +112,7 @@ export default function TutorialEditorPage() {
   const reset = () => {
     localStorage.removeItem(CUSTOM_TUTORIAL_KEY)
     setSteps(defaultSteps)
-    setStatus('カスタムチュートリアルをリセットしました。')
+    setStatus('JSONの初期チュートリアルにリセットしました。')
     setTimeout(() => setStatus(''), 2000)
   }
 
@@ -120,7 +131,7 @@ export default function TutorialEditorPage() {
   return (
     <main className="p-4 space-y-4">
       <h1 className="text-xl font-bold">チュートリアル編集ページ</h1>
-      <p className="text-sm text-gray-600">ステップ編集に加えて、下の「簡易プレビュー」で見た目確認、または「ホームで実動プレビュー」で実際に開始→完了→このページへ自動復帰できます。</p>
+      <p className="text-sm text-gray-600">初期値は `data/site-tutorial-steps.json` から読み込みます。必要に応じて保存すると localStorage が優先されます。</p>
 
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={addStep} className="px-3 py-2 rounded border text-sm">ステップ追加</button>

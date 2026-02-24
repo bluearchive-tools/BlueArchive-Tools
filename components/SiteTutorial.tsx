@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
+import tutorialSteps from '../data/site-tutorial-steps.json'
 
 const PROMPT_KEY = 'app:siteTutorialPrompted'
 const COMPLETED_KEY = 'app:siteTutorialCompleted'
@@ -19,6 +20,14 @@ type HighlightRect = {
   left: number
   width: number
   height: number
+}
+
+
+type LocaleKey = 'ja' | 'en'
+
+const getDefaultStepsFromJson = (locale: LocaleKey): TutorialStep[] => {
+  const root = tutorialSteps as Record<LocaleKey, Record<string, unknown>>
+  return parseSteps(root[locale] ?? root.ja)
 }
 
 const parseSteps = (value: unknown): TutorialStep[] => {
@@ -41,7 +50,8 @@ const parseSteps = (value: unknown): TutorialStep[] => {
 
 export default function SiteTutorial() {
   const t = useTranslations('site-tutorial')
-  const defaultSteps = useMemo(() => parseSteps(t.raw('steps')), [t])
+  const locale = (useLocale() as LocaleKey) || 'ja'
+  const defaultSteps = useMemo(() => getDefaultStepsFromJson(locale), [locale])
   const [steps, setSteps] = useState<TutorialStep[]>(defaultSteps)
   const [promptOpen, setPromptOpen] = useState(false)
   const [tutorialOpen, setTutorialOpen] = useState(false)

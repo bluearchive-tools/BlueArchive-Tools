@@ -33,6 +33,7 @@ const buildLabel = (el: HTMLElement) => {
 export default function Home() {
   const t = useTranslations('home.sections')
   const [pickMode, setPickMode] = useState(false)
+  const [pickPanelOpen, setPickPanelOpen] = useState(false)
   const [candidates, setCandidates] = useState<PickCandidate[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
 
@@ -41,6 +42,7 @@ export default function Home() {
     const params = new URLSearchParams(window.location.search)
     const enabled = params.get('tutorial') === 'pick'
     setPickMode(enabled)
+    setPickPanelOpen(false)
     if (!enabled) return
 
     let outlined: HTMLElement | null = null
@@ -117,9 +119,16 @@ export default function Home() {
   return (
     <>
       {pickMode && (
-        <div data-picker-overlay="1" className="fixed right-3 top-3 z-[200] w-[28rem] max-h-[70vh] overflow-auto rounded border bg-white p-3 shadow-lg">
+        <button data-picker-overlay="1" type="button" onClick={() => setPickPanelOpen((v) => !v)} className="fixed right-3 top-3 z-[200] rounded bg-green-600 px-3 py-2 text-xs font-semibold text-white shadow-lg">
+          {pickPanelOpen ? '候補パネルを閉じる' : '候補パネルを開く'}
+        </button>
+      )}
+
+      {pickMode && pickPanelOpen && (
+        <div data-picker-overlay="1" className="fixed right-3 top-14 z-[200] w-[28rem] max-h-[70vh] overflow-auto rounded border bg-white p-3 shadow-lg">
           <p className="text-sm font-bold">GUI選択モード</p>
           <p className="text-xs text-gray-600">マウス位置の配下要素を一覧表示します。選びたい要素を選択して「この要素を使う」を押してください。</p>
+          <button type="button" onClick={() => setPickPanelOpen(false)} className="mt-2 rounded border px-2 py-1 text-xs">閉じる</button>
           <div className="mt-2 space-y-1">
             {candidates.map((item, index) => (
               <button
