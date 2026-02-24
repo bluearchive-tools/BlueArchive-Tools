@@ -16,6 +16,7 @@ type Student = {
   styleIds?: string[]
   styleOf?: string
   altIds?: string[]
+  aliases?: string[]
   altOf?: string
   initialStars: number
   role: string
@@ -136,6 +137,7 @@ export default function DivineCalcPage() {
           styleIds?: string[]
           styleOf?: string
           altIds?: string[]
+          aliases?: string[]
           altOf?: string
           initialStars?: number
           role?: string
@@ -157,6 +159,7 @@ export default function DivineCalcPage() {
           styleIds: Array.isArray(s.styleIds) ? (s.styleIds as string[]) : undefined,
           styleOf: typeof s.styleOf === 'string' ? s.styleOf : undefined,
           altIds: Array.isArray(s.altIds) ? (s.altIds as string[]) : undefined,
+          aliases: Array.isArray(s.aliases) ? (s.aliases as string[]) : undefined,
           altOf: typeof s.altOf === 'string' ? s.altOf : undefined,
           initialStars: typeof s.initialStars === 'number' && Number.isFinite(s.initialStars) ? s.initialStars : 1,
           role: typeof s.role === 'string' ? s.role : '',
