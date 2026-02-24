@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 const PROMPT_KEY = 'app:siteTutorialPrompted'
 const COMPLETED_KEY = 'app:siteTutorialCompleted'
 const CUSTOM_TUTORIAL_KEY = 'app:siteTutorialCustom'
+const PREVIEW_RETURN_KEY = 'app:siteTutorialPreviewReturnTo'
 
 type TutorialStep = {
   text: string
@@ -47,7 +48,7 @@ export default function SiteTutorial() {
   const [stepIndex, setStepIndex] = useState(0)
   const [highlightRect, setHighlightRect] = useState<HighlightRect | null>(null)
   const [viewport, setViewport] = useState({ width: 1280, height: 800 })
-
+  const [previewMode, setPreviewMode] = useState(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -75,6 +76,16 @@ export default function SiteTutorial() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const isPreview = params.get('tutorial') === 'preview'
+    if (isPreview) {
+      setPreviewMode(true)
+      setPromptOpen(false)
+      setTutorialOpen(true)
+      setStepIndex(0)
+      return
+    }
+
     try {
       const prompted = localStorage.getItem(PROMPT_KEY) === '1'
       const completed = localStorage.getItem(COMPLETED_KEY) === '1'
@@ -104,12 +115,7 @@ export default function SiteTutorial() {
         return
       }
       const rect = element.getBoundingClientRect()
-      setHighlightRect({
-        top: rect.top,
-        left: rect.left,
-        width: rect.width,
-        height: rect.height,
-      })
+      setHighlightRect({ top: rect.top, left: rect.left, width: rect.width, height: rect.height })
     }
 
     updateRect()
@@ -145,6 +151,14 @@ export default function SiteTutorial() {
       }
     }
     setTutorialOpen(false)
+
+    if (typeof window !== 'undefined' && previewMode) {
+      const returnTo = localStorage.getItem(PREVIEW_RETURN_KEY)
+      if (returnTo) {
+        localStorage.removeItem(PREVIEW_RETURN_KEY)
+        window.location.href = returnTo
+      }
+    }
   }
 
   const nextStep = () => {
@@ -170,20 +184,8 @@ export default function SiteTutorial() {
           <h2 className="text-lg font-semibold">{t('prompt.title')}</h2>
           <p className="mt-2 text-sm text-gray-600">{t('prompt.body')}</p>
           <div className="mt-4 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => closePrompt(false)}
-              className="rounded-md border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50"
-            >
-              {t('prompt.no')}
-            </button>
-            <button
-              type="button"
-              onClick={() => closePrompt(true)}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-            >
-              {t('prompt.yes')}
-            </button>
+            <button type="button" onClick={() => closePrompt(false)} className="rounded-md border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50">{t('prompt.no')}</button>
+            <button type="button" onClick={() => closePrompt(true)} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">{t('prompt.yes')}</button>
           </div>
         </div>
       )}
@@ -191,17 +193,10 @@ export default function SiteTutorial() {
       {tutorialOpen && (
         <>
           {highlightRect && (
-            <>
-              <div
-                className="fixed z-[81] rounded-lg border-2 border-blue-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)] pointer-events-none"
-                style={{
-                  top: highlightRect.top - 6,
-                  left: highlightRect.left - 6,
-                  width: highlightRect.width + 12,
-                  height: highlightRect.height + 12,
-                }}
-              />
-            </>
+            <div
+              className="fixed z-[81] rounded-lg border-2 border-blue-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)] pointer-events-none"
+              style={{ top: highlightRect.top - 6, left: highlightRect.left - 6, width: highlightRect.width + 12, height: highlightRect.height + 12 }}
+            />
           )}
           <div
             className="fixed z-[82] w-full max-w-xl rounded-lg bg-white p-6 shadow-lg"
@@ -216,35 +211,14 @@ export default function SiteTutorial() {
           >
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">{current.title ?? t('tutorial.title')}</h2>
-              <button
-                type="button"
-                onClick={finishTutorial}
-                className="text-sm font-semibold text-gray-500 hover:text-gray-700"
-              >
-                {t('tutorial.skip')}
-              </button>
+              <button type="button" onClick={finishTutorial} className="text-sm font-semibold text-gray-500 hover:text-gray-700">{t('tutorial.skip')}</button>
             </div>
-            <p className="mt-3 text-sm text-gray-600">
-              {t('tutorial.stepLabel', { current: stepIndex + 1, total: steps.length })}
-            </p>
+            <p className="mt-3 text-sm text-gray-600">{t('tutorial.stepLabel', { current: stepIndex + 1, total: steps.length })}</p>
             <p className="mt-4 text-base text-gray-700">{current.text}</p>
             {current.selector && <p className="mt-2 text-xs text-gray-500">target: {current.selector}</p>}
             <div className="mt-6 flex justify-between">
-              <button
-                type="button"
-                onClick={prevStep}
-                disabled={stepIndex === 0}
-                className="rounded-md border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-              >
-                {t('tutorial.back')}
-              </button>
-              <button
-                type="button"
-                onClick={nextStep}
-                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-              >
-                {stepIndex >= steps.length - 1 ? t('tutorial.finish') : t('tutorial.next')}
-              </button>
+              <button type="button" onClick={prevStep} disabled={stepIndex === 0} className="rounded-md border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40">{t('tutorial.back')}</button>
+              <button type="button" onClick={nextStep} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">{stepIndex >= steps.length - 1 ? t('tutorial.finish') : t('tutorial.next')}</button>
             </div>
           </div>
         </>

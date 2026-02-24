@@ -6,9 +6,60 @@ import FeatureItem from '../components/FeatureItem'
 import Link from 'next/link'
 import LoginPopup from '../components/LoginPopup'
 import { useTranslations } from 'next-intl'
+import { useEffect } from 'react'
+
+const getSelector = (el: HTMLElement) => {
+  const tutorial = el.getAttribute('data-tutorial')
+  if (tutorial) return `[data-tutorial="${tutorial}"]`
+  if (el.id) return `#${el.id}`
+  return el.tagName.toLowerCase()
+}
 
 export default function Home() {
   const t = useTranslations('home.sections')
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('tutorial') !== 'pick') return
+
+    let hovered: HTMLElement | null = null
+    const prevOutline = new WeakMap<HTMLElement, string>()
+
+    const clear = () => {
+      if (!hovered) return
+      hovered.style.outline = prevOutline.get(hovered) ?? ''
+      hovered = null
+    }
+
+    const onMove = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null
+      if (!target) return
+      if (hovered === target) return
+      clear()
+      hovered = target
+      prevOutline.set(target, target.style.outline)
+      target.style.outline = '2px solid #22c55e'
+    }
+
+    const onClick = (e: MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const target = e.target as HTMLElement | null
+      if (!target) return
+      const selector = getSelector(target)
+      window.opener?.postMessage({ type: 'tutorial-selector-picked', selector }, window.location.origin)
+      alert(`選択したセレクタ: ${selector}\nこのタブを閉じて編集画面に戻ってください。`)
+    }
+
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('click', onClick, true)
+    return () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('click', onClick, true)
+      clear()
+    }
+  }, [])
 
   return (
     <>
