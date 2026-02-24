@@ -13,21 +13,21 @@ const PICK_RESULT_KEY = 'app:siteTutorialPickResult'
 type PickCandidate = {
   selector: string
   label: string
+  element: HTMLElement
 }
 
 const buildSelector = (el: HTMLElement) => {
   const tutorial = el.getAttribute('data-tutorial')
   if (tutorial) return `[data-tutorial="${tutorial}"]`
   if (el.id) return `#${el.id}`
-  const classNames = Array.from(el.classList).slice(0, 2)
-  if (classNames.length > 0) return `${el.tagName.toLowerCase()}.${classNames.join('.')}`
+  const classes = Array.from(el.classList).slice(0, 2)
+  if (classes.length > 0) return `${el.tagName.toLowerCase()}.${classes.join('.')}`
   return el.tagName.toLowerCase()
 }
 
 const buildLabel = (el: HTMLElement) => {
   const text = (el.textContent ?? '').trim().replace(/\s+/g, ' ')
-  if (text) return text.slice(0, 40)
-  return '<no-text>'
+  return text ? text.slice(0, 40) : '<no-text>'
 }
 
 export default function Home() {
@@ -45,52 +45,37 @@ export default function Home() {
     setPickPanelOpen(false)
     if (!enabled) return
 
-    let outlined: HTMLElement | null = null
-    const previousOutline = new WeakMap<HTMLElement, string>()
-
-    const clearOutline = () => {
-      if (!outlined) return
-      outlined.style.outline = previousOutline.get(outlined) ?? ''
-      outlined = null
-    }
-
-    const updateCandidates = (x: number, y: number) => {
+    const onMove = (e: MouseEvent) => {
       const elements = document
-        .elementsFromPoint(x, y)
+        .elementsFromPoint(e.clientX, e.clientY)
         .filter((node): node is HTMLElement => node instanceof HTMLElement)
         .filter((el) => !el.closest('[data-picker-overlay="1"]'))
 
-      const dedup = new Set<string>()
+      const dedup = new Set<HTMLElement>()
       const next: PickCandidate[] = []
       for (const el of elements) {
-        const selector = buildSelector(el)
-        if (dedup.has(selector)) continue
-        dedup.add(selector)
-        next.push({ selector, label: `${el.tagName.toLowerCase()} | ${buildLabel(el)}` })
+        if (dedup.has(el)) continue
+        dedup.add(el)
+        next.push({
+          selector: buildSelector(el),
+          label: `${el.tagName.toLowerCase()} | ${buildLabel(el)}`,
+          element: el,
+        })
       }
       setCandidates(next)
       setSelectedIndex(0)
     }
 
-    const onMove = (e: MouseEvent) => {
-      updateCandidates(e.clientX, e.clientY)
-    }
-
     document.addEventListener('mousemove', onMove)
-
-    return () => {
-      document.removeEventListener('mousemove', onMove)
-      clearOutline()
-    }
+    return () => document.removeEventListener('mousemove', onMove)
   }, [])
 
   useEffect(() => {
     if (!pickMode) return
     const current = candidates[selectedIndex]
-    if (!current) return
+    if (!current?.element) return
 
-    const el = document.querySelector(current.selector) as HTMLElement | null
-    if (!el) return
+    const el = current.element
     const old = el.style.outline
     el.style.outline = '2px solid #22c55e'
     return () => {
@@ -119,13 +104,18 @@ export default function Home() {
   return (
     <>
       {pickMode && (
-        <button data-picker-overlay="1" type="button" onClick={() => setPickPanelOpen((v) => !v)} className="fixed right-3 top-3 z-[200] rounded bg-green-600 px-3 py-2 text-xs font-semibold text-white shadow-lg">
+        <button
+          data-picker-overlay="1"
+          type="button"
+          onClick={() => setPickPanelOpen((v) => !v)}
+          className="fixed bottom-3 right-3 z-[200] rounded bg-green-600 px-3 py-2 text-xs font-semibold text-white shadow-lg"
+        >
           {pickPanelOpen ? '候補パネルを閉じる' : '候補パネルを開く'}
         </button>
       )}
 
       {pickMode && pickPanelOpen && (
-        <div data-picker-overlay="1" className="fixed right-3 top-14 z-[200] w-[28rem] max-h-[70vh] overflow-auto rounded border bg-white p-3 shadow-lg">
+        <div data-picker-overlay="1" className="fixed bottom-14 right-3 z-[200] w-[28rem] max-h-[70vh] overflow-auto rounded border bg-white p-3 shadow-lg">
           <p className="text-sm font-bold">GUI選択モード</p>
           <p className="text-xs text-gray-600">マウス位置の配下要素を一覧表示します。選びたい要素を選択して「この要素を使う」を押してください。</p>
           <button type="button" onClick={() => setPickPanelOpen(false)} className="mt-2 rounded border px-2 py-1 text-xs">閉じる</button>
@@ -152,15 +142,9 @@ export default function Home() {
         <LoginPopup />
         <CollapsibleBox title={t('students.title')} description={t('students.description')}>
           <div data-tutorial="home-links" className="space-y-2">
-            <Link href="/students">
-              <FeatureItem title={t('students.actions.view.title')} description={t('students.actions.view.description')} />
-            </Link>
-            <Link href="/students/import">
-              <FeatureItem title={t('students.actions.import.title')} description={t('students.actions.import.description')} />
-            </Link>
-            <Link href="/squads">
-              <FeatureItem title={t('students.actions.squads.title')} description={t('students.actions.squads.description')} />
-            </Link>
+            <Link href="/students"><FeatureItem title={t('students.actions.view.title')} description={t('students.actions.view.description')} /></Link>
+            <Link href="/students/import"><FeatureItem title={t('students.actions.import.title')} description={t('students.actions.import.description')} /></Link>
+            <Link href="/squads"><FeatureItem title={t('students.actions.squads.title')} description={t('students.actions.squads.description')} /></Link>
           </div>
         </CollapsibleBox>
 
