@@ -400,8 +400,57 @@ export default function AddStudentModal({
     if (!file) return
     try {
       const text = await file.text()
-      const data: Student[] = JSON.parse(text)
-      addStudents(data)
+      const parsed: unknown = JSON.parse(text)
+
+      if (Array.isArray(parsed)) {
+        addStudents(parsed as Student[])
+        handleClose()
+        return
+      }
+
+      if (parsed && typeof parsed === 'object') {
+        const entries = Object.entries(parsed as Record<string, unknown>)
+        if (entries.length === 0) {
+          alert('インポートデータが空です')
+          return
+        }
+
+        if (session) {
+          const rows = entries
+            .filter(([studentId, v]) => !!studentId && !!v && typeof v === 'object')
+            .map(([studentId, v]) => ({
+              user_id: session.user.id,
+              student_id: studentId,
+              ...(v as Record<string, unknown>),
+            }))
+          if (rows.length === 0) {
+            alert('取り込める生徒データが見つかりませんでした')
+            return
+          }
+          const { error } = await supabase.from('user_students').upsert(rows)
+          if (error) {
+            alert(error.message)
+            return
+          }
+        } else {
+          let imported = 0
+          for (const [studentId, v] of entries) {
+            if (!studentId || !v || typeof v !== 'object') continue
+            localStorage.setItem(`userStudent:${studentId}`, JSON.stringify(v))
+            imported += 1
+          }
+          if (imported === 0) {
+            alert('取り込める生徒データが見つかりませんでした')
+            return
+          }
+        }
+
+        onAdded()
+        handleClose()
+        return
+      }
+
+      alert('JSON形式が不正です')
       handleClose()
     } catch (err) {
       console.error(err)

@@ -375,6 +375,7 @@ export async function extractFormation(
     const raw = await fs.readFile(file, 'utf-8')
     const students = JSON.parse(raw) as Student[]
     const lines = text.split(/\r?\n/)
+    const hasAnyTeamMarker = lines.some((line) => /(^|\s)(\d+凸目|PT\s*\d+)(\s|$)/i.test(line))
     const teams: Student[][] = []
     let currentTeam: Student[] = []
     const ids = new Set<string>()
@@ -392,16 +393,20 @@ export async function extractFormation(
         flushCurrentTeam()
         break
       }
+      if (line.trim() === '') {
+        flushCurrentTeam()
+        continue
+      }
       const members = extractStudentsFromLine(line, students)
       const hasTeamMarker = /(^|\s)(\d+凸目|PT\s*\d+)(\s|$)/i.test(line)
-      if (hasTeamMarker) {
+      if (hasAnyTeamMarker && hasTeamMarker) {
         startedByMarker = true
         if (members.length === 0) {
           flushCurrentTeam()
           continue
         }
       }
-      if (!startedByMarker) continue
+      if (hasAnyTeamMarker && !startedByMarker) continue
       if (members.length === 0) continue
       for (const member of members) {
         if (currentTeam.some((picked) => picked.id === member.id)) continue

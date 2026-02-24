@@ -110,10 +110,16 @@ export default function StudentUserData({
   studentId,
   editMode,
   previewMax,
+  previewMode,
+  previewData,
+  onPreviewChange,
 }: {
   studentId: string
   editMode: boolean
   previewMax?: boolean
+  previewMode?: boolean
+  previewData?: UserStudent | null
+  onPreviewChange?: (next: Partial<UserStudent>) => void
 }) {
 
   const session = useSession()
@@ -220,10 +226,11 @@ export default function StudentUserData({
   const baseId = student?.styleOf || studentId
 
   const isRegistered = !!data
+  const canEditDirect = !!editMode || !!previewMode
 
   const placeholderMin: UserStudent = {
     level: 1,
-    star: 1,
+    star: Math.max(1, Math.min(5, student?.initialStars || 1)),
     unique_star: 0,
     unique_level: 0,
     bond: 0,
@@ -247,8 +254,8 @@ export default function StudentUserData({
   const placeholderMax: UserStudent = {
     level: 90,
     star: 5,
-    unique_star: 3,
-    unique_level: 50,
+    unique_star: 4,
+    unique_level: 60,
     bond: 100,
     hp: 0,
     hp_wb: 25,
@@ -267,7 +274,35 @@ export default function StudentUserData({
     item_tier: 2,
   }
 
-  const display = data || (previewMax ? placeholderMax : placeholderMin)
+  const display = data || (previewMode ? (previewData || placeholderMin) : (previewMax ? placeholderMax : placeholderMin))
+
+  const clampValue = (field: string, value: number, current: UserStudent) => {
+    const intValue = Math.floor(Number.isFinite(value) ? value : 0)
+    const clamp = (min: number, max: number) => Math.max(min, Math.min(max, intValue))
+
+    switch (field) {
+      case 'level': return clamp(1, 90)
+      case 'star': return clamp(1, 5)
+      case 'unique_level': return clamp(0, 60)
+      case 'unique_star': return (current.star ?? 1) < 5 ? 0 : clamp(0, 4)
+      case 'equip1':
+      case 'equip2':
+      case 'equip3':
+      case 'item_tier':
+        return clamp(0, 10)
+      case 'hp_wb':
+      case 'attack_wb':
+      case 'heal_wb':
+        return clamp(0, 25)
+      case 'ex_skill': return clamp(1, 5)
+      case 'normal_skill':
+      case 'passive_skill':
+      case 'sub_skill':
+        return clamp(1, 10)
+      case 'bond': return clamp(0, 100)
+      default: return intValue
+    }
+  }
 
   const resolveUniqueWeaponStat = (field: 'hp' | 'attack' | 'heal') => {
     if (!student?.uniqueWeapon) return 0
@@ -460,7 +495,13 @@ export default function StudentUserData({
               </span>
             </button>
             <span className="flex-1 text-left text-2xl">{student?.name}</span>
-            <span className="flex items-center -space-x-1 justify-end">
+            <span
+              className={`flex items-center -space-x-1 justify-end ${canEditDirect ? 'cursor-pointer edit-highlight' : ''}`}
+              onClick={() => {
+                if (!canEditDirect) return
+                setEditField({ field: 'star', label: '星', value: display.star, min: 1, max: 5 })
+              }}
+            >
               {Array.from({ length: display.star }).map((_, i) => (
                 <FontAwesomeIcon key={i} icon={faStar} className="text-yellow-400" />
               ))}
@@ -473,10 +514,10 @@ export default function StudentUserData({
           </div>
           <div
             className={`bg-[#114073] bg-opacity-90 px-1 inline-block w-20 text-center${
-              editMode && isRegistered ? ' edit-highlight cursor-pointer' : ''
+              canEditDirect ? ' edit-highlight cursor-pointer' : ''
             }`}
             onClick={() => {
-              if (editMode && isRegistered) {
+              if (canEditDirect) {
                 setEditField({
                   field: 'level',
                   label: 'レベル',
@@ -520,15 +561,15 @@ export default function StudentUserData({
           <div className="grid grid-cols-2 gap-1 pb-1 border-b border-gray-300">
             <div
               onClick={() =>
-                editMode && isRegistered && setEditField({ field: 'hp', label: 'HP', value: display.hp })
+                canEditDirect && setEditField({ field: 'hp', label: 'HP', value: display.hp })
               }
-              className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
+              className={`cursor-pointer${canEditDirect ? ' edit-highlight' : ''}`}
             >
               HP {renderStatValue(hpCalc)}{' '}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
-                  if (editMode && isRegistered) {
+                  if (canEditDirect) {
                     setEditField({ field: 'hp_wb', label: 'HPWB', value: display.hp_wb, min: 0, max: 25 })
                   }
                 }}
@@ -544,15 +585,15 @@ export default function StudentUserData({
             </div>
             <div
               onClick={() =>
-                editMode && isRegistered && setEditField({ field: 'attack', label: '攻撃力', value: display.attack })
+                canEditDirect && setEditField({ field: 'attack', label: '攻撃力', value: display.attack })
               }
-              className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
+              className={`cursor-pointer${canEditDirect ? ' edit-highlight' : ''}`}
             >
               攻撃力 {renderStatValue(attackCalc)}{' '}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
-                  if (editMode && isRegistered) {
+                  if (canEditDirect) {
                     setEditField({
                       field: 'attack_wb',
                       label: '攻撃力WB',
@@ -576,23 +617,23 @@ export default function StudentUserData({
           <div className="grid grid-cols-2 gap-1 pt-1">
             <div
               onClick={() =>
-                editMode && isRegistered && setEditField({ field: 'defense', label: '防御力', value: display.defense })
+                canEditDirect && setEditField({ field: 'defense', label: '防御力', value: display.defense })
               }
-              className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
+              className={`cursor-pointer${canEditDirect ? ' edit-highlight' : ''}`}
             >
               防御力 {renderStatValue(defenseCalc)}
             </div>
             <div
               onClick={() =>
-                editMode && isRegistered && setEditField({ field: 'heal', label: '治癒力', value: display.heal })
+                canEditDirect && setEditField({ field: 'heal', label: '治癒力', value: display.heal })
               }
-              className={`cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
+              className={`cursor-pointer${canEditDirect ? ' edit-highlight' : ''}`}
             >
               治癒力 {renderStatValue(healCalc)}{' '}
               <span
                 onClick={(e) => {
                   e.stopPropagation()
-                  if (editMode && isRegistered) {
+                  if (canEditDirect) {
                     setEditField({
                       field: 'heal_wb',
                       label: '治癒力WB',
@@ -623,9 +664,9 @@ export default function StudentUserData({
           ].map((skill, i) => (
             <div key={i} className="skew-x-12">
               <div
-                className={`-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1 cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
+                className={`-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1 cursor-pointer${canEditDirect ? ' edit-highlight' : ''}`}
                 onClick={() => {
-                  if (editMode && isRegistered) {
+                  if (canEditDirect) {
                     setEditField({
                       field: skill.field,
                       label: skill.label,
@@ -673,10 +714,10 @@ export default function StudentUserData({
         <div className="grid grid-cols-1 gap-1 text-center">
           <div className="skew-x-12">
             <div
-              className={`-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1 space-y-1 cursor-pointer${editMode && isRegistered ? ' edit-highlight' : ''}`}
+              className={`-skew-x-12 border rounded-md flex flex-col items-center justify-between h-28 w-full p-1 space-y-1 cursor-pointer${canEditDirect ? ' edit-highlight' : ''}`}
               onClick={() => {
-                if (editMode && isRegistered) {
-                  setEditField({ field: 'unique_level', label: '固有武器Lv', value: display.unique_level, min: 0 })
+                if (canEditDirect) {
+                  setEditField({ field: 'unique_level', label: '固有武器Lv', value: display.unique_level, min: 0, max: 60 })
                 } else if (student?.uniqueWeapon) {
                   setUniqueWeaponDetail(student.uniqueWeapon)
                 }
@@ -685,17 +726,25 @@ export default function StudentUserData({
               <span className="text-sm">固有武器</span>
               <span>Lv. {display.unique_level}</span>
               <div
-                className={`space-x-px${editMode && isRegistered ? ' edit-highlight cursor-pointer' : ''}`}
+                className={`space-x-px${canEditDirect ? ' edit-highlight cursor-pointer' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation()
-                  if (editMode && isRegistered) {
-                    setEditField({ field: 'unique_star', label: '固有武器星', value: display.unique_star, min: 0 })
+                  if (canEditDirect) {
+                    setEditField({ field: 'unique_star', label: '固有武器星', value: display.unique_star, min: 0, max: 4 })
                   }
                 }}
               >
-                {Array.from({ length: display.unique_star }).map((_, i) => (
-                  <FontAwesomeIcon key={i} icon={faStar} className="text-sky-400" />
-                ))}
+                {display.unique_star > 0
+                  ? Array.from({ length: display.unique_star }).map((_, i) => (
+                      <FontAwesomeIcon key={i} icon={faStar} className="text-sky-400" />
+                    ))
+                  : display.star >= 5 && (
+                      <FontAwesomeIcon
+                        icon={faStar}
+                        className="text-white"
+                        style={{ color: 'white', stroke: '#38bdf8', strokeWidth: 1.6 }}
+                      />
+                    )}
               </div>
             </div>
           </div>
@@ -711,9 +760,9 @@ export default function StudentUserData({
               <div
                 className={`-skew-x-12 rounded-lg border relative w-full aspect-square flex items-end justify-start ${
                   i === 3 && !student?.hasAccessory ? 'bg-gray-300 text-gray-500 border-black' : 'text-[#4298f5] border-black'
-                } ${editMode ? 'cursor-pointer edit-highlight' : ''}`}
+                } ${canEditDirect ? 'cursor-pointer edit-highlight' : ''}`}
                 onClick={() => {
-                  if (editMode && isRegistered && (i < 3 || student?.hasAccessory)) {
+                  if (canEditDirect && (i < 3 || student?.hasAccessory)) {
                     setEditField({
                       field: gear.field,
                       label: i === 3 ? '愛用品Tier' : `装備${i + 1}Tier`,
@@ -784,10 +833,20 @@ export default function StudentUserData({
           max={editField.max}
           onClose={() => setEditField(null)}
           onSave={async (v) => {
+            const normalized = clampValue(editField.field, v, display)
+            const patch: Partial<UserStudent> = { [editField.field]: normalized }
+            if (editField.field === 'star' && normalized < 5) {
+              patch.unique_star = 0
+            }
+            if (previewMode && !isRegistered) {
+              onPreviewChange?.(patch)
+              setEditField(null)
+              return
+            }
             if (session) {
               await supabase
                 .from('user_students')
-                .update({ [editField.field]: v })
+                .update(patch)
                 .eq('user_id', session.user.id)
                 .eq('student_id', dataId ?? baseId)
               setEditField(null)
@@ -796,7 +855,7 @@ export default function StudentUserData({
               const key = `userStudent:${dataId ?? baseId}`
               const local = localStorage.getItem(key)
               const obj: UserStudent = local ? JSON.parse(local) : { ...placeholderMin }
-              const newObj = { ...obj, [editField.field]: v }
+              const newObj = { ...obj, ...patch }
               localStorage.setItem(key, JSON.stringify(newObj))
               setEditField(null)
               setData(newObj)
