@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTheme } from './ThemeProvider'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -38,11 +38,14 @@ type Notice = {
   content: string
 }
 
+const TUTORIAL_COMPLETED_KEY = 'app:siteTutorialCompleted'
+
 export default function NoticeModal() {
   const [notices, setNotices] = useState<Notice[]>([])
   const [latestId, setLatestId] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
   const [visible, setVisible] = useState(false)
+  const shouldOpenAfterTutorialRef = useRef(false)
   const { dark } = useTheme()
 
   const openModal = () => {
@@ -68,7 +71,12 @@ export default function NoticeModal() {
           setLatestId(latest.id)
           const last = localStorage.getItem('lastNoticeId')
           if (last !== latest.id) {
-            openModal()
+            const tutorialCompleted = localStorage.getItem(TUTORIAL_COMPLETED_KEY) === '1'
+            if (tutorialCompleted) {
+              openModal()
+            } else {
+              shouldOpenAfterTutorialRef.current = true
+            }
           }
         }
       } catch {
@@ -82,6 +90,17 @@ export default function NoticeModal() {
     const handler = () => openModal()
     window.addEventListener('openNotice', handler)
     return () => window.removeEventListener('openNotice', handler)
+  }, [])
+
+
+  useEffect(() => {
+    const handler = () => {
+      if (!shouldOpenAfterTutorialRef.current) return
+      shouldOpenAfterTutorialRef.current = false
+      openModal()
+    }
+    window.addEventListener('site-tutorial-finished', handler)
+    return () => window.removeEventListener('site-tutorial-finished', handler)
   }, [])
 
   const close = () => closeModal()

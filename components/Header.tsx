@@ -95,6 +95,18 @@ export default function Header() {
     }
   }, [])
 
+
+  useEffect(() => {
+    const openMobileTools = () => setMobileToolsOpen(true)
+    const closeMobileTools = () => setMobileToolsOpen(false)
+    window.addEventListener('site-tutorial-open-mobile-tools', openMobileTools)
+    window.addEventListener('site-tutorial-close-mobile-tools', closeMobileTools)
+    return () => {
+      window.removeEventListener('site-tutorial-open-mobile-tools', openMobileTools)
+      window.removeEventListener('site-tutorial-close-mobile-tools', closeMobileTools)
+    }
+  }, [])
+
   useEffect(() => {
     let legacyRouter: NextRouter | undefined
     const handleStart = () => setLoading(true)

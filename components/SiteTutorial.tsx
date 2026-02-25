@@ -59,14 +59,26 @@ const parseSteps = (value: unknown): TutorialStep[] => {
 }
 
 
+const isElementVisible = (element: HTMLElement) => {
+  const style = window.getComputedStyle(element)
+  if (style.display === 'none' || style.visibility === 'hidden') return false
+  const rect = element.getBoundingClientRect()
+  return rect.width > 0 && rect.height > 0
+}
+
 const safeQuerySelector = (selector: string): HTMLElement | null => {
   try {
-    const found = document.querySelector(selector)
-    return found instanceof HTMLElement ? found : null
+    const found = Array.from(document.querySelectorAll(selector)).find(
+      (node): node is HTMLElement => node instanceof HTMLElement && isElementVisible(node)
+    )
+    return found ?? null
   } catch {
     return null
   }
 }
+
+const needsMobileToolsExpansion = (selector: string) =>
+  selector.includes('[data-tutorial="header-notices"]') || selector.includes('[data-tutorial="header-settings"]')
 
 export default function SiteTutorial() {
   const t = useTranslations('site-tutorial')
@@ -80,12 +92,17 @@ export default function SiteTutorial() {
   const [viewport, setViewport] = useState({ width: 1280, height: 800 })
   const [previewMode, setPreviewMode] = useState(false)
   const expandedButtonsRef = useRef<HTMLButtonElement[]>([])
+  const mobileToolsExpandedByTutorialRef = useRef(false)
 
   const collapseExpanded = () => {
     const buttons = expandedButtonsRef.current.splice(0)
     for (const button of buttons.reverse()) {
       if (!document.contains(button)) continue
       button.click()
+    }
+    if (mobileToolsExpandedByTutorialRef.current) {
+      window.dispatchEvent(new Event('site-tutorial-close-mobile-tools'))
+      mobileToolsExpandedByTutorialRef.current = false
     }
   }
 
@@ -169,6 +186,11 @@ export default function SiteTutorial() {
     collapseExpanded()
 
     const selector = current.selector
+    if (window.innerWidth < 768 && needsMobileToolsExpansion(selector)) {
+      window.dispatchEvent(new Event('site-tutorial-open-mobile-tools'))
+      mobileToolsExpandedByTutorialRef.current = true
+    }
+
     const initialElement = safeQuerySelector(selector)
     if (initialElement) {
       expandedButtonsRef.current = expandAncestorsIfHidden(initialElement)
@@ -244,6 +266,9 @@ export default function SiteTutorial() {
     }
     setTutorialOpen(false)
     collapseExpanded()
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('site-tutorial-finished'))
+    }
 
     if (typeof window !== 'undefined' && previewMode) {
       const returnTo = localStorage.getItem(PREVIEW_RETURN_KEY)
