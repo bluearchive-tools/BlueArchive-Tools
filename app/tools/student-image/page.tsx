@@ -132,14 +132,14 @@ function drawStarWithNumber(
   ctx.fill()
 
   const text = String(clamp(value, 0, 99))
-  ctx.font = `italic 700 ${Math.round(radius * 1.02)}px "M PLUS Rounded 1c", Arial`
+  ctx.font = `italic 700 ${Math.round(radius * 1.02)}px "Noto Sans JP", "Noto Sans", sans-serif`
   ctx.fillStyle = '#111827'
   ctx.strokeStyle = 'rgba(255,255,255,0.72)'
   ctx.lineWidth = Math.max(0.8, radius * 0.045)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.strokeText(text, x, y + radius * 0.04)
-  ctx.fillText(text, x, y + radius * 0.04)
+  ctx.strokeText(text, x, y)
+  ctx.fillText(text, x, y)
 
   ctx.restore()
 }
