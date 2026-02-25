@@ -72,6 +72,10 @@
         "levelCalc": {
           "title": "Level calculator",
           "description": "Calculate required reports and run estimates for leveling"
+        },
+        "studentImage": {
+          "title": "Student Image Maker",
+          "description": "Generate PNG/GIF student icons with attack-type frame and stars"
         }
       }
     },

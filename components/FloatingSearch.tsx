@@ -75,6 +75,7 @@ const SEARCH_PAGES: SearchEntry[] = [
   { label: 'レベル計算', path: '/tools/level-calc', keywords: ['level', 'exp'] },
   { label: 'BGMプレイヤー', path: '/tools/bgm-player', keywords: ['bgm', 'music', 'player'] },
   { label: 'BGM DJ', path: '/tools/bgm-dj', keywords: ['bgm', 'dj', 'music'] },
+  { label: '生徒画像作成', path: '/tools/student-image', keywords: ['student', 'image', 'icon', 'gif'] },
   { label: 'デコレーション', path: '/decorations', keywords: ['decoration'] },
   { label: 'ヘルプ(ローカル)', path: '/help/editor', keywords: ['help'] },
 ]
