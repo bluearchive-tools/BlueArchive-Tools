@@ -24,8 +24,9 @@ const escapeCssIdentifier = (value: string) => {
 const buildStrictPathSelector = (el: HTMLElement) => {
   const segments: string[] = []
   let node: HTMLElement | null = el
-  while (node && node.tagName.toLowerCase() !== 'html') {
-    const current = node
+  while (node) {
+    const current: HTMLElement = node
+    if (current.tagName.toLowerCase() === 'html') break
     if (current.id) {
       segments.unshift(`#${escapeCssIdentifier(current.id)}`)
       break
