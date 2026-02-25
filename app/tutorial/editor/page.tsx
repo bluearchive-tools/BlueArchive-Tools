@@ -13,10 +13,20 @@ type PickerMessage = { type: 'tutorial-selector-picked'; selector: string }
 type PickResult = { selector: string; pickedAt: number }
 type LocaleKey = 'ja' | 'en'
 
+const compareStepKeys = (a: string, b: string) => {
+  const partA = a.match(/^(.*?)(\d+)$/)
+  const partB = b.match(/^(.*?)(\d+)$/)
+  if (partA && partB && partA[1] === partB[1]) {
+    const numDiff = Number(partA[2]) - Number(partB[2])
+    if (numDiff !== 0) return numDiff
+  }
+  return a.localeCompare(b)
+}
+
 const getDefaultSteps = (locale: LocaleKey): StepItem[] => {
   const map = (tutorialSteps as Record<LocaleKey, Record<string, { text?: string; selector?: string; title?: string }>>)[locale]
   return Object.entries(map)
-    .sort(([a], [b]) => a.localeCompare(b))
+    .sort(([a], [b]) => compareStepKeys(a, b))
     .map(([key, value]) => ({ key, text: value.text ?? '', selector: value.selector ?? '', title: value.title ?? '' }))
 }
 
