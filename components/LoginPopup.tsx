@@ -11,26 +11,21 @@ import { useTranslations } from 'next-intl'
 const DISMISSED_KEY = 'app:loginPromptDismissed'
 const CLOSE_ANIMATION_MS = 420
 
-type SinkTarget = {
-  alignRatioX: number
+type ClosingMotion = {
+  translateX: number
+  translateY: number
 }
 
-const getSinkTarget = (): SinkTarget | null => {
-  const mobileToggle = document.querySelector('[data-login-sink="mobile-tools"]')
-  let target: HTMLElement | null = null
-  if (mobileToggle instanceof HTMLElement) {
-    const style = window.getComputedStyle(mobileToggle)
-    if (style.display !== 'none' && style.visibility !== 'hidden') target = mobileToggle
+const getMotionToTopRight = (element: HTMLElement): ClosingMotion => {
+  const rect = element.getBoundingClientRect()
+  const centerX = rect.left + rect.width / 2
+  const centerY = rect.top + rect.height / 2
+  const targetX = window.innerWidth - 24
+  const targetY = 20
+  return {
+    translateX: targetX - centerX,
+    translateY: targetY - centerY,
   }
-  if (!target) {
-    const account = document.querySelector('[data-login-sink="account"]')
-    if (account instanceof HTMLElement) target = account
-  }
-  if (!target) return null
-
-  const rect = target.getBoundingClientRect()
-  const ratio = Math.max(0, Math.min(1, rect.left / Math.max(window.innerWidth, 1)))
-  return { alignRatioX: ratio }
 }
 
 export default function LoginPopup() {
@@ -39,8 +34,9 @@ export default function LoginPopup() {
   const [visible, setVisible] = useState(false)
   const [open, setOpen] = useState(false)
   const [closing, setClosing] = useState(false)
-  const [transformOrigin, setTransformOrigin] = useState('100% 50%')
+  const [closingMotion, setClosingMotion] = useState<ClosingMotion>({ translateX: 0, translateY: 0 })
   const closeTimerRef = useRef<number | null>(null)
+  const cardRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (session) return
@@ -67,9 +63,9 @@ export default function LoginPopup() {
       /* ignore */
     }
 
-    const sink = getSinkTarget()
-    if (sink) {
-      setTransformOrigin(`${Math.round(sink.alignRatioX * 100)}% 50%`)
+    const card = cardRef.current
+    if (card) {
+      setClosingMotion(getMotionToTopRight(card))
     }
 
     setOpen(false)
@@ -77,13 +73,14 @@ export default function LoginPopup() {
     closeTimerRef.current = window.setTimeout(() => {
       setVisible(false)
       setClosing(false)
+      setClosingMotion({ translateX: 0, translateY: 0 })
     }, CLOSE_ANIMATION_MS)
   }
 
   if (session || !visible) return null
 
   const cardTransform = closing
-    ? 'scaleX(0.06) scaleY(0.86)'
+    ? `translate(${closingMotion.translateX}px, ${closingMotion.translateY}px) scaleX(0.06) scaleY(0.86)`
     : open
       ? 'translateY(0) scale(1)'
       : 'translateY(-16px) scale(1)'
@@ -93,7 +90,8 @@ export default function LoginPopup() {
   return (
     <div className="fixed top-20 inset-x-0 flex justify-center pointer-events-none z-5">
       <div
-        style={{ transform: cardTransform, opacity: cardOpacity, transformOrigin }}
+        ref={cardRef}
+        style={{ transform: cardTransform, opacity: cardOpacity, transformOrigin: '100% 50%' }}
         className="relative bg-yellow-200/80 text-black rounded shadow p-4 pointer-events-auto max-w-md w-full mx-4 flex flex-col gap-3 transition-all duration-[420ms]"
       >
         <div className="flex items-start gap-2">
