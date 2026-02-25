@@ -237,7 +237,7 @@ export default function Header() {
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <h1 className="text-lg font-bold leading-tight">
-            <Link href="/">{t('brand')}</Link>
+            <Link href="/" data-tutorial="header-brand">{t('brand')}</Link>
           </h1>
           <button onClick={() => setAboutOpen(true)} aria-label={t('actions.about')} className="text-base shrink-0">
             <FontAwesomeIcon icon={faCircleQuestion} />
@@ -261,13 +261,13 @@ export default function Header() {
               </option>
             ))}
           </select>
-          <button onClick={openNotice} aria-label={t('actions.notices')}>
+          <button data-tutorial="header-notices" onClick={openNotice} aria-label={t('actions.notices')}>
             <FontAwesomeIcon icon={faBell} />
           </button>
           <Link href="/decorations" aria-label="デコレーションショップ" className="text-lg">
             <FontAwesomeIcon icon={faShop} />
           </Link>
-          <Link href="/mypage" aria-label={t('actions.settings')}>
+          <Link href="/mypage" data-tutorial="header-settings" aria-label={t('actions.settings')}>
             <FontAwesomeIcon icon={faCog} />
           </Link>
           <button onClick={toggleTheme} aria-label={t('actions.toggleTheme')}>
@@ -307,13 +307,13 @@ export default function Header() {
       {mobileToolsOpen && (
         <div className="md:hidden mt-3 border-t pt-3 space-y-3">
           <div className="flex flex-wrap items-center justify-end gap-3">
-            <button onClick={openNotice} aria-label={t('actions.notices')} className="border rounded px-3 py-1">
+            <button data-tutorial="header-notices" onClick={openNotice} aria-label={t('actions.notices')} className="border rounded px-3 py-1">
               <FontAwesomeIcon icon={faBell} />
             </button>
             <Link href="/decorations" aria-label="デコレーションショップ" className="border rounded px-3 py-1">
               <FontAwesomeIcon icon={faShop} />
             </Link>
-            <Link href="/mypage" aria-label={t('actions.settings')} className="border rounded px-3 py-1">
+            <Link href="/mypage" data-tutorial="header-settings" aria-label={t('actions.settings')} className="border rounded px-3 py-1">
               <FontAwesomeIcon icon={faCog} />
             </Link>
             <button onClick={toggleTheme} aria-label={t('actions.toggleTheme')} className="border rounded px-3 py-1">

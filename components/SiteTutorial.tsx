@@ -30,9 +30,19 @@ const getDefaultStepsFromJson = (locale: LocaleKey): TutorialStep[] => {
   return parseSteps(root[locale] ?? root.ja)
 }
 
+const compareStepKeys = (a: string, b: string) => {
+  const partA = a.match(/^(.*?)(\d+)$/)
+  const partB = b.match(/^(.*?)(\d+)$/)
+  if (partA && partB && partA[1] === partB[1]) {
+    const numDiff = Number(partA[2]) - Number(partB[2])
+    if (numDiff !== 0) return numDiff
+  }
+  return a.localeCompare(b)
+}
+
 const parseSteps = (value: unknown): TutorialStep[] => {
   if (!value || typeof value !== 'object') return []
-  const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b))
+  const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => compareStepKeys(a, b))
   return entries
     .map(([, item]) => {
       if (typeof item === 'string') return { text: item }

@@ -16,13 +16,40 @@ type PickCandidate = {
   element: HTMLElement
 }
 
+const escapeCssIdentifier = (value: string) => {
+  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(value)
+  return value.replace(/[^a-zA-Z0-9_-]/g, '\\$&')
+}
+
+const buildStrictPathSelector = (el: HTMLElement) => {
+  const segments: string[] = []
+  let node: HTMLElement | null = el
+  while (node && node.tagName.toLowerCase() !== 'html') {
+    if (node.id) {
+      segments.unshift(`#${escapeCssIdentifier(node.id)}`)
+      break
+    }
+
+    const tag = node.tagName.toLowerCase()
+    const parent = node.parentElement
+    if (!parent) {
+      segments.unshift(tag)
+      break
+    }
+
+    const sameTagSiblings = Array.from(parent.children).filter((child) => child.tagName === node!.tagName)
+    const nth = sameTagSiblings.indexOf(node) + 1
+    segments.unshift(`${tag}:nth-of-type(${nth})`)
+    node = parent
+  }
+
+  return segments.join(' > ')
+}
+
 const buildSelector = (el: HTMLElement) => {
   const tutorial = el.getAttribute('data-tutorial')
   if (tutorial) return `[data-tutorial="${tutorial}"]`
-  if (el.id) return `#${el.id}`
-  const classes = Array.from(el.classList).slice(0, 2)
-  if (classes.length > 0) return `${el.tagName.toLowerCase()}.${classes.join('.')}`
-  return el.tagName.toLowerCase()
+  return buildStrictPathSelector(el)
 }
 
 const buildLabel = (el: HTMLElement) => {
@@ -78,7 +105,7 @@ export default function Home() {
     const isBlockedInteractiveTarget = (target: EventTarget | null) => {
       if (!(target instanceof Element)) return false
       if (isPickerOverlayTarget(target)) return false
-      return Boolean(target.closest('a[href], button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"]'))
+      return Boolean(target.closest('a[href]'))
     }
 
     const blockPickModeInteraction = (event: MouseEvent) => {
@@ -172,7 +199,7 @@ export default function Home() {
 
       <main data-tutorial="home-main" className="p-4 space-y-4 pb-16">
         <LoginPopup />
-        <CollapsibleBox title={t('students.title')} description={t('students.description')}>
+        <CollapsibleBox tutorialKey="home-section-students" title={t('students.title')} description={t('students.description')}>
           <div data-tutorial="home-links" className="space-y-2">
             <Link href="/students"><FeatureItem title={t('students.actions.view.title')} description={t('students.actions.view.description')} /></Link>
             <Link href="/students/import"><FeatureItem title={t('students.actions.import.title')} description={t('students.actions.import.description')} /></Link>
@@ -180,7 +207,7 @@ export default function Home() {
           </div>
         </CollapsibleBox>
 
-        <CollapsibleBox title={t('tlTools.title')} description={t('tlTools.description')}>
+        <CollapsibleBox tutorialKey="home-section-tl" title={t('tlTools.title')} description={t('tlTools.description')}>
           <div className="space-y-2">
             <Link href="/tl/search"><FeatureItem title={t('tlTools.actions.search.title')} description={t('tlTools.actions.search.description')} /></Link>
             <Link href="/tl/search-beta"><FeatureItem title="TL検索β" description="β版の総力戦/大決戦検索UIです" /></Link>
@@ -190,7 +217,7 @@ export default function Home() {
           <div aria-disabled="true" className="opacity-50 grayscale cursor-not-allowed select-none"><div className="pointer-events-none"><FeatureItem title={t('tlTools.actions.videoToTl.title')} description={t('tlTools.actions.videoToTl.description')} /></div></div>
         </CollapsibleBox>
 
-        <CollapsibleBox title={t('tools.title')} description={t('tools.description')}>
+        <CollapsibleBox tutorialKey="home-section-tools" title={t('tools.title')} description={t('tools.description')}>
           <div data-tutorial="tools-links" className="space-y-2">
             <Link href="/tools/training-planning"><FeatureItem title={t('tools.actions.trainingPlanning.title')} description={t('tools.actions.trainingPlanning.description')} /></Link>
             <Link href="/tools/event-schedule"><FeatureItem title={t('tools.actions.eventSchedule.title')} description={t('tools.actions.eventSchedule.description')} /></Link>
@@ -199,7 +226,7 @@ export default function Home() {
           </div>
         </CollapsibleBox>
 
-        <CollapsibleBox title={t('minigames.title')} description={t('minigames.description')}>
+        <CollapsibleBox tutorialKey="home-section-minigames" title={t('minigames.title')} description={t('minigames.description')}>
           <div className="space-y-2">
             <Link href="/minigames/bgm-quiz"><FeatureItem title={t('minigames.actions.bgmQuiz.title')} description={t('minigames.actions.bgmQuiz.description')} /></Link>
           </div>

@@ -35,7 +35,7 @@ export default function LoginPopup() {
       <div className="relative bg-yellow-200/80 text-black rounded shadow p-4 pointer-events-auto max-w-md w-full mx-4 flex flex-col gap-3">
         <div className="flex items-start gap-2">
           <FontAwesomeIcon icon={faCircleExclamation} className="text-yellow-600 mt-1" />
-          <p className="flex-1 text-sm">{t('messages.loginPrompt')}</p>
+          <p data-tutorial="login-prompt" className="flex-1 text-sm">{t('messages.loginPrompt')}</p>
           <button onClick={close} className="text-gray-700" aria-label={t('actions.close')}>
             <FontAwesomeIcon icon={faXmark} />
           </button>
