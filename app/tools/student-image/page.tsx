@@ -52,7 +52,7 @@ const BASE: Options = {
   borderThin: 6,
   borderBottom: 45,
   skewRatio: 0.1,
-  blinkHoldMs: 1000,
+  blinkHoldMs: 10000,
 }
 
 const TRANSPARENT_MARKER: RGB = [1, 2, 3]
@@ -122,7 +122,7 @@ function drawStarWithNumber(
   ctx.fill()
 
   ctx.strokeStyle = stroke
-  ctx.lineWidth = Math.max(2, radius * 0.12)
+  ctx.lineWidth = Math.max(1, radius * 0.065)
   ctx.lineJoin = 'round'
   ctx.stroke()
 
@@ -132,10 +132,10 @@ function drawStarWithNumber(
   ctx.fill()
 
   const text = String(clamp(value, 0, 99))
-  ctx.font = `700 ${Math.round(radius * 1.02)}px Arial`
-  ctx.fillStyle = '#ffffff'
-  ctx.strokeStyle = 'rgba(15,23,42,0.7)'
-  ctx.lineWidth = Math.max(1.2, radius * 0.08)
+  ctx.font = `italic 700 ${Math.round(radius * 1.02)}px "M PLUS Rounded 1c", Arial`
+  ctx.fillStyle = '#111827'
+  ctx.strokeStyle = 'rgba(255,255,255,0.72)'
+  ctx.lineWidth = Math.max(0.8, radius * 0.045)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.strokeText(text, x, y + radius * 0.04)
@@ -171,7 +171,7 @@ function drawDanger(ctx: CanvasRenderingContext2D, size: number) {
 }
 
 function createBlueFrames(holdMs: number): BlueFrame[] {
-  const hold = clamp(holdMs, 200, 4000)
+  const hold = clamp(holdMs, 200, 20000)
   return [
     { alpha: 0, delayMs: hold },
     { alpha: 0.45, delayMs: 140 },
@@ -205,10 +205,16 @@ function drawCard(
   ctx.imageSmoothingEnabled = true
 
   const outerPath = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop)
-  const innerPath = createParallelogramPath(size, frameHeight, skew, thin, bottom, thin, frameTop)
+  const innerBottomInset = Math.max(2, bottom * 0.35)
+  const innerPath = createParallelogramPath(size, frameHeight, skew, thin, innerBottomInset, thin, frameTop)
 
   ctx.fillStyle = ring
   ctx.fill(outerPath)
+  ctx.strokeStyle = ring
+  ctx.lineWidth = Math.max(2, thin * 1.6)
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  ctx.stroke(outerPath)
 
   ctx.save()
   ctx.clip(innerPath)
@@ -232,11 +238,11 @@ function drawCard(
   ctx.lineWidth = Math.max(1, thin * 0.85)
   ctx.lineJoin = 'round'
   ctx.lineCap = 'round'
-  ctx.stroke(createParallelogramPath(size, frameHeight, skew, thin * 0.8, bottom * 0.87, thin * 0.8, frameTop))
+  ctx.stroke(createParallelogramPath(size, frameHeight, skew, thin * 0.8, innerBottomInset * 0.95, thin * 0.8, frameTop))
   ctx.restore()
 
   const levelFont = Math.round(size * 0.135)
-  ctx.font = `italic 700 ${levelFont}px Arial`
+  ctx.font = `italic 700 ${levelFont}px "M PLUS Rounded 1c", Arial`
   ctx.fillStyle = '#ffffff'
   ctx.strokeStyle = 'rgba(15,23,42,0.42)'
   ctx.lineWidth = Math.max(1, size * 0.006)
@@ -248,7 +254,7 @@ function drawCard(
 
   const starRadius = size * 0.12
   const starX = size * 0.18
-  const starY = frameTop + frameHeight - starRadius * 0.9
+  const starY = frameTop + frameHeight - bottom * 0.72
   drawStarWithNumber(ctx, starX, starY, starRadius, '#fde047', '#f59e0b', '#92400e', options.stars)
 
   if (options.unique >= 1 && blueStarAlpha > 0) {
@@ -260,7 +266,7 @@ function drawCard(
   }
 
   const stripHeight = Math.max(2, size * 0.018)
-  const bottomY = frameTop + frameHeight
+  const bottomY = frameTop + frameHeight - bottom * 0.58
   const rightBottomX = size - skew
   const strip = new Path2D()
   strip.moveTo(0, bottomY)
@@ -554,7 +560,7 @@ export default function StudentImageToolPage() {
 
           <label className="space-y-1 text-sm">
             <span className="font-semibold">青星待機時間(ms)</span>
-            <input type="number" min={200} max={4000} step={100} value={options.blinkHoldMs} onChange={(event) => setOptions((prev) => ({ ...prev, blinkHoldMs: clamp(Number(event.target.value), 200, 4000) }))} className="w-full rounded border px-3 py-2" />
+            <input type="number" min={200} max={20000} step={100} value={options.blinkHoldMs} onChange={(event) => setOptions((prev) => ({ ...prev, blinkHoldMs: clamp(Number(event.target.value), 200, 20000) }))} className="w-full rounded border px-3 py-2" />
           </label>
         </div>
 
