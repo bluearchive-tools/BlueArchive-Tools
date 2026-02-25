@@ -302,6 +302,7 @@ export default function Header() {
   const accountButton = (
     <div className="relative" ref={dropdownRef}>
       <button
+        data-login-sink="account"
         onClick={() => setAccountOpen(!accountOpen)}
         className="cursor-pointer min-w-[8rem] whitespace-nowrap text-center flex items-center justify-center gap-1"
       >
@@ -404,6 +405,7 @@ export default function Header() {
             ))}
           </select>
           <button
+            data-login-sink="mobile-tools"
             type="button"
             onClick={() => setMobileToolsOpen((prev) => !prev)}
             aria-label={mobileToolsOpen ? 'ツールを閉じる' : 'ツールを開く'}

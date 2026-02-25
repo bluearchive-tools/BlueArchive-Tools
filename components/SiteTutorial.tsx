@@ -349,7 +349,6 @@ export default function SiteTutorial() {
             </div>
             <p className="mt-3 text-sm text-gray-600">{t('tutorial.stepLabel', { current: stepIndex + 1, total: steps.length })}</p>
             <p className="mt-4 text-base text-gray-700">{current.text}</p>
-            {current.selector && <p className="mt-2 text-xs text-gray-500">target: {current.selector}</p>}
             <div className="mt-6 flex justify-between">
               <button type="button" onClick={prevStep} disabled={stepIndex === 0} className="rounded-md border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40">{t('tutorial.back')}</button>
               <button type="button" onClick={nextStep} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">{stepIndex >= steps.length - 1 ? t('tutorial.finish') : t('tutorial.next')}</button>
