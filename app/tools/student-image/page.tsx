@@ -48,9 +48,9 @@ const BASE: Options = {
   stars: 3,
   unique: 0,
   size: 512,
-  cornerRadius: 14,
+  cornerRadius: 30,
   borderThin: 6,
-  borderBottom: 45,
+  borderBottom: 100,
   skewRatio: 0.1,
   blinkHoldMs: 10000,
 }
@@ -138,8 +138,8 @@ function drawStarWithNumber(
   ctx.lineWidth = Math.max(0.8, radius * 0.045)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.strokeText(text, x, y)
-  ctx.fillText(text, x, y)
+  ctx.strokeText(text, x - radius * 0.06, y)
+  ctx.fillText(text, x - radius * 0.06, y)
 
   ctx.restore()
 }
@@ -249,8 +249,8 @@ function drawCard(
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
   const levelText = `Lv.${options.level}`
-  ctx.strokeText(levelText, size * 0.095, frameTop + size * 0.03)
-  ctx.fillText(levelText, size * 0.095, frameTop + size * 0.03)
+  ctx.strokeText(levelText, size * 0.095, frameTop + size * 0.015)
+  ctx.fillText(levelText, size * 0.095, frameTop + size * 0.015)
 
   const starRadius = size * 0.12
   const starX = size * 0.18
@@ -265,8 +265,8 @@ function drawCard(
     drawDanger(ctx, size)
   }
 
-  const stripHeight = Math.max(2, size * 0.018)
-  const bottomY = frameTop + frameHeight - bottom * 0.58
+  const stripHeight = Math.max(2, size * 0.02)
+  const bottomY = frameTop + frameHeight + size * 0.004
   const rightBottomX = size - skew
   const strip = new Path2D()
   strip.moveTo(0, bottomY)
@@ -550,7 +550,7 @@ export default function StudentImageToolPage() {
 
           <label className="space-y-1 text-sm">
             <span className="font-semibold">枠線の太さ（下）</span>
-            <input type="number" min={4} max={64} value={options.borderBottom} onChange={(event) => setOptions((prev) => ({ ...prev, borderBottom: clamp(Number(event.target.value), 4, 64) }))} className="w-full rounded border px-3 py-2" />
+            <input type="number" min={4} max={140} value={options.borderBottom} onChange={(event) => setOptions((prev) => ({ ...prev, borderBottom: clamp(Number(event.target.value), 4, 140) }))} className="w-full rounded border px-3 py-2" />
           </label>
 
           <label className="space-y-1 text-sm">
