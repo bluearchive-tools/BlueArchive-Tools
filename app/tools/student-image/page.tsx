@@ -11,6 +11,8 @@ type Student = {
   initialStars: number
 }
 
+type AttackType = '爆発' | '貫通' | '神秘' | '振動'
+
 type Options = {
   level: number
   stars: number
@@ -27,11 +29,13 @@ type AttackColor = {
   ring: string
 }
 
-const ATTACK_COLORS: Record<string, AttackColor> = {
-  爆発: { ring: '#ef4444' },
-  貫通: { ring: '#f59e0b' },
-  神秘: { ring: '#3b82f6' },
-  振動: { ring: '#ec4899' },
+const ATTACK_TYPES: AttackType[] = ['爆発', '貫通', '神秘', '振動']
+
+const ATTACK_COLORS: Record<AttackType, AttackColor> = {
+  爆発: { ring: '#dc2626' },
+  貫通: { ring: '#d97706' },
+  神秘: { ring: '#2563eb' },
+  振動: { ring: '#db2777' },
 }
 
 const BASE: Options = {
@@ -40,9 +44,9 @@ const BASE: Options = {
   unique: 0,
   size: 192,
   cornerRadius: 14,
-  borderThin: 3,
-  borderBottom: 11,
-  skewRatio: 0.14,
+  borderThin: 6,
+  borderBottom: 23,
+  skewRatio: 0.1,
   blinkDelay: 34,
 }
 
@@ -98,7 +102,11 @@ function drawStarWithNumber(
   colorBottom: string,
   stroke: string,
   value: number,
+  alpha = 1,
 ) {
+  ctx.save()
+  ctx.globalAlpha = alpha
+
   drawStarShape(ctx, x, y, radius)
   const grad = ctx.createLinearGradient(x, y - radius, x, y + radius)
   grad.addColorStop(0, colorTop)
@@ -125,6 +133,8 @@ function drawStarWithNumber(
   ctx.textBaseline = 'middle'
   ctx.strokeText(text, x, y + radius * 0.04)
   ctx.fillText(text, x, y + radius * 0.04)
+
+  ctx.restore()
 }
 
 function drawDanger(ctx: CanvasRenderingContext2D, size: number) {
@@ -133,7 +143,7 @@ function drawDanger(ctx: CanvasRenderingContext2D, size: number) {
   const left = size - tri - pad
   const top = pad
   ctx.save()
-  ctx.globalAlpha = 0.22
+  ctx.globalAlpha = 0.24
   ctx.fillStyle = '#ef4444'
   ctx.beginPath()
   ctx.moveTo(left + tri / 2, top)
@@ -144,7 +154,7 @@ function drawDanger(ctx: CanvasRenderingContext2D, size: number) {
   ctx.strokeStyle = '#7f1d1d'
   ctx.lineWidth = Math.max(1, size * 0.01)
   ctx.stroke()
-  ctx.globalAlpha = 0.45
+  ctx.globalAlpha = 0.46
   ctx.fillStyle = '#7f1d1d'
   ctx.font = `bold ${Math.round(size * 0.11)}px Arial`
   ctx.textAlign = 'center'
@@ -153,22 +163,41 @@ function drawDanger(ctx: CanvasRenderingContext2D, size: number) {
   ctx.restore()
 }
 
+function computeBlueStarAlpha(timeMs: number, blinkDelay: number) {
+  const base = clamp(blinkDelay, 8, 100)
+  const cycleMs = base * 40
+  const phase = (timeMs % cycleMs) / cycleMs
+
+  if (phase < 0.25) {
+    return phase / 0.25
+  }
+  if (phase < 0.5) {
+    return 1
+  }
+  if (phase < 0.75) {
+    return 1 - (phase - 0.5) / 0.25
+  }
+  return 0
+}
+
 function drawCard(
   ctx: CanvasRenderingContext2D,
   image: HTMLImageElement,
-  attackType: string,
+  attackType: AttackType,
+  originalAttackType: string,
   options: Options,
-  showBlueStar: boolean,
+  blueStarAlpha: number,
 ) {
   const size = options.size
-  const frameHeight = size * 0.9
-  const frameTop = size * 0.04
+  const frameHeight = size * 0.88
+  const frameTop = size * 0.05
   const skew = size * options.skewRatio
   const thin = options.borderThin
   const bottom = options.borderBottom
   const color = ATTACK_COLORS[attackType]
-  const hasInvalidAttack = !color
-  const ring = color?.ring ?? '#64748b'
+  const ring = color.ring
+
+  const shouldWarn = attackType !== originalAttackType
 
   ctx.clearRect(0, 0, size, size)
   ctx.imageSmoothingEnabled = true
@@ -181,6 +210,7 @@ function drawCard(
 
   ctx.save()
   ctx.clip(innerPath)
+
   const ratio = Math.max(size / image.width, frameHeight / image.height)
   const drawWidth = image.width * ratio
   const drawHeight = image.height * ratio
@@ -188,42 +218,49 @@ function drawCard(
   const dy = frameTop + (frameHeight - drawHeight) / 2
   ctx.drawImage(image, dx, dy, drawWidth, drawHeight)
 
+  const portraitMask = new Path2D()
+  portraitMask.roundRect(size * 0.02, frameTop + size * 0.01, size * 0.96, frameHeight - size * 0.02, size * 0.17)
+  ctx.globalCompositeOperation = 'destination-in'
+  ctx.fillStyle = '#000000'
+  ctx.fill(portraitMask)
+
+  ctx.globalCompositeOperation = 'source-over'
   const gradient = ctx.createLinearGradient(0, frameTop + frameHeight * 0.56, 0, frameTop + frameHeight)
   gradient.addColorStop(0, 'rgba(2,6,23,0)')
-  gradient.addColorStop(1, 'rgba(2,6,23,0.8)')
+  gradient.addColorStop(1, 'rgba(2,6,23,0.6)')
   ctx.fillStyle = gradient
   ctx.fillRect(0, frameTop, size, frameHeight)
   ctx.restore()
 
   ctx.save()
-  ctx.strokeStyle = 'rgba(255,255,255,0.46)'
-  ctx.lineWidth = Math.max(1, thin * 0.9)
+  ctx.strokeStyle = 'rgba(255,255,255,0.52)'
+  ctx.lineWidth = Math.max(1, thin * 0.85)
   ctx.lineJoin = 'round'
   ctx.lineCap = 'round'
-  ctx.stroke(createParallelogramPath(size, frameHeight, skew, thin * 0.9, bottom * 0.9, thin * 0.9, frameTop))
+  ctx.stroke(createParallelogramPath(size, frameHeight, skew, thin * 0.8, bottom * 0.87, thin * 0.8, frameTop))
   ctx.restore()
 
-  const levelFont = Math.round(size * 0.14)
+  const levelFont = Math.round(size * 0.135)
   ctx.font = `italic 700 ${levelFont}px Arial`
   ctx.fillStyle = '#ffffff'
-  ctx.strokeStyle = 'rgba(15,23,42,0.55)'
-  ctx.lineWidth = Math.max(1.2, size * 0.009)
+  ctx.strokeStyle = 'rgba(15,23,42,0.42)'
+  ctx.lineWidth = Math.max(1, size * 0.006)
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
   const levelText = `Lv.${options.level}`
-  ctx.strokeText(levelText, size * 0.09, frameTop + size * 0.055)
-  ctx.fillText(levelText, size * 0.09, frameTop + size * 0.055)
+  ctx.strokeText(levelText, size * 0.095, frameTop + size * 0.03)
+  ctx.fillText(levelText, size * 0.095, frameTop + size * 0.03)
 
   const starRadius = size * 0.12
-  const starX = size * 0.16
-  const starY = frameTop + frameHeight - starRadius * 0.15
+  const starX = size * 0.18
+  const starY = frameTop + frameHeight - starRadius * 0.9
   drawStarWithNumber(ctx, starX, starY, starRadius, '#fde047', '#f59e0b', '#92400e', options.stars)
 
-  if (options.unique >= 1 && showBlueStar) {
-    drawStarWithNumber(ctx, starX, starY, starRadius, '#7dd3fc', '#3b82f6', '#1e3a8a', options.unique)
+  if (options.unique >= 1 && blueStarAlpha > 0) {
+    drawStarWithNumber(ctx, starX, starY, starRadius, '#7dd3fc', '#3b82f6', '#1e3a8a', options.unique, blueStarAlpha)
   }
 
-  if (hasInvalidAttack) {
+  if (shouldWarn) {
     drawDanger(ctx, size)
   }
 
@@ -263,9 +300,9 @@ function dataUrlToBlob(dataUrl: string) {
 export default function StudentImageToolPage() {
   const [students, setStudents] = useState<Student[]>([])
   const [selectedStudentId, setSelectedStudentId] = useState('')
-  const [selectedAttackType, setSelectedAttackType] = useState('')
+  const [selectedAttackType, setSelectedAttackType] = useState<AttackType>('爆発')
   const [options, setOptions] = useState<Options>(BASE)
-  const [blinkOn, setBlinkOn] = useState(true)
+  const [blueStarAlpha, setBlueStarAlpha] = useState(0)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -279,7 +316,10 @@ export default function StudentImageToolPage() {
       setStudents(json)
       if (json.length > 0) {
         setSelectedStudentId(json[0].id)
-        setSelectedAttackType(json[0].attackType)
+        const initialAttackType = ATTACK_TYPES.includes(json[0].attackType as AttackType)
+          ? (json[0].attackType as AttackType)
+          : '爆発'
+        setSelectedAttackType(initialAttackType)
         setOptions((prev) => ({ ...prev, stars: json[0].initialStars }))
       }
     }
@@ -293,23 +333,29 @@ export default function StudentImageToolPage() {
 
   useEffect(() => {
     if (!selectedStudent) return
-    setSelectedAttackType(selectedStudent.attackType)
+    const safeAttackType = ATTACK_TYPES.includes(selectedStudent.attackType as AttackType)
+      ? (selectedStudent.attackType as AttackType)
+      : '爆発'
+    setSelectedAttackType(safeAttackType)
     setOptions((prev) => ({ ...prev, stars: selectedStudent.initialStars }))
   }, [selectedStudent])
 
   useEffect(() => {
     if (options.unique < 1) {
-      setBlinkOn(false)
+      setBlueStarAlpha(0)
       return
     }
-    let mounted = true
-    const id = window.setInterval(() => {
-      if (!mounted) return
-      setBlinkOn((prev) => !prev)
-    }, clamp(options.blinkDelay, 8, 100) * 10)
+    let active = true
+    let raf = 0
+    const loop = (ts: number) => {
+      if (!active) return
+      setBlueStarAlpha(computeBlueStarAlpha(ts, options.blinkDelay))
+      raf = window.requestAnimationFrame(loop)
+    }
+    raf = window.requestAnimationFrame(loop)
     return () => {
-      mounted = false
-      window.clearInterval(id)
+      active = false
+      window.cancelAnimationFrame(raf)
     }
   }, [options.blinkDelay, options.unique])
 
@@ -325,7 +371,7 @@ export default function StudentImageToolPage() {
   }, [])
 
   const renderPreview = useCallback(
-    async (showBlueStar: boolean) => {
+    async (currentBlueAlpha: number) => {
       if (!selectedStudent || !canvasRef.current) return
       if (!imageRef.current) {
         imageRef.current = await loadImage(selectedStudent.image)
@@ -334,19 +380,27 @@ export default function StudentImageToolPage() {
       canvasRef.current.height = options.size
       const ctx = canvasRef.current.getContext('2d')
       if (!ctx || !imageRef.current) return
-      drawCard(ctx, imageRef.current, selectedAttackType, options, showBlueStar)
+
+      drawCard(
+        ctx,
+        imageRef.current,
+        selectedAttackType,
+        selectedStudent.attackType,
+        options,
+        options.unique >= 1 ? currentBlueAlpha : 0,
+      )
     },
     [loadImage, options, selectedAttackType, selectedStudent],
   )
 
   useEffect(() => {
     imageRef.current = null
-    renderPreview(options.unique >= 1 && blinkOn).catch(() => setError('画像の描画に失敗しました'))
-  }, [selectedStudentId, renderPreview, options.unique, blinkOn])
+    renderPreview(blueStarAlpha).catch(() => setError('画像の描画に失敗しました'))
+  }, [selectedStudentId, renderPreview, blueStarAlpha])
 
   useEffect(() => {
-    renderPreview(options.unique >= 1 && blinkOn).catch(() => setError('画像の描画に失敗しました'))
-  }, [options, renderPreview, blinkOn])
+    renderPreview(blueStarAlpha).catch(() => setError('画像の描画に失敗しました'))
+  }, [options, renderPreview, blueStarAlpha])
 
   const onDownload = useCallback(async () => {
     if (!selectedStudent || !canvasRef.current) return
@@ -355,7 +409,7 @@ export default function StudentImageToolPage() {
 
     try {
       if (options.unique <= 0) {
-        await renderPreview(false)
+        await renderPreview(0)
         const dataUrl = canvasRef.current.toDataURL('image/png')
         const blob = dataUrlToBlob(dataUrl)
         const url = URL.createObjectURL(blob)
@@ -375,17 +429,24 @@ export default function StudentImageToolPage() {
         if (!ctx || !imageRef.current) return
 
         const encoder = GIFEncoder()
-        const delays = [options.blinkDelay, options.blinkDelay]
-        const frames = [false, true]
+        const alphaFrames = [0, 0.5, 1, 1, 0.5, 0, 0]
+        const delays = [options.blinkDelay / 2, options.blinkDelay / 2, options.blinkDelay / 2, options.blinkDelay, options.blinkDelay / 2, options.blinkDelay / 2, options.blinkDelay]
 
-        for (let index = 0; index < frames.length; index += 1) {
-          drawCard(ctx, imageRef.current, selectedAttackType, options, frames[index])
+        for (let index = 0; index < alphaFrames.length; index += 1) {
+          drawCard(
+            ctx,
+            imageRef.current,
+            selectedAttackType,
+            selectedStudent.attackType,
+            options,
+            alphaFrames[index],
+          )
           const frame = ctx.getImageData(0, 0, options.size, options.size)
           const palette = quantize(frame.data, 256)
           const indexed = applyPalette(frame.data, palette)
           encoder.writeFrame(indexed, options.size, options.size, {
             palette,
-            delay: delays[index],
+            delay: Math.max(1, Math.round(delays[index])),
           })
         }
 
@@ -405,13 +466,13 @@ export default function StudentImageToolPage() {
     }
   }, [loadImage, options, renderPreview, selectedAttackType, selectedStudent])
 
-  const isUnknownAttackType = !ATTACK_COLORS[selectedAttackType]
+  const isDanger = !!selectedStudent && selectedAttackType !== selectedStudent.attackType
 
   return (
     <main className="p-4 space-y-4 pb-16">
       <section className="rounded border p-4 bg-white space-y-4">
         <h1 className="text-lg font-bold">生徒アイコン画像作成ツール</h1>
-        <p className="text-sm text-gray-600">右傾き平行四辺形のフレームで生徒画像を加工します。固有1以上は黄色星の上に同位置・同サイズの青星を重ねて点滅表示し、GIF出力できます。</p>
+        <p className="text-sm text-gray-600">右傾き平行四辺形のフレームで生徒画像を加工します。固有1以上は黄色星の上に同位置・同サイズの青星を重ね、フェード点滅してGIF出力できます。</p>
 
         <div className="grid gap-4 md:grid-cols-2">
           <label className="space-y-1 text-sm">
@@ -430,14 +491,18 @@ export default function StudentImageToolPage() {
           </label>
 
           <label className="space-y-1 text-sm">
-            <span className="font-semibold">攻撃属性（手動変更可）</span>
-            <input
-              type="text"
+            <span className="font-semibold">攻撃属性（選択）</span>
+            <select
               value={selectedAttackType}
-              onChange={(event) => setSelectedAttackType(event.target.value)}
+              onChange={(event) => setSelectedAttackType(event.target.value as AttackType)}
               className="w-full rounded border px-3 py-2"
-              placeholder="爆発 / 貫通 / 神秘 / 振動"
-            />
+            >
+              {ATTACK_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
           </label>
 
           <label className="space-y-1 text-sm">
@@ -494,9 +559,9 @@ export default function StudentImageToolPage() {
             <input
               type="number"
               min={1}
-              max={12}
+              max={20}
               value={options.borderThin}
-              onChange={(event) => setOptions((prev) => ({ ...prev, borderThin: clamp(Number(event.target.value), 1, 12) }))}
+              onChange={(event) => setOptions((prev) => ({ ...prev, borderThin: clamp(Number(event.target.value), 1, 20) }))}
               className="w-full rounded border px-3 py-2"
             />
           </label>
@@ -506,9 +571,9 @@ export default function StudentImageToolPage() {
             <input
               type="number"
               min={4}
-              max={28}
+              max={32}
               value={options.borderBottom}
-              onChange={(event) => setOptions((prev) => ({ ...prev, borderBottom: clamp(Number(event.target.value), 4, 28) }))}
+              onChange={(event) => setOptions((prev) => ({ ...prev, borderBottom: clamp(Number(event.target.value), 4, 32) }))}
               className="w-full rounded border px-3 py-2"
             />
           </label>
@@ -548,12 +613,12 @@ export default function StudentImageToolPage() {
           {busy ? '生成中...' : options.unique >= 1 ? 'GIFをダウンロード' : 'PNGをダウンロード'}
         </button>
 
-        {isUnknownAttackType && <p className="text-sm text-amber-700">未知の攻撃属性です。右上に危険マークを表示します。</p>}
+        {isDanger && <p className="text-sm text-amber-700">本来の攻撃属性ではないため、右上に危険マークを表示します。</p>}
         {error && <p className="text-sm text-red-600">{error}</p>}
       </section>
 
       <section className="rounded border bg-slate-50 p-4">
-        <h2 className="text-base font-semibold mb-3">プレビュー（固有1以上なら点滅）</h2>
+        <h2 className="text-base font-semibold mb-3">プレビュー（固有1以上ならフェード点滅）</h2>
         <canvas ref={canvasRef} className="rounded border bg-white max-w-full h-auto" />
       </section>
     </main>
