@@ -149,6 +149,7 @@ export default function SiteTutorial() {
       collapseExpanded()
       return
     }
+
     const current = steps[stepIndex]
     if (!current?.selector) {
       setHighlightRect(null)
@@ -157,16 +158,14 @@ export default function SiteTutorial() {
 
     collapseExpanded()
 
-    const initialElement = safeQuerySelector(current.selector ?? '')
-    if (!initialElement) {
-      setHighlightRect(null)
-      return
+    const selector = current.selector
+    const initialElement = safeQuerySelector(selector)
+    if (initialElement) {
+      expandedButtonsRef.current = expandAncestorsIfHidden(initialElement)
     }
 
-    expandedButtonsRef.current = expandAncestorsIfHidden(initialElement)
-
     const updateRect = () => {
-      const element = safeQuerySelector(current.selector ?? '')
+      const element = safeQuerySelector(selector)
       if (!element) {
         setHighlightRect(null)
         return
@@ -177,12 +176,33 @@ export default function SiteTutorial() {
 
     updateRect()
 
-    if (expandedButtonsRef.current.length > 0) {
-      window.setTimeout(updateRect, 320)
-    }
+    const delayedRectTimer = window.setTimeout(updateRect, 320)
+    const retryEnd = Date.now() + 5000
+    const retryTimer = window.setInterval(() => {
+      if (Date.now() > retryEnd) {
+        window.clearInterval(retryTimer)
+        return
+      }
+      updateRect()
+    }, 250)
+
+    const mutationObserver = new MutationObserver(() => {
+      window.requestAnimationFrame(updateRect)
+    })
+    mutationObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style', 'hidden', 'aria-hidden'],
+    })
+
     window.addEventListener('resize', updateRect)
     window.addEventListener('scroll', updateRect, true)
+
     return () => {
+      mutationObserver.disconnect()
+      window.clearTimeout(delayedRectTimer)
+      window.clearInterval(retryTimer)
       window.removeEventListener('resize', updateRect)
       window.removeEventListener('scroll', updateRect, true)
       collapseExpanded()

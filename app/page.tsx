@@ -73,26 +73,32 @@ export default function Home() {
   useEffect(() => {
     if (!pickMode) return
 
-    const isAnchorTarget = (target: EventTarget | null) => target instanceof Element && Boolean(target.closest('a[href]'))
+    const isPickerOverlayTarget = (target: EventTarget | null) => target instanceof Element && Boolean(target.closest('[data-picker-overlay="1"]'))
 
-    const blockLinkClickNavigation = (event: MouseEvent) => {
-      if (!isAnchorTarget(event.target)) return
+    const isBlockedInteractiveTarget = (target: EventTarget | null) => {
+      if (!(target instanceof Element)) return false
+      if (isPickerOverlayTarget(target)) return false
+      return Boolean(target.closest('a[href], button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"]'))
+    }
+
+    const blockPickModeInteraction = (event: MouseEvent) => {
+      if (!isBlockedInteractiveTarget(event.target)) return
       event.preventDefault()
       event.stopPropagation()
     }
 
-    const blockLinkKeyboardNavigation = (event: KeyboardEvent) => {
+    const blockPickModeKeyboardInteraction = (event: KeyboardEvent) => {
       if (!(event.key === 'Enter' || event.key === ' ')) return
-      if (!isAnchorTarget(event.target)) return
+      if (!isBlockedInteractiveTarget(event.target)) return
       event.preventDefault()
       event.stopPropagation()
     }
 
-    document.addEventListener('click', blockLinkClickNavigation, true)
-    document.addEventListener('keydown', blockLinkKeyboardNavigation, true)
+    document.addEventListener('click', blockPickModeInteraction, true)
+    document.addEventListener('keydown', blockPickModeKeyboardInteraction, true)
     return () => {
-      document.removeEventListener('click', blockLinkClickNavigation, true)
-      document.removeEventListener('keydown', blockLinkKeyboardNavigation, true)
+      document.removeEventListener('click', blockPickModeInteraction, true)
+      document.removeEventListener('keydown', blockPickModeKeyboardInteraction, true)
     }
   }, [pickMode])
 
