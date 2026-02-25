@@ -9,21 +9,28 @@ import { faCircleExclamation, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { useTranslations } from 'next-intl'
 
 const DISMISSED_KEY = 'app:loginPromptDismissed'
+const CLOSE_ANIMATION_MS = 420
 
-type SinkStyle = {
-  transform: string
-  opacity: number
+type SinkTarget = {
+  alignRatioX: number
 }
 
-const getSinkTarget = () => {
+const getSinkTarget = (): SinkTarget | null => {
   const mobileToggle = document.querySelector('[data-login-sink="mobile-tools"]')
+  let target: HTMLElement | null = null
   if (mobileToggle instanceof HTMLElement) {
     const style = window.getComputedStyle(mobileToggle)
-    if (style.display !== 'none' && style.visibility !== 'hidden') return mobileToggle
+    if (style.display !== 'none' && style.visibility !== 'hidden') target = mobileToggle
   }
-  const account = document.querySelector('[data-login-sink="account"]')
-  if (account instanceof HTMLElement) return account
-  return null
+  if (!target) {
+    const account = document.querySelector('[data-login-sink="account"]')
+    if (account instanceof HTMLElement) target = account
+  }
+  if (!target) return null
+
+  const rect = target.getBoundingClientRect()
+  const ratio = Math.max(0, Math.min(1, rect.left / Math.max(window.innerWidth, 1)))
+  return { alignRatioX: ratio }
 }
 
 export default function LoginPopup() {
@@ -31,8 +38,9 @@ export default function LoginPopup() {
   const session = useSession()
   const [visible, setVisible] = useState(false)
   const [open, setOpen] = useState(false)
-  const [sinkStyle, setSinkStyle] = useState<SinkStyle | null>(null)
-  const cardRef = useRef<HTMLDivElement | null>(null)
+  const [closing, setClosing] = useState(false)
+  const [transformOrigin, setTransformOrigin] = useState('100% 50%')
+  const closeTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (session) return
@@ -46,6 +54,12 @@ export default function LoginPopup() {
     return () => window.clearTimeout(id)
   }, [session])
 
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current != null) window.clearTimeout(closeTimerRef.current)
+    }
+  }, [])
+
   const close = () => {
     try {
       localStorage.setItem(DISMISSED_KEY, '1')
@@ -53,39 +67,34 @@ export default function LoginPopup() {
       /* ignore */
     }
 
-    const card = cardRef.current
-    const target = getSinkTarget()
-    if (card && target) {
-      const from = card.getBoundingClientRect()
-      const to = target.getBoundingClientRect()
-      const fromCenterX = from.left + from.width / 2
-      const fromCenterY = from.top + from.height / 2
-      const toCenterX = to.left + to.width / 2
-      const toCenterY = to.top + to.height / 2
-      setSinkStyle({
-        transform: `translate(${toCenterX - fromCenterX}px, ${toCenterY - fromCenterY}px) scale(0.08)`,
-        opacity: 0,
-      })
-      setOpen(false)
-      window.setTimeout(() => setVisible(false), 260)
-      return
+    const sink = getSinkTarget()
+    if (sink) {
+      setTransformOrigin(`${Math.round(sink.alignRatioX * 100)}% 50%`)
     }
 
     setOpen(false)
-    window.setTimeout(() => setVisible(false), 200)
+    setClosing(true)
+    closeTimerRef.current = window.setTimeout(() => {
+      setVisible(false)
+      setClosing(false)
+    }, CLOSE_ANIMATION_MS)
   }
 
   if (session || !visible) return null
 
-  const cardTransform = sinkStyle?.transform ?? (open ? 'translateY(0) scale(1)' : 'translateY(-16px) scale(1)')
-  const cardOpacity = sinkStyle?.opacity ?? (open ? 1 : 0)
+  const cardTransform = closing
+    ? 'scaleX(0.06) scaleY(0.86)'
+    : open
+      ? 'translateY(0) scale(1)'
+      : 'translateY(-16px) scale(1)'
+
+  const cardOpacity = closing ? 0.22 : open ? 1 : 0
 
   return (
     <div className="fixed top-20 inset-x-0 flex justify-center pointer-events-none z-5">
       <div
-        ref={cardRef}
-        style={{ transform: cardTransform, opacity: cardOpacity }}
-        className="relative bg-yellow-200/80 text-black rounded shadow p-4 pointer-events-auto max-w-md w-full mx-4 flex flex-col gap-3 transition-all duration-200"
+        style={{ transform: cardTransform, opacity: cardOpacity, transformOrigin }}
+        className="relative bg-yellow-200/80 text-black rounded shadow p-4 pointer-events-auto max-w-md w-full mx-4 flex flex-col gap-3 transition-all duration-[420ms]"
       >
         <div className="flex items-start gap-2">
           <FontAwesomeIcon icon={faCircleExclamation} className="text-yellow-600 mt-1" />
