@@ -100,7 +100,11 @@ export default function NoticeModal() {
       openModal()
     }
     window.addEventListener('site-tutorial-finished', handler)
-    return () => window.removeEventListener('site-tutorial-finished', handler)
+    window.addEventListener('site-tutorial-skipped', handler)
+    return () => {
+      window.removeEventListener('site-tutorial-finished', handler)
+      window.removeEventListener('site-tutorial-skipped', handler)
+    }
   }, [])
 
   const close = () => closeModal()

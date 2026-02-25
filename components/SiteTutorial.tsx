@@ -269,6 +269,10 @@ export default function SiteTutorial() {
     if (value) {
       setTutorialOpen(true)
       setStepIndex(0)
+      return
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('site-tutorial-skipped'))
     }
   }
 
