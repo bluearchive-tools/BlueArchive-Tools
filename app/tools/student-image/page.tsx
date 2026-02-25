@@ -16,8 +16,10 @@ type Options = {
   stars: number
   unique: number
   size: number
-  borderWidth: number
   cornerRadius: number
+  borderThin: number
+  borderBottom: number
+  skewRatio: number
   glowStrength: number
   levelTextColor: string
   blinkDelay: number
@@ -40,18 +42,45 @@ const BASE: Options = {
   stars: 3,
   unique: 0,
   size: 192,
-  borderWidth: 8,
-  cornerRadius: 18,
-  glowStrength: 0.55,
+  cornerRadius: 14,
+  borderThin: 3,
+  borderBottom: 11,
+  skewRatio: 0.14,
+  glowStrength: 0.52,
   levelTextColor: '#cbd5e1',
-  blinkDelay: 36,
+  blinkDelay: 34,
 }
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value))
 }
 
-function drawStar(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, fill: string, stroke: string) {
+function createParallelogramPath(size: number, skew: number, insetTop: number, insetBottom: number, insetSide: number) {
+  const topY = insetTop
+  const bottomY = size - insetBottom
+  const leftTopX = skew + insetSide
+  const rightTopX = size - insetSide
+  const rightBottomX = size - skew - insetSide
+  const leftBottomX = insetSide
+
+  const path = new Path2D()
+  path.moveTo(leftTopX, topY)
+  path.lineTo(rightTopX, topY)
+  path.lineTo(rightBottomX, bottomY)
+  path.lineTo(leftBottomX, bottomY)
+  path.closePath()
+  return path
+}
+
+function drawStarWithNumber(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  fill: string,
+  stroke: string,
+  value: number,
+) {
   const inner = radius * 0.5
   ctx.beginPath()
   for (let i = 0; i < 10; i += 1) {
@@ -66,17 +95,27 @@ function drawStar(ctx: CanvasRenderingContext2D, x: number, y: number, radius: n
   ctx.fillStyle = fill
   ctx.fill()
   ctx.strokeStyle = stroke
-  ctx.lineWidth = Math.max(1, radius * 0.14)
+  ctx.lineWidth = Math.max(2, radius * 0.16)
   ctx.stroke()
+
+  const text = String(clamp(value, 0, 99))
+  ctx.font = `700 ${Math.round(radius * 1.08)}px Arial`
+  ctx.fillStyle = '#f8fafc'
+  ctx.strokeStyle = '#0f172a'
+  ctx.lineWidth = Math.max(2, radius * 0.13)
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.strokeText(text, x, y + radius * 0.05)
+  ctx.fillText(text, x, y + radius * 0.05)
 }
 
 function drawDanger(ctx: CanvasRenderingContext2D, size: number) {
-  const pad = size * 0.07
-  const tri = size * 0.26
+  const pad = size * 0.06
+  const tri = size * 0.24
   const left = size - tri - pad
   const top = pad
   ctx.save()
-  ctx.globalAlpha = 0.26
+  ctx.globalAlpha = 0.22
   ctx.fillStyle = '#ef4444'
   ctx.beginPath()
   ctx.moveTo(left + tri / 2, top)
@@ -89,7 +128,7 @@ function drawDanger(ctx: CanvasRenderingContext2D, size: number) {
   ctx.stroke()
   ctx.globalAlpha = 0.45
   ctx.fillStyle = '#7f1d1d'
-  ctx.font = `bold ${Math.round(size * 0.12)}px Arial`
+  ctx.font = `bold ${Math.round(size * 0.11)}px Arial`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.fillText('!', left + tri / 2, top + tri * 0.62)
@@ -104,43 +143,48 @@ function drawCard(
   showBlueStar: boolean,
 ) {
   const size = options.size
-  const border = options.borderWidth
-  const radius = options.cornerRadius
+  const skew = size * options.skewRatio
+  const thin = options.borderThin
+  const bottom = options.borderBottom
   const color = ATTACK_COLORS[attackType]
   const hasInvalidAttack = !color
+  const ring = color?.ring ?? '#64748b'
+  const glow = color?.glow ?? '#94a3b8'
 
   ctx.clearRect(0, 0, size, size)
 
-  const ring = color?.ring ?? '#64748b'
-  const glow = color?.glow ?? '#94a3b8'
+  const outerPath = createParallelogramPath(size, skew, 0, 0, 0)
+  const innerPath = createParallelogramPath(size, skew, thin, bottom, thin)
 
   ctx.save()
   ctx.fillStyle = ring
   ctx.shadowColor = glow
-  ctx.shadowBlur = size * options.glowStrength * 0.35
-  const outer = new Path2D()
-  outer.roundRect(0, 0, size, size, radius)
-  ctx.fill(outer)
+  ctx.shadowBlur = size * options.glowStrength * 0.3
+  ctx.fill(outerPath)
   ctx.restore()
 
-  const inner = new Path2D()
-  inner.roundRect(border, border, size - border * 2, size - border * 2, Math.max(0, radius - border * 0.8))
   ctx.save()
-  ctx.clip(inner)
-
+  ctx.clip(innerPath)
   const ratio = Math.max(size / image.width, size / image.height)
   const drawWidth = image.width * ratio
   const drawHeight = image.height * ratio
   const dx = (size - drawWidth) / 2
   const dy = (size - drawHeight) / 2
   ctx.drawImage(image, dx, dy, drawWidth, drawHeight)
+
+  const gradient = ctx.createLinearGradient(0, size * 0.56, 0, size)
+  gradient.addColorStop(0, 'rgba(2,6,23,0)')
+  gradient.addColorStop(1, 'rgba(2,6,23,0.82)')
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, size, size)
   ctx.restore()
 
-  const gradient = ctx.createLinearGradient(0, size * 0.62, 0, size)
-  gradient.addColorStop(0, 'rgba(2,6,23,0)')
-  gradient.addColorStop(1, 'rgba(2,6,23,0.78)')
-  ctx.fillStyle = gradient
-  ctx.fillRect(border, border, size - border * 2, size - border * 2)
+  ctx.save()
+  ctx.strokeStyle = '#ffffff'
+  ctx.globalAlpha = 0.55
+  ctx.lineWidth = Math.max(1, thin * 0.45)
+  ctx.stroke(createParallelogramPath(size, skew, thin * 0.7, bottom * 0.88, thin * 0.7))
+  ctx.restore()
 
   const levelFont = Math.round(size * 0.17)
   ctx.font = `italic 700 ${levelFont}px Arial`
@@ -150,37 +194,37 @@ function drawCard(
   ctx.textAlign = 'left'
   ctx.textBaseline = 'bottom'
   const levelText = `Lv.${options.level}`
-  ctx.strokeText(levelText, size * 0.05, size * 0.28)
-  ctx.fillText(levelText, size * 0.05, size * 0.28)
+  ctx.strokeText(levelText, size * 0.08, size * 0.28)
+  ctx.fillText(levelText, size * 0.08, size * 0.28)
 
-  const yellowStarCount = options.unique >= 1 ? 5 : clamp(options.stars, 1, 10)
-  const starBaseY = size * 0.88
-  const starSpacing = size * 0.13
-  const starRadius = size * 0.045
-
-  for (let i = 0; i < yellowStarCount; i += 1) {
-    const x = size * 0.13 + i * starSpacing
-    drawStar(ctx, x, starBaseY, starRadius, '#fbbf24', '#92400e')
-  }
+  const starX = size * 0.18
+  const starY = size * 0.83
+  const starRadius = size * 0.11
+  drawStarWithNumber(ctx, starX, starY, starRadius, '#fbbf24', '#92400e', options.stars)
 
   if (options.unique >= 1 && showBlueStar) {
-    const blueX = size * 0.88
-    const blueY = starBaseY - size * 0.01
-    drawStar(ctx, blueX, blueY, starRadius * 1.2, '#60a5fa', '#1e3a8a')
-
-    ctx.font = `700 ${Math.round(size * 0.09)}px Arial`
-    ctx.fillStyle = '#e0f2fe'
-    ctx.strokeStyle = '#0f172a'
-    ctx.lineWidth = Math.max(2, size * 0.014)
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    const value = String(clamp(options.unique, 1, 99))
-    ctx.strokeText(value, blueX, blueY + size * 0.004)
-    ctx.fillText(value, blueX, blueY + size * 0.004)
+    drawStarWithNumber(ctx, starX, starY, starRadius, '#60a5fa', '#1e3a8a', options.unique)
   }
 
   if (hasInvalidAttack) {
     drawDanger(ctx, size)
+  }
+
+  const shadowBottom = createParallelogramPath(size, skew, size - bottom, 0, 0)
+  ctx.save()
+  ctx.globalAlpha = 0.17
+  ctx.fillStyle = '#020617'
+  ctx.fill(shadowBottom)
+  ctx.restore()
+
+  const clipRadius = Math.max(0, options.cornerRadius)
+  if (clipRadius > 0) {
+    const rounded = new Path2D()
+    rounded.roundRect(0, 0, size, size, clipRadius)
+    ctx.save()
+    ctx.globalCompositeOperation = 'destination-in'
+    ctx.fill(rounded)
+    ctx.restore()
   }
 }
 
@@ -197,7 +241,9 @@ function dataUrlToBlob(dataUrl: string) {
 export default function StudentImageToolPage() {
   const [students, setStudents] = useState<Student[]>([])
   const [selectedStudentId, setSelectedStudentId] = useState('')
+  const [selectedAttackType, setSelectedAttackType] = useState('')
   const [options, setOptions] = useState<Options>(BASE)
+  const [blinkOn, setBlinkOn] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -211,6 +257,7 @@ export default function StudentImageToolPage() {
       setStudents(json)
       if (json.length > 0) {
         setSelectedStudentId(json[0].id)
+        setSelectedAttackType(json[0].attackType)
         setOptions((prev) => ({ ...prev, stars: json[0].initialStars }))
       }
     }
@@ -224,8 +271,25 @@ export default function StudentImageToolPage() {
 
   useEffect(() => {
     if (!selectedStudent) return
+    setSelectedAttackType(selectedStudent.attackType)
     setOptions((prev) => ({ ...prev, stars: selectedStudent.initialStars }))
   }, [selectedStudent])
+
+  useEffect(() => {
+    if (options.unique < 1) {
+      setBlinkOn(false)
+      return
+    }
+    let mounted = true
+    const id = window.setInterval(() => {
+      if (!mounted) return
+      setBlinkOn((prev) => !prev)
+    }, clamp(options.blinkDelay, 8, 100) * 10)
+    return () => {
+      mounted = false
+      window.clearInterval(id)
+    }
+  }, [options.blinkDelay, options.unique])
 
   const loadImage = useCallback(async (sourceUrl: string) => {
     const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(sourceUrl)}`
@@ -241,29 +305,26 @@ export default function StudentImageToolPage() {
   const renderPreview = useCallback(
     async (showBlueStar: boolean) => {
       if (!selectedStudent || !canvasRef.current) return
-
       if (!imageRef.current) {
         imageRef.current = await loadImage(selectedStudent.image)
       }
-
       canvasRef.current.width = options.size
       canvasRef.current.height = options.size
       const ctx = canvasRef.current.getContext('2d')
       if (!ctx || !imageRef.current) return
-
-      drawCard(ctx, imageRef.current, selectedStudent.attackType, options, showBlueStar)
+      drawCard(ctx, imageRef.current, selectedAttackType, options, showBlueStar)
     },
-    [loadImage, options, selectedStudent],
+    [loadImage, options, selectedAttackType, selectedStudent],
   )
 
   useEffect(() => {
     imageRef.current = null
-    renderPreview(options.unique >= 1).catch(() => setError('画像の描画に失敗しました'))
-  }, [selectedStudentId, renderPreview, options.unique])
+    renderPreview(options.unique >= 1 && blinkOn).catch(() => setError('画像の描画に失敗しました'))
+  }, [selectedStudentId, renderPreview, options.unique, blinkOn])
 
   useEffect(() => {
-    renderPreview(options.unique >= 1).catch(() => setError('画像の描画に失敗しました'))
-  }, [options, renderPreview])
+    renderPreview(options.unique >= 1 && blinkOn).catch(() => setError('画像の描画に失敗しました'))
+  }, [options, renderPreview, blinkOn])
 
   const onDownload = useCallback(async () => {
     if (!selectedStudent || !canvasRef.current) return
@@ -293,10 +354,10 @@ export default function StudentImageToolPage() {
 
         const encoder = GIFEncoder()
         const delays = [options.blinkDelay, options.blinkDelay]
-
         const frames = [false, true]
+
         for (let index = 0; index < frames.length; index += 1) {
-          drawCard(ctx, imageRef.current, selectedStudent.attackType, options, frames[index])
+          drawCard(ctx, imageRef.current, selectedAttackType, options, frames[index])
           const frame = ctx.getImageData(0, 0, options.size, options.size)
           const palette = quantize(frame.data, 256)
           const indexed = applyPalette(frame.data, palette)
@@ -314,21 +375,21 @@ export default function StudentImageToolPage() {
         a.download = `${selectedStudent.name}_icon.gif`
         a.click()
         URL.revokeObjectURL(url)
-
-        await renderPreview(true)
       }
     } catch {
       setError('ダウンロード画像の生成に失敗しました')
     } finally {
       setBusy(false)
     }
-  }, [loadImage, options, renderPreview, selectedStudent])
+  }, [loadImage, options, renderPreview, selectedAttackType, selectedStudent])
+
+  const isUnknownAttackType = !ATTACK_COLORS[selectedAttackType]
 
   return (
     <main className="p-4 space-y-4 pb-16">
       <section className="rounded border p-4 bg-white space-y-4">
         <h1 className="text-lg font-bold">生徒アイコン画像作成ツール</h1>
-        <p className="text-sm text-gray-600">生徒を選んで、レベル表示・星表示・縁色を調整した画像を生成してダウンロードできます。固有1以上は青星が点滅するGIFを出力します。</p>
+        <p className="text-sm text-gray-600">右傾き平行四辺形のフレームで生徒画像を加工します。固有1以上は黄色星の上に同位置・同サイズの青星を重ねて点滅表示し、GIF出力できます。</p>
 
         <div className="grid gap-4 md:grid-cols-2">
           <label className="space-y-1 text-sm">
@@ -347,6 +408,17 @@ export default function StudentImageToolPage() {
           </label>
 
           <label className="space-y-1 text-sm">
+            <span className="font-semibold">攻撃属性（手動変更可）</span>
+            <input
+              type="text"
+              value={selectedAttackType}
+              onChange={(event) => setSelectedAttackType(event.target.value)}
+              className="w-full rounded border px-3 py-2"
+              placeholder="爆発 / 貫通 / 神秘 / 振動"
+            />
+          </label>
+
+          <label className="space-y-1 text-sm">
             <span className="font-semibold">レベル</span>
             <input
               type="number"
@@ -359,25 +431,25 @@ export default function StudentImageToolPage() {
           </label>
 
           <label className="space-y-1 text-sm">
-            <span className="font-semibold">星（固有0時）</span>
+            <span className="font-semibold">星の数字（黄星）</span>
             <input
               type="number"
               min={1}
-              max={10}
+              max={99}
               value={options.stars}
-              onChange={(event) => setOptions((prev) => ({ ...prev, stars: clamp(Number(event.target.value), 1, 10) }))}
+              onChange={(event) => setOptions((prev) => ({ ...prev, stars: clamp(Number(event.target.value), 1, 99) }))}
               className="w-full rounded border px-3 py-2"
             />
           </label>
 
           <label className="space-y-1 text-sm">
-            <span className="font-semibold">固有</span>
+            <span className="font-semibold">固有（青星の数字）</span>
             <input
               type="number"
               min={0}
-              max={10}
+              max={99}
               value={options.unique}
-              onChange={(event) => setOptions((prev) => ({ ...prev, unique: clamp(Number(event.target.value), 0, 10) }))}
+              onChange={(event) => setOptions((prev) => ({ ...prev, unique: clamp(Number(event.target.value), 0, 99) }))}
               className="w-full rounded border px-3 py-2"
             />
           </label>
@@ -396,25 +468,38 @@ export default function StudentImageToolPage() {
           </label>
 
           <label className="space-y-1 text-sm">
-            <span className="font-semibold">枠線幅</span>
+            <span className="font-semibold">枠線の細さ（上/左右）</span>
             <input
               type="number"
-              min={2}
-              max={20}
-              value={options.borderWidth}
-              onChange={(event) => setOptions((prev) => ({ ...prev, borderWidth: clamp(Number(event.target.value), 2, 20) }))}
+              min={1}
+              max={12}
+              value={options.borderThin}
+              onChange={(event) => setOptions((prev) => ({ ...prev, borderThin: clamp(Number(event.target.value), 1, 12) }))}
               className="w-full rounded border px-3 py-2"
             />
           </label>
 
           <label className="space-y-1 text-sm">
-            <span className="font-semibold">角丸</span>
+            <span className="font-semibold">枠線の太さ（下）</span>
             <input
               type="number"
-              min={0}
-              max={56}
-              value={options.cornerRadius}
-              onChange={(event) => setOptions((prev) => ({ ...prev, cornerRadius: clamp(Number(event.target.value), 0, 56) }))}
+              min={4}
+              max={28}
+              value={options.borderBottom}
+              onChange={(event) => setOptions((prev) => ({ ...prev, borderBottom: clamp(Number(event.target.value), 4, 28) }))}
+              className="w-full rounded border px-3 py-2"
+            />
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="font-semibold">右傾き率</span>
+            <input
+              type="number"
+              min={0.05}
+              max={0.25}
+              step={0.01}
+              value={options.skewRatio}
+              onChange={(event) => setOptions((prev) => ({ ...prev, skewRatio: clamp(Number(event.target.value), 0.05, 0.25) }))}
               className="w-full rounded border px-3 py-2"
             />
           </label>
@@ -451,14 +536,12 @@ export default function StudentImageToolPage() {
           {busy ? '生成中...' : options.unique >= 1 ? 'GIFをダウンロード' : 'PNGをダウンロード'}
         </button>
 
-        {selectedStudent && !ATTACK_COLORS[selectedStudent.attackType] && (
-          <p className="text-sm text-amber-700">未知の攻撃属性です。危険マークを右上に表示します。</p>
-        )}
+        {isUnknownAttackType && <p className="text-sm text-amber-700">未知の攻撃属性です。右上に危険マークを表示します。</p>}
         {error && <p className="text-sm text-red-600">{error}</p>}
       </section>
 
       <section className="rounded border bg-slate-50 p-4">
-        <h2 className="text-base font-semibold mb-3">プレビュー</h2>
+        <h2 className="text-base font-semibold mb-3">プレビュー（固有1以上なら点滅）</h2>
         <canvas ref={canvasRef} className="rounded border bg-white max-w-full h-auto" />
       </section>
     </main>
