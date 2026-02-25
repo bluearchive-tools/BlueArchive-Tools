@@ -48,6 +48,16 @@ const parseSteps = (value: unknown): TutorialStep[] => {
     .filter((step): step is TutorialStep => !!step)
 }
 
+
+const safeQuerySelector = (selector: string): HTMLElement | null => {
+  try {
+    const found = document.querySelector(selector)
+    return found instanceof HTMLElement ? found : null
+  } catch {
+    return null
+  }
+}
+
 export default function SiteTutorial() {
   const t = useTranslations('site-tutorial')
   const locale = (useLocale() as LocaleKey) || 'ja'
@@ -147,7 +157,7 @@ export default function SiteTutorial() {
 
     collapseExpanded()
 
-    const initialElement = document.querySelector(current.selector ?? '') as HTMLElement | null
+    const initialElement = safeQuerySelector(current.selector ?? '')
     if (!initialElement) {
       setHighlightRect(null)
       return
@@ -156,7 +166,7 @@ export default function SiteTutorial() {
     expandedButtonsRef.current = expandAncestorsIfHidden(initialElement)
 
     const updateRect = () => {
-      const element = document.querySelector(current.selector ?? '') as HTMLElement | null
+      const element = safeQuerySelector(current.selector ?? '')
       if (!element) {
         setHighlightRect(null)
         return
