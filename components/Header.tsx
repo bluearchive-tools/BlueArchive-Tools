@@ -259,7 +259,7 @@ export default function Header() {
         window.dispatchEvent(new Event('site-tutorial-shortcut'))
         return
       }
-      setAboutOpen(true)
+      window.dispatchEvent(new Event('page-help-shortcut'))
     }
 
     window.addEventListener('keydown', onKeyDown)
