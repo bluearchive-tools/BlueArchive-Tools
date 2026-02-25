@@ -72,6 +72,32 @@ export default function Home() {
 
   useEffect(() => {
     if (!pickMode) return
+
+    const isAnchorTarget = (target: EventTarget | null) => target instanceof Element && Boolean(target.closest('a[href]'))
+
+    const blockLinkClickNavigation = (event: MouseEvent) => {
+      if (!isAnchorTarget(event.target)) return
+      event.preventDefault()
+      event.stopPropagation()
+    }
+
+    const blockLinkKeyboardNavigation = (event: KeyboardEvent) => {
+      if (!(event.key === 'Enter' || event.key === ' ')) return
+      if (!isAnchorTarget(event.target)) return
+      event.preventDefault()
+      event.stopPropagation()
+    }
+
+    document.addEventListener('click', blockLinkClickNavigation, true)
+    document.addEventListener('keydown', blockLinkKeyboardNavigation, true)
+    return () => {
+      document.removeEventListener('click', blockLinkClickNavigation, true)
+      document.removeEventListener('keydown', blockLinkKeyboardNavigation, true)
+    }
+  }, [pickMode])
+
+  useEffect(() => {
+    if (!pickMode) return
     const current = candidates[selectedIndex]
     if (!current?.element) return
 
