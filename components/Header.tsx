@@ -29,6 +29,61 @@ import { SUPPORTED_LOCALES, parseLocale, type Locale } from '../lib/i18n/config'
 import { useSearchParams } from 'next/navigation'
 import { stripLeadingLocale } from '../lib/i18n/utils'
 
+
+const HELP_SHORTCUT_STORAGE_KEY = 'app:helpShortcut'
+
+const detectIsMacPlatform = () => {
+  if (typeof navigator === 'undefined') return false
+  return /Mac|iPhone|iPad|iPod/i.test(navigator.platform)
+}
+
+const normalizeKeyLabel = (value: string) => {
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+  if (trimmed === ' ') return 'space'
+  return trimmed.toLowerCase()
+}
+
+type ParsedShortcut = {
+  modifiers: Set<'ctrl' | 'meta' | 'alt' | 'shift'>
+  key: string
+}
+
+const parseShortcut = (value: string): ParsedShortcut => {
+  const parts = value
+    .split('+')
+    .map((part) => part.trim())
+    .filter(Boolean)
+  const modifiers = new Set<'ctrl' | 'meta' | 'alt' | 'shift'>()
+  let key = ''
+  parts.forEach((part) => {
+    const lower = part.toLowerCase()
+    if (lower === 'ctrl' || lower === 'control') {
+      modifiers.add('ctrl')
+    } else if (lower === 'cmd' || lower === 'meta' || lower === 'command') {
+      modifiers.add('meta')
+    } else if (lower === 'alt' || lower === 'option') {
+      modifiers.add('alt')
+    } else if (lower === 'shift') {
+      modifiers.add('shift')
+    } else {
+      key = part
+    }
+  })
+  return { modifiers, key }
+}
+
+const matchesShortcut = (event: KeyboardEvent, shortcut: string) => {
+  const parsed = parseShortcut(shortcut)
+  const key = normalizeKeyLabel(parsed.key)
+  if (!key) return false
+  if (parsed.modifiers.has('ctrl') !== event.ctrlKey) return false
+  if (parsed.modifiers.has('meta') !== event.metaKey) return false
+  if (parsed.modifiers.has('alt') !== event.altKey) return false
+  if (parsed.modifiers.has('shift') !== event.shiftKey) return false
+  return normalizeKeyLabel(event.key) === key
+}
+
 export default function Header() {
   const t = useTranslations('header')
   const locale = useLocale() as Locale
@@ -43,6 +98,7 @@ export default function Header() {
   const [hideHeader, setHideHeader] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false)
+  const [helpShortcut, setHelpShortcut] = useState(() => (detectIsMacPlatform() ? 'Cmd+/' : 'Ctrl+/'))
   const { dark, toggle } = useTheme()
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -73,6 +129,29 @@ export default function Header() {
     document.addEventListener('click', handleClick)
     return () => document.removeEventListener('click', handleClick)
   }, [accountOpen])
+
+
+  useEffect(() => {
+    const defaultShortcut = detectIsMacPlatform() ? 'Cmd+/' : 'Ctrl+/'
+    const loadShortcut = () => {
+      try {
+        const raw = localStorage.getItem(HELP_SHORTCUT_STORAGE_KEY)
+        if (raw && raw.trim()) {
+          setHelpShortcut(raw)
+          return
+        }
+      } catch {
+        /* ignore */
+      }
+      setHelpShortcut(defaultShortcut)
+    }
+    loadShortcut()
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === HELP_SHORTCUT_STORAGE_KEY) loadShortcut()
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
 
   useEffect(() => {
     const read = () => {
@@ -167,6 +246,25 @@ export default function Header() {
     const basePath = stripLeadingLocale(normalizedPath)
     return basePath || '/'
   }, [pathname])
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target
+      if (target instanceof HTMLElement) {
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
+      }
+      if (!matchesShortcut(event, helpShortcut)) return
+      event.preventDefault()
+      if (currentPath === '/') {
+        window.dispatchEvent(new Event('site-tutorial-shortcut'))
+        return
+      }
+      setAboutOpen(true)
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [currentPath, helpShortcut])
 
   const changeLocale = (nextLocale: Locale) => {
     if (!nextLocale || nextLocale === locale) return

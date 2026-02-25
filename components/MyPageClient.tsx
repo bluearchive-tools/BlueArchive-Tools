@@ -93,6 +93,8 @@ const detectIsMacPlatform = () => {
 const defaultSearchShortcut = (preferMeta: boolean) => (preferMeta ? 'Cmd+K' : 'Ctrl+K')
 
 const SEARCH_SHORTCUT_STORAGE_KEY = 'app:searchShortcut'
+const HELP_SHORTCUT_STORAGE_KEY = 'app:helpShortcut'
+const defaultHelpShortcut = (preferMeta: boolean) => (preferMeta ? 'Cmd+/' : 'Ctrl+/')
 
 const formatShortcutFromEvent = (event: ReactKeyboardEvent<HTMLInputElement>) => {
   const key = event.key
@@ -391,6 +393,9 @@ export default function MyPageClient({
   )
   const [searchShortcut, setSearchShortcut] = useState(() =>
     defaultSearchShortcut(detectIsMacPlatform())
+  )
+  const [helpShortcut, setHelpShortcut] = useState(() =>
+    defaultHelpShortcut(detectIsMacPlatform())
   )
   const [delUser, setDelUser] = useState(false)
   const [delTheme, setDelTheme] = useState(false)
@@ -1288,6 +1293,23 @@ export default function MyPageClient({
 
   useEffect(() => {
     try {
+      const raw = localStorage.getItem(HELP_SHORTCUT_STORAGE_KEY)
+      if (!raw) {
+        setHelpShortcut(defaultHelpShortcut(isMacPlatform))
+        return
+      }
+      if (raw.trim()) {
+        setHelpShortcut(raw)
+      } else {
+        setHelpShortcut(defaultHelpShortcut(isMacPlatform))
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [isMacPlatform])
+
+  useEffect(() => {
+    try {
       localStorage.setItem(TL_MAKER_SHORTCUT_STORAGE_KEY, JSON.stringify(makerShortcuts))
       window.dispatchEvent(new StorageEvent('storage', {
         key: TL_MAKER_SHORTCUT_STORAGE_KEY,
@@ -1305,6 +1327,18 @@ export default function MyPageClient({
       /* ignore */
     }
   }, [searchShortcut])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(HELP_SHORTCUT_STORAGE_KEY, helpShortcut)
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: HELP_SHORTCUT_STORAGE_KEY,
+        newValue: helpShortcut,
+      }))
+    } catch {
+      /* ignore */
+    }
+  }, [helpShortcut])
 
   const selectedTargets = [
     { label: '学生データ', value: delUser },
@@ -2280,7 +2314,7 @@ export default function MyPageClient({
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold">ショートカットキー</h3>
-                <p className="text-sm text-gray-500">TLメーカーdevと検索バーのショートカットキーを設定します</p>
+                <p className="text-sm text-gray-500">TLメーカーdev・検索バー・ヘルプ/チュートリアルのショートカットキーを設定します</p>
               </div>
               <button
                 type="button"
@@ -2288,6 +2322,7 @@ export default function MyPageClient({
                 onClick={() => {
                   setMakerShortcuts(defaultShortcuts(isMacPlatform))
                   setSearchShortcut(defaultSearchShortcut(isMacPlatform))
+                  setHelpShortcut(defaultHelpShortcut(isMacPlatform))
                   setMessage('ショートカットキーをデフォルトに戻しました')
                 }}
               >
@@ -2330,6 +2365,22 @@ export default function MyPageClient({
                   readOnly
                   className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
                   placeholder={isMacPlatform ? 'Cmd+K' : 'Ctrl+K'}
+                />
+              </label>
+
+              <label className="flex items-center gap-3">
+                <span className="w-32 text-gray-700">ヘルプ/チュートリアル</span>
+                <input
+                  value={helpShortcut}
+                  onKeyDown={(e) => {
+                    e.preventDefault()
+                    const next = formatShortcutFromEvent(e)
+                    if (next === null) return
+                    setHelpShortcut(next)
+                  }}
+                  readOnly
+                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder={isMacPlatform ? 'Cmd+/' : 'Ctrl+/'}
                 />
               </label>
               <p className="text-xs text-gray-500">

@@ -147,6 +147,22 @@ export default function SiteTutorial() {
     }
   }, [defaultSteps])
 
+
+  useEffect(() => {
+    const onShortcut = () => {
+      setPromptOpen(false)
+      setTutorialOpen(true)
+      setStepIndex(0)
+      try {
+        localStorage.setItem(PROMPT_KEY, '1')
+      } catch {
+        /* ignore */
+      }
+    }
+    window.addEventListener('site-tutorial-shortcut', onShortcut)
+    return () => window.removeEventListener('site-tutorial-shortcut', onShortcut)
+  }, [])
+
   useEffect(() => {
     if (typeof window === 'undefined') return
     const params = new URLSearchParams(window.location.search)
