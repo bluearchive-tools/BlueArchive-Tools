@@ -25,20 +25,23 @@ const buildStrictPathSelector = (el: HTMLElement) => {
   const segments: string[] = []
   let node: HTMLElement | null = el
   while (node && node.tagName.toLowerCase() !== 'html') {
-    if (node.id) {
-      segments.unshift(`#${escapeCssIdentifier(node.id)}`)
+    const current = node
+    if (current.id) {
+      segments.unshift(`#${escapeCssIdentifier(current.id)}`)
       break
     }
 
-    const tag = node.tagName.toLowerCase()
-    const parent = node.parentElement
+    const tag = current.tagName.toLowerCase()
+    const parent: HTMLElement | null = current.parentElement
     if (!parent) {
       segments.unshift(tag)
       break
     }
 
-    const sameTagSiblings = Array.from(parent.children).filter((child) => child.tagName === node!.tagName)
-    const nth = sameTagSiblings.indexOf(node) + 1
+    const sameTagSiblings = Array.from(parent.children).filter(
+      (child): child is HTMLElement => child instanceof HTMLElement && child.tagName === current.tagName
+    )
+    const nth = sameTagSiblings.indexOf(current) + 1
     segments.unshift(`${tag}:nth-of-type(${nth})`)
     node = parent
   }
