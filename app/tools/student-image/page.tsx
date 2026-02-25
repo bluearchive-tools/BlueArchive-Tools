@@ -20,21 +20,18 @@ type Options = {
   borderThin: number
   borderBottom: number
   skewRatio: number
-  glowStrength: number
-  levelTextColor: string
   blinkDelay: number
 }
 
 type AttackColor = {
   ring: string
-  glow: string
 }
 
 const ATTACK_COLORS: Record<string, AttackColor> = {
-  爆発: { ring: '#ef4444', glow: '#fca5a5' },
-  貫通: { ring: '#f59e0b', glow: '#fde68a' },
-  神秘: { ring: '#3b82f6', glow: '#93c5fd' },
-  振動: { ring: '#ec4899', glow: '#f9a8d4' },
+  爆発: { ring: '#ef4444' },
+  貫通: { ring: '#f59e0b' },
+  神秘: { ring: '#3b82f6' },
+  振動: { ring: '#ec4899' },
 }
 
 const BASE: Options = {
@@ -46,8 +43,6 @@ const BASE: Options = {
   borderThin: 3,
   borderBottom: 11,
   skewRatio: 0.14,
-  glowStrength: 0.52,
-  levelTextColor: '#cbd5e1',
   blinkDelay: 34,
 }
 
@@ -55,12 +50,20 @@ function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value))
 }
 
-function createParallelogramPath(size: number, skew: number, insetTop: number, insetBottom: number, insetSide: number) {
-  const topY = insetTop
-  const bottomY = size - insetBottom
+function createParallelogramPath(
+  width: number,
+  height: number,
+  skew: number,
+  insetTop: number,
+  insetBottom: number,
+  insetSide: number,
+  offsetY: number,
+) {
+  const topY = offsetY + insetTop
+  const bottomY = offsetY + height - insetBottom
   const leftTopX = skew + insetSide
-  const rightTopX = size - insetSide
-  const rightBottomX = size - skew - insetSide
+  const rightTopX = width - insetSide
+  const rightBottomX = width - skew - insetSide
   const leftBottomX = insetSide
 
   const path = new Path2D()
@@ -72,16 +75,8 @@ function createParallelogramPath(size: number, skew: number, insetTop: number, i
   return path
 }
 
-function drawStarWithNumber(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  radius: number,
-  fill: string,
-  stroke: string,
-  value: number,
-) {
-  const inner = radius * 0.5
+function drawStarShape(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number) {
+  const inner = radius * 0.46
   ctx.beginPath()
   for (let i = 0; i < 10; i += 1) {
     const angle = (Math.PI / 5) * i - Math.PI / 2
@@ -92,21 +87,44 @@ function drawStarWithNumber(
     else ctx.lineTo(px, py)
   }
   ctx.closePath()
-  ctx.fillStyle = fill
+}
+
+function drawStarWithNumber(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  colorTop: string,
+  colorBottom: string,
+  stroke: string,
+  value: number,
+) {
+  drawStarShape(ctx, x, y, radius)
+  const grad = ctx.createLinearGradient(x, y - radius, x, y + radius)
+  grad.addColorStop(0, colorTop)
+  grad.addColorStop(1, colorBottom)
+  ctx.fillStyle = grad
   ctx.fill()
+
   ctx.strokeStyle = stroke
-  ctx.lineWidth = Math.max(2, radius * 0.16)
+  ctx.lineWidth = Math.max(2, radius * 0.12)
+  ctx.lineJoin = 'round'
   ctx.stroke()
 
+  ctx.beginPath()
+  ctx.arc(x - radius * 0.2, y - radius * 0.25, radius * 0.18, 0, Math.PI * 2)
+  ctx.fillStyle = 'rgba(255,255,255,0.55)'
+  ctx.fill()
+
   const text = String(clamp(value, 0, 99))
-  ctx.font = `700 ${Math.round(radius * 1.08)}px Arial`
-  ctx.fillStyle = '#f8fafc'
-  ctx.strokeStyle = '#0f172a'
-  ctx.lineWidth = Math.max(2, radius * 0.13)
+  ctx.font = `700 ${Math.round(radius * 1.02)}px Arial`
+  ctx.fillStyle = '#ffffff'
+  ctx.strokeStyle = 'rgba(15,23,42,0.7)'
+  ctx.lineWidth = Math.max(1.2, radius * 0.08)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.strokeText(text, x, y + radius * 0.05)
-  ctx.fillText(text, x, y + radius * 0.05)
+  ctx.strokeText(text, x, y + radius * 0.04)
+  ctx.fillText(text, x, y + radius * 0.04)
 }
 
 function drawDanger(ctx: CanvasRenderingContext2D, size: number) {
@@ -143,79 +161,83 @@ function drawCard(
   showBlueStar: boolean,
 ) {
   const size = options.size
+  const frameHeight = size * 0.9
+  const frameTop = size * 0.04
   const skew = size * options.skewRatio
   const thin = options.borderThin
   const bottom = options.borderBottom
   const color = ATTACK_COLORS[attackType]
   const hasInvalidAttack = !color
   const ring = color?.ring ?? '#64748b'
-  const glow = color?.glow ?? '#94a3b8'
 
   ctx.clearRect(0, 0, size, size)
+  ctx.imageSmoothingEnabled = true
 
-  const outerPath = createParallelogramPath(size, skew, 0, 0, 0)
-  const innerPath = createParallelogramPath(size, skew, thin, bottom, thin)
+  const outerPath = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop)
+  const innerPath = createParallelogramPath(size, frameHeight, skew, thin, bottom, thin, frameTop)
 
-  ctx.save()
   ctx.fillStyle = ring
-  ctx.shadowColor = glow
-  ctx.shadowBlur = size * options.glowStrength * 0.3
   ctx.fill(outerPath)
-  ctx.restore()
 
   ctx.save()
   ctx.clip(innerPath)
-  const ratio = Math.max(size / image.width, size / image.height)
+  const ratio = Math.max(size / image.width, frameHeight / image.height)
   const drawWidth = image.width * ratio
   const drawHeight = image.height * ratio
   const dx = (size - drawWidth) / 2
-  const dy = (size - drawHeight) / 2
+  const dy = frameTop + (frameHeight - drawHeight) / 2
   ctx.drawImage(image, dx, dy, drawWidth, drawHeight)
 
-  const gradient = ctx.createLinearGradient(0, size * 0.56, 0, size)
+  const gradient = ctx.createLinearGradient(0, frameTop + frameHeight * 0.56, 0, frameTop + frameHeight)
   gradient.addColorStop(0, 'rgba(2,6,23,0)')
-  gradient.addColorStop(1, 'rgba(2,6,23,0.82)')
+  gradient.addColorStop(1, 'rgba(2,6,23,0.8)')
   ctx.fillStyle = gradient
-  ctx.fillRect(0, 0, size, size)
+  ctx.fillRect(0, frameTop, size, frameHeight)
   ctx.restore()
 
   ctx.save()
-  ctx.strokeStyle = '#ffffff'
-  ctx.globalAlpha = 0.55
-  ctx.lineWidth = Math.max(1, thin * 0.45)
-  ctx.stroke(createParallelogramPath(size, skew, thin * 0.7, bottom * 0.88, thin * 0.7))
+  ctx.strokeStyle = 'rgba(255,255,255,0.46)'
+  ctx.lineWidth = Math.max(1, thin * 0.9)
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  ctx.stroke(createParallelogramPath(size, frameHeight, skew, thin * 0.9, bottom * 0.9, thin * 0.9, frameTop))
   ctx.restore()
 
-  const levelFont = Math.round(size * 0.17)
+  const levelFont = Math.round(size * 0.14)
   ctx.font = `italic 700 ${levelFont}px Arial`
-  ctx.fillStyle = options.levelTextColor
-  ctx.strokeStyle = '#0f172a'
-  ctx.lineWidth = Math.max(2, size * 0.02)
+  ctx.fillStyle = '#ffffff'
+  ctx.strokeStyle = 'rgba(15,23,42,0.55)'
+  ctx.lineWidth = Math.max(1.2, size * 0.009)
   ctx.textAlign = 'left'
-  ctx.textBaseline = 'bottom'
+  ctx.textBaseline = 'top'
   const levelText = `Lv.${options.level}`
-  ctx.strokeText(levelText, size * 0.08, size * 0.28)
-  ctx.fillText(levelText, size * 0.08, size * 0.28)
+  ctx.strokeText(levelText, size * 0.09, frameTop + size * 0.055)
+  ctx.fillText(levelText, size * 0.09, frameTop + size * 0.055)
 
-  const starX = size * 0.18
-  const starY = size * 0.83
-  const starRadius = size * 0.11
-  drawStarWithNumber(ctx, starX, starY, starRadius, '#fbbf24', '#92400e', options.stars)
+  const starRadius = size * 0.12
+  const starX = size * 0.16
+  const starY = frameTop + frameHeight - starRadius * 0.15
+  drawStarWithNumber(ctx, starX, starY, starRadius, '#fde047', '#f59e0b', '#92400e', options.stars)
 
   if (options.unique >= 1 && showBlueStar) {
-    drawStarWithNumber(ctx, starX, starY, starRadius, '#60a5fa', '#1e3a8a', options.unique)
+    drawStarWithNumber(ctx, starX, starY, starRadius, '#7dd3fc', '#3b82f6', '#1e3a8a', options.unique)
   }
 
   if (hasInvalidAttack) {
     drawDanger(ctx, size)
   }
 
-  const shadowBottom = createParallelogramPath(size, skew, size - bottom, 0, 0)
-  ctx.save()
-  ctx.globalAlpha = 0.17
-  ctx.fillStyle = '#020617'
-  ctx.fill(shadowBottom)
-  ctx.restore()
+  const stripHeight = Math.max(2, size * 0.018)
+  const bottomY = frameTop + frameHeight
+  const rightBottomX = size - skew
+  const strip = new Path2D()
+  strip.moveTo(0, bottomY)
+  strip.lineTo(rightBottomX, bottomY)
+  strip.lineTo(rightBottomX + 1, bottomY + stripHeight)
+  strip.lineTo(1, bottomY + stripHeight)
+  strip.closePath()
+  ctx.fillStyle = 'rgba(148,163,184,0.42)'
+  ctx.fill(strip)
 
   const clipRadius = Math.max(0, options.cornerRadius)
   if (clipRadius > 0) {
@@ -513,16 +535,6 @@ export default function StudentImageToolPage() {
               value={options.blinkDelay}
               onChange={(event) => setOptions((prev) => ({ ...prev, blinkDelay: clamp(Number(event.target.value), 8, 100) }))}
               className="w-full rounded border px-3 py-2"
-            />
-          </label>
-
-          <label className="space-y-1 text-sm md:col-span-2">
-            <span className="font-semibold">レベル文字色</span>
-            <input
-              type="color"
-              value={options.levelTextColor}
-              onChange={(event) => setOptions((prev) => ({ ...prev, levelTextColor: event.target.value }))}
-              className="h-11 w-full rounded border px-2"
             />
           </label>
         </div>
