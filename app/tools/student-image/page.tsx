@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { applyPalette, GIFEncoder, quantize } from 'gifenc'
+import { applyPalette, GIFEncoder, quantize, type RGB } from 'gifenc'
 
 type Student = {
   id: string
@@ -22,17 +22,22 @@ type Options = {
   borderThin: number
   borderBottom: number
   skewRatio: number
-  blinkDelay: number
+  blinkHoldMs: number
 }
 
 type AttackColor = {
   ring: string
 }
 
+type BlueFrame = {
+  alpha: number
+  delayMs: number
+}
+
 const ATTACK_TYPES: AttackType[] = ['爆発', '貫通', '神秘', '振動']
 
 const ATTACK_COLORS: Record<AttackType, AttackColor> = {
-  爆発: { ring: '#dc2626' },
+  爆発: { ring: '#e11d48' },
   貫通: { ring: '#d97706' },
   神秘: { ring: '#2563eb' },
   振動: { ring: '#db2777' },
@@ -42,13 +47,15 @@ const BASE: Options = {
   level: 90,
   stars: 3,
   unique: 0,
-  size: 192,
+  size: 512,
   cornerRadius: 14,
   borderThin: 6,
-  borderBottom: 23,
+  borderBottom: 45,
   skewRatio: 0.1,
-  blinkDelay: 34,
+  blinkHoldMs: 1000,
 }
+
+const TRANSPARENT_MARKER: RGB = [1, 2, 3]
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value))
@@ -163,21 +170,16 @@ function drawDanger(ctx: CanvasRenderingContext2D, size: number) {
   ctx.restore()
 }
 
-function computeBlueStarAlpha(timeMs: number, blinkDelay: number) {
-  const base = clamp(blinkDelay, 8, 100)
-  const cycleMs = base * 40
-  const phase = (timeMs % cycleMs) / cycleMs
-
-  if (phase < 0.25) {
-    return phase / 0.25
-  }
-  if (phase < 0.5) {
-    return 1
-  }
-  if (phase < 0.75) {
-    return 1 - (phase - 0.5) / 0.25
-  }
-  return 0
+function createBlueFrames(holdMs: number): BlueFrame[] {
+  const hold = clamp(holdMs, 200, 4000)
+  return [
+    { alpha: 0, delayMs: hold },
+    { alpha: 0.45, delayMs: 140 },
+    { alpha: 1, delayMs: 140 },
+    { alpha: 1, delayMs: hold },
+    { alpha: 0.45, delayMs: 140 },
+    { alpha: 0, delayMs: 140 },
+  ]
 }
 
 function drawCard(
@@ -218,16 +220,9 @@ function drawCard(
   const dy = frameTop + (frameHeight - drawHeight) / 2
   ctx.drawImage(image, dx, dy, drawWidth, drawHeight)
 
-  const portraitMask = new Path2D()
-  portraitMask.roundRect(size * 0.02, frameTop + size * 0.01, size * 0.96, frameHeight - size * 0.02, size * 0.17)
-  ctx.globalCompositeOperation = 'destination-in'
-  ctx.fillStyle = '#000000'
-  ctx.fill(portraitMask)
-
-  ctx.globalCompositeOperation = 'source-over'
   const gradient = ctx.createLinearGradient(0, frameTop + frameHeight * 0.56, 0, frameTop + frameHeight)
   gradient.addColorStop(0, 'rgba(2,6,23,0)')
-  gradient.addColorStop(1, 'rgba(2,6,23,0.6)')
+  gradient.addColorStop(1, 'rgba(2,6,23,0.45)')
   ctx.fillStyle = gradient
   ctx.fillRect(0, frameTop, size, frameHeight)
   ctx.restore()
@@ -297,17 +292,59 @@ function dataUrlToBlob(dataUrl: string) {
   return new Blob([bytes], { type: mime })
 }
 
+function prepareTransparentFrame(imageData: ImageData) {
+  const rgba = new Uint8Array(imageData.data)
+  const alphaMask = new Uint8Array(imageData.width * imageData.height)
+
+  for (let i = 0; i < alphaMask.length; i += 1) {
+    const offset = i * 4
+    const alpha = rgba[offset + 3]
+    if (alpha < 8) {
+      alphaMask[i] = 1
+      rgba[offset] = TRANSPARENT_MARKER[0]
+      rgba[offset + 1] = TRANSPARENT_MARKER[1]
+      rgba[offset + 2] = TRANSPARENT_MARKER[2]
+      rgba[offset + 3] = 255
+    }
+  }
+
+  const quantized = quantize(rgba, 255)
+  const palette: RGB[] = [TRANSPARENT_MARKER]
+  for (let i = 0; i < quantized.length && palette.length < 256; i += 1) {
+    const color = quantized[i]
+    if (color[0] === TRANSPARENT_MARKER[0] && color[1] === TRANSPARENT_MARKER[1] && color[2] === TRANSPARENT_MARKER[2]) {
+      continue
+    }
+    palette.push(color)
+  }
+
+  const indexed = applyPalette(rgba, palette)
+  for (let i = 0; i < alphaMask.length; i += 1) {
+    if (alphaMask[i] === 1) {
+      indexed[i] = 0
+    }
+  }
+
+  return {
+    palette,
+    indexed,
+  }
+}
+
 export default function StudentImageToolPage() {
   const [students, setStudents] = useState<Student[]>([])
   const [selectedStudentId, setSelectedStudentId] = useState('')
   const [selectedAttackType, setSelectedAttackType] = useState<AttackType>('爆発')
   const [options, setOptions] = useState<Options>(BASE)
-  const [blueStarAlpha, setBlueStarAlpha] = useState(0)
+  const [previewFrameIndex, setPreviewFrameIndex] = useState(0)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const imageRef = useRef<HTMLImageElement | null>(null)
+
+  const blueFrames = useMemo(() => createBlueFrames(options.blinkHoldMs), [options.blinkHoldMs])
+  const previewBlueAlpha = options.unique >= 1 ? blueFrames[previewFrameIndex]?.alpha ?? 0 : 0
 
   useEffect(() => {
     const load = async () => {
@@ -342,22 +379,15 @@ export default function StudentImageToolPage() {
 
   useEffect(() => {
     if (options.unique < 1) {
-      setBlueStarAlpha(0)
+      setPreviewFrameIndex(0)
       return
     }
-    let active = true
-    let raf = 0
-    const loop = (ts: number) => {
-      if (!active) return
-      setBlueStarAlpha(computeBlueStarAlpha(ts, options.blinkDelay))
-      raf = window.requestAnimationFrame(loop)
-    }
-    raf = window.requestAnimationFrame(loop)
-    return () => {
-      active = false
-      window.cancelAnimationFrame(raf)
-    }
-  }, [options.blinkDelay, options.unique])
+    const delay = blueFrames[previewFrameIndex]?.delayMs ?? 140
+    const id = window.setTimeout(() => {
+      setPreviewFrameIndex((prev) => (prev + 1) % blueFrames.length)
+    }, delay)
+    return () => window.clearTimeout(id)
+  }, [blueFrames, options.unique, previewFrameIndex])
 
   const loadImage = useCallback(async (sourceUrl: string) => {
     const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(sourceUrl)}`
@@ -371,7 +401,7 @@ export default function StudentImageToolPage() {
   }, [])
 
   const renderPreview = useCallback(
-    async (currentBlueAlpha: number) => {
+    async (alpha: number) => {
       if (!selectedStudent || !canvasRef.current) return
       if (!imageRef.current) {
         imageRef.current = await loadImage(selectedStudent.image)
@@ -381,26 +411,19 @@ export default function StudentImageToolPage() {
       const ctx = canvasRef.current.getContext('2d')
       if (!ctx || !imageRef.current) return
 
-      drawCard(
-        ctx,
-        imageRef.current,
-        selectedAttackType,
-        selectedStudent.attackType,
-        options,
-        options.unique >= 1 ? currentBlueAlpha : 0,
-      )
+      drawCard(ctx, imageRef.current, selectedAttackType, selectedStudent.attackType, options, alpha)
     },
     [loadImage, options, selectedAttackType, selectedStudent],
   )
 
   useEffect(() => {
     imageRef.current = null
-    renderPreview(blueStarAlpha).catch(() => setError('画像の描画に失敗しました'))
-  }, [selectedStudentId, renderPreview, blueStarAlpha])
+    renderPreview(previewBlueAlpha).catch(() => setError('画像の描画に失敗しました'))
+  }, [previewBlueAlpha, renderPreview, selectedStudentId])
 
   useEffect(() => {
-    renderPreview(blueStarAlpha).catch(() => setError('画像の描画に失敗しました'))
-  }, [options, renderPreview, blueStarAlpha])
+    renderPreview(previewBlueAlpha).catch(() => setError('画像の描画に失敗しました'))
+  }, [options, previewBlueAlpha, renderPreview])
 
   const onDownload = useCallback(async () => {
     if (!selectedStudent || !canvasRef.current) return
@@ -429,24 +452,17 @@ export default function StudentImageToolPage() {
         if (!ctx || !imageRef.current) return
 
         const encoder = GIFEncoder()
-        const alphaFrames = [0, 0.5, 1, 1, 0.5, 0, 0]
-        const delays = [options.blinkDelay / 2, options.blinkDelay / 2, options.blinkDelay / 2, options.blinkDelay, options.blinkDelay / 2, options.blinkDelay / 2, options.blinkDelay]
 
-        for (let index = 0; index < alphaFrames.length; index += 1) {
-          drawCard(
-            ctx,
-            imageRef.current,
-            selectedAttackType,
-            selectedStudent.attackType,
-            options,
-            alphaFrames[index],
-          )
-          const frame = ctx.getImageData(0, 0, options.size, options.size)
-          const palette = quantize(frame.data, 256)
-          const indexed = applyPalette(frame.data, palette)
-          encoder.writeFrame(indexed, options.size, options.size, {
-            palette,
-            delay: Math.max(1, Math.round(delays[index])),
+        for (let index = 0; index < blueFrames.length; index += 1) {
+          const frame = blueFrames[index]
+          drawCard(ctx, imageRef.current, selectedAttackType, selectedStudent.attackType, options, frame.alpha)
+          const imageData = ctx.getImageData(0, 0, options.size, options.size)
+          const transparentFrame = prepareTransparentFrame(imageData)
+          encoder.writeFrame(transparentFrame.indexed, options.size, options.size, {
+            palette: transparentFrame.palette,
+            delay: Math.max(1, Math.round(frame.delayMs / 10)),
+            transparent: true,
+            transparentIndex: 0,
           })
         }
 
@@ -464,7 +480,7 @@ export default function StudentImageToolPage() {
     } finally {
       setBusy(false)
     }
-  }, [loadImage, options, renderPreview, selectedAttackType, selectedStudent])
+  }, [blueFrames, loadImage, options, renderPreview, selectedAttackType, selectedStudent])
 
   const isDanger = !!selectedStudent && selectedAttackType !== selectedStudent.attackType
 
@@ -477,11 +493,7 @@ export default function StudentImageToolPage() {
         <div className="grid gap-4 md:grid-cols-2">
           <label className="space-y-1 text-sm">
             <span className="font-semibold">生徒</span>
-            <select
-              value={selectedStudentId}
-              onChange={(event) => setSelectedStudentId(event.target.value)}
-              className="w-full rounded border px-3 py-2"
-            >
+            <select value={selectedStudentId} onChange={(event) => setSelectedStudentId(event.target.value)} className="w-full rounded border px-3 py-2">
               {students.map((student) => (
                 <option key={student.id} value={student.id}>
                   {student.name} ({student.attackType})
@@ -507,109 +519,46 @@ export default function StudentImageToolPage() {
 
           <label className="space-y-1 text-sm">
             <span className="font-semibold">レベル</span>
-            <input
-              type="number"
-              min={1}
-              max={99}
-              value={options.level}
-              onChange={(event) => setOptions((prev) => ({ ...prev, level: clamp(Number(event.target.value), 1, 99) }))}
-              className="w-full rounded border px-3 py-2"
-            />
+            <input type="number" min={1} max={99} value={options.level} onChange={(event) => setOptions((prev) => ({ ...prev, level: clamp(Number(event.target.value), 1, 99) }))} className="w-full rounded border px-3 py-2" />
           </label>
 
           <label className="space-y-1 text-sm">
             <span className="font-semibold">星の数字（黄星）</span>
-            <input
-              type="number"
-              min={1}
-              max={99}
-              value={options.stars}
-              onChange={(event) => setOptions((prev) => ({ ...prev, stars: clamp(Number(event.target.value), 1, 99) }))}
-              className="w-full rounded border px-3 py-2"
-            />
+            <input type="number" min={1} max={99} value={options.stars} onChange={(event) => setOptions((prev) => ({ ...prev, stars: clamp(Number(event.target.value), 1, 99) }))} className="w-full rounded border px-3 py-2" />
           </label>
 
           <label className="space-y-1 text-sm">
             <span className="font-semibold">固有（青星の数字）</span>
-            <input
-              type="number"
-              min={0}
-              max={99}
-              value={options.unique}
-              onChange={(event) => setOptions((prev) => ({ ...prev, unique: clamp(Number(event.target.value), 0, 99) }))}
-              className="w-full rounded border px-3 py-2"
-            />
+            <input type="number" min={0} max={99} value={options.unique} onChange={(event) => setOptions((prev) => ({ ...prev, unique: clamp(Number(event.target.value), 0, 99) }))} className="w-full rounded border px-3 py-2" />
           </label>
 
           <label className="space-y-1 text-sm">
             <span className="font-semibold">画像サイズ(px)</span>
-            <input
-              type="number"
-              min={96}
-              max={512}
-              step={8}
-              value={options.size}
-              onChange={(event) => setOptions((prev) => ({ ...prev, size: clamp(Number(event.target.value), 96, 512) }))}
-              className="w-full rounded border px-3 py-2"
-            />
+            <input type="number" min={96} max={512} step={8} value={options.size} onChange={(event) => setOptions((prev) => ({ ...prev, size: clamp(Number(event.target.value), 96, 512) }))} className="w-full rounded border px-3 py-2" />
           </label>
 
           <label className="space-y-1 text-sm">
             <span className="font-semibold">枠線の細さ（上/左右）</span>
-            <input
-              type="number"
-              min={1}
-              max={20}
-              value={options.borderThin}
-              onChange={(event) => setOptions((prev) => ({ ...prev, borderThin: clamp(Number(event.target.value), 1, 20) }))}
-              className="w-full rounded border px-3 py-2"
-            />
+            <input type="number" min={1} max={20} value={options.borderThin} onChange={(event) => setOptions((prev) => ({ ...prev, borderThin: clamp(Number(event.target.value), 1, 20) }))} className="w-full rounded border px-3 py-2" />
           </label>
 
           <label className="space-y-1 text-sm">
             <span className="font-semibold">枠線の太さ（下）</span>
-            <input
-              type="number"
-              min={4}
-              max={32}
-              value={options.borderBottom}
-              onChange={(event) => setOptions((prev) => ({ ...prev, borderBottom: clamp(Number(event.target.value), 4, 32) }))}
-              className="w-full rounded border px-3 py-2"
-            />
+            <input type="number" min={4} max={64} value={options.borderBottom} onChange={(event) => setOptions((prev) => ({ ...prev, borderBottom: clamp(Number(event.target.value), 4, 64) }))} className="w-full rounded border px-3 py-2" />
           </label>
 
           <label className="space-y-1 text-sm">
             <span className="font-semibold">右傾き率</span>
-            <input
-              type="number"
-              min={0.05}
-              max={0.25}
-              step={0.01}
-              value={options.skewRatio}
-              onChange={(event) => setOptions((prev) => ({ ...prev, skewRatio: clamp(Number(event.target.value), 0.05, 0.25) }))}
-              className="w-full rounded border px-3 py-2"
-            />
+            <input type="number" min={0.05} max={0.25} step={0.01} value={options.skewRatio} onChange={(event) => setOptions((prev) => ({ ...prev, skewRatio: clamp(Number(event.target.value), 0.05, 0.25) }))} className="w-full rounded border px-3 py-2" />
           </label>
 
           <label className="space-y-1 text-sm">
-            <span className="font-semibold">青星点滅速度(1/100秒)</span>
-            <input
-              type="number"
-              min={8}
-              max={100}
-              value={options.blinkDelay}
-              onChange={(event) => setOptions((prev) => ({ ...prev, blinkDelay: clamp(Number(event.target.value), 8, 100) }))}
-              className="w-full rounded border px-3 py-2"
-            />
+            <span className="font-semibold">青星待機時間(ms)</span>
+            <input type="number" min={200} max={4000} step={100} value={options.blinkHoldMs} onChange={(event) => setOptions((prev) => ({ ...prev, blinkHoldMs: clamp(Number(event.target.value), 200, 4000) }))} className="w-full rounded border px-3 py-2" />
           </label>
         </div>
 
-        <button
-          type="button"
-          onClick={() => onDownload()}
-          disabled={busy || !selectedStudent}
-          className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
-        >
+        <button type="button" onClick={() => onDownload()} disabled={busy || !selectedStudent} className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">
           {busy ? '生成中...' : options.unique >= 1 ? 'GIFをダウンロード' : 'PNGをダウンロード'}
         </button>
 
