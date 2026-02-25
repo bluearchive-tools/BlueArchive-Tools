@@ -1,0 +1,16 @@
+{
+  "ja": {
+    "step1": { "title": "ホーム", "text": "ホーム画面から、目的のツールやミニゲームを選択できます。", "selector": "[data-tutorial=\"home-main\"]" },
+    "step2": { "title": "生徒関連", "text": "生徒管理系の機能はこのセクションから使えます。", "selector": "[data-tutorial=\"home-links\"]" },
+    "step3": { "title": "計算ツール", "text": "育成計画やイベントスケジュール等のツールはここにあります。", "selector": "[data-tutorial=\"tools-links\"]" },
+    "step4": { "title": "BGM DJ", "text": "BGM DJでは2デッキやクロスフェーダーを使ったミックスが体験できます。" },
+    "step5": { "title": "ミニゲーム", "text": "ミニゲームのBGMクイズで耳トレとして遊んでみましょう。" }
+  },
+  "en": {
+    "step1": { "title": "Home", "text": "You can choose tools and mini games from the home screen.", "selector": "[data-tutorial=\"home-main\"]" },
+    "step2": { "title": "Students", "text": "Use this section for student-related features.", "selector": "[data-tutorial=\"home-links\"]" },
+    "step3": { "title": "Tools", "text": "Open calculators and utility tools from here.", "selector": "[data-tutorial=\"tools-links\"]" },
+    "step4": { "title": "BGM DJ", "text": "Use BGM DJ to mix with two decks and a crossfader." },
+    "step5": { "title": "Mini game", "text": "Play the BGM quiz mini game for a quick challenge." }
+  }
+}

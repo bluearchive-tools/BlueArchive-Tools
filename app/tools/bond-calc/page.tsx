@@ -19,6 +19,7 @@ type Student = {
   styleIds?: string[]
   styleOf?: string
   altIds?: string[]
+  aliases?: string[]
   altOf?: string
   initialStars: number
   role: string
@@ -85,6 +86,7 @@ export default function BondCalcPage() {
         styleIds: Array.isArray(item.styleIds) ? (item.styleIds as string[]) : undefined,
         styleOf: typeof item.styleOf === 'string' ? item.styleOf : undefined,
         altIds: Array.isArray(item.altIds) ? (item.altIds as string[]) : undefined,
+        aliases: Array.isArray(item.aliases) ? (item.aliases as string[]) : undefined,
         altOf: typeof item.altOf === 'string' ? item.altOf : undefined,
         initialStars:
           typeof item.initialStars === 'number' && Number.isFinite(item.initialStars) ? item.initialStars : 1,

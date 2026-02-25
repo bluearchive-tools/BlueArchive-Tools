@@ -14,9 +14,9 @@
     "stepLabel": "Step {current} / {total}"
   },
   "steps": {
-    "step1": "Pick a tool or mini game from the home page.",
-    "step2": "Use the quick search (Ctrl+K / Cmd+K) to jump between pages.",
-    "step3": "Try the BGM player for playlists and playback controls.",
+    "step1": { "title": "Home", "text": "You can choose tools and mini games from the home screen.", "selector": "[data-tutorial=\"home-main\"]" },
+    "step2": { "title": "Students", "text": "Use this section for student-related features.", "selector": "[data-tutorial=\"home-links\"]" },
+    "step3": { "title": "Tools", "text": "Open calculators and utility tools from here.", "selector": "[data-tutorial=\"tools-links\"]" },
     "step4": "Use BGM DJ to mix with two decks and a crossfader.",
     "step5": "Play the BGM quiz mini game for a quick challenge."
   }
