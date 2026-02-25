@@ -77,6 +77,15 @@ type SocialLink = {
   biliAvatar?: string | null
 }
 
+
+type ImageToolSettings = {
+  level: number
+  star: number
+  uniqueStar: number
+  blinkMs: number
+  showDangerOnUnknown: boolean
+}
+
 type TlDefaultSettings = {
   includeSquad: boolean
   allowTl: boolean
@@ -93,6 +102,9 @@ const detectIsMacPlatform = () => {
 const defaultSearchShortcut = (preferMeta: boolean) => (preferMeta ? 'Cmd+K' : 'Ctrl+K')
 
 const SEARCH_SHORTCUT_STORAGE_KEY = 'app:searchShortcut'
+const HELP_SHORTCUT_STORAGE_KEY = 'app:helpShortcut'
+const IMAGE_TOOL_SETTINGS_KEY = 'app:imageToolSettings'
+const defaultHelpShortcut = (preferMeta: boolean) => (preferMeta ? 'Cmd+/' : 'Ctrl+/')
 
 const formatShortcutFromEvent = (event: ReactKeyboardEvent<HTMLInputElement>) => {
   const key = event.key
@@ -392,6 +404,10 @@ export default function MyPageClient({
   const [searchShortcut, setSearchShortcut] = useState(() =>
     defaultSearchShortcut(detectIsMacPlatform())
   )
+  const [helpShortcut, setHelpShortcut] = useState(() =>
+    defaultHelpShortcut(detectIsMacPlatform())
+  )
+  const [imageToolSettings, setImageToolSettings] = useState<ImageToolSettings>({ level: 90, star: 3, uniqueStar: 0, blinkMs: 450, showDangerOnUnknown: true })
   const [delUser, setDelUser] = useState(false)
   const [delTheme, setDelTheme] = useState(false)
   const [delNotice, setDelNotice] = useState(false)
@@ -1288,6 +1304,41 @@ export default function MyPageClient({
 
   useEffect(() => {
     try {
+      const raw = localStorage.getItem(HELP_SHORTCUT_STORAGE_KEY)
+      if (!raw) {
+        setHelpShortcut(defaultHelpShortcut(isMacPlatform))
+        return
+      }
+      if (raw.trim()) {
+        setHelpShortcut(raw)
+      } else {
+        setHelpShortcut(defaultHelpShortcut(isMacPlatform))
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [isMacPlatform])
+
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(IMAGE_TOOL_SETTINGS_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as Partial<ImageToolSettings>
+      setImageToolSettings((prev) => ({
+        level: typeof parsed.level === 'number' ? Math.max(1, Math.min(99, parsed.level)) : prev.level,
+        star: typeof parsed.star === 'number' ? Math.max(1, Math.min(5, parsed.star)) : prev.star,
+        uniqueStar: typeof parsed.uniqueStar === 'number' ? Math.max(0, Math.min(10, parsed.uniqueStar)) : prev.uniqueStar,
+        blinkMs: typeof parsed.blinkMs === 'number' ? Math.max(150, Math.min(1000, parsed.blinkMs)) : prev.blinkMs,
+        showDangerOnUnknown: typeof parsed.showDangerOnUnknown === 'boolean' ? parsed.showDangerOnUnknown : prev.showDangerOnUnknown,
+      }))
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
       localStorage.setItem(TL_MAKER_SHORTCUT_STORAGE_KEY, JSON.stringify(makerShortcuts))
       window.dispatchEvent(new StorageEvent('storage', {
         key: TL_MAKER_SHORTCUT_STORAGE_KEY,
@@ -1305,6 +1356,27 @@ export default function MyPageClient({
       /* ignore */
     }
   }, [searchShortcut])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(HELP_SHORTCUT_STORAGE_KEY, helpShortcut)
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: HELP_SHORTCUT_STORAGE_KEY,
+        newValue: helpShortcut,
+      }))
+    } catch {
+      /* ignore */
+    }
+  }, [helpShortcut])
+
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(IMAGE_TOOL_SETTINGS_KEY, JSON.stringify(imageToolSettings))
+    } catch {
+      /* ignore */
+    }
+  }, [imageToolSettings])
 
   const selectedTargets = [
     { label: '学生データ', value: delUser },
@@ -2280,7 +2352,7 @@ export default function MyPageClient({
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold">ショートカットキー</h3>
-                <p className="text-sm text-gray-500">TLメーカーdevと検索バーのショートカットキーを設定します</p>
+                <p className="text-sm text-gray-500">TLメーカーdev・検索バー・ヘルプ/チュートリアル・画像作成ツール設定を管理します</p>
               </div>
               <button
                 type="button"
@@ -2288,6 +2360,8 @@ export default function MyPageClient({
                 onClick={() => {
                   setMakerShortcuts(defaultShortcuts(isMacPlatform))
                   setSearchShortcut(defaultSearchShortcut(isMacPlatform))
+                  setHelpShortcut(defaultHelpShortcut(isMacPlatform))
+                  setImageToolSettings({ level: 90, star: 3, uniqueStar: 0, blinkMs: 450, showDangerOnUnknown: true })
                   setMessage('ショートカットキーをデフォルトに戻しました')
                 }}
               >
@@ -2332,6 +2406,33 @@ export default function MyPageClient({
                   placeholder={isMacPlatform ? 'Cmd+K' : 'Ctrl+K'}
                 />
               </label>
+
+              <label className="flex items-center gap-3">
+                <span className="w-32 text-gray-700">ヘルプ/チュートリアル</span>
+                <input
+                  value={helpShortcut}
+                  onKeyDown={(e) => {
+                    e.preventDefault()
+                    const next = formatShortcutFromEvent(e)
+                    if (next === null) return
+                    setHelpShortcut(next)
+                  }}
+                  readOnly
+                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder={isMacPlatform ? 'Cmd+/' : 'Ctrl+/'}
+                />
+              </label>
+
+              <div className="mt-3 rounded border border-gray-200 p-3 space-y-2">
+                <p className="text-sm font-semibold text-gray-700">画像作成ツールの既定値</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <label className="flex items-center gap-2"><span className="w-32 text-gray-700">Lv</span><input type="number" min={1} max={99} className="flex-1 rounded border border-gray-300 px-2 py-1 text-sm" value={imageToolSettings.level} onChange={(e) => setImageToolSettings((p) => ({ ...p, level: Math.max(1, Math.min(99, Number(e.target.value || 1)) ) }))} /></label>
+                  <label className="flex items-center gap-2"><span className="w-32 text-gray-700">星</span><input type="number" min={1} max={5} className="flex-1 rounded border border-gray-300 px-2 py-1 text-sm" value={imageToolSettings.star} onChange={(e) => setImageToolSettings((p) => ({ ...p, star: Math.max(1, Math.min(5, Number(e.target.value || 1)) ) }))} /></label>
+                  <label className="flex items-center gap-2"><span className="w-32 text-gray-700">固有星</span><input type="number" min={0} max={10} className="flex-1 rounded border border-gray-300 px-2 py-1 text-sm" value={imageToolSettings.uniqueStar} onChange={(e) => setImageToolSettings((p) => ({ ...p, uniqueStar: Math.max(0, Math.min(10, Number(e.target.value || 0)) ) }))} /></label>
+                  <label className="flex items-center gap-2"><span className="w-32 text-gray-700">点滅ms</span><input type="number" min={150} max={1000} className="flex-1 rounded border border-gray-300 px-2 py-1 text-sm" value={imageToolSettings.blinkMs} onChange={(e) => setImageToolSettings((p) => ({ ...p, blinkMs: Math.max(150, Math.min(1000, Number(e.target.value || 150)) ) }))} /></label>
+                </div>
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={imageToolSettings.showDangerOnUnknown} onChange={(e) => setImageToolSettings((p) => ({ ...p, showDangerOnUnknown: e.target.checked }))} />不明攻撃属性に危険マークを表示</label>
+              </div>
               <p className="text-xs text-gray-500">
                 入力欄をクリックしてキーを押してください（例: {isMacPlatform ? 'Cmd+Z' : 'Ctrl+Z'}）。
               </p>

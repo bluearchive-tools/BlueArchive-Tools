@@ -9,10 +9,12 @@ export default function CollapsibleBox({
   title,
   description,
   children,
+  tutorialKey,
 }: {
   title: string
   description: string
   children: React.ReactNode
+  tutorialKey?: string
 }) {
   const [open, setOpen] = useState(false)
   const { dark } = useTheme()
@@ -20,6 +22,7 @@ export default function CollapsibleBox({
   return (
     <div className={`rounded-lg border ${dark ? 'border-gray-700' : 'border-gray-300'} overflow-hidden`}>
       <button
+        data-tutorial={tutorialKey}
         onClick={() => setOpen(!open)}
         className={`w-full text-left p-4 ${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'}`}
       >
