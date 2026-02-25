@@ -8,6 +8,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircleExclamation, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { useTranslations } from 'next-intl'
 
+const DISMISSED_KEY = 'app:loginPromptDismissed'
+
 export default function LoginPopup() {
   const t = useTranslations('common')
   const session = useSession()
@@ -15,27 +17,35 @@ export default function LoginPopup() {
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
-    if (!session) {
-      setVisible(true)
-      setTimeout(() => setOpen(true), 20)
+    if (session) return
+    try {
+      if (localStorage.getItem(DISMISSED_KEY) === '1') return
+    } catch {
+      /* ignore */
     }
+    setVisible(true)
+    const id = window.setTimeout(() => setOpen(true), 20)
+    return () => window.clearTimeout(id)
   }, [session])
 
   const close = () => {
+    try {
+      localStorage.setItem(DISMISSED_KEY, '1')
+    } catch {
+      /* ignore */
+    }
     setOpen(false)
-    setTimeout(() => setVisible(false), 200)
+    window.setTimeout(() => setVisible(false), 220)
   }
 
   if (session || !visible) return null
 
   return (
-    <div
-      className={`fixed top-20 inset-x-0 flex justify-center pointer-events-none z-5 transition-all duration-200 ${open ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}
-    >
+    <div className={`fixed top-20 inset-x-0 flex justify-center pointer-events-none z-5 transition-all duration-200 ${open ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
       <div className="relative bg-yellow-200/80 text-black rounded shadow p-4 pointer-events-auto max-w-md w-full mx-4 flex flex-col gap-3">
         <div className="flex items-start gap-2">
           <FontAwesomeIcon icon={faCircleExclamation} className="text-yellow-600 mt-1" />
-          <p className="flex-1 text-sm">{t('messages.loginPrompt')}</p>
+          <p data-tutorial="login-prompt" className="flex-1 text-sm">{t('messages.loginPrompt')}</p>
           <button onClick={close} className="text-gray-700" aria-label={t('actions.close')}>
             <FontAwesomeIcon icon={faXmark} />
           </button>

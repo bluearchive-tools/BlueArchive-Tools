@@ -119,6 +119,13 @@ export default function PageHelpButton({ pageKey, className }: Props) {
     return () => clearTimeout(timer)
   }, [visible])
 
+
+  useEffect(() => {
+    const openByShortcut = () => setVisible(true)
+    window.addEventListener('page-help-shortcut', openByShortcut)
+    return () => window.removeEventListener('page-help-shortcut', openByShortcut)
+  }, [])
+
   if (!content) return null
 
   const { entry, buttonLabel } = content
