@@ -1,11 +1,58 @@
 {
   "ja": {
-    "step1": { "title": "ホーム", "text": "ホーム画面から、目的のツールやミニゲームを選択できます。", "selector": "[data-tutorial=\"home-main\"]" },
-    "step2": { "title": "生徒関連", "text": "生徒管理系の機能はこのセクションから使えます。", "selector": "[data-tutorial=\"home-links\"]" },
-    "step3": { "title": "計算ツール", "text": "育成計画やイベントスケジュール等のツールはここにあります。", "selector": "[data-tutorial=\"tools-links\"]" },
-    "step4": { "title": "BGM DJ", "text": "BGM DJでは2デッキやクロスフェーダーを使ったミックスが体験できます。" },
-    "step5": { "title": "ミニゲーム", "text": "ミニゲームのBGMクイズで耳トレとして遊んでみましょう。" }
+  "step1": {
+    "text": "チュートリアルでサイトの使い方を学びましょう",
+    "title": "BlueArchive Toolsへようこそ！"
   },
+  "step2": {
+    "text": "GoogleもしくはDiscordアカウントでログインしておくと、他の端末からでも同じデータを使えます",
+    "selector": "p.flex-1.text-sm",
+    "title": "ログインすると便利！"
+  },
+  "step3": {
+    "text": "生徒一覧からあなたの生徒データを追加できます。\n生徒データインポートでは、他のサイトからデータを取り込めます。",
+    "selector": "button.w-full.text-left",
+    "title": "あなたの生徒データを登録しよう"
+  },
+  "step4": {
+    "text": "TL検索では、シーズン中の動画を簡単に検索できます。\nTLメーカーでは、タイムラインを用いてTLを作成できます",
+    "selector": "button.w-full.text-left",
+    "title": "TL検索をしてみよう"
+  },
+  "step5": {
+    "text": "育成プランニングでは、生徒の育成目標を設定して必要素材を計算できます\nイベントカレンダーでは、開催予定・開催中のイベントを確認できます",
+    "selector": "button.w-full.text-left",
+    "title": "便利ツールを使ってみよう"
+  },
+  "step6": {
+    "text": "ミニゲームをしてみましょう！",
+    "selector": "button.w-full.text-left",
+    "title": "BGMを覚えていますか？"
+  },
+  "step7": {
+    "text": "過去のお知らせを確認できます",
+    "selector": "button",
+    "title": "お知らせはここから"
+  },
+  "step8": {
+    "text": "ログインすると、サイト内でのプロフィール、YouTube接続などができます",
+    "selector": "a",
+    "title": "プロフィールを設定しよう"
+  },
+  "step9": {
+    "text": "左上をクリックするとトップページに戻れます",
+    "selector": "a",
+    "title": "トップページに戻るには"
+  },
+  "step10": {
+    "text": "サイト内でF1を押してください！",
+    "title": "もう一回見たくなったら"
+  },
+  "step11": {
+    "text": "これでチュートリアルは終わりです",
+    "title": "おしまい"
+  }
+},
   "en": {
     "step1": { "title": "Home", "text": "You can choose tools and mini games from the home screen.", "selector": "[data-tutorial=\"home-main\"]" },
     "step2": { "title": "Students", "text": "Use this section for student-related features.", "selector": "[data-tutorial=\"home-links\"]" },
