@@ -51,7 +51,7 @@ const BASE: Options = {
   cornerRadius: 52,
   borderThin: 6,
   borderBottom: 150,
-  skewRatio: 0.1,
+  skewRatio: 0.05,
   blinkHoldMs: 18000,
 }
 
@@ -65,6 +65,51 @@ type Point = { x: number; y: number }
 
 function distance(a: Point, b: Point) {
   return Math.hypot(a.x - b.x, a.y - b.y)
+}
+
+function normalize(vector: Point) {
+  const len = Math.hypot(vector.x, vector.y)
+  if (len === 0) return { x: 0, y: 0 }
+  return { x: vector.x / len, y: vector.y / len }
+}
+
+function buildRoundedPolygonPath(points: Point[], radius: number) {
+  const path = new Path2D()
+  if (points.length < 3) return path
+
+  const corners = points.map((point, index) => {
+    const prev = points[(index - 1 + points.length) % points.length]
+    const next = points[(index + 1) % points.length]
+
+    const toPrev = { x: prev.x - point.x, y: prev.y - point.y }
+    const toNext = { x: next.x - point.x, y: next.y - point.y }
+    const prevLen = Math.hypot(toPrev.x, toPrev.y)
+    const nextLen = Math.hypot(toNext.x, toNext.y)
+    const currentRadius = Math.min(radius, prevLen * 0.5, nextLen * 0.5)
+    const prevDir = normalize(toPrev)
+    const nextDir = normalize(toNext)
+
+    return {
+      point,
+      start: {
+        x: point.x + prevDir.x * currentRadius,
+        y: point.y + prevDir.y * currentRadius,
+      },
+      end: {
+        x: point.x + nextDir.x * currentRadius,
+        y: point.y + nextDir.y * currentRadius,
+      },
+    }
+  })
+
+  path.moveTo(corners[0].end.x, corners[0].end.y)
+  for (let i = 1; i <= corners.length; i += 1) {
+    const current = corners[i % corners.length]
+    path.lineTo(current.start.x, current.start.y)
+    path.quadraticCurveTo(current.point.x, current.point.y, current.end.x, current.end.y)
+  }
+  path.closePath()
+  return path
 }
 
 function createParallelogramPath(
@@ -89,30 +134,9 @@ function createParallelogramPath(
   const p3: Point = { x: rightBottomX, y: bottomY }
   const p4: Point = { x: leftBottomX, y: bottomY }
 
-  const maxRadius = Math.max(0, Math.min(distance(p1, p2), distance(p2, p3), distance(p3, p4), distance(p4, p1)) * 0.22)
+  const maxRadius = Math.max(0, Math.min(distance(p1, p2), distance(p2, p3), distance(p3, p4), distance(p4, p1)) * 0.25)
   const r = Math.min(cornerRadius, maxRadius)
-
-  const path = new Path2D()
-  if (r <= 0.01) {
-    path.moveTo(p1.x, p1.y)
-    path.lineTo(p2.x, p2.y)
-    path.lineTo(p3.x, p3.y)
-    path.lineTo(p4.x, p4.y)
-    path.closePath()
-    return path
-  }
-
-  path.moveTo(p1.x + r, p1.y)
-  path.lineTo(p2.x - r, p2.y)
-  path.arcTo(p2.x, p2.y, p3.x, p3.y, r)
-  path.lineTo(p3.x - r * 0.65, p3.y - r * 0.65)
-  path.arcTo(p3.x, p3.y, p4.x, p4.y, r)
-  path.lineTo(p4.x + r, p4.y)
-  path.arcTo(p4.x, p4.y, p1.x, p1.y, r)
-  path.lineTo(p1.x + r * 0.55, p1.y + r * 0.55)
-  path.arcTo(p1.x, p1.y, p2.x, p2.y, r)
-  path.closePath()
-  return path
+  return buildRoundedPolygonPath([p1, p2, p3, p4], r)
 }
 
 function drawStarShape(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number) {
@@ -224,7 +248,6 @@ function drawCard(
   const frameTop = size * 0.05
   const skew = size * options.skewRatio
   const thin = options.borderThin
-  const bottom = options.borderBottom
   const color = ATTACK_COLORS[attackType]
   const ring = color.ring
 
@@ -234,7 +257,7 @@ function drawCard(
   ctx.imageSmoothingEnabled = true
 
   const outerPath = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop, options.cornerRadius)
-  const innerBottomInset = Math.max(2, bottom * 0.35)
+  const innerBottomInset = thin
   const innerPath = createParallelogramPath(size, frameHeight, skew, thin, innerBottomInset, thin, frameTop, options.cornerRadius * 0.72)
 
   ctx.fillStyle = ring
