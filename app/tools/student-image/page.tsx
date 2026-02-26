@@ -257,8 +257,7 @@ function drawCard(
   ctx.imageSmoothingEnabled = true
 
   const outerPath = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop, options.cornerRadius)
-  const innerBottomInset = Math.max(thin, bottom - thin)
-  const innerPath = createParallelogramPath(size, frameHeight, skew, thin, innerBottomInset, thin, frameTop, options.cornerRadius)
+  const innerPath = createParallelogramPath(size, frameHeight, skew, thin, thin, thin, frameTop, options.cornerRadius)
 
   ctx.fillStyle = ring
   ctx.fill(outerPath)
@@ -274,14 +273,16 @@ function drawCard(
 
   ctx.restore()
 
-  const bottomBandTopY = frameTop + frameHeight - innerBottomInset
-  const bottomBandTopLeftX = thin + (skew * innerBottomInset) / frameHeight
-  const bottomBandTopRightX = size - skew - thin + (skew * innerBottomInset) / frameHeight
+  const bottomBandTopY = frameTop + frameHeight - bottom
+  const bottomBandTopLeftX = thin + (skew * bottom) / frameHeight
+  const bottomBandTopRightX = size - skew - thin + (skew * bottom) / frameHeight
+  const cornerLift = Math.min(options.cornerRadius * 0.35, bottom * 0.25)
   const bottomBand = new Path2D()
   bottomBand.moveTo(bottomBandTopLeftX, bottomBandTopY)
   bottomBand.lineTo(bottomBandTopRightX, bottomBandTopY)
-  bottomBand.lineTo(size - skew, frameTop + frameHeight)
+  bottomBand.quadraticCurveTo(size - skew - thin * 0.35, bottomBandTopY - cornerLift, size - skew, frameTop + frameHeight)
   bottomBand.lineTo(0, frameTop + frameHeight)
+  bottomBand.quadraticCurveTo(thin * 0.35, bottomBandTopY - cornerLift, bottomBandTopLeftX, bottomBandTopY)
   bottomBand.closePath()
   ctx.save()
   ctx.clip(outerPath)
