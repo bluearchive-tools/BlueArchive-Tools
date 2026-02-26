@@ -48,11 +48,11 @@ const BASE: Options = {
   stars: 3,
   unique: 0,
   size: 512,
-  cornerRadius: 30,
+  cornerRadius: 52,
   borderThin: 6,
-  borderBottom: 100,
+  borderBottom: 150,
   skewRatio: 0.1,
-  blinkHoldMs: 10000,
+  blinkHoldMs: 18000,
 }
 
 const TRANSPARENT_MARKER: RGB = [1, 2, 3]
@@ -171,7 +171,7 @@ function drawDanger(ctx: CanvasRenderingContext2D, size: number) {
 }
 
 function createBlueFrames(holdMs: number): BlueFrame[] {
-  const hold = clamp(holdMs, 200, 20000)
+  const hold = clamp(holdMs, 200, 30000)
   return [
     { alpha: 0, delayMs: hold },
     { alpha: 0.45, delayMs: 140 },
@@ -254,7 +254,7 @@ function drawCard(
 
   const starRadius = size * 0.12
   const starX = size * 0.18
-  const starY = frameTop + frameHeight - bottom - starRadius * 0.22
+  const starY = frameTop + frameHeight - Math.max(starRadius * 1.18, size * 0.12)
   drawStarWithNumber(ctx, starX, starY, starRadius, '#fde047', '#f59e0b', '#92400e', options.stars)
 
   if (options.unique >= 1 && blueStarAlpha > 0) {
@@ -550,7 +550,7 @@ export default function StudentImageToolPage() {
 
           <label className="space-y-1 text-sm">
             <span className="font-semibold">枠線の太さ（下）</span>
-            <input type="number" min={4} max={140} value={options.borderBottom} onChange={(event) => setOptions((prev) => ({ ...prev, borderBottom: clamp(Number(event.target.value), 4, 140) }))} className="w-full rounded border px-3 py-2" />
+            <input type="number" min={4} max={220} value={options.borderBottom} onChange={(event) => setOptions((prev) => ({ ...prev, borderBottom: clamp(Number(event.target.value), 4, 220) }))} className="w-full rounded border px-3 py-2" />
           </label>
 
           <label className="space-y-1 text-sm">
@@ -560,7 +560,7 @@ export default function StudentImageToolPage() {
 
           <label className="space-y-1 text-sm">
             <span className="font-semibold">青星待機時間(ms)</span>
-            <input type="number" min={200} max={20000} step={100} value={options.blinkHoldMs} onChange={(event) => setOptions((prev) => ({ ...prev, blinkHoldMs: clamp(Number(event.target.value), 200, 20000) }))} className="w-full rounded border px-3 py-2" />
+            <input type="number" min={200} max={30000} step={100} value={options.blinkHoldMs} onChange={(event) => setOptions((prev) => ({ ...prev, blinkHoldMs: clamp(Number(event.target.value), 200, 30000) }))} className="w-full rounded border px-3 py-2" />
           </label>
         </div>
 
