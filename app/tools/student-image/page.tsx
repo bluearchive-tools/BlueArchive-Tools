@@ -257,7 +257,8 @@ function drawCard(
   ctx.imageSmoothingEnabled = true
 
   const outerPath = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop, options.cornerRadius)
-  const innerPath = createParallelogramPath(size, frameHeight, skew, thin, thin, thin, frameTop, options.cornerRadius)
+  const innerBottomInset = Math.max(thin, bottom - thin)
+  const innerPath = createParallelogramPath(size, frameHeight, skew, thin, innerBottomInset, thin, frameTop, options.cornerRadius)
 
   ctx.fillStyle = ring
   ctx.fill(outerPath)
@@ -273,9 +274,9 @@ function drawCard(
 
   ctx.restore()
 
-  const bottomBandTopY = frameTop + frameHeight - bottom
-  const bottomBandTopLeftX = thin + (skew * bottom) / frameHeight
-  const bottomBandTopRightX = size - skew - thin + (skew * bottom) / frameHeight
+  const bottomBandTopY = frameTop + frameHeight - innerBottomInset
+  const bottomBandTopLeftX = thin + (skew * innerBottomInset) / frameHeight
+  const bottomBandTopRightX = size - skew - thin + (skew * innerBottomInset) / frameHeight
   const bottomBand = new Path2D()
   bottomBand.moveTo(bottomBandTopLeftX, bottomBandTopY)
   bottomBand.lineTo(bottomBandTopRightX, bottomBandTopY)
@@ -286,14 +287,6 @@ function drawCard(
   ctx.clip(outerPath)
   ctx.fillStyle = ring
   ctx.fill(bottomBand)
-  ctx.restore()
-
-  ctx.save()
-  ctx.strokeStyle = 'rgba(255,255,255,0.52)'
-  ctx.lineWidth = Math.max(1, thin * 0.85)
-  ctx.lineJoin = 'round'
-  ctx.lineCap = 'round'
-  ctx.stroke(createParallelogramPath(size, frameHeight, skew, thin * 0.8, thin * 0.8, thin * 0.8, frameTop, options.cornerRadius))
   ctx.restore()
 
   const levelFont = Math.round(size * 0.135)
