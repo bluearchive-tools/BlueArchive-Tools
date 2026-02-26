@@ -257,7 +257,8 @@ function drawCard(
   ctx.imageSmoothingEnabled = true
 
   const outerPath = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop, options.cornerRadius)
-  const innerPath = createParallelogramPath(size, frameHeight, skew, thin, thin, thin, frameTop, options.cornerRadius)
+  const innerBottomInset = Math.max(thin, bottom - thin)
+  const innerPath = createParallelogramPath(size, frameHeight, skew, thin, innerBottomInset, thin, frameTop, options.cornerRadius)
 
   ctx.fillStyle = ring
   ctx.fill(outerPath)
@@ -279,24 +280,25 @@ function drawCard(
 
   ctx.restore()
 
-  const stripTopY = frameTop + frameHeight - bottom
-  const stripTopLeftX = (skew * bottom) / frameHeight
-  const stripTopRightX = size - skew + (skew * bottom) / frameHeight
+  const innerBottomY = frameTop + frameHeight - innerBottomInset
   const bottomBand = new Path2D()
-  bottomBand.moveTo(stripTopLeftX, stripTopY)
-  bottomBand.lineTo(stripTopRightX, stripTopY)
+  bottomBand.moveTo(thin, innerBottomY)
+  bottomBand.lineTo(size - skew - thin, innerBottomY)
   bottomBand.lineTo(size - skew, frameTop + frameHeight)
   bottomBand.lineTo(0, frameTop + frameHeight)
   bottomBand.closePath()
+  ctx.save()
+  ctx.clip(outerPath)
   ctx.fillStyle = ring
   ctx.fill(bottomBand)
+  ctx.restore()
 
   ctx.save()
   ctx.strokeStyle = 'rgba(255,255,255,0.52)'
   ctx.lineWidth = Math.max(1, thin * 0.85)
   ctx.lineJoin = 'round'
   ctx.lineCap = 'round'
-  ctx.stroke(createParallelogramPath(size, frameHeight, skew, thin * 0.8, thin * 0.8, thin * 0.8, frameTop, options.cornerRadius))
+  ctx.stroke(createParallelogramPath(size, frameHeight, skew, thin * 0.8, Math.max(thin * 0.8, innerBottomInset - thin * 0.2), thin * 0.8, frameTop, options.cornerRadius))
   ctx.restore()
 
   const levelFont = Math.round(size * 0.135)
@@ -322,18 +324,6 @@ function drawCard(
   if (shouldWarn) {
     drawDanger(ctx, size)
   }
-
-  const stripHeight = Math.max(2, size * 0.02)
-  const bottomY = frameTop + frameHeight + size * 0.004
-  const rightBottomX = size - skew
-  const strip = new Path2D()
-  strip.moveTo(0, bottomY)
-  strip.lineTo(rightBottomX, bottomY)
-  strip.lineTo(rightBottomX + 1, bottomY + stripHeight)
-  strip.lineTo(1, bottomY + stripHeight)
-  strip.closePath()
-  ctx.fillStyle = 'rgba(148,163,184,0.42)'
-  ctx.fill(strip)
 
 }
 
