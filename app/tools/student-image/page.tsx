@@ -37,10 +37,10 @@ type BlueFrame = {
 const ATTACK_TYPES: AttackType[] = ['爆発', '貫通', '神秘', '振動']
 
 const ATTACK_COLORS: Record<AttackType, AttackColor> = {
-  爆発: { ring: '#e11d48' },
-  貫通: { ring: '#d97706' },
-  神秘: { ring: '#2563eb' },
-  振動: { ring: '#db2777' },
+  爆発: { ring: '#920b05' },
+  貫通: { ring: '#c08b0b' },
+  神秘: { ring: '#296c99' },
+  振動: { ring: '#b060aa' },
 }
 
 const BASE: Options = {
@@ -257,8 +257,7 @@ function drawCard(
   ctx.imageSmoothingEnabled = true
 
   const outerPath = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop, options.cornerRadius)
-  const innerBottomInset = Math.max(thin + 2, bottom - thin * 1.8)
-  const innerPath = createParallelogramPath(size, frameHeight, skew, thin, innerBottomInset, thin, frameTop, options.cornerRadius)
+  const innerPath = createParallelogramPath(size, frameHeight, skew, thin, thin, thin, frameTop, options.cornerRadius)
 
   ctx.fillStyle = ring
   ctx.fill(outerPath)
@@ -280,13 +279,24 @@ function drawCard(
 
   ctx.restore()
 
+  const stripTopY = frameTop + frameHeight - bottom
+  const stripTopLeftX = (skew * bottom) / frameHeight
+  const stripTopRightX = size - skew + (skew * bottom) / frameHeight
+  const bottomBand = new Path2D()
+  bottomBand.moveTo(stripTopLeftX, stripTopY)
+  bottomBand.lineTo(stripTopRightX, stripTopY)
+  bottomBand.lineTo(size - skew, frameTop + frameHeight)
+  bottomBand.lineTo(0, frameTop + frameHeight)
+  bottomBand.closePath()
+  ctx.fillStyle = ring
+  ctx.fill(bottomBand)
+
   ctx.save()
   ctx.strokeStyle = 'rgba(255,255,255,0.52)'
   ctx.lineWidth = Math.max(1, thin * 0.85)
   ctx.lineJoin = 'round'
   ctx.lineCap = 'round'
-  const innerStrokeBottomInset = Math.max(thin, innerBottomInset - thin * 0.6)
-  ctx.stroke(createParallelogramPath(size, frameHeight, skew, thin * 0.8, innerStrokeBottomInset, thin * 0.8, frameTop, options.cornerRadius))
+  ctx.stroke(createParallelogramPath(size, frameHeight, skew, thin * 0.8, thin * 0.8, thin * 0.8, frameTop, options.cornerRadius))
   ctx.restore()
 
   const levelFont = Math.round(size * 0.135)
