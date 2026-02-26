@@ -61,6 +61,12 @@ function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value))
 }
 
+type Point = { x: number; y: number }
+
+function distance(a: Point, b: Point) {
+  return Math.hypot(a.x - b.x, a.y - b.y)
+}
+
 function createParallelogramPath(
   width: number,
   height: number,
@@ -69,6 +75,7 @@ function createParallelogramPath(
   insetBottom: number,
   insetSide: number,
   offsetY: number,
+  cornerRadius = 0,
 ) {
   const topY = offsetY + insetTop
   const bottomY = offsetY + height - insetBottom
@@ -77,11 +84,33 @@ function createParallelogramPath(
   const rightBottomX = width - skew - insetSide
   const leftBottomX = insetSide
 
+  const p1: Point = { x: leftTopX, y: topY }
+  const p2: Point = { x: rightTopX, y: topY }
+  const p3: Point = { x: rightBottomX, y: bottomY }
+  const p4: Point = { x: leftBottomX, y: bottomY }
+
+  const maxRadius = Math.max(0, Math.min(distance(p1, p2), distance(p2, p3), distance(p3, p4), distance(p4, p1)) * 0.22)
+  const r = Math.min(cornerRadius, maxRadius)
+
   const path = new Path2D()
-  path.moveTo(leftTopX, topY)
-  path.lineTo(rightTopX, topY)
-  path.lineTo(rightBottomX, bottomY)
-  path.lineTo(leftBottomX, bottomY)
+  if (r <= 0.01) {
+    path.moveTo(p1.x, p1.y)
+    path.lineTo(p2.x, p2.y)
+    path.lineTo(p3.x, p3.y)
+    path.lineTo(p4.x, p4.y)
+    path.closePath()
+    return path
+  }
+
+  path.moveTo(p1.x + r, p1.y)
+  path.lineTo(p2.x - r, p2.y)
+  path.arcTo(p2.x, p2.y, p3.x, p3.y, r)
+  path.lineTo(p3.x - r * 0.65, p3.y - r * 0.65)
+  path.arcTo(p3.x, p3.y, p4.x, p4.y, r)
+  path.lineTo(p4.x + r, p4.y)
+  path.arcTo(p4.x, p4.y, p1.x, p1.y, r)
+  path.lineTo(p1.x + r * 0.55, p1.y + r * 0.55)
+  path.arcTo(p1.x, p1.y, p2.x, p2.y, r)
   path.closePath()
   return path
 }
@@ -204,9 +233,9 @@ function drawCard(
   ctx.clearRect(0, 0, size, size)
   ctx.imageSmoothingEnabled = true
 
-  const outerPath = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop)
+  const outerPath = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop, options.cornerRadius)
   const innerBottomInset = Math.max(2, bottom * 0.35)
-  const innerPath = createParallelogramPath(size, frameHeight, skew, thin, innerBottomInset, thin, frameTop)
+  const innerPath = createParallelogramPath(size, frameHeight, skew, thin, innerBottomInset, thin, frameTop, options.cornerRadius * 0.72)
 
   ctx.fillStyle = ring
   ctx.fill(outerPath)
@@ -238,7 +267,7 @@ function drawCard(
   ctx.lineWidth = Math.max(1, thin * 0.85)
   ctx.lineJoin = 'round'
   ctx.lineCap = 'round'
-  ctx.stroke(createParallelogramPath(size, frameHeight, skew, thin * 0.8, innerBottomInset * 0.95, thin * 0.8, frameTop))
+  ctx.stroke(createParallelogramPath(size, frameHeight, skew, thin * 0.8, innerBottomInset * 0.95, thin * 0.8, frameTop, options.cornerRadius * 0.62))
   ctx.restore()
 
   const levelFont = Math.round(size * 0.135)
@@ -249,11 +278,11 @@ function drawCard(
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
   const levelText = `Lv.${options.level}`
-  ctx.strokeText(levelText, size * 0.095, frameTop + size * 0.015)
-  ctx.fillText(levelText, size * 0.095, frameTop + size * 0.015)
+  ctx.strokeText(levelText, size * 0.095, frameTop + size * 0.006)
+  ctx.fillText(levelText, size * 0.095, frameTop + size * 0.006)
 
   const starRadius = size * 0.12
-  const starX = size * 0.18
+  const starX = size * 0.14
   const starY = frameTop + frameHeight - Math.max(starRadius * 1.18, size * 0.12)
   drawStarWithNumber(ctx, starX, starY, starRadius, '#fde047', '#f59e0b', '#92400e', options.stars)
 
@@ -277,15 +306,6 @@ function drawCard(
   ctx.fillStyle = 'rgba(148,163,184,0.42)'
   ctx.fill(strip)
 
-  const clipRadius = Math.max(0, options.cornerRadius)
-  if (clipRadius > 0) {
-    const rounded = new Path2D()
-    rounded.roundRect(0, 0, size, size, clipRadius)
-    ctx.save()
-    ctx.globalCompositeOperation = 'destination-in'
-    ctx.fill(rounded)
-    ctx.restore()
-  }
 }
 
 function dataUrlToBlob(dataUrl: string) {
@@ -298,15 +318,37 @@ function dataUrlToBlob(dataUrl: string) {
   return new Blob([bytes], { type: mime })
 }
 
-function prepareTransparentFrame(imageData: ImageData) {
-  const rgba = new Uint8Array(imageData.data)
-  const alphaMask = new Uint8Array(imageData.width * imageData.height)
+function buildParallelogramVisibleMask(options: Options) {
+  const size = options.size
+  const frameHeight = size * 0.88
+  const frameTop = size * 0.05
+  const skew = size * options.skewRatio
 
-  for (let i = 0; i < alphaMask.length; i += 1) {
-    const offset = i * 4
-    const alpha = rgba[offset + 3]
-    if (alpha < 8) {
-      alphaMask[i] = 1
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return new Uint8Array(size * size)
+
+  const path = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop, options.cornerRadius)
+  ctx.clearRect(0, 0, size, size)
+  ctx.fillStyle = '#ffffff'
+  ctx.fill(path)
+
+  const data = ctx.getImageData(0, 0, size, size).data
+  const mask = new Uint8Array(size * size)
+  for (let i = 0; i < mask.length; i += 1) {
+    mask[i] = data[i * 4 + 3] > 10 ? 1 : 0
+  }
+  return mask
+}
+
+function prepareTransparentFrame(imageData: ImageData, visibleMask: Uint8Array) {
+  const rgba = new Uint8Array(imageData.data)
+
+  for (let i = 0; i < visibleMask.length; i += 1) {
+    if (visibleMask[i] === 0) {
+      const offset = i * 4
       rgba[offset] = TRANSPARENT_MARKER[0]
       rgba[offset + 1] = TRANSPARENT_MARKER[1]
       rgba[offset + 2] = TRANSPARENT_MARKER[2]
@@ -325,16 +367,11 @@ function prepareTransparentFrame(imageData: ImageData) {
   }
 
   const indexed = applyPalette(rgba, palette)
-  for (let i = 0; i < alphaMask.length; i += 1) {
-    if (alphaMask[i] === 1) {
-      indexed[i] = 0
-    }
+  for (let i = 0; i < visibleMask.length; i += 1) {
+    if (visibleMask[i] === 0) indexed[i] = 0
   }
 
-  return {
-    palette,
-    indexed,
-  }
+  return { palette, indexed }
 }
 
 export default function StudentImageToolPage() {
@@ -458,12 +495,13 @@ export default function StudentImageToolPage() {
         if (!ctx || !imageRef.current) return
 
         const encoder = GIFEncoder()
+        const visibleMask = buildParallelogramVisibleMask(options)
 
         for (let index = 0; index < blueFrames.length; index += 1) {
           const frame = blueFrames[index]
           drawCard(ctx, imageRef.current, selectedAttackType, selectedStudent.attackType, options, frame.alpha)
           const imageData = ctx.getImageData(0, 0, options.size, options.size)
-          const transparentFrame = prepareTransparentFrame(imageData)
+          const transparentFrame = prepareTransparentFrame(imageData, visibleMask)
           encoder.writeFrame(transparentFrame.indexed, options.size, options.size, {
             palette: transparentFrame.palette,
             delay: Math.max(1, Math.round(frame.delayMs / 10)),
