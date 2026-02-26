@@ -49,7 +49,7 @@ const BASE: Options = {
   unique: 0,
   size: 512,
   cornerRadius: 52,
-  borderThin: 6,
+  borderThin: 4,
   borderBottom: 150,
   skewRatio: 0.05,
   blinkHoldMs: 18000,
@@ -248,6 +248,7 @@ function drawCard(
   const frameTop = size * 0.05
   const skew = size * options.skewRatio
   const thin = options.borderThin
+  const bottom = options.borderBottom
   const color = ATTACK_COLORS[attackType]
   const ring = color.ring
 
@@ -257,8 +258,8 @@ function drawCard(
   ctx.imageSmoothingEnabled = true
 
   const outerPath = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop, options.cornerRadius)
-  const innerBottomInset = thin
-  const innerPath = createParallelogramPath(size, frameHeight, skew, thin, innerBottomInset, thin, frameTop, options.cornerRadius * 0.72)
+  const innerBottomInset = Math.max(thin + 2, bottom - thin * 1.8)
+  const innerPath = createParallelogramPath(size, frameHeight, skew, thin, innerBottomInset, thin, frameTop, options.cornerRadius)
 
   ctx.fillStyle = ring
   ctx.fill(outerPath)
@@ -290,7 +291,8 @@ function drawCard(
   ctx.lineWidth = Math.max(1, thin * 0.85)
   ctx.lineJoin = 'round'
   ctx.lineCap = 'round'
-  ctx.stroke(createParallelogramPath(size, frameHeight, skew, thin * 0.8, innerBottomInset * 0.95, thin * 0.8, frameTop, options.cornerRadius * 0.62))
+  const innerStrokeBottomInset = Math.max(thin, innerBottomInset - thin * 0.6)
+  ctx.stroke(createParallelogramPath(size, frameHeight, skew, thin * 0.8, innerStrokeBottomInset, thin * 0.8, frameTop, options.cornerRadius))
   ctx.restore()
 
   const levelFont = Math.round(size * 0.135)
