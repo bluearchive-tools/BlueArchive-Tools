@@ -48,7 +48,7 @@ const BASE: Options = {
   stars: 3,
   unique: 0,
   size: 512,
-  cornerRadius: 52,
+  cornerRadius: 16,
   borderThin: 4,
   borderBottom: 150,
   skewRatio: 0.05,
@@ -134,7 +134,7 @@ function createParallelogramPath(
   const p3: Point = { x: rightBottomX, y: bottomY }
   const p4: Point = { x: leftBottomX, y: bottomY }
 
-  const maxRadius = Math.max(0, Math.min(distance(p1, p2), distance(p2, p3), distance(p3, p4), distance(p4, p1)) * 0.25)
+  const maxRadius = Math.max(0, Math.min(distance(p1, p2), distance(p2, p3), distance(p3, p4), distance(p4, p1)) * 0.08)
   const r = Math.min(cornerRadius, maxRadius)
   return buildRoundedPolygonPath([p1, p2, p3, p4], r)
 }
