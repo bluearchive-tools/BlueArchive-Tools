@@ -48,14 +48,13 @@ const BASE: Options = {
   stars: 3,
   unique: 0,
   size: 512,
-  cornerRadius: 16,
+  cornerRadius: 52,
   borderThin: 4,
-  borderBottom: 150,
-  skewRatio: 0.05,
+  borderBottom: 50,
+  skewRatio: 0.11,
   blinkHoldMs: 18000,
 }
 
-const TRANSPARENT_MARKER: RGB = [1, 2, 3]
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value))
@@ -134,7 +133,7 @@ function createParallelogramPath(
   const p3: Point = { x: rightBottomX, y: bottomY }
   const p4: Point = { x: leftBottomX, y: bottomY }
 
-  const maxRadius = Math.max(0, Math.min(distance(p1, p2), distance(p2, p3), distance(p3, p4), distance(p4, p1)) * 0.08)
+  const maxRadius = Math.max(0, Math.min(distance(p1, p2), distance(p2, p3), distance(p3, p4), distance(p4, p1)) * 0.25)
   const r = Math.min(cornerRadius, maxRadius)
   return buildRoundedPolygonPath([p1, p2, p3, p4], r)
 }
@@ -279,11 +278,6 @@ function drawCard(
   const dy = frameTop + (frameHeight - drawHeight) / 2
   ctx.drawImage(image, dx, dy, drawWidth, drawHeight)
 
-  const gradient = ctx.createLinearGradient(0, frameTop + frameHeight * 0.56, 0, frameTop + frameHeight)
-  gradient.addColorStop(0, 'rgba(2,6,23,0)')
-  gradient.addColorStop(1, 'rgba(2,6,23,0.45)')
-  ctx.fillStyle = gradient
-  ctx.fillRect(0, frameTop, size, frameHeight)
   ctx.restore()
 
   ctx.save()
@@ -370,34 +364,18 @@ function buildParallelogramVisibleMask(options: Options) {
 
 function prepareTransparentFrame(imageData: ImageData, visibleMask: Uint8Array) {
   const rgba = new Uint8Array(imageData.data)
+  const basePalette = quantize(rgba, 255)
+  const palette: RGB[] = [[0, 0, 0], ...basePalette.slice(0, 255)]
+  const indexed = applyPalette(rgba, basePalette)
+  const maskedIndexed = new Uint8Array(indexed.length)
 
   for (let i = 0; i < visibleMask.length; i += 1) {
-    if (visibleMask[i] === 0) {
-      const offset = i * 4
-      rgba[offset] = TRANSPARENT_MARKER[0]
-      rgba[offset + 1] = TRANSPARENT_MARKER[1]
-      rgba[offset + 2] = TRANSPARENT_MARKER[2]
-      rgba[offset + 3] = 255
-    }
+    maskedIndexed[i] = visibleMask[i] === 0 ? 0 : indexed[i] + 1
   }
 
-  const quantized = quantize(rgba, 255)
-  const palette: RGB[] = [TRANSPARENT_MARKER]
-  for (let i = 0; i < quantized.length && palette.length < 256; i += 1) {
-    const color = quantized[i]
-    if (color[0] === TRANSPARENT_MARKER[0] && color[1] === TRANSPARENT_MARKER[1] && color[2] === TRANSPARENT_MARKER[2]) {
-      continue
-    }
-    palette.push(color)
-  }
-
-  const indexed = applyPalette(rgba, palette)
-  for (let i = 0; i < visibleMask.length; i += 1) {
-    if (visibleMask[i] === 0) indexed[i] = 0
-  }
-
-  return { palette, indexed }
+  return { palette, indexed: maskedIndexed }
 }
+
 
 export default function StudentImageToolPage() {
   const [students, setStudents] = useState<Student[]>([])
