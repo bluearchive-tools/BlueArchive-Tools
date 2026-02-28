@@ -23,6 +23,8 @@ type Options = {
   borderBottom: number
   skewRatio: number
   blinkHoldMs: number
+  levelXRatio: number
+  levelYRatio: number
 }
 
 type AttackColor = {
@@ -53,6 +55,8 @@ const BASE: Options = {
   borderBottom: 50,
   skewRatio: 0.11,
   blinkHoldMs: 18000,
+  levelXRatio: 0.095,
+  levelYRatio: 0.006,
 }
 
 
@@ -248,6 +252,8 @@ function drawCard(
   const skew = size * options.skewRatio
   const thin = options.borderThin
   const bottom = options.borderBottom
+  const skewSlope = skew / frameHeight
+  const sideInset = thin * Math.hypot(1, skewSlope)
   const color = ATTACK_COLORS[attackType]
   const ring = color.ring
 
@@ -257,12 +263,21 @@ function drawCard(
   ctx.imageSmoothingEnabled = true
 
   const outerPath = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop, options.cornerRadius)
-  const innerPath = createParallelogramPath(size, frameHeight, skew, thin, thin, thin, frameTop, options.cornerRadius)
+  const imageWindowPath = createParallelogramPath(
+    size,
+    frameHeight,
+    skew,
+    thin,
+    bottom,
+    sideInset,
+    frameTop,
+    options.cornerRadius,
+  )
 
   ctx.fillStyle = ring
   ctx.fill(outerPath)
   ctx.save()
-  ctx.clip(innerPath)
+  ctx.clip(imageWindowPath)
 
   const ratio = Math.max(size / image.width, frameHeight / image.height)
   const drawWidth = image.width * ratio
@@ -274,15 +289,15 @@ function drawCard(
   ctx.restore()
 
   const bottomBandTopY = frameTop + frameHeight - bottom
-  const bottomBandTopLeftX = thin + (skew * bottom) / frameHeight
-  const bottomBandTopRightX = size - skew - thin + (skew * bottom) / frameHeight
+  const bottomBandTopLeftX = sideInset + (skew * bottom) / frameHeight
+  const bottomBandTopRightX = size - skew - sideInset + (skew * bottom) / frameHeight
   const cornerLift = Math.min(options.cornerRadius * 0.35, bottom * 0.25)
   const bottomBand = new Path2D()
   bottomBand.moveTo(bottomBandTopLeftX, bottomBandTopY)
   bottomBand.lineTo(bottomBandTopRightX, bottomBandTopY)
-  bottomBand.quadraticCurveTo(size - skew - thin * 0.35, bottomBandTopY - cornerLift, size - skew, frameTop + frameHeight)
+  bottomBand.quadraticCurveTo(size - skew - sideInset * 0.35, bottomBandTopY - cornerLift, size - skew, frameTop + frameHeight)
   bottomBand.lineTo(0, frameTop + frameHeight)
-  bottomBand.quadraticCurveTo(thin * 0.35, bottomBandTopY - cornerLift, bottomBandTopLeftX, bottomBandTopY)
+  bottomBand.quadraticCurveTo(sideInset * 0.35, bottomBandTopY - cornerLift, bottomBandTopLeftX, bottomBandTopY)
   bottomBand.closePath()
   ctx.save()
   ctx.clip(outerPath)
@@ -298,8 +313,10 @@ function drawCard(
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
   const levelText = `Lv.${options.level}`
-  ctx.strokeText(levelText, size * 0.095, frameTop + size * 0.006)
-  ctx.fillText(levelText, size * 0.095, frameTop + size * 0.006)
+  const levelX = size * options.levelXRatio
+  const levelY = frameTop + size * options.levelYRatio
+  ctx.strokeText(levelText, levelX, levelY)
+  ctx.fillText(levelText, levelX, levelY)
 
   const starRadius = size * 0.12
   const starX = size * 0.14
@@ -591,6 +608,16 @@ export default function StudentImageToolPage() {
           <label className="space-y-1 text-sm">
             <span className="font-semibold">青星待機時間(ms)</span>
             <input type="number" min={200} max={30000} step={100} value={options.blinkHoldMs} onChange={(event) => setOptions((prev) => ({ ...prev, blinkHoldMs: clamp(Number(event.target.value), 200, 30000) }))} className="w-full rounded border px-3 py-2" />
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="font-semibold">Lv位置X比率</span>
+            <input type="number" min={0} max={0.5} step={0.005} value={options.levelXRatio} onChange={(event) => setOptions((prev) => ({ ...prev, levelXRatio: clamp(Number(event.target.value), 0, 0.5) }))} className="w-full rounded border px-3 py-2" />
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="font-semibold">Lv位置Y比率</span>
+            <input type="number" min={-0.05} max={0.3} step={0.005} value={options.levelYRatio} onChange={(event) => setOptions((prev) => ({ ...prev, levelYRatio: clamp(Number(event.target.value), -0.05, 0.3) }))} className="w-full rounded border px-3 py-2" />
           </label>
         </div>
 
