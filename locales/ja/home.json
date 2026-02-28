@@ -72,6 +72,10 @@
         "levelCalc": {
           "title": "レベル上げ計算機",
           "description": "レベル上げに必要なレポート数と周回目安を計算します"
+        },
+        "studentImage": {
+          "title": "生徒画像作成ツール",
+          "description": "生徒画像に攻撃属性枠や星を重ねてPNG/GIFで出力できます"
         }
       }
     },
