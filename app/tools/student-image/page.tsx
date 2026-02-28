@@ -238,6 +238,42 @@ function createBlueFrames(holdMs: number): BlueFrame[] {
   ]
 }
 
+function buildImageWindowPath(
+  size: number,
+  frameHeight: number,
+  frameTop: number,
+  skew: number,
+  sideInset: number,
+  thin: number,
+  bottom: number,
+  cornerRadius: number,
+) {
+  const topY = frameTop + thin
+  const bottomY = frameTop + frameHeight - bottom
+  const leftTopX = skew + sideInset
+  const rightTopX = size - sideInset
+  const leftBottomX = sideInset + (skew * bottom) / frameHeight
+  const rightBottomX = size - skew - sideInset + (skew * bottom) / frameHeight
+  const cornerLift = Math.min(cornerRadius * 0.35, bottom * 0.25)
+
+  const path = new Path2D()
+  path.moveTo(leftTopX, topY)
+  path.lineTo(rightTopX, topY)
+  path.lineTo(rightBottomX, bottomY)
+  path.quadraticCurveTo(size - skew - sideInset * 0.35, bottomY - cornerLift, size - skew, frameTop + frameHeight)
+  path.lineTo(0, frameTop + frameHeight)
+  path.quadraticCurveTo(sideInset * 0.35, bottomY - cornerLift, leftBottomX, bottomY)
+  path.closePath()
+
+  return {
+    path,
+    topY,
+    bottomY,
+    leftTopX,
+    rightTopX,
+  }
+}
+
 function drawCard(
   ctx: CanvasRenderingContext2D,
   image: HTMLImageElement,
@@ -263,46 +299,24 @@ function drawCard(
   ctx.imageSmoothingEnabled = true
 
   const outerPath = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop, options.cornerRadius)
-  const imageWindowPath = createParallelogramPath(
-    size,
-    frameHeight,
-    skew,
-    thin,
-    bottom,
-    sideInset,
-    frameTop,
-    options.cornerRadius,
-  )
+  const imageWindow = buildImageWindowPath(size, frameHeight, frameTop, skew, sideInset, thin, bottom, options.cornerRadius)
 
   ctx.fillStyle = ring
   ctx.fill(outerPath)
-  ctx.save()
-  ctx.clip(imageWindowPath)
 
-  const ratio = Math.max(size / image.width, frameHeight / image.height)
+  ctx.save()
+  ctx.clip(imageWindow.path)
+
+  const targetWidth = imageWindow.rightTopX - imageWindow.leftTopX
+  const targetHeight = imageWindow.bottomY - imageWindow.topY
+  const ratio = Math.max(targetWidth / image.width, targetHeight / image.height)
   const drawWidth = image.width * ratio
   const drawHeight = image.height * ratio
-  const dx = (size - drawWidth) / 2
-  const dy = frameTop + (frameHeight - drawHeight) / 2
+  const dx = (targetWidth - drawWidth) / 2
+  const dy = (targetHeight - drawHeight) / 2
+
+  ctx.transform(1, 0, -skewSlope, 1, imageWindow.leftTopX, imageWindow.topY)
   ctx.drawImage(image, dx, dy, drawWidth, drawHeight)
-
-  ctx.restore()
-
-  const bottomBandTopY = frameTop + frameHeight - bottom
-  const bottomBandTopLeftX = sideInset + (skew * bottom) / frameHeight
-  const bottomBandTopRightX = size - skew - sideInset + (skew * bottom) / frameHeight
-  const cornerLift = Math.min(options.cornerRadius * 0.35, bottom * 0.25)
-  const bottomBand = new Path2D()
-  bottomBand.moveTo(bottomBandTopLeftX, bottomBandTopY)
-  bottomBand.lineTo(bottomBandTopRightX, bottomBandTopY)
-  bottomBand.quadraticCurveTo(size - skew - sideInset * 0.35, bottomBandTopY - cornerLift, size - skew, frameTop + frameHeight)
-  bottomBand.lineTo(0, frameTop + frameHeight)
-  bottomBand.quadraticCurveTo(sideInset * 0.35, bottomBandTopY - cornerLift, bottomBandTopLeftX, bottomBandTopY)
-  bottomBand.closePath()
-  ctx.save()
-  ctx.clip(outerPath)
-  ctx.fillStyle = ring
-  ctx.fill(bottomBand)
   ctx.restore()
 
   const levelFont = Math.round(size * 0.135)
@@ -332,7 +346,6 @@ function drawCard(
   }
 
 }
-
 function dataUrlToBlob(dataUrl: string) {
   const parts = dataUrl.split(',')
   const mime = parts[0].match(/:(.*?);/)?.[1] ?? 'image/png'
