@@ -238,42 +238,6 @@ function createBlueFrames(holdMs: number): BlueFrame[] {
   ]
 }
 
-function buildImageWindowPath(
-  size: number,
-  frameHeight: number,
-  frameTop: number,
-  skew: number,
-  sideInset: number,
-  thin: number,
-  bottom: number,
-  cornerRadius: number,
-) {
-  const topY = frameTop + thin
-  const bottomY = frameTop + frameHeight - bottom
-  const leftTopX = skew + sideInset
-  const rightTopX = size - sideInset
-  const leftBottomX = sideInset + (skew * bottom) / frameHeight
-  const rightBottomX = size - skew - sideInset + (skew * bottom) / frameHeight
-  const cornerLift = Math.min(cornerRadius * 0.35, bottom * 0.25)
-
-  const path = new Path2D()
-  path.moveTo(leftTopX, topY)
-  path.lineTo(rightTopX, topY)
-  path.lineTo(rightBottomX, bottomY)
-  path.quadraticCurveTo(size - skew - sideInset * 0.35, bottomY - cornerLift, size - skew, frameTop + frameHeight)
-  path.lineTo(0, frameTop + frameHeight)
-  path.quadraticCurveTo(sideInset * 0.35, bottomY - cornerLift, leftBottomX, bottomY)
-  path.closePath()
-
-  return {
-    path,
-    topY,
-    bottomY,
-    leftTopX,
-    rightTopX,
-  }
-}
-
 function drawCard(
   ctx: CanvasRenderingContext2D,
   image: HTMLImageElement,
@@ -299,23 +263,35 @@ function drawCard(
   ctx.imageSmoothingEnabled = true
 
   const outerPath = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop, options.cornerRadius)
-  const imageWindow = buildImageWindowPath(size, frameHeight, frameTop, skew, sideInset, thin, bottom, options.cornerRadius)
+  const innerPath = createParallelogramPath(
+    size,
+    frameHeight,
+    skew,
+    thin,
+    bottom,
+    sideInset,
+    frameTop,
+    options.cornerRadius,
+  )
 
   ctx.fillStyle = ring
   ctx.fill(outerPath)
 
-  ctx.save()
-  ctx.clip(imageWindow.path)
+  const targetLeft = skew + sideInset
+  const targetTop = frameTop + thin
+  const targetWidth = size - skew - sideInset * 2
+  const targetHeight = frameHeight - thin - bottom
+  const windowSkewSlope = (skew * (frameHeight - bottom)) / (frameHeight * targetHeight)
 
-  const targetWidth = imageWindow.rightTopX - imageWindow.leftTopX
-  const targetHeight = imageWindow.bottomY - imageWindow.topY
   const ratio = Math.max(targetWidth / image.width, targetHeight / image.height)
   const drawWidth = image.width * ratio
   const drawHeight = image.height * ratio
   const dx = (targetWidth - drawWidth) / 2
   const dy = (targetHeight - drawHeight) / 2
 
-  ctx.transform(1, 0, -skewSlope, 1, imageWindow.leftTopX, imageWindow.topY)
+  ctx.save()
+  ctx.clip(innerPath)
+  ctx.transform(1, 0, -windowSkewSlope, 1, targetLeft, targetTop)
   ctx.drawImage(image, dx, dy, drawWidth, drawHeight)
   ctx.restore()
 
