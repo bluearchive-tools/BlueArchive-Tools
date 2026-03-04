@@ -463,7 +463,7 @@ function drawCard(
 
   ctx.save()
   ctx.clip(innerWindow.path)
-  ctx.drawImage(image, targetLeft + dx - 2, targetTop + dy, drawWidth, drawHeight)
+  ctx.drawImage(image, targetLeft + dx, targetTop + dy, drawWidth, drawHeight)
   ctx.restore()
 
   ctx.save()
