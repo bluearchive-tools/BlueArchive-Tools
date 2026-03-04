@@ -407,8 +407,8 @@ function drawCard(
   const badgeWidth = Math.min(size * 0.26, targetWidth * 0.48)
   const badgeHeight = Math.min(size * 0.21, targetHeight * 0.58, badgeWidth * 0.72)
   const badgeSkew = skewSlope * badgeHeight
-  const badgeSafeRight = Math.max(badgeMarginRight, options.cornerRadius * 0.18)
-  const badgeSafeBottom = Math.max(badgeMarginBottom, options.cornerRadius * 0.18)
+  const badgeSafeRight = Math.max(0, badgeMarginRight)
+  const badgeSafeBottom = Math.max(0, badgeMarginBottom)
   const badgeBottom = frameTop + frameHeight - badgeSafeBottom
   const badgeY = badgeBottom - badgeHeight
   const outerRightAtBadgeTop = size - skewSlope * (badgeY - frameTop)
