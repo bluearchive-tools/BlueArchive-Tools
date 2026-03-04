@@ -57,6 +57,8 @@ const CHARACTER_TYPE_ICONS: Record<string, string> = {
   'T.S.': 'https://static.wikitide.net/bluearchivewiki/c/c7/TacticalSupport.svg',
 }
 
+const BADGE_ICON_FILL_COLOR = { r: 34, g: 53, b: 81 }
+
 const BASE: Options = {
   level: 90,
   stars: 3,
@@ -128,6 +130,39 @@ function buildRoundedPolygonPath(points: Point[], radius: number) {
   }
   path.closePath()
   return path
+}
+
+function recolorWhitePixelsToBadgeColor(source: HTMLImageElement) {
+  const canvas = document.createElement('canvas')
+  const width = source.naturalWidth || source.width
+  const height = source.naturalHeight || source.height
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  if (!ctx) return null
+
+  ctx.clearRect(0, 0, width, height)
+  ctx.drawImage(source, 0, 0, width, height)
+  const imageData = ctx.getImageData(0, 0, width, height)
+  const pixels = imageData.data
+
+  for (let index = 0; index < pixels.length; index += 4) {
+    const alpha = pixels[index + 3]
+    if (alpha === 0) continue
+
+    const red = pixels[index]
+    const green = pixels[index + 1]
+    const blue = pixels[index + 2]
+    const isWhiteLike = red >= 235 && green >= 235 && blue >= 235
+    if (!isWhiteLike) continue
+
+    pixels[index] = BADGE_ICON_FILL_COLOR.r
+    pixels[index + 1] = BADGE_ICON_FILL_COLOR.g
+    pixels[index + 2] = BADGE_ICON_FILL_COLOR.b
+  }
+
+  ctx.putImageData(imageData, 0, 0)
+  return canvas
 }
 
 function createParallelogramPathWithTopLeftAndBottomRightRadius(
@@ -385,7 +420,7 @@ function createInnerWindowPath(
 function drawCard(
   ctx: CanvasRenderingContext2D,
   image: HTMLImageElement,
-  badgeIcon: HTMLImageElement | null,
+  badgeIcon: HTMLCanvasElement | null,
   attackType: AttackType,
   originalAttackType: string,
   options: Options,
@@ -547,7 +582,7 @@ export default function StudentImageToolPage() {
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const imageRef = useRef<HTMLImageElement | null>(null)
-  const badgeIconRef = useRef<HTMLImageElement | null>(null)
+  const badgeIconRef = useRef<HTMLCanvasElement | null>(null)
 
   const blueFrames = useMemo(() => createBlueFrames(options.blinkHoldMs), [options.blinkHoldMs])
   const previewBlueAlpha = options.unique >= 1 ? blueFrames[previewFrameIndex]?.alpha ?? 0 : 0
@@ -610,7 +645,8 @@ export default function StudentImageToolPage() {
     const iconUrl = CHARACTER_TYPE_ICONS[characterType]
     if (!iconUrl) return null
     try {
-      return await loadImage(iconUrl)
+      const iconImage = await loadImage(iconUrl)
+      return recolorWhitePixelsToBadgeColor(iconImage)
     } catch {
       return null
     }
