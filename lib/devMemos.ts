@@ -18,11 +18,11 @@ const DEV_MEMOS: DevMemoMeta[] = [
     fileName: 'getting-started.md',
   },
   {
-    slug: 'home-others-category',
-    title: 'トップ画面の「その他」カテゴリ追加',
-    summary: 'ホーム画面に開発メモ導線を追加した背景と実装方針のメモです。',
-    updatedAt: '2026-03-04',
-    fileName: 'home-others-category.md',
+    slug: 'font-used-in-ba',
+    title: 'ブルアカで使われているフォント調査',
+    summary: 'UIなどで使われているフォントをまとめたメモです',
+    updatedAt: '2026-03-05',
+    fileName: 'font-used-in-ba.md',
   },
 ]
 
