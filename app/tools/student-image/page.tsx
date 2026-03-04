@@ -173,50 +173,68 @@ function drawStarWithNumber(
   ctx.globalAlpha = alpha
 
   drawStarShape(ctx, x, y, radius)
-  ctx.shadowColor = 'rgba(0,0,0,0.28)'
-  ctx.shadowBlur = radius * 0.22
-  ctx.shadowOffsetY = radius * 0.07
-
   const grad = ctx.createLinearGradient(x, y - radius, x, y + radius)
-  grad.addColorStop(0, '#fff7c2')
-  grad.addColorStop(0.32, colorTop)
+  grad.addColorStop(0, '#f0fdff')
+  grad.addColorStop(0.28, colorTop)
   grad.addColorStop(0.72, colorBottom)
-  grad.addColorStop(1, '#8a4f00')
+  grad.addColorStop(1, colorBottom)
   ctx.fillStyle = grad
   ctx.fill()
 
-  ctx.shadowColor = 'transparent'
   ctx.strokeStyle = stroke
-  ctx.lineWidth = Math.max(1.2, radius * 0.08)
+  ctx.lineWidth = Math.max(1.1, radius * 0.06)
   ctx.lineJoin = 'round'
   ctx.stroke()
 
-  drawStarShape(ctx, x, y, radius * 0.86)
-  const innerGlow = ctx.createRadialGradient(x - radius * 0.2, y - radius * 0.28, radius * 0.05, x, y, radius * 0.9)
-  innerGlow.addColorStop(0, 'rgba(255,255,255,0.8)')
-  innerGlow.addColorStop(0.55, 'rgba(255,255,255,0.2)')
-  innerGlow.addColorStop(1, 'rgba(255,255,255,0)')
-  ctx.fillStyle = innerGlow
-  ctx.fill()
+  const centerX = x
+  const centerY = y + radius * 0.08
+  const facetOuter: Point[] = []
+  for (let i = 0; i < 5; i += 1) {
+    const angle = -Math.PI / 2 + (Math.PI * 2 * i) / 5
+    facetOuter.push({
+      x: x + Math.cos(angle) * radius * 0.78,
+      y: y + Math.sin(angle) * radius * 0.78,
+    })
+  }
 
-  ctx.beginPath()
-  ctx.arc(x - radius * 0.24, y - radius * 0.3, radius * 0.14, 0, Math.PI * 2)
-  ctx.fillStyle = 'rgba(255,255,255,0.7)'
-  ctx.fill()
+  ctx.save()
+  drawStarShape(ctx, x, y, radius * 0.97)
+  ctx.clip()
+  for (let i = 0; i < 5; i += 1) {
+    const p1 = facetOuter[i]
+    const p2 = facetOuter[(i + 1) % 5]
+    ctx.beginPath()
+    ctx.moveTo(centerX, centerY)
+    ctx.lineTo(p1.x, p1.y)
+    ctx.lineTo(p2.x, p2.y)
+    ctx.closePath()
+    ctx.fillStyle = i % 2 === 0 ? 'rgba(255,255,255,0.34)' : 'rgba(255,255,255,0.18)'
+    ctx.fill()
+  }
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.42)'
+  ctx.lineWidth = Math.max(0.9, radius * 0.03)
+  for (let i = 0; i < 5; i += 1) {
+    const p = facetOuter[i]
+    ctx.beginPath()
+    ctx.moveTo(centerX, centerY)
+    ctx.lineTo(p.x, p.y)
+    ctx.stroke()
+  }
+  ctx.restore()
 
   const text = String(clamp(value, 0, 99))
-  ctx.font = `italic 700 ${Math.round(radius * 0.9)}px "M PLUS Rounded 1c", Arial`
-  ctx.fillStyle = '#111827'
-  ctx.strokeStyle = 'rgba(255,255,255,0.72)'
-  ctx.lineWidth = Math.max(0.8, radius * 0.045)
+  ctx.font = `italic 700 ${Math.round(radius * 0.88)}px "M PLUS Rounded 1c", Arial`
+  ctx.fillStyle = '#0f172a'
+  ctx.strokeStyle = 'rgba(255,255,255,0.8)'
+  ctx.lineWidth = Math.max(0.9, radius * 0.05)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.strokeText(text, x - radius * 0.06, y)
-  ctx.fillText(text, x - radius * 0.06, y)
+  ctx.strokeText(text, x - radius * 0.05, y + radius * 0.02)
+  ctx.fillText(text, x - radius * 0.05, y + radius * 0.02)
 
   ctx.restore()
 }
-
 function drawDanger(ctx: CanvasRenderingContext2D, size: number) {
   const pad = size * 0.06
   const tri = size * 0.24
@@ -344,7 +362,7 @@ function drawCard(
   ctx.save()
   ctx.clip(innerWindow.path)
   const badgeWidth = Math.min(size * 0.3, targetWidth * 0.55)
-  const badgeHeight = Math.min(size * 0.24, targetHeight * 0.62)
+  const badgeHeight = Math.min(size * 0.21, targetHeight * 0.58, badgeWidth * 0.72)
   const badgeSkew = skewSlope * badgeHeight
   const badgeRight = innerWindow.maxX - sideBorder
   const badgeBottom = innerWindow.bottomY - sideBorder
