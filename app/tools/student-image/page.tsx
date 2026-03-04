@@ -8,6 +8,7 @@ type Student = {
   name: string
   image: string
   attackType: string
+  characterType: string
   initialStars: number
 }
 
@@ -47,6 +48,16 @@ const ATTACK_COLORS: Record<AttackType, AttackColor> = {
   神秘: { ring: '#296c99' },
   振動: { ring: '#b060aa' },
 }
+
+const CHARACTER_TYPE_ICONS: Record<string, string> = {
+  タンク: 'https://static.wikitide.net/bluearchivewiki/a/af/Tank.svg',
+  アタッカー: 'https://static.wikitide.net/bluearchivewiki/d/d5/Attacker.svg',
+  サポーター: 'https://static.wikitide.net/bluearchivewiki/5/58/Support.svg',
+  ヒーラー: 'https://static.wikitide.net/bluearchivewiki/c/cc/Healer.svg',
+  'T.S.': 'https://static.wikitide.net/bluearchivewiki/c/c7/TacticalSupport.svg',
+}
+
+const BADGE_ICON_FILL_COLOR = { r: 34, g: 53, b: 81 }
 
 const BASE: Options = {
   level: 90,
@@ -121,7 +132,40 @@ function buildRoundedPolygonPath(points: Point[], radius: number) {
   return path
 }
 
-function createParallelogramPathWithBottomRightRadius(
+function recolorWhitePixelsToBadgeColor(source: HTMLImageElement) {
+  const canvas = document.createElement('canvas')
+  const width = source.naturalWidth || source.width
+  const height = source.naturalHeight || source.height
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  if (!ctx) return null
+
+  ctx.clearRect(0, 0, width, height)
+  ctx.drawImage(source, 0, 0, width, height)
+  const imageData = ctx.getImageData(0, 0, width, height)
+  const pixels = imageData.data
+
+  for (let index = 0; index < pixels.length; index += 4) {
+    const alpha = pixels[index + 3]
+    if (alpha === 0) continue
+
+    const red = pixels[index]
+    const green = pixels[index + 1]
+    const blue = pixels[index + 2]
+    const isWhiteLike = red >= 235 && green >= 235 && blue >= 235
+    if (!isWhiteLike) continue
+
+    pixels[index] = BADGE_ICON_FILL_COLOR.r
+    pixels[index + 1] = BADGE_ICON_FILL_COLOR.g
+    pixels[index + 2] = BADGE_ICON_FILL_COLOR.b
+  }
+
+  ctx.putImageData(imageData, 0, 0)
+  return canvas
+}
+
+function createParallelogramPathWithTopLeftAndBottomRightRadius(
   width: number,
   height: number,
   skew: number,
@@ -140,20 +184,27 @@ function createParallelogramPathWithBottomRightRadius(
   const p3: Point = { x: rightBottomX, y: bottomY }
   const p4: Point = { x: leftBottomX, y: bottomY }
 
-  const maxRadius = Math.max(0, Math.min(distance(p2, p3), distance(p3, p4)) * 0.5)
+  const maxRadius = Math.max(0, Math.min(distance(p1, p2), distance(p2, p3), distance(p3, p4), distance(p4, p1)) * 0.5)
   const r = Math.min(cornerRadius, maxRadius)
 
-  const edgeTop = normalize({ x: p2.x - p3.x, y: p2.y - p3.y })
-  const edgeBottom = normalize({ x: p4.x - p3.x, y: p4.y - p3.y })
-  const brStart = { x: p3.x + edgeTop.x * r, y: p3.y + edgeTop.y * r }
-  const brEnd = { x: p3.x + edgeBottom.x * r, y: p3.y + edgeBottom.y * r }
+  const tlEdgeBottom = normalize({ x: p4.x - p1.x, y: p4.y - p1.y })
+  const tlEdgeTop = normalize({ x: p2.x - p1.x, y: p2.y - p1.y })
+  const tlStart = { x: p1.x + tlEdgeBottom.x * r, y: p1.y + tlEdgeBottom.y * r }
+  const tlEnd = { x: p1.x + tlEdgeTop.x * r, y: p1.y + tlEdgeTop.y * r }
+
+  const brEdgeTop = normalize({ x: p2.x - p3.x, y: p2.y - p3.y })
+  const brEdgeBottom = normalize({ x: p4.x - p3.x, y: p4.y - p3.y })
+  const brStart = { x: p3.x + brEdgeTop.x * r, y: p3.y + brEdgeTop.y * r }
+  const brEnd = { x: p3.x + brEdgeBottom.x * r, y: p3.y + brEdgeBottom.y * r }
 
   const path = new Path2D()
-  path.moveTo(p1.x, p1.y)
+  path.moveTo(tlEnd.x, tlEnd.y)
   path.lineTo(p2.x, p2.y)
   path.lineTo(brStart.x, brStart.y)
   path.quadraticCurveTo(p3.x, p3.y, brEnd.x, brEnd.y)
   path.lineTo(p4.x, p4.y)
+  path.lineTo(tlStart.x, tlStart.y)
+  path.quadraticCurveTo(p1.x, p1.y, tlEnd.x, tlEnd.y)
   path.closePath()
   return path
 }
@@ -304,13 +355,25 @@ function drawDanger(ctx: CanvasRenderingContext2D, size: number) {
 
 function createBlueFrames(holdMs: number): BlueFrame[] {
   const hold = clamp(holdMs, 200, 30000)
+  const transitionSteps = 10
+  const transitionDelayMs = 50
+  const smoothstep = (t: number) => t * t * (3 - 2 * t)
+
+  const fadeInFrames = Array.from({ length: transitionSteps }, (_, index) => {
+    const progress = (index + 1) / transitionSteps
+    return { alpha: smoothstep(progress), delayMs: transitionDelayMs }
+  })
+
+  const fadeOutFrames = Array.from({ length: transitionSteps }, (_, index) => {
+    const progress = (index + 1) / transitionSteps
+    return { alpha: 1 - smoothstep(progress), delayMs: transitionDelayMs }
+  })
+
   return [
     { alpha: 0, delayMs: hold },
-    { alpha: 0.45, delayMs: 140 },
-    { alpha: 1, delayMs: 140 },
+    ...fadeInFrames,
     { alpha: 1, delayMs: hold },
-    { alpha: 0.45, delayMs: 140 },
-    { alpha: 0, delayMs: 140 },
+    ...fadeOutFrames,
   ]
 }
 
@@ -357,6 +420,7 @@ function createInnerWindowPath(
 function drawCard(
   ctx: CanvasRenderingContext2D,
   image: HTMLImageElement,
+  badgeIcon: HTMLCanvasElement | null,
   attackType: AttackType,
   originalAttackType: string,
   options: Options,
@@ -399,25 +463,34 @@ function drawCard(
 
   ctx.save()
   ctx.clip(innerWindow.path)
-  ctx.drawImage(image, targetLeft + dx - 2, targetTop + dy, drawWidth, drawHeight)
+  ctx.drawImage(image, targetLeft + dx, targetTop + dy, drawWidth, drawHeight)
   ctx.restore()
 
   ctx.save()
   ctx.clip(outerPath)
-  const badgeWidth = Math.min(size * 0.26, targetWidth * 0.48)
-  const badgeHeight = Math.min(size * 0.21, targetHeight * 0.58, badgeWidth * 0.72)
+  const badgeHeight = Math.min(size * 0.21, targetHeight * 0.58, targetWidth * 0.34)
+  const badgeWidth = badgeHeight * 1.15
   const badgeSkew = skewSlope * badgeHeight
-  const badgeSafeRight = Math.max(badgeMarginRight, options.cornerRadius * 0.18)
-  const badgeSafeBottom = Math.max(badgeMarginBottom, options.cornerRadius * 0.18)
+  const badgeSafeRight = Math.max(0, badgeMarginRight)
+  const badgeSafeBottom = Math.max(0, badgeMarginBottom)
   const badgeBottom = frameTop + frameHeight - badgeSafeBottom
   const badgeY = badgeBottom - badgeHeight
   const outerRightAtBadgeTop = size - skewSlope * (badgeY - frameTop)
   const badgeRight = outerRightAtBadgeTop - badgeSafeRight
   const badgeX = badgeRight - badgeWidth
   ctx.translate(badgeX, badgeY)
-  const badgePath = createParallelogramPathWithBottomRightRadius(badgeWidth, badgeHeight, badgeSkew, 0, options.cornerRadius)
+  const badgePath = createParallelogramPathWithTopLeftAndBottomRightRadius(badgeWidth, badgeHeight, badgeSkew, 0, options.cornerRadius)
   ctx.fillStyle = '#ffffff'
   ctx.fill(badgePath)
+  if (badgeIcon) {
+    const iconSize = badgeHeight * 0.68
+    const iconX = (badgeWidth - iconSize) / 2
+    const iconY = (badgeHeight - iconSize) / 2
+    ctx.save()
+    ctx.clip(badgePath)
+    ctx.drawImage(badgeIcon, iconX, iconY, iconSize, iconSize)
+    ctx.restore()
+  }
   ctx.restore()
 
   const levelFont = Math.round(size * 0.135)
@@ -434,7 +507,7 @@ function drawCard(
   ctx.fillText(levelText, levelX, levelY)
 
   const starRadius = size * 0.12
-  const starX = size * 0.14
+  const starX = size * 0.15
   const starY = frameTop + frameHeight - Math.max(starRadius * 1.18, size * 0.12)
   drawStarWithNumber(ctx, starX, starY, starRadius, '#fde047', '#f59e0b', '#92400e', options.stars)
 
@@ -509,6 +582,7 @@ export default function StudentImageToolPage() {
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const imageRef = useRef<HTMLImageElement | null>(null)
+  const badgeIconRef = useRef<HTMLCanvasElement | null>(null)
 
   const blueFrames = useMemo(() => createBlueFrames(options.blinkHoldMs), [options.blinkHoldMs])
   const previewBlueAlpha = options.unique >= 1 ? blueFrames[previewFrameIndex]?.alpha ?? 0 : 0
@@ -567,24 +641,39 @@ export default function StudentImageToolPage() {
     return image
   }, [])
 
+  const loadBadgeIcon = useCallback(async (characterType: string) => {
+    const iconUrl = CHARACTER_TYPE_ICONS[characterType]
+    if (!iconUrl) return null
+    try {
+      const iconImage = await loadImage(iconUrl)
+      return recolorWhitePixelsToBadgeColor(iconImage)
+    } catch {
+      return null
+    }
+  }, [loadImage])
+
   const renderPreview = useCallback(
     async (alpha: number) => {
       if (!selectedStudent || !canvasRef.current) return
       if (!imageRef.current) {
         imageRef.current = await loadImage(selectedStudent.image)
       }
+      if (!badgeIconRef.current) {
+        badgeIconRef.current = await loadBadgeIcon(selectedStudent.characterType)
+      }
       canvasRef.current.width = options.size
       canvasRef.current.height = options.size
       const ctx = canvasRef.current.getContext('2d')
       if (!ctx || !imageRef.current) return
 
-      drawCard(ctx, imageRef.current, selectedAttackType, selectedStudent.attackType, options, alpha)
+      drawCard(ctx, imageRef.current, badgeIconRef.current, selectedAttackType, selectedStudent.attackType, options, alpha)
     },
-    [loadImage, options, selectedAttackType, selectedStudent],
+    [loadBadgeIcon, loadImage, options, selectedAttackType, selectedStudent],
   )
 
   useEffect(() => {
     imageRef.current = null
+    badgeIconRef.current = null
     renderPreview(previewBlueAlpha).catch(() => setError('画像の描画に失敗しました'))
   }, [previewBlueAlpha, renderPreview, selectedStudentId])
 
@@ -612,6 +701,9 @@ export default function StudentImageToolPage() {
         if (!imageRef.current) {
           imageRef.current = await loadImage(selectedStudent.image)
         }
+        if (!badgeIconRef.current) {
+          badgeIconRef.current = await loadBadgeIcon(selectedStudent.characterType)
+        }
         const canvas = document.createElement('canvas')
         canvas.width = options.size
         canvas.height = options.size
@@ -623,7 +715,7 @@ export default function StudentImageToolPage() {
 
         for (let index = 0; index < blueFrames.length; index += 1) {
           const frame = blueFrames[index]
-          drawCard(ctx, imageRef.current, selectedAttackType, selectedStudent.attackType, options, frame.alpha)
+          drawCard(ctx, imageRef.current, badgeIconRef.current, selectedAttackType, selectedStudent.attackType, options, frame.alpha)
           const imageData = ctx.getImageData(0, 0, options.size, options.size)
           const transparentFrame = prepareTransparentFrame(imageData, visibleMask)
           encoder.writeFrame(transparentFrame.indexed, options.size, options.size, {
@@ -648,7 +740,7 @@ export default function StudentImageToolPage() {
     } finally {
       setBusy(false)
     }
-  }, [blueFrames, loadImage, options, renderPreview, selectedAttackType, selectedStudent])
+  }, [blueFrames, loadBadgeIcon, loadImage, options, renderPreview, selectedAttackType, selectedStudent])
 
   const isDanger = !!selectedStudent && selectedAttackType !== selectedStudent.attackType
 
