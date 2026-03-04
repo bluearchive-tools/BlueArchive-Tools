@@ -342,19 +342,18 @@ function drawCard(
   ctx.restore()
 
   ctx.save()
-  ctx.clip(outerPath)
-  const badgeWidth = size * 0.24
-  const badgeHeight = size * 0.11
-  const badgeSkew = (skew / frameHeight) * badgeHeight
-  const badgeX = size - badgeWidth - size * 0.06
-  const badgeY = frameTop + frameHeight - badgeHeight - size * 0.03
+  ctx.clip(innerWindow.path)
+  const badgeWidth = Math.min(size * 0.3, targetWidth * 0.55)
+  const badgeHeight = Math.min(size * 0.24, targetHeight * 0.62)
+  const badgeSkew = skewSlope * badgeHeight
+  const badgeRight = innerWindow.maxX - sideBorder
+  const badgeBottom = innerWindow.bottomY - sideBorder
+  const badgeX = badgeRight - badgeWidth
+  const badgeY = badgeBottom - badgeHeight
   ctx.translate(badgeX, badgeY)
-  const badgePath = createParallelogramPath(badgeWidth, badgeHeight, badgeSkew, 0, 0, 0, 0, options.cornerRadius * 0.18)
-  ctx.fillStyle = "rgba(255,255,255,0.92)"
+  const badgePath = createParallelogramPath(badgeWidth, badgeHeight, badgeSkew, 0, 0, 0, 0, options.cornerRadius * 0.22)
+  ctx.fillStyle = '#ffffff'
   ctx.fill(badgePath)
-  ctx.strokeStyle = "rgba(15,23,42,0.2)"
-  ctx.lineWidth = Math.max(1, size * 0.004)
-  ctx.stroke(badgePath)
   ctx.restore()
 
   const levelFont = Math.round(size * 0.135)
