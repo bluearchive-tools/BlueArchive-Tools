@@ -238,6 +238,46 @@ function createBlueFrames(holdMs: number): BlueFrame[] {
   ]
 }
 
+function createInnerWindowPath(
+  size: number,
+  frameHeight: number,
+  frameTop: number,
+  outerSkew: number,
+  thin: number,
+  bottom: number,
+  sideInset: number,
+  cornerRadius: number,
+) {
+  const topY = frameTop + thin
+  const bottomY = frameTop + frameHeight - bottom
+  const visibleHeight = bottomY - topY
+  const innerSkew = outerSkew * (visibleHeight / frameHeight)
+
+  const leftTopX = outerSkew + sideInset
+  const rightTopX = size - sideInset
+  const leftBottomX = leftTopX - innerSkew
+  const rightBottomX = rightTopX - innerSkew
+
+  const p1: Point = { x: leftTopX, y: topY }
+  const p2: Point = { x: rightTopX, y: topY }
+  const p3: Point = { x: rightBottomX, y: bottomY }
+  const p4: Point = { x: leftBottomX, y: bottomY }
+
+  const maxRadius = Math.max(
+    0,
+    Math.min(distance(p1, p2), distance(p2, p3), distance(p3, p4), distance(p4, p1)) * 0.25,
+  )
+  const r = Math.min(cornerRadius, maxRadius)
+
+  return {
+    path: buildRoundedPolygonPath([p1, p2, p3, p4], r),
+    minX: Math.min(leftTopX, leftBottomX),
+    maxX: Math.max(rightTopX, rightBottomX),
+    topY,
+    bottomY,
+  }
+}
+
 function drawCard(
   ctx: CanvasRenderingContext2D,
   image: HTMLImageElement,
@@ -263,24 +303,15 @@ function drawCard(
   ctx.imageSmoothingEnabled = true
 
   const outerPath = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop, options.cornerRadius)
-  const innerPath = createParallelogramPath(
-    size,
-    frameHeight,
-    skew,
-    thin,
-    bottom,
-    sideInset,
-    frameTop,
-    options.cornerRadius,
-  )
+  const innerWindow = createInnerWindowPath(size, frameHeight, frameTop, skew, thin, bottom, sideInset, options.cornerRadius)
 
   ctx.fillStyle = ring
   ctx.fill(outerPath)
 
-  const targetLeft = skew + sideInset
-  const targetTop = frameTop + thin
-  const targetWidth = size - skew - sideInset * 2
-  const targetHeight = frameHeight - thin - bottom
+  const targetLeft = innerWindow.minX
+  const targetTop = innerWindow.topY
+  const targetWidth = innerWindow.maxX - innerWindow.minX
+  const targetHeight = innerWindow.bottomY - innerWindow.topY
   const ratio = Math.max(targetWidth / image.width, targetHeight / image.height)
   const drawWidth = image.width * ratio
   const drawHeight = image.height * ratio
@@ -288,7 +319,7 @@ function drawCard(
   const dy = (targetHeight - drawHeight) / 2
 
   ctx.save()
-  ctx.clip(innerPath)
+  ctx.clip(innerWindow.path)
   ctx.drawImage(image, targetLeft + dx, targetTop + dy, drawWidth, drawHeight)
   ctx.restore()
 
