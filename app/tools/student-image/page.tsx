@@ -26,7 +26,6 @@ type Options = {
   blinkHoldMs: number
   levelXRatio: number
   levelYRatio: number
-  layoutOffsetX: number
 }
 
 type AttackColor = {
@@ -60,7 +59,6 @@ const BASE: Options = {
   blinkHoldMs: 18000,
   levelXRatio: 0.11,
   levelYRatio: 0.02,
-  layoutOffsetX: 1,
 }
 
 
@@ -325,9 +323,6 @@ function drawCard(
   const outerPath = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop, options.cornerRadius)
   const innerWindow = createInnerWindowPath(size, frameHeight, frameTop, skew, topBorder, bottom, sideInset, options.cornerRadius)
 
-  ctx.save()
-  ctx.translate(options.layoutOffsetX, 0)
-
   ctx.fillStyle = ring
   ctx.fill(outerPath)
 
@@ -343,7 +338,23 @@ function drawCard(
 
   ctx.save()
   ctx.clip(innerWindow.path)
-  ctx.drawImage(image, targetLeft + dx, targetTop + dy, drawWidth, drawHeight)
+  ctx.drawImage(image, targetLeft + dx - 2, targetTop + dy, drawWidth, drawHeight)
+  ctx.restore()
+
+  ctx.save()
+  ctx.clip(outerPath)
+  const badgeWidth = size * 0.24
+  const badgeHeight = size * 0.11
+  const badgeSkew = (skew / frameHeight) * badgeHeight
+  const badgeX = size - badgeWidth - size * 0.06
+  const badgeY = frameTop + frameHeight - badgeHeight - size * 0.03
+  ctx.translate(badgeX, badgeY)
+  const badgePath = createParallelogramPath(badgeWidth, badgeHeight, badgeSkew, 0, 0, 0, 0, options.cornerRadius * 0.18)
+  ctx.fillStyle = "rgba(255,255,255,0.92)"
+  ctx.fill(badgePath)
+  ctx.strokeStyle = "rgba(15,23,42,0.2)"
+  ctx.lineWidth = Math.max(1, size * 0.004)
+  ctx.stroke(badgePath)
   ctx.restore()
 
   const levelFont = Math.round(size * 0.135)
@@ -372,7 +383,6 @@ function drawCard(
     drawDanger(ctx, size)
   }
 
-  ctx.restore()
 
 }
 function dataUrlToBlob(dataUrl: string) {
@@ -400,10 +410,7 @@ function buildParallelogramVisibleMask(options: Options) {
   const path = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop, options.cornerRadius)
   ctx.clearRect(0, 0, size, size)
   ctx.fillStyle = '#ffffff'
-  ctx.save()
-  ctx.translate(options.layoutOffsetX, 0)
   ctx.fill(path)
-  ctx.restore()
 
   const data = ctx.getImageData(0, 0, size, size).data
   const mask = new Uint8Array(size * size)
