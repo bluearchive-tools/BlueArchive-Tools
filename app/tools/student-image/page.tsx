@@ -468,8 +468,9 @@ function drawCard(
 
   ctx.save()
   ctx.clip(outerPath)
-  const badgeWidth = Math.min(size * 0.26, targetWidth * 0.48)
-  const badgeHeight = Math.min(size * 0.21, targetHeight * 0.58, badgeWidth * 0.72)
+  const badgeSize = Math.min(size * 0.21, targetHeight * 0.58, targetWidth * 0.38)
+  const badgeWidth = badgeSize
+  const badgeHeight = badgeSize
   const badgeSkew = skewSlope * badgeHeight
   const badgeSafeRight = Math.max(0, badgeMarginRight)
   const badgeSafeBottom = Math.max(0, badgeMarginBottom)
