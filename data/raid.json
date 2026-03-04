@@ -1250,6 +1250,17 @@
       "maxDifficulty": "Torment",
       "startDate": "2026-01-14",
       "endDate": "2026-01-20"
+    },
+    {
+      "number": "D31",
+      "boss": "ヒエロニムス",
+      "terrain": "市街地",
+      "type": "大決戦",
+      "defenseArmors": ["軽装備", "重装甲", "特殊装甲"],
+      "maxDifficultyArmors": ["重装甲", "特殊装甲"],
+      "maxDifficulty": "Torment",
+      "startDate": "2026-03-04",
+      "endDate": "2026-03-11"
     }
   ]
 }
