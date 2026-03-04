@@ -19,7 +19,8 @@ type Options = {
   unique: number
   size: number
   cornerRadius: number
-  borderThin: number
+  borderTop: number
+  borderSide: number
   borderBottom: number
   skewRatio: number
   blinkHoldMs: number
@@ -51,12 +52,13 @@ const BASE: Options = {
   unique: 0,
   size: 512,
   cornerRadius: 52,
-  borderThin: 4,
-  borderBottom: 50,
+  borderTop: 5,
+  borderSide: 4,
+  borderBottom: 45,
   skewRatio: 0.11,
   blinkHoldMs: 18000,
-  levelXRatio: 0.095,
-  levelYRatio: 0.006,
+  levelXRatio: 0.11,
+  levelYRatio: 0.02,
 }
 
 
@@ -171,20 +173,35 @@ function drawStarWithNumber(
   ctx.globalAlpha = alpha
 
   drawStarShape(ctx, x, y, radius)
+  ctx.shadowColor = 'rgba(0,0,0,0.28)'
+  ctx.shadowBlur = radius * 0.22
+  ctx.shadowOffsetY = radius * 0.07
+
   const grad = ctx.createLinearGradient(x, y - radius, x, y + radius)
-  grad.addColorStop(0, colorTop)
-  grad.addColorStop(1, colorBottom)
+  grad.addColorStop(0, '#fff7c2')
+  grad.addColorStop(0.32, colorTop)
+  grad.addColorStop(0.72, colorBottom)
+  grad.addColorStop(1, '#8a4f00')
   ctx.fillStyle = grad
   ctx.fill()
 
+  ctx.shadowColor = 'transparent'
   ctx.strokeStyle = stroke
-  ctx.lineWidth = Math.max(1, radius * 0.065)
+  ctx.lineWidth = Math.max(1.2, radius * 0.08)
   ctx.lineJoin = 'round'
   ctx.stroke()
 
+  drawStarShape(ctx, x, y, radius * 0.86)
+  const innerGlow = ctx.createRadialGradient(x - radius * 0.2, y - radius * 0.28, radius * 0.05, x, y, radius * 0.9)
+  innerGlow.addColorStop(0, 'rgba(255,255,255,0.8)')
+  innerGlow.addColorStop(0.55, 'rgba(255,255,255,0.2)')
+  innerGlow.addColorStop(1, 'rgba(255,255,255,0)')
+  ctx.fillStyle = innerGlow
+  ctx.fill()
+
   ctx.beginPath()
-  ctx.arc(x - radius * 0.2, y - radius * 0.25, radius * 0.18, 0, Math.PI * 2)
-  ctx.fillStyle = 'rgba(255,255,255,0.55)'
+  ctx.arc(x - radius * 0.24, y - radius * 0.3, radius * 0.14, 0, Math.PI * 2)
+  ctx.fillStyle = 'rgba(255,255,255,0.7)'
   ctx.fill()
 
   const text = String(clamp(value, 0, 99))
@@ -290,10 +307,11 @@ function drawCard(
   const frameHeight = size * 0.88
   const frameTop = size * 0.05
   const skew = size * options.skewRatio
-  const thin = options.borderThin
+  const topBorder = options.borderTop
+  const sideBorder = options.borderSide
   const bottom = options.borderBottom
   const skewSlope = skew / frameHeight
-  const sideInset = thin * Math.hypot(1, skewSlope)
+  const sideInset = sideBorder * Math.hypot(1, skewSlope)
   const color = ATTACK_COLORS[attackType]
   const ring = color.ring
 
@@ -303,7 +321,7 @@ function drawCard(
   ctx.imageSmoothingEnabled = true
 
   const outerPath = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop, options.cornerRadius)
-  const innerWindow = createInnerWindowPath(size, frameHeight, frameTop, skew, thin, bottom, sideInset, options.cornerRadius)
+  const innerWindow = createInnerWindowPath(size, frameHeight, frameTop, skew, topBorder, bottom, sideInset, options.cornerRadius)
 
   ctx.fillStyle = ring
   ctx.fill(outerPath)
@@ -327,7 +345,7 @@ function drawCard(
   ctx.font = `italic 700 ${levelFont}px "M PLUS Rounded 1c", Arial`
   ctx.fillStyle = '#ffffff'
   ctx.strokeStyle = 'rgba(15,23,42,0.42)'
-  ctx.lineWidth = Math.max(1, size * 0.006)
+  ctx.lineWidth = Math.max(1.6, size * 0.0085)
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
   const levelText = `Lv.${options.level}`
@@ -608,8 +626,13 @@ export default function StudentImageToolPage() {
           </label>
 
           <label className="space-y-1 text-sm">
-            <span className="font-semibold">枠線の細さ（上/左右）</span>
-            <input type="number" min={1} max={20} value={options.borderThin} onChange={(event) => setOptions((prev) => ({ ...prev, borderThin: clamp(Number(event.target.value), 1, 20) }))} className="w-full rounded border px-3 py-2" />
+            <span className="font-semibold">枠線の細さ（上）</span>
+            <input type="number" min={1} max={20} value={options.borderTop} onChange={(event) => setOptions((prev) => ({ ...prev, borderTop: clamp(Number(event.target.value), 1, 20) }))} className="w-full rounded border px-3 py-2" />
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="font-semibold">枠線の細さ（左右）</span>
+            <input type="number" min={1} max={20} value={options.borderSide} onChange={(event) => setOptions((prev) => ({ ...prev, borderSide: clamp(Number(event.target.value), 1, 20) }))} className="w-full rounded border px-3 py-2" />
           </label>
 
           <label className="space-y-1 text-sm">
