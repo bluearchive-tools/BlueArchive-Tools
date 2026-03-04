@@ -281,8 +281,6 @@ function drawCard(
   const targetTop = frameTop + thin
   const targetWidth = size - skew - sideInset * 2
   const targetHeight = frameHeight - thin - bottom
-  const windowSkewSlope = (skew * (frameHeight - bottom)) / (frameHeight * targetHeight)
-
   const ratio = Math.max(targetWidth / image.width, targetHeight / image.height)
   const drawWidth = image.width * ratio
   const drawHeight = image.height * ratio
@@ -291,8 +289,7 @@ function drawCard(
 
   ctx.save()
   ctx.clip(innerPath)
-  ctx.transform(1, 0, -windowSkewSlope, 1, targetLeft, targetTop)
-  ctx.drawImage(image, dx, dy, drawWidth, drawHeight)
+  ctx.drawImage(image, targetLeft + dx, targetTop + dy, drawWidth, drawHeight)
   ctx.restore()
 
   const levelFont = Math.round(size * 0.135)
