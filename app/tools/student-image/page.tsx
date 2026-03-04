@@ -19,10 +19,15 @@ type Options = {
   unique: number
   size: number
   cornerRadius: number
-  borderThin: number
+  borderTop: number
+  borderSide: number
   borderBottom: number
   skewRatio: number
   blinkHoldMs: number
+  levelXRatio: number
+  levelYRatio: number
+  badgeMarginRight: number
+  badgeMarginBottom: number
 }
 
 type AttackColor = {
@@ -49,10 +54,15 @@ const BASE: Options = {
   unique: 0,
   size: 512,
   cornerRadius: 52,
-  borderThin: 4,
-  borderBottom: 50,
+  borderTop: 6,
+  borderSide: 5,
+  borderBottom: 45,
   skewRatio: 0.11,
   blinkHoldMs: 18000,
+  levelXRatio: 0.11,
+  levelYRatio: 0.02,
+  badgeMarginRight: 3,
+  badgeMarginBottom: 3,
 }
 
 
@@ -107,6 +117,43 @@ function buildRoundedPolygonPath(points: Point[], radius: number) {
     path.lineTo(current.start.x, current.start.y)
     path.quadraticCurveTo(current.point.x, current.point.y, current.end.x, current.end.y)
   }
+  path.closePath()
+  return path
+}
+
+function createParallelogramPathWithBottomRightRadius(
+  width: number,
+  height: number,
+  skew: number,
+  offsetY: number,
+  cornerRadius: number,
+) {
+  const topY = offsetY
+  const bottomY = offsetY + height
+  const leftTopX = skew
+  const rightTopX = width
+  const rightBottomX = width - skew
+  const leftBottomX = 0
+
+  const p1: Point = { x: leftTopX, y: topY }
+  const p2: Point = { x: rightTopX, y: topY }
+  const p3: Point = { x: rightBottomX, y: bottomY }
+  const p4: Point = { x: leftBottomX, y: bottomY }
+
+  const maxRadius = Math.max(0, Math.min(distance(p2, p3), distance(p3, p4)) * 0.5)
+  const r = Math.min(cornerRadius, maxRadius)
+
+  const edgeTop = normalize({ x: p2.x - p3.x, y: p2.y - p3.y })
+  const edgeBottom = normalize({ x: p4.x - p3.x, y: p4.y - p3.y })
+  const brStart = { x: p3.x + edgeTop.x * r, y: p3.y + edgeTop.y * r }
+  const brEnd = { x: p3.x + edgeBottom.x * r, y: p3.y + edgeBottom.y * r }
+
+  const path = new Path2D()
+  path.moveTo(p1.x, p1.y)
+  path.lineTo(p2.x, p2.y)
+  path.lineTo(brStart.x, brStart.y)
+  path.quadraticCurveTo(p3.x, p3.y, brEnd.x, brEnd.y)
+  path.lineTo(p4.x, p4.y)
   path.closePath()
   return path
 }
@@ -168,34 +215,67 @@ function drawStarWithNumber(
 
   drawStarShape(ctx, x, y, radius)
   const grad = ctx.createLinearGradient(x, y - radius, x, y + radius)
-  grad.addColorStop(0, colorTop)
+  grad.addColorStop(0, '#f0fdff')
+  grad.addColorStop(0.28, colorTop)
+  grad.addColorStop(0.72, colorBottom)
   grad.addColorStop(1, colorBottom)
   ctx.fillStyle = grad
   ctx.fill()
 
   ctx.strokeStyle = stroke
-  ctx.lineWidth = Math.max(1, radius * 0.065)
+  ctx.lineWidth = Math.max(1.1, radius * 0.06)
   ctx.lineJoin = 'round'
   ctx.stroke()
 
-  ctx.beginPath()
-  ctx.arc(x - radius * 0.2, y - radius * 0.25, radius * 0.18, 0, Math.PI * 2)
-  ctx.fillStyle = 'rgba(255,255,255,0.55)'
-  ctx.fill()
+  const centerX = x
+  const centerY = y + radius * 0.08
+  const facetOuter: Point[] = []
+  for (let i = 0; i < 5; i += 1) {
+    const angle = -Math.PI / 2 + (Math.PI * 2 * i) / 5
+    facetOuter.push({
+      x: x + Math.cos(angle) * radius * 0.78,
+      y: y + Math.sin(angle) * radius * 0.78,
+    })
+  }
+
+  ctx.save()
+  drawStarShape(ctx, x, y, radius * 0.97)
+  ctx.clip()
+  for (let i = 0; i < 5; i += 1) {
+    const p1 = facetOuter[i]
+    const p2 = facetOuter[(i + 1) % 5]
+    ctx.beginPath()
+    ctx.moveTo(centerX, centerY)
+    ctx.lineTo(p1.x, p1.y)
+    ctx.lineTo(p2.x, p2.y)
+    ctx.closePath()
+    ctx.fillStyle = i % 2 === 0 ? 'rgba(255,255,255,0.34)' : 'rgba(255,255,255,0.18)'
+    ctx.fill()
+  }
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.42)'
+  ctx.lineWidth = Math.max(0.9, radius * 0.03)
+  for (let i = 0; i < 5; i += 1) {
+    const p = facetOuter[i]
+    ctx.beginPath()
+    ctx.moveTo(centerX, centerY)
+    ctx.lineTo(p.x, p.y)
+    ctx.stroke()
+  }
+  ctx.restore()
 
   const text = String(clamp(value, 0, 99))
-  ctx.font = `italic 700 ${Math.round(radius * 0.9)}px "M PLUS Rounded 1c", Arial`
-  ctx.fillStyle = '#111827'
-  ctx.strokeStyle = 'rgba(255,255,255,0.72)'
-  ctx.lineWidth = Math.max(0.8, radius * 0.045)
+  ctx.font = `italic 700 ${Math.round(radius * 0.88)}px "M PLUS Rounded 1c", Arial`
+  ctx.fillStyle = '#0f172a'
+  ctx.strokeStyle = 'rgba(255,255,255,0.8)'
+  ctx.lineWidth = Math.max(0.9, radius * 0.05)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.strokeText(text, x - radius * 0.06, y)
-  ctx.fillText(text, x - radius * 0.06, y)
+  ctx.strokeText(text, x - radius * 0.05, y + radius * 0.02)
+  ctx.fillText(text, x - radius * 0.05, y + radius * 0.02)
 
   ctx.restore()
 }
-
 function drawDanger(ctx: CanvasRenderingContext2D, size: number) {
   const pad = size * 0.06
   const tri = size * 0.24
@@ -234,6 +314,46 @@ function createBlueFrames(holdMs: number): BlueFrame[] {
   ]
 }
 
+function createInnerWindowPath(
+  size: number,
+  frameHeight: number,
+  frameTop: number,
+  outerSkew: number,
+  thin: number,
+  bottom: number,
+  sideInset: number,
+  cornerRadius: number,
+) {
+  const topY = frameTop + thin
+  const bottomY = frameTop + frameHeight - bottom
+  const visibleHeight = bottomY - topY
+  const innerSkew = outerSkew * (visibleHeight / frameHeight)
+
+  const leftTopX = outerSkew + sideInset
+  const rightTopX = size - sideInset
+  const leftBottomX = leftTopX - innerSkew
+  const rightBottomX = rightTopX - innerSkew
+
+  const p1: Point = { x: leftTopX, y: topY }
+  const p2: Point = { x: rightTopX, y: topY }
+  const p3: Point = { x: rightBottomX, y: bottomY }
+  const p4: Point = { x: leftBottomX, y: bottomY }
+
+  const maxRadius = Math.max(
+    0,
+    Math.min(distance(p1, p2), distance(p2, p3), distance(p3, p4), distance(p4, p1)) * 0.25,
+  )
+  const r = Math.min(cornerRadius, maxRadius)
+
+  return {
+    path: buildRoundedPolygonPath([p1, p2, p3, p4], r),
+    minX: Math.min(leftTopX, leftBottomX),
+    maxX: Math.max(rightTopX, rightBottomX),
+    topY,
+    bottomY,
+  }
+}
+
 function drawCard(
   ctx: CanvasRenderingContext2D,
   image: HTMLImageElement,
@@ -246,8 +366,13 @@ function drawCard(
   const frameHeight = size * 0.88
   const frameTop = size * 0.05
   const skew = size * options.skewRatio
-  const thin = options.borderThin
+  const topBorder = options.borderTop
+  const sideBorder = options.borderSide
   const bottom = options.borderBottom
+  const badgeMarginRight = options.badgeMarginRight
+  const badgeMarginBottom = options.badgeMarginBottom
+  const skewSlope = skew / frameHeight
+  const sideInset = sideBorder * Math.hypot(1, skewSlope)
   const color = ATTACK_COLORS[attackType]
   const ring = color.ring
 
@@ -257,49 +382,56 @@ function drawCard(
   ctx.imageSmoothingEnabled = true
 
   const outerPath = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop, options.cornerRadius)
-  const innerPath = createParallelogramPath(size, frameHeight, skew, thin, thin, thin, frameTop, options.cornerRadius)
+  const innerWindow = createInnerWindowPath(size, frameHeight, frameTop, skew, topBorder, bottom, sideInset, options.cornerRadius)
 
   ctx.fillStyle = ring
   ctx.fill(outerPath)
-  ctx.save()
-  ctx.clip(innerPath)
 
-  const ratio = Math.max(size / image.width, frameHeight / image.height)
+  const targetLeft = innerWindow.minX
+  const targetTop = innerWindow.topY
+  const targetWidth = innerWindow.maxX - innerWindow.minX
+  const targetHeight = innerWindow.bottomY - innerWindow.topY
+  const ratio = Math.max(targetWidth / image.width, targetHeight / image.height)
   const drawWidth = image.width * ratio
   const drawHeight = image.height * ratio
-  const dx = (size - drawWidth) / 2
-  const dy = frameTop + (frameHeight - drawHeight) / 2
-  ctx.drawImage(image, dx, dy, drawWidth, drawHeight)
+  const dx = (targetWidth - drawWidth) / 2
+  const dy = (targetHeight - drawHeight) / 2
 
+  ctx.save()
+  ctx.clip(innerWindow.path)
+  ctx.drawImage(image, targetLeft + dx - 2, targetTop + dy, drawWidth, drawHeight)
   ctx.restore()
 
-  const bottomBandTopY = frameTop + frameHeight - bottom
-  const bottomBandTopLeftX = thin + (skew * bottom) / frameHeight
-  const bottomBandTopRightX = size - skew - thin + (skew * bottom) / frameHeight
-  const cornerLift = Math.min(options.cornerRadius * 0.35, bottom * 0.25)
-  const bottomBand = new Path2D()
-  bottomBand.moveTo(bottomBandTopLeftX, bottomBandTopY)
-  bottomBand.lineTo(bottomBandTopRightX, bottomBandTopY)
-  bottomBand.quadraticCurveTo(size - skew - thin * 0.35, bottomBandTopY - cornerLift, size - skew, frameTop + frameHeight)
-  bottomBand.lineTo(0, frameTop + frameHeight)
-  bottomBand.quadraticCurveTo(thin * 0.35, bottomBandTopY - cornerLift, bottomBandTopLeftX, bottomBandTopY)
-  bottomBand.closePath()
   ctx.save()
   ctx.clip(outerPath)
-  ctx.fillStyle = ring
-  ctx.fill(bottomBand)
+  const badgeWidth = Math.min(size * 0.26, targetWidth * 0.48)
+  const badgeHeight = Math.min(size * 0.21, targetHeight * 0.58, badgeWidth * 0.72)
+  const badgeSkew = skewSlope * badgeHeight
+  const badgeSafeRight = Math.max(badgeMarginRight, options.cornerRadius * 0.18)
+  const badgeSafeBottom = Math.max(badgeMarginBottom, options.cornerRadius * 0.18)
+  const badgeBottom = frameTop + frameHeight - badgeSafeBottom
+  const badgeY = badgeBottom - badgeHeight
+  const outerRightAtBadgeTop = size - skewSlope * (badgeY - frameTop)
+  const badgeRight = outerRightAtBadgeTop - badgeSafeRight
+  const badgeX = badgeRight - badgeWidth
+  ctx.translate(badgeX, badgeY)
+  const badgePath = createParallelogramPathWithBottomRightRadius(badgeWidth, badgeHeight, badgeSkew, 0, options.cornerRadius)
+  ctx.fillStyle = '#ffffff'
+  ctx.fill(badgePath)
   ctx.restore()
 
   const levelFont = Math.round(size * 0.135)
   ctx.font = `italic 700 ${levelFont}px "M PLUS Rounded 1c", Arial`
   ctx.fillStyle = '#ffffff'
   ctx.strokeStyle = 'rgba(15,23,42,0.42)'
-  ctx.lineWidth = Math.max(1, size * 0.006)
+  ctx.lineWidth = Math.max(1.9, size * 0.0095)
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
   const levelText = `Lv.${options.level}`
-  ctx.strokeText(levelText, size * 0.095, frameTop + size * 0.006)
-  ctx.fillText(levelText, size * 0.095, frameTop + size * 0.006)
+  const levelX = size * options.levelXRatio
+  const levelY = frameTop + size * options.levelYRatio
+  ctx.strokeText(levelText, levelX, levelY)
+  ctx.fillText(levelText, levelX, levelY)
 
   const starRadius = size * 0.12
   const starX = size * 0.14
@@ -314,8 +446,8 @@ function drawCard(
     drawDanger(ctx, size)
   }
 
-}
 
+}
 function dataUrlToBlob(dataUrl: string) {
   const parts = dataUrl.split(',')
   const mime = parts[0].match(/:(.*?);/)?.[1] ?? 'image/png'
@@ -574,13 +706,28 @@ export default function StudentImageToolPage() {
           </label>
 
           <label className="space-y-1 text-sm">
-            <span className="font-semibold">枠線の細さ（上/左右）</span>
-            <input type="number" min={1} max={20} value={options.borderThin} onChange={(event) => setOptions((prev) => ({ ...prev, borderThin: clamp(Number(event.target.value), 1, 20) }))} className="w-full rounded border px-3 py-2" />
+            <span className="font-semibold">枠線の細さ（上）</span>
+            <input type="number" min={1} max={20} value={options.borderTop} onChange={(event) => setOptions((prev) => ({ ...prev, borderTop: clamp(Number(event.target.value), 1, 20) }))} className="w-full rounded border px-3 py-2" />
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="font-semibold">枠線の細さ（左右）</span>
+            <input type="number" min={1} max={20} value={options.borderSide} onChange={(event) => setOptions((prev) => ({ ...prev, borderSide: clamp(Number(event.target.value), 1, 20) }))} className="w-full rounded border px-3 py-2" />
           </label>
 
           <label className="space-y-1 text-sm">
             <span className="font-semibold">枠線の太さ（下）</span>
             <input type="number" min={4} max={220} value={options.borderBottom} onChange={(event) => setOptions((prev) => ({ ...prev, borderBottom: clamp(Number(event.target.value), 4, 220) }))} className="w-full rounded border px-3 py-2" />
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="font-semibold">白平行四辺形の右余白(px)</span>
+            <input type="number" min={1} max={40} value={options.badgeMarginRight} onChange={(event) => setOptions((prev) => ({ ...prev, badgeMarginRight: clamp(Number(event.target.value), 1, 40) }))} className="w-full rounded border px-3 py-2" />
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="font-semibold">白平行四辺形の下余白(px)</span>
+            <input type="number" min={1} max={40} value={options.badgeMarginBottom} onChange={(event) => setOptions((prev) => ({ ...prev, badgeMarginBottom: clamp(Number(event.target.value), 1, 40) }))} className="w-full rounded border px-3 py-2" />
           </label>
 
           <label className="space-y-1 text-sm">
@@ -591,6 +738,16 @@ export default function StudentImageToolPage() {
           <label className="space-y-1 text-sm">
             <span className="font-semibold">青星待機時間(ms)</span>
             <input type="number" min={200} max={30000} step={100} value={options.blinkHoldMs} onChange={(event) => setOptions((prev) => ({ ...prev, blinkHoldMs: clamp(Number(event.target.value), 200, 30000) }))} className="w-full rounded border px-3 py-2" />
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="font-semibold">Lv位置X比率</span>
+            <input type="number" min={0} max={0.5} step={0.005} value={options.levelXRatio} onChange={(event) => setOptions((prev) => ({ ...prev, levelXRatio: clamp(Number(event.target.value), 0, 0.5) }))} className="w-full rounded border px-3 py-2" />
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="font-semibold">Lv位置Y比率</span>
+            <input type="number" min={-0.05} max={0.3} step={0.005} value={options.levelYRatio} onChange={(event) => setOptions((prev) => ({ ...prev, levelYRatio: clamp(Number(event.target.value), -0.05, 0.3) }))} className="w-full rounded border px-3 py-2" />
           </label>
         </div>
 
