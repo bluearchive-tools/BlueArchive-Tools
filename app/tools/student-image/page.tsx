@@ -26,6 +26,7 @@ type Options = {
   blinkHoldMs: number
   levelXRatio: number
   levelYRatio: number
+  layoutOffsetX: number
 }
 
 type AttackColor = {
@@ -52,13 +53,14 @@ const BASE: Options = {
   unique: 0,
   size: 512,
   cornerRadius: 52,
-  borderTop: 5,
-  borderSide: 4,
+  borderTop: 6,
+  borderSide: 5,
   borderBottom: 45,
   skewRatio: 0.11,
   blinkHoldMs: 18000,
   levelXRatio: 0.11,
   levelYRatio: 0.02,
+  layoutOffsetX: 1,
 }
 
 
@@ -323,6 +325,9 @@ function drawCard(
   const outerPath = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop, options.cornerRadius)
   const innerWindow = createInnerWindowPath(size, frameHeight, frameTop, skew, topBorder, bottom, sideInset, options.cornerRadius)
 
+  ctx.save()
+  ctx.translate(options.layoutOffsetX, 0)
+
   ctx.fillStyle = ring
   ctx.fill(outerPath)
 
@@ -345,7 +350,7 @@ function drawCard(
   ctx.font = `italic 700 ${levelFont}px "M PLUS Rounded 1c", Arial`
   ctx.fillStyle = '#ffffff'
   ctx.strokeStyle = 'rgba(15,23,42,0.42)'
-  ctx.lineWidth = Math.max(1.6, size * 0.0085)
+  ctx.lineWidth = Math.max(1.9, size * 0.0095)
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
   const levelText = `Lv.${options.level}`
@@ -366,6 +371,8 @@ function drawCard(
   if (shouldWarn) {
     drawDanger(ctx, size)
   }
+
+  ctx.restore()
 
 }
 function dataUrlToBlob(dataUrl: string) {
@@ -393,7 +400,10 @@ function buildParallelogramVisibleMask(options: Options) {
   const path = createParallelogramPath(size, frameHeight, skew, 0, 0, 0, frameTop, options.cornerRadius)
   ctx.clearRect(0, 0, size, size)
   ctx.fillStyle = '#ffffff'
+  ctx.save()
+  ctx.translate(options.layoutOffsetX, 0)
   ctx.fill(path)
+  ctx.restore()
 
   const data = ctx.getImageData(0, 0, size, size).data
   const mask = new Uint8Array(size * size)
