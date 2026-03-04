@@ -364,10 +364,11 @@ function drawCard(
   const badgeWidth = Math.min(size * 0.3, targetWidth * 0.55)
   const badgeHeight = Math.min(size * 0.21, targetHeight * 0.58, badgeWidth * 0.72)
   const badgeSkew = skewSlope * badgeHeight
-  const badgeRight = innerWindow.maxX - sideBorder
   const badgeBottom = frameTop + frameHeight - sideBorder
-  const badgeX = badgeRight - badgeWidth
   const badgeY = badgeBottom - badgeHeight
+  const outerRightAtBadgeTop = size - skewSlope * (badgeY - frameTop)
+  const badgeRight = outerRightAtBadgeTop - sideBorder
+  const badgeX = badgeRight - badgeWidth
   ctx.translate(badgeX, badgeY)
   const badgePath = createParallelogramPath(badgeWidth, badgeHeight, badgeSkew, 0, 0, 0, 0, options.cornerRadius * 0.22)
   ctx.fillStyle = '#ffffff'
