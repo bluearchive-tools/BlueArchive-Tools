@@ -463,7 +463,7 @@ function drawCard(
 
   ctx.save()
   ctx.clip(innerWindow.path)
-  ctx.drawImage(image, targetLeft + dx - 3, targetTop + dy, drawWidth, drawHeight)
+  ctx.drawImage(image, targetLeft + dx - 2, targetTop + dy, drawWidth, drawHeight)
   ctx.restore()
 
   ctx.save()
@@ -507,7 +507,7 @@ function drawCard(
   ctx.fillText(levelText, levelX, levelY)
 
   const starRadius = size * 0.12
-  const starX = size * 0.16
+  const starX = size * 0.15
   const starY = frameTop + frameHeight - Math.max(starRadius * 1.18, size * 0.12)
   drawStarWithNumber(ctx, starX, starY, starRadius, '#fde047', '#f59e0b', '#92400e', options.stars)
 
