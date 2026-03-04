@@ -88,6 +88,16 @@
           "description": "ヒントを頼りに楽曲名を当てましょう"
         }
       }
+    },
+    "others": {
+      "title": "その他",
+      "description": "補助ページや開発向けコンテンツです",
+      "actions": {
+        "devMemos": {
+          "title": "開発メモ",
+          "description": "更新ログや実装方針の小記事をまとめています"
+        }
+      }
     }
   }
 }

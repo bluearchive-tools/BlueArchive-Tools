@@ -88,6 +88,16 @@
           "description": "Guess the track name from the hint"
         }
       }
+    },
+    "others": {
+      "title": "Others",
+      "description": "Support pages and development-oriented contents",
+      "actions": {
+        "devMemos": {
+          "title": "Development memos",
+          "description": "Browse short notes about updates and implementation ideas"
+        }
+      }
     }
   }
 }

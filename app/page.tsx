@@ -236,6 +236,13 @@ export default function Home() {
             <Link href="/minigames/bgm-quiz"><FeatureItem title={t('minigames.actions.bgmQuiz.title')} description={t('minigames.actions.bgmQuiz.description')} /></Link>
           </div>
         </CollapsibleBox>
+
+
+        <CollapsibleBox tutorialKey="home-section-others" title={t('others.title')} description={t('others.description')}>
+          <div className="space-y-2">
+            <Link href="/dev-memos"><FeatureItem title={t('others.actions.devMemos.title')} description={t('others.actions.devMemos.description')} /></Link>
+          </div>
+        </CollapsibleBox>
       </main>
     </>
   )
