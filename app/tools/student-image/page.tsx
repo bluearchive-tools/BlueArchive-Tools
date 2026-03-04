@@ -361,13 +361,14 @@ function drawCard(
 
   ctx.save()
   ctx.clip(outerPath)
-  const badgeWidth = Math.min(size * 0.3, targetWidth * 0.55)
+  const badgeWidth = Math.min(size * 0.26, targetWidth * 0.48)
   const badgeHeight = Math.min(size * 0.21, targetHeight * 0.58, badgeWidth * 0.72)
   const badgeSkew = skewSlope * badgeHeight
-  const badgeBottom = frameTop + frameHeight - sideBorder
+  const badgeSafeMargin = Math.max(sideBorder, options.cornerRadius * 0.18)
+  const badgeBottom = frameTop + frameHeight - badgeSafeMargin
   const badgeY = badgeBottom - badgeHeight
   const outerRightAtBadgeTop = size - skewSlope * (badgeY - frameTop)
-  const badgeRight = outerRightAtBadgeTop - sideBorder
+  const badgeRight = outerRightAtBadgeTop - badgeSafeMargin
   const badgeX = badgeRight - badgeWidth
   ctx.translate(badgeX, badgeY)
   const badgePath = createParallelogramPath(badgeWidth, badgeHeight, badgeSkew, 0, 0, 0, 0, options.cornerRadius * 0.22)
