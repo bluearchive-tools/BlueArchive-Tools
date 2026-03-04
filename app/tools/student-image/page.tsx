@@ -463,14 +463,13 @@ function drawCard(
 
   ctx.save()
   ctx.clip(innerWindow.path)
-  ctx.drawImage(image, targetLeft + dx - 2, targetTop + dy, drawWidth, drawHeight)
+  ctx.drawImage(image, targetLeft + dx - 3, targetTop + dy, drawWidth, drawHeight)
   ctx.restore()
 
   ctx.save()
   ctx.clip(outerPath)
-  const badgeSize = Math.min(size * 0.21, targetHeight * 0.58, targetWidth * 0.38)
-  const badgeWidth = badgeSize
-  const badgeHeight = badgeSize
+  const badgeHeight = Math.min(size * 0.21, targetHeight * 0.58, targetWidth * 0.34)
+  const badgeWidth = badgeHeight * 1.15
   const badgeSkew = skewSlope * badgeHeight
   const badgeSafeRight = Math.max(0, badgeMarginRight)
   const badgeSafeBottom = Math.max(0, badgeMarginBottom)
@@ -508,7 +507,7 @@ function drawCard(
   ctx.fillText(levelText, levelX, levelY)
 
   const starRadius = size * 0.12
-  const starX = size * 0.14
+  const starX = size * 0.16
   const starY = frameTop + frameHeight - Math.max(starRadius * 1.18, size * 0.12)
   drawStarWithNumber(ctx, starX, starY, starRadius, '#fde047', '#f59e0b', '#92400e', options.stars)
 
