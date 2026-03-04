@@ -26,6 +26,8 @@ type Options = {
   blinkHoldMs: number
   levelXRatio: number
   levelYRatio: number
+  badgeMarginRight: number
+  badgeMarginBottom: number
 }
 
 type AttackColor = {
@@ -59,6 +61,8 @@ const BASE: Options = {
   blinkHoldMs: 18000,
   levelXRatio: 0.11,
   levelYRatio: 0.02,
+  badgeMarginRight: 5,
+  badgeMarginBottom: 5,
 }
 
 
@@ -365,6 +369,8 @@ function drawCard(
   const topBorder = options.borderTop
   const sideBorder = options.borderSide
   const bottom = options.borderBottom
+  const badgeMarginRight = options.badgeMarginRight
+  const badgeMarginBottom = options.badgeMarginBottom
   const skewSlope = skew / frameHeight
   const sideInset = sideBorder * Math.hypot(1, skewSlope)
   const color = ATTACK_COLORS[attackType]
@@ -401,11 +407,12 @@ function drawCard(
   const badgeWidth = Math.min(size * 0.26, targetWidth * 0.48)
   const badgeHeight = Math.min(size * 0.21, targetHeight * 0.58, badgeWidth * 0.72)
   const badgeSkew = skewSlope * badgeHeight
-  const badgeSafeMargin = Math.max(sideBorder, options.cornerRadius * 0.18)
-  const badgeBottom = frameTop + frameHeight - badgeSafeMargin
+  const badgeSafeRight = Math.max(badgeMarginRight, options.cornerRadius * 0.18)
+  const badgeSafeBottom = Math.max(badgeMarginBottom, options.cornerRadius * 0.18)
+  const badgeBottom = frameTop + frameHeight - badgeSafeBottom
   const badgeY = badgeBottom - badgeHeight
   const outerRightAtBadgeTop = size - skewSlope * (badgeY - frameTop)
-  const badgeRight = outerRightAtBadgeTop - badgeSafeMargin
+  const badgeRight = outerRightAtBadgeTop - badgeSafeRight
   const badgeX = badgeRight - badgeWidth
   ctx.translate(badgeX, badgeY)
   const badgePath = createParallelogramPathWithBottomRightRadius(badgeWidth, badgeHeight, badgeSkew, 0, options.cornerRadius)
@@ -711,6 +718,16 @@ export default function StudentImageToolPage() {
           <label className="space-y-1 text-sm">
             <span className="font-semibold">枠線の太さ（下）</span>
             <input type="number" min={4} max={220} value={options.borderBottom} onChange={(event) => setOptions((prev) => ({ ...prev, borderBottom: clamp(Number(event.target.value), 4, 220) }))} className="w-full rounded border px-3 py-2" />
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="font-semibold">白平行四辺形の右余白(px)</span>
+            <input type="number" min={1} max={40} value={options.badgeMarginRight} onChange={(event) => setOptions((prev) => ({ ...prev, badgeMarginRight: clamp(Number(event.target.value), 1, 40) }))} className="w-full rounded border px-3 py-2" />
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="font-semibold">白平行四辺形の下余白(px)</span>
+            <input type="number" min={1} max={40} value={options.badgeMarginBottom} onChange={(event) => setOptions((prev) => ({ ...prev, badgeMarginBottom: clamp(Number(event.target.value), 1, 40) }))} className="w-full rounded border px-3 py-2" />
           </label>
 
           <label className="space-y-1 text-sm">
