@@ -121,7 +121,7 @@ function buildRoundedPolygonPath(points: Point[], radius: number) {
   return path
 }
 
-function createParallelogramPathWithBottomRightRadius(
+function createParallelogramPathWithTopLeftAndBottomRightRadius(
   width: number,
   height: number,
   skew: number,
@@ -140,20 +140,27 @@ function createParallelogramPathWithBottomRightRadius(
   const p3: Point = { x: rightBottomX, y: bottomY }
   const p4: Point = { x: leftBottomX, y: bottomY }
 
-  const maxRadius = Math.max(0, Math.min(distance(p2, p3), distance(p3, p4)) * 0.5)
+  const maxRadius = Math.max(0, Math.min(distance(p1, p2), distance(p2, p3), distance(p3, p4), distance(p4, p1)) * 0.5)
   const r = Math.min(cornerRadius, maxRadius)
 
-  const edgeTop = normalize({ x: p2.x - p3.x, y: p2.y - p3.y })
-  const edgeBottom = normalize({ x: p4.x - p3.x, y: p4.y - p3.y })
-  const brStart = { x: p3.x + edgeTop.x * r, y: p3.y + edgeTop.y * r }
-  const brEnd = { x: p3.x + edgeBottom.x * r, y: p3.y + edgeBottom.y * r }
+  const tlEdgeBottom = normalize({ x: p4.x - p1.x, y: p4.y - p1.y })
+  const tlEdgeTop = normalize({ x: p2.x - p1.x, y: p2.y - p1.y })
+  const tlStart = { x: p1.x + tlEdgeBottom.x * r, y: p1.y + tlEdgeBottom.y * r }
+  const tlEnd = { x: p1.x + tlEdgeTop.x * r, y: p1.y + tlEdgeTop.y * r }
+
+  const brEdgeTop = normalize({ x: p2.x - p3.x, y: p2.y - p3.y })
+  const brEdgeBottom = normalize({ x: p4.x - p3.x, y: p4.y - p3.y })
+  const brStart = { x: p3.x + brEdgeTop.x * r, y: p3.y + brEdgeTop.y * r }
+  const brEnd = { x: p3.x + brEdgeBottom.x * r, y: p3.y + brEdgeBottom.y * r }
 
   const path = new Path2D()
-  path.moveTo(p1.x, p1.y)
+  path.moveTo(tlEnd.x, tlEnd.y)
   path.lineTo(p2.x, p2.y)
   path.lineTo(brStart.x, brStart.y)
   path.quadraticCurveTo(p3.x, p3.y, brEnd.x, brEnd.y)
   path.lineTo(p4.x, p4.y)
+  path.lineTo(tlStart.x, tlStart.y)
+  path.quadraticCurveTo(p1.x, p1.y, tlEnd.x, tlEnd.y)
   path.closePath()
   return path
 }
@@ -304,13 +311,25 @@ function drawDanger(ctx: CanvasRenderingContext2D, size: number) {
 
 function createBlueFrames(holdMs: number): BlueFrame[] {
   const hold = clamp(holdMs, 200, 30000)
+  const transitionSteps = 10
+  const transitionDelayMs = 50
+  const smoothstep = (t: number) => t * t * (3 - 2 * t)
+
+  const fadeInFrames = Array.from({ length: transitionSteps }, (_, index) => {
+    const progress = (index + 1) / transitionSteps
+    return { alpha: smoothstep(progress), delayMs: transitionDelayMs }
+  })
+
+  const fadeOutFrames = Array.from({ length: transitionSteps }, (_, index) => {
+    const progress = (index + 1) / transitionSteps
+    return { alpha: 1 - smoothstep(progress), delayMs: transitionDelayMs }
+  })
+
   return [
     { alpha: 0, delayMs: hold },
-    { alpha: 0.45, delayMs: 140 },
-    { alpha: 1, delayMs: 140 },
+    ...fadeInFrames,
     { alpha: 1, delayMs: hold },
-    { alpha: 0.45, delayMs: 140 },
-    { alpha: 0, delayMs: 140 },
+    ...fadeOutFrames,
   ]
 }
 
@@ -415,7 +434,7 @@ function drawCard(
   const badgeRight = outerRightAtBadgeTop - badgeSafeRight
   const badgeX = badgeRight - badgeWidth
   ctx.translate(badgeX, badgeY)
-  const badgePath = createParallelogramPathWithBottomRightRadius(badgeWidth, badgeHeight, badgeSkew, 0, options.cornerRadius)
+  const badgePath = createParallelogramPathWithTopLeftAndBottomRightRadius(badgeWidth, badgeHeight, badgeSkew, 0, options.cornerRadius)
   ctx.fillStyle = '#ffffff'
   ctx.fill(badgePath)
   ctx.restore()
