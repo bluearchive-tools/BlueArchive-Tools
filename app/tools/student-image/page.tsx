@@ -117,6 +117,43 @@ function buildRoundedPolygonPath(points: Point[], radius: number) {
   return path
 }
 
+function createParallelogramPathWithBottomRightRadius(
+  width: number,
+  height: number,
+  skew: number,
+  offsetY: number,
+  cornerRadius: number,
+) {
+  const topY = offsetY
+  const bottomY = offsetY + height
+  const leftTopX = skew
+  const rightTopX = width
+  const rightBottomX = width - skew
+  const leftBottomX = 0
+
+  const p1: Point = { x: leftTopX, y: topY }
+  const p2: Point = { x: rightTopX, y: topY }
+  const p3: Point = { x: rightBottomX, y: bottomY }
+  const p4: Point = { x: leftBottomX, y: bottomY }
+
+  const maxRadius = Math.max(0, Math.min(distance(p2, p3), distance(p3, p4)) * 0.5)
+  const r = Math.min(cornerRadius, maxRadius)
+
+  const edgeTop = normalize({ x: p2.x - p3.x, y: p2.y - p3.y })
+  const edgeBottom = normalize({ x: p4.x - p3.x, y: p4.y - p3.y })
+  const brStart = { x: p3.x + edgeTop.x * r, y: p3.y + edgeTop.y * r }
+  const brEnd = { x: p3.x + edgeBottom.x * r, y: p3.y + edgeBottom.y * r }
+
+  const path = new Path2D()
+  path.moveTo(p1.x, p1.y)
+  path.lineTo(p2.x, p2.y)
+  path.lineTo(brStart.x, brStart.y)
+  path.quadraticCurveTo(p3.x, p3.y, brEnd.x, brEnd.y)
+  path.lineTo(p4.x, p4.y)
+  path.closePath()
+  return path
+}
+
 function createParallelogramPath(
   width: number,
   height: number,
@@ -371,7 +408,7 @@ function drawCard(
   const badgeRight = outerRightAtBadgeTop - badgeSafeMargin
   const badgeX = badgeRight - badgeWidth
   ctx.translate(badgeX, badgeY)
-  const badgePath = createParallelogramPath(badgeWidth, badgeHeight, badgeSkew, 0, 0, 0, 0, options.cornerRadius * 0.22)
+  const badgePath = createParallelogramPathWithBottomRightRadius(badgeWidth, badgeHeight, badgeSkew, 0, options.cornerRadius)
   ctx.fillStyle = '#ffffff'
   ctx.fill(badgePath)
   ctx.restore()
