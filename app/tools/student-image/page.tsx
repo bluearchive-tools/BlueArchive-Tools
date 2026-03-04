@@ -8,6 +8,7 @@ type Student = {
   name: string
   image: string
   attackType: string
+  characterType: string
   initialStars: number
 }
 
@@ -46,6 +47,14 @@ const ATTACK_COLORS: Record<AttackType, AttackColor> = {
   貫通: { ring: '#c08b0b' },
   神秘: { ring: '#296c99' },
   振動: { ring: '#b060aa' },
+}
+
+const CHARACTER_TYPE_ICONS: Record<string, string> = {
+  タンク: 'https://static.wikitide.net/bluearchivewiki/a/af/Tank.svg',
+  アタッカー: 'https://static.wikitide.net/bluearchivewiki/d/d5/Attacker.svg',
+  サポーター: 'https://static.wikitide.net/bluearchivewiki/5/58/Support.svg',
+  ヒーラー: 'https://static.wikitide.net/bluearchivewiki/c/cc/Healer.svg',
+  'T.S.': 'https://static.wikitide.net/bluearchivewiki/c/c7/TacticalSupport.svg',
 }
 
 const BASE: Options = {
@@ -376,6 +385,7 @@ function createInnerWindowPath(
 function drawCard(
   ctx: CanvasRenderingContext2D,
   image: HTMLImageElement,
+  badgeIcon: HTMLImageElement | null,
   attackType: AttackType,
   originalAttackType: string,
   options: Options,
@@ -437,6 +447,15 @@ function drawCard(
   const badgePath = createParallelogramPathWithTopLeftAndBottomRightRadius(badgeWidth, badgeHeight, badgeSkew, 0, options.cornerRadius)
   ctx.fillStyle = '#ffffff'
   ctx.fill(badgePath)
+  if (badgeIcon) {
+    const iconSize = badgeHeight * 0.68
+    const iconX = (badgeWidth - iconSize) / 2
+    const iconY = (badgeHeight - iconSize) / 2
+    ctx.save()
+    ctx.clip(badgePath)
+    ctx.drawImage(badgeIcon, iconX, iconY, iconSize, iconSize)
+    ctx.restore()
+  }
   ctx.restore()
 
   const levelFont = Math.round(size * 0.135)
@@ -528,6 +547,7 @@ export default function StudentImageToolPage() {
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const imageRef = useRef<HTMLImageElement | null>(null)
+  const badgeIconRef = useRef<HTMLImageElement | null>(null)
 
   const blueFrames = useMemo(() => createBlueFrames(options.blinkHoldMs), [options.blinkHoldMs])
   const previewBlueAlpha = options.unique >= 1 ? blueFrames[previewFrameIndex]?.alpha ?? 0 : 0
@@ -586,24 +606,38 @@ export default function StudentImageToolPage() {
     return image
   }, [])
 
+  const loadBadgeIcon = useCallback(async (characterType: string) => {
+    const iconUrl = CHARACTER_TYPE_ICONS[characterType]
+    if (!iconUrl) return null
+    try {
+      return await loadImage(iconUrl)
+    } catch {
+      return null
+    }
+  }, [loadImage])
+
   const renderPreview = useCallback(
     async (alpha: number) => {
       if (!selectedStudent || !canvasRef.current) return
       if (!imageRef.current) {
         imageRef.current = await loadImage(selectedStudent.image)
       }
+      if (!badgeIconRef.current) {
+        badgeIconRef.current = await loadBadgeIcon(selectedStudent.characterType)
+      }
       canvasRef.current.width = options.size
       canvasRef.current.height = options.size
       const ctx = canvasRef.current.getContext('2d')
       if (!ctx || !imageRef.current) return
 
-      drawCard(ctx, imageRef.current, selectedAttackType, selectedStudent.attackType, options, alpha)
+      drawCard(ctx, imageRef.current, badgeIconRef.current, selectedAttackType, selectedStudent.attackType, options, alpha)
     },
-    [loadImage, options, selectedAttackType, selectedStudent],
+    [loadBadgeIcon, loadImage, options, selectedAttackType, selectedStudent],
   )
 
   useEffect(() => {
     imageRef.current = null
+    badgeIconRef.current = null
     renderPreview(previewBlueAlpha).catch(() => setError('画像の描画に失敗しました'))
   }, [previewBlueAlpha, renderPreview, selectedStudentId])
 
@@ -631,6 +665,9 @@ export default function StudentImageToolPage() {
         if (!imageRef.current) {
           imageRef.current = await loadImage(selectedStudent.image)
         }
+        if (!badgeIconRef.current) {
+          badgeIconRef.current = await loadBadgeIcon(selectedStudent.characterType)
+        }
         const canvas = document.createElement('canvas')
         canvas.width = options.size
         canvas.height = options.size
@@ -642,7 +679,7 @@ export default function StudentImageToolPage() {
 
         for (let index = 0; index < blueFrames.length; index += 1) {
           const frame = blueFrames[index]
-          drawCard(ctx, imageRef.current, selectedAttackType, selectedStudent.attackType, options, frame.alpha)
+          drawCard(ctx, imageRef.current, badgeIconRef.current, selectedAttackType, selectedStudent.attackType, options, frame.alpha)
           const imageData = ctx.getImageData(0, 0, options.size, options.size)
           const transparentFrame = prepareTransparentFrame(imageData, visibleMask)
           encoder.writeFrame(transparentFrame.indexed, options.size, options.size, {
@@ -667,7 +704,7 @@ export default function StudentImageToolPage() {
     } finally {
       setBusy(false)
     }
-  }, [blueFrames, loadImage, options, renderPreview, selectedAttackType, selectedStudent])
+  }, [blueFrames, loadBadgeIcon, loadImage, options, renderPreview, selectedAttackType, selectedStudent])
 
   const isDanger = !!selectedStudent && selectedAttackType !== selectedStudent.attackType
 
