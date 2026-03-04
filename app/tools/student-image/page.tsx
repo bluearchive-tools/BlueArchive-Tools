@@ -61,8 +61,8 @@ const BASE: Options = {
   blinkHoldMs: 18000,
   levelXRatio: 0.11,
   levelYRatio: 0.02,
-  badgeMarginRight: 5,
-  badgeMarginBottom: 5,
+  badgeMarginRight: 3,
+  badgeMarginBottom: 3,
 }
 
 
