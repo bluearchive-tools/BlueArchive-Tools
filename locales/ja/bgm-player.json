@@ -1,6 +1,6 @@
 {
   "title": "BGMプレイヤー",
-  "description": "Blue ArchiveのBGMを再生できます。",
+  "description": "BGMを再生できます。",
   "nowPlaying": "再生中",
   "empty": "再生するBGMを選択してください。",
   "playbackOptions": {
