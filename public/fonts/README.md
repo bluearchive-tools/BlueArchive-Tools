@@ -6,4 +6,4 @@
 - `student-image-star-number.otf`
 
 配置後、`/tools/student-image` を再読み込みすると自動で適用されます。
-ファイルが無い場合は既定フォント（`M PLUS Rounded 1c`, `Arial`）を使用します。
+ファイルが無い場合は既定フォント（`MFW-PUDShinMGoPr6N-Medium`, `sans-serif`）を使用します。

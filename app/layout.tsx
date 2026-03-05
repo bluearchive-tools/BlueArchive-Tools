@@ -4,7 +4,6 @@ import { Providers } from './providers'
 import Header from '../components/Header'
 import FloatingSearch from '../components/FloatingSearch'
 import SiteTutorial from '../components/SiteTutorial'
-import { M_PLUS_Rounded_1c } from 'next/font/google'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
 import type { Metadata } from 'next'
@@ -13,13 +12,6 @@ import { createTranslator } from 'next-intl'
 import { DEFAULT_LOCALE, LOCALE_MESSAGES, SUPPORTED_LOCALES, parseLocale, type Locale } from '../lib/i18n/config'
 
 config.autoAddCss = false
-
-const mplus = M_PLUS_Rounded_1c({
-  weight: '500',
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-sans',
-})
 
 async function resolveRequestLocale(): Promise<Locale> {
   const cookieStore = await cookies()
@@ -70,7 +62,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang={locale}>
-      <body className={`${mplus.variable} font-sans`}>
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://morisawafonts.net/c/01KJZ1SBC9NW4B9FVY61B76MM1/mf.css"
+        />
+      </head>
+      <body className="font-sans">
         {/* ここではあくまでサーバー→クライアントの橋渡しだけ */}
         <Providers locale={locale} messages={messages}>
           <Header />
