@@ -14,7 +14,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-mplus);
+  --font-sans: "MFW-PUDShinMGoPr6N-Medium", sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 

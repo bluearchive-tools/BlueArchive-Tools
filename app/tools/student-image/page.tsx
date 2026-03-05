@@ -61,7 +61,7 @@ const BADGE_ICON_FILL_COLOR = { r: 34, g: 53, b: 81 }
 
 const STAR_NUMBER_FONT_NAME = 'StudentImageStarNumber'
 const STAR_NUMBER_FONT_FILE = '/fonts/student-image-star-number.otf'
-const STAR_NUMBER_FONT_FALLBACK = '"M PLUS Rounded 1c", Arial'
+const STAR_NUMBER_FONT_FALLBACK = '"MFW-PUDShinMGoPr6N-Medium", sans-serif'
 
 const BASE: Options = {
   level: 90,
@@ -500,7 +500,7 @@ function drawCard(
   ctx.restore()
 
   const levelFont = Math.round(size * 0.135)
-  ctx.font = `italic 700 ${levelFont}px "M PLUS Rounded 1c", Arial`
+  ctx.font = `italic 700 ${levelFont}px "MFW-PUDShinMGoPr6N-Medium", sans-serif`
   ctx.fillStyle = '#ffffff'
   ctx.strokeStyle = 'rgba(15,23,42,0.42)'
   ctx.lineWidth = Math.max(1.9, size * 0.0095)
