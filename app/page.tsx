@@ -228,6 +228,7 @@ export default function Home() {
             <Link href="/tools/bgm-player"><FeatureItem title={t('tools.actions.bgmPlayer.title')} description={t('tools.actions.bgmPlayer.description')} /></Link>
             <Link href="/tools/bgm-dj"><FeatureItem title={t('tools.actions.bgmDj.title')} description={t('tools.actions.bgmDj.description')} /></Link>
             <Link href="/tools/student-image"><FeatureItem title={t('tools.actions.studentImage.title')} description={t('tools.actions.studentImage.description')} /></Link>
+            <Link href="/tools/momotalk-simulator"><FeatureItem title={t('tools.actions.momotalkSimulator.title')} description={t('tools.actions.momotalkSimulator.description')} /></Link>
           </div>
         </CollapsibleBox>
 
@@ -241,6 +242,7 @@ export default function Home() {
         <CollapsibleBox tutorialKey="home-section-others" title={t('others.title')} description={t('others.description')}>
           <div className="space-y-2">
             <Link href="/dev-memos"><FeatureItem title={t('others.actions.devMemos.title')} description={t('others.actions.devMemos.description')} /></Link>
+            <Link href="/ba-memos"><FeatureItem title={t('others.actions.baMemos.title')} description={t('others.actions.baMemos.description')} /></Link>
           </div>
         </CollapsibleBox>
       </main>
