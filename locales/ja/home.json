@@ -11,21 +11,21 @@
         },
         "import": {
           "title": "生徒データインポート",
-          "description": "画像から生徒のデータをインポートできます"
+          "description": "他サイトや画像から生徒のデータをインポートできます"
         },
         "squads": {
           "title": "部隊管理",
-          "description": "部隊を構成できます"
+          "description": "TLメーカーで使用する部隊を構成できます"
         }
       }
     },
     "tlTools": {
       "title": "TLツール(β)",
-      "description": "TL作成に役立つツールです",
+      "description": "TL検索、作成ができます",
       "actions": {
         "search": {
           "title": "TL検索",
-          "description": "既存のTLを検索できます"
+          "description": "現在、過去シーズンのTLを検索できます"
         },
         "maker": {
           "title": "TLメーカー",
@@ -33,11 +33,11 @@
         },
         "makerDev": {
           "title": "TLメーカーdev",
-          "description": "実験的機能を利用できます"
+          "description": "実験機能が入っているTLメーカーです"
         },
         "videoToTl": {
           "title": "動画toTL",
-          "description": "動画からTLを自動生成できます"
+          "description": "動画からTLを自動生成できます(予定)"
         }
       }
     },
@@ -47,7 +47,7 @@
       "actions": {
         "eventSchedule": {
           "title": "イベントスケジュール表",
-          "description": "イベントの開催予定を確認できます"
+          "description": "ゲーム内イベントを確認できます"
         },
         "divineCalc": {
           "title": "神名文字計算機",
@@ -55,11 +55,11 @@
         },
         "bgmPlayer": {
           "title": "BGMプレイヤー",
-          "description": "Blue ArchiveのBGMを再生できます"
+          "description": "BGMを再生できます"
         },
         "bgmDj": {
           "title": "BGM DJ",
-          "description": "2デッキでBGMをミックスできます"
+          "description": "謎のDJページです"
         },
         "bondCalc": {
           "title": "絆上げ計算機",
@@ -67,15 +67,15 @@
         },
         "trainingPlanning": {
           "title": "育成プランニング",
-          "description": "星上げ・絆上げ・レベル上げ計算機をまとめて利用できます"
+          "description": "目標を設定して必要素材を計算できます"
         },
         "levelCalc": {
           "title": "レベル上げ計算機",
           "description": "レベル上げに必要なレポート数と周回目安を計算します"
         },
         "studentImage": {
-          "title": "生徒画像作成ツール",
-          "description": "生徒画像に攻撃属性枠や星を重ねてPNG/GIFで出力できます"
+          "title": "生徒アイコンビューワー",
+          "description": "レベルや星を描いた生徒アイコンっぽいものを見られます"
         }
       }
     },
@@ -85,17 +85,17 @@
       "actions": {
         "bgmQuiz": {
           "title": "BGMクイズ",
-          "description": "ヒントを頼りに楽曲名を当てましょう"
+          "description": "色々なモードで記憶力を試してみましょう"
         }
       }
     },
     "others": {
       "title": "その他",
-      "description": "補助ページや開発向けコンテンツです",
+      "description": "特にツールではないもの(記事系)をまとめてます",
       "actions": {
         "devMemos": {
           "title": "開発メモ",
-          "description": "更新ログや実装方針の小記事をまとめています"
+          "description": "サイトの開発で得られた情報のメモです"
         }
       }
     }
