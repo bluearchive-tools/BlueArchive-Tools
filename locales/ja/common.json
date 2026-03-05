@@ -57,11 +57,11 @@
     }
   },
   "trainingPlanning": {
-    "description": "生徒の現在ステータスを左に表示し、右で目標を編集して必要素材を自動計算します。",
+    "description": "複数生徒の目標ステータスまでの必要な素材を計算できます",
     "studentLabel": "対象生徒",
-    "currentStatusTitle": "現在ステータス（保存データ）",
-    "targetStatusTitle": "目標ステータス（自由入力）",
-    "setMaxButton": "すべて最大にする（Ctrl/Cmd+クリックで絆50）",
+    "currentStatusTitle": "現在ステータス",
+    "targetStatusTitle": "目標ステータス",
+    "setMaxButton": "最大にする",
     "resultTitle": "必要素材の計算結果",
     "sections": {
       "star": "星上げ",
@@ -96,7 +96,7 @@
     "close": "閉じる",
     "labels": {
       "star": "星",
-      "uniqueStar": "固有★",
+      "uniqueStar": "固有",
       "level": "レベル",
       "bond": "絆",
       "equip1": "装備1Lv",
