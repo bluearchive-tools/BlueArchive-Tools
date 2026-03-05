@@ -229,6 +229,7 @@ export default function Home() {
             <Link href="/tools/bgm-dj"><FeatureItem title={t('tools.actions.bgmDj.title')} description={t('tools.actions.bgmDj.description')} /></Link>
             <Link href="/tools/student-image"><FeatureItem title={t('tools.actions.studentImage.title')} description={t('tools.actions.studentImage.description')} /></Link>
             <Link href="/tools/momotalk-simulator"><FeatureItem title={t('tools.actions.momotalkSimulator.title')} description={t('tools.actions.momotalkSimulator.description')} /></Link>
+            <Link href="/tools/story-editor"><FeatureItem title={t('tools.actions.storyEditor.title')} description={t('tools.actions.storyEditor.description')} /></Link>
           </div>
         </CollapsibleBox>
 

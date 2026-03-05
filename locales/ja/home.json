@@ -80,6 +80,10 @@
         "momotalkSimulator": {
           "title": "モモトークシミュレーター",
           "description": "モモトーク風の画面をシミュレーションできます"
+        },
+        "storyEditor": {
+          "title": "ストーリーエディタ",
+          "description": "自分でストーリーを作成して再生できます"
         }
       }
     },

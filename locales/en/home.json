@@ -80,6 +80,10 @@
         "momotalkSimulator": {
           "title": "Momotalk simulator",
           "description": "Simulate a Momotalk-style chat screen"
+        },
+        "storyEditor": {
+          "title": "Story editor",
+          "description": "Create your own story and play it back"
         }
       }
     },
