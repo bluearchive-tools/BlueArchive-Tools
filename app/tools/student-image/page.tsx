@@ -59,6 +59,10 @@ const CHARACTER_TYPE_ICONS: Record<string, string> = {
 
 const BADGE_ICON_FILL_COLOR = { r: 34, g: 53, b: 81 }
 
+const STAR_NUMBER_FONT_NAME = 'StudentImageStarNumber'
+const STAR_NUMBER_FONT_FILE = '/fonts/student-image-star-number.otf'
+const STAR_NUMBER_FONT_FALLBACK = '"M PLUS Rounded 1c", Arial'
+
 const BASE: Options = {
   level: 90,
   stars: 3,
@@ -259,6 +263,7 @@ function drawStarWithNumber(
   colorBottom: string,
   stroke: string,
   value: number,
+  fontFamily: string,
   alpha = 1,
 ) {
   ctx.save()
@@ -316,7 +321,7 @@ function drawStarWithNumber(
   ctx.restore()
 
   const text = String(clamp(value, 0, 99))
-  ctx.font = `italic 700 ${Math.round(radius * 0.88)}px "M PLUS Rounded 1c", Arial`
+  ctx.font = `italic 700 ${Math.round(radius * 0.88)}px ${fontFamily}`
   ctx.fillStyle = '#0f172a'
   ctx.strokeStyle = 'rgba(255,255,255,0.8)'
   ctx.lineWidth = Math.max(0.9, radius * 0.05)
@@ -425,6 +430,7 @@ function drawCard(
   originalAttackType: string,
   options: Options,
   blueStarAlpha: number,
+  starNumberFontFamily: string,
 ) {
   const size = options.size
   const frameHeight = size * 0.88
@@ -509,10 +515,10 @@ function drawCard(
   const starRadius = size * 0.12
   const starX = size * 0.15
   const starY = frameTop + frameHeight - Math.max(starRadius * 1.18, size * 0.12)
-  drawStarWithNumber(ctx, starX, starY, starRadius, '#fde047', '#f59e0b', '#92400e', options.stars)
+  drawStarWithNumber(ctx, starX, starY, starRadius, '#fde047', '#f59e0b', '#92400e', options.stars, starNumberFontFamily)
 
   if (options.unique >= 1 && blueStarAlpha > 0) {
-    drawStarWithNumber(ctx, starX, starY, starRadius, '#7dd3fc', '#3b82f6', '#1e3a8a', options.unique, blueStarAlpha)
+    drawStarWithNumber(ctx, starX, starY, starRadius, '#7dd3fc', '#3b82f6', '#1e3a8a', options.unique, starNumberFontFamily, blueStarAlpha)
   }
 
   if (shouldWarn) {
@@ -579,6 +585,7 @@ export default function StudentImageToolPage() {
   const [previewFrameIndex, setPreviewFrameIndex] = useState(0)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [starNumberFontFamily, setStarNumberFontFamily] = useState(STAR_NUMBER_FONT_FALLBACK)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const imageRef = useRef<HTMLImageElement | null>(null)
@@ -602,6 +609,40 @@ export default function StudentImageToolPage() {
       }
     }
     load().catch(() => setError('生徒データの読み込みに失敗しました'))
+  }, [])
+
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadCustomStarFont = async () => {
+      if (typeof FontFace === 'undefined' || typeof document === 'undefined' || !document.fonts) {
+        setStarNumberFontFamily(STAR_NUMBER_FONT_FALLBACK)
+        return
+      }
+
+      try {
+        const face = new FontFace(STAR_NUMBER_FONT_NAME, `url(${STAR_NUMBER_FONT_FILE})`, {
+          style: 'normal',
+          weight: '700',
+        })
+        const loadedFace = await face.load()
+        if (cancelled) return
+        document.fonts.add(loadedFace)
+        await document.fonts.load(`700 32px ${STAR_NUMBER_FONT_NAME}`)
+        if (cancelled) return
+        setStarNumberFontFamily(`"${STAR_NUMBER_FONT_NAME}", ${STAR_NUMBER_FONT_FALLBACK}`)
+      } catch {
+        if (cancelled) return
+        setStarNumberFontFamily(STAR_NUMBER_FONT_FALLBACK)
+      }
+    }
+
+    loadCustomStarFont().catch(() => setStarNumberFontFamily(STAR_NUMBER_FONT_FALLBACK))
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const selectedStudent = useMemo(
@@ -666,9 +707,9 @@ export default function StudentImageToolPage() {
       const ctx = canvasRef.current.getContext('2d')
       if (!ctx || !imageRef.current) return
 
-      drawCard(ctx, imageRef.current, badgeIconRef.current, selectedAttackType, selectedStudent.attackType, options, alpha)
+      drawCard(ctx, imageRef.current, badgeIconRef.current, selectedAttackType, selectedStudent.attackType, options, alpha, starNumberFontFamily)
     },
-    [loadBadgeIcon, loadImage, options, selectedAttackType, selectedStudent],
+    [loadBadgeIcon, loadImage, options, selectedAttackType, selectedStudent, starNumberFontFamily],
   )
 
   useEffect(() => {
@@ -715,7 +756,7 @@ export default function StudentImageToolPage() {
 
         for (let index = 0; index < blueFrames.length; index += 1) {
           const frame = blueFrames[index]
-          drawCard(ctx, imageRef.current, badgeIconRef.current, selectedAttackType, selectedStudent.attackType, options, frame.alpha)
+          drawCard(ctx, imageRef.current, badgeIconRef.current, selectedAttackType, selectedStudent.attackType, options, frame.alpha, starNumberFontFamily)
           const imageData = ctx.getImageData(0, 0, options.size, options.size)
           const transparentFrame = prepareTransparentFrame(imageData, visibleMask)
           encoder.writeFrame(transparentFrame.indexed, options.size, options.size, {
@@ -740,7 +781,7 @@ export default function StudentImageToolPage() {
     } finally {
       setBusy(false)
     }
-  }, [blueFrames, loadBadgeIcon, loadImage, options, renderPreview, selectedAttackType, selectedStudent])
+  }, [blueFrames, loadBadgeIcon, loadImage, options, renderPreview, selectedAttackType, selectedStudent, starNumberFontFamily])
 
   const isDanger = !!selectedStudent && selectedAttackType !== selectedStudent.attackType
 
@@ -749,6 +790,7 @@ export default function StudentImageToolPage() {
       <section className="rounded border p-4 bg-white space-y-4">
         <h1 className="text-lg font-bold">生徒アイコン画像作成ツール</h1>
         <p className="text-sm text-gray-600">右傾き平行四辺形のフレームで生徒画像を加工します。固有1以上は黄色星の上に同位置・同サイズの青星を重ね、フェード点滅してGIF出力できます。</p>
+        <p className="text-xs text-gray-500">星の数字フォントは <code>public/fonts/student-image-star-number.otf</code> を配置すると自動適用されます（未配置時は既定フォント）。</p>
 
         <div className="grid gap-4 md:grid-cols-2">
           <label className="space-y-1 text-sm">
