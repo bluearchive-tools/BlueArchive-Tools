@@ -59,8 +59,14 @@ export default function StudentSelect({ students, value, onChange }: Props) {
     return () => document.removeEventListener('click', handle)
   }, [])
 
-  const normalizeForSearch = (text: string) => {
-    const normalized = text.normalize('NFKC').trim().toLowerCase()
+  const normalizeForSearch = (text: unknown) => {
+    const normalizedText =
+      typeof text === 'string'
+        ? text
+        : typeof text === 'number'
+          ? String(text)
+          : ''
+    const normalized = normalizedText.normalize('NFKC').trim().toLowerCase()
     return {
       raw: normalized,
       katakana: toKatakana(normalized),
