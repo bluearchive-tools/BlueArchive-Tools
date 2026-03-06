@@ -7,6 +7,7 @@ import { faBars, faExpand, faForward, faGear } from '@fortawesome/free-solid-svg
 type StoryEffect = 'none' | 'flash' | 'shake' | 'fade'
 type ElementAddMode = 'character' | 'line' | 'background'
 type TitlePhase = 'hidden' | 'fadeIn' | 'fadeOut'
+type FadePhase = 'hidden' | 'fadeIn' | 'fadeOut'
 
 type StoryMeta = {
   title: string
@@ -55,7 +56,9 @@ const SHIN_MARU_FONT = '"MFW-PShinMGoPr6N-Medium", "M PLUS 1p", sans-serif'
 const TEXT_REVEAL_INTERVAL_MS = 38
 const AUTO_ADVANCE_DELAY_MS = 700
 const TITLE_HOLD_MS = 1000
-const LOCATION_HOLD_MS = 2000
+const TITLE_FADE_MS = 500
+const LOCATION_SHOW_MS = 1500
+const LOCATION_FADE_MS = 500
 
 const DEFAULT_CHARACTERS: StoryCharacter[] = [
   { id: 1, name: '先生', affiliation: 'シャーレ' },
@@ -143,10 +146,17 @@ export default function StoryEditorPage() {
   const [storyFlags, setStoryFlags] = useState<string[]>([])
   const [autoMode, setAutoMode] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [logOpen, setLogOpen] = useState(false)
+  const [logs, setLogs] = useState<string[]>([])
+  const [loggedLineId, setLoggedLineId] = useState<number | null>(null)
+  const [backgroundOnly, setBackgroundOnly] = useState(false)
+
   const [titlePhase, setTitlePhase] = useState<TitlePhase>('hidden')
-  const [locationVisible, setLocationVisible] = useState(false)
+  const [locationPhase, setLocationPhase] = useState<FadePhase>('hidden')
+
   const [forceLandscape, setForceLandscape] = useState(false)
   const [currentBackground, setCurrentBackground] = useState<BackgroundConfig>({ color: '#ffffff', imageUrl: '' })
+  const [choiceAppear, setChoiceAppear] = useState(false)
 
   const flagsSet = useMemo(() => new Set(storyFlags), [storyFlags])
   const playingElement = playIndex >= 0 ? elements[playIndex] ?? null : null
@@ -169,8 +179,8 @@ export default function StoryEditorPage() {
   useEffect(() => {
     if (!isPlaying || !playingLine || titlePhase !== 'hidden') return
     setVisibleChars(0)
+    setLoggedLineId(null)
   }, [isPlaying, playingLine, titlePhase])
-
 
   useEffect(() => {
     if (!isPlaying || !playingLine || titlePhase !== 'hidden') return
@@ -189,14 +199,28 @@ export default function StoryEditorPage() {
   }, [isPlaying, playingLine, titlePhase, visibleChars])
 
   useEffect(() => {
-    if (!isPlaying || !playingLine || !playingLine.locationLabel.trim()) {
-      setLocationVisible(false)
+    if (!isPlaying || !playingLine || titlePhase !== 'hidden') return
+    if (!isLineFullyVisible) return
+    if (loggedLineId === playingLine.id) return
+    const characterName = playingCharacter?.name ?? '未設定'
+    setLogs((prev) => [...prev, `${characterName}: ${playingLine.body}`])
+    setLoggedLineId(playingLine.id)
+  }, [isPlaying, isLineFullyVisible, loggedLineId, playingCharacter?.name, playingLine, titlePhase])
+
+  useEffect(() => {
+    if (!isPlaying || !playingLine || !playingLine.locationLabel.trim() || titlePhase !== 'hidden') {
+      setLocationPhase('hidden')
       return
     }
-    setLocationVisible(true)
-    const timerId = window.setTimeout(() => setLocationVisible(false), LOCATION_HOLD_MS)
-    return () => window.clearTimeout(timerId)
-  }, [isPlaying, playIndex, playingLine])
+
+    setLocationPhase('fadeIn')
+    const fadeOutId = window.setTimeout(() => setLocationPhase('fadeOut'), LOCATION_SHOW_MS)
+    const hideId = window.setTimeout(() => setLocationPhase('hidden'), LOCATION_SHOW_MS + LOCATION_FADE_MS)
+    return () => {
+      window.clearTimeout(fadeOutId)
+      window.clearTimeout(hideId)
+    }
+  }, [isPlaying, playIndex, playingLine, titlePhase])
 
   useEffect(() => {
     if (!isPlaying || !autoMode || !playingLine || !isLineFullyVisible || titlePhase !== 'hidden') return
@@ -205,6 +229,17 @@ export default function StoryEditorPage() {
     return () => window.clearTimeout(timeoutId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoMode, isPlaying, isLineFullyVisible, playingLine, titlePhase, visibleChoices.length, flagsSet, playIndex, elements])
+
+  useEffect(() => {
+    const canShowChoices = titlePhase === 'hidden' && isLineFullyVisible && visibleChoices.length > 0
+    if (!canShowChoices) {
+      setChoiceAppear(false)
+      return
+    }
+    setChoiceAppear(false)
+    const id = window.setTimeout(() => setChoiceAppear(true), 16)
+    return () => window.clearTimeout(id)
+  }, [isLineFullyVisible, titlePhase, visibleChoices.length, playIndex])
 
   useEffect(() => {
     if (!isPlaying) return
@@ -279,7 +314,7 @@ export default function StoryEditorPage() {
   }
 
   const reorderElements = (fromId: number, toId: number) => {
-    if (fromId == toId) return
+    if (fromId === toId) return
     setElements((prev) => {
       const fromIndex = prev.findIndex((element) => element.id === fromId)
       const toIndex = prev.findIndex((element) => element.id === toId)
@@ -326,16 +361,19 @@ export default function StoryEditorPage() {
     const initialBg = findLastBackgroundBefore(elements, firstLineIndex)
     if (initialBg) setCurrentBackground(initialBg)
 
+    setLogs([])
     setStoryFlags([])
     setAutoMode(false)
     setMenuOpen(false)
+    setLogOpen(false)
+    setBackgroundOnly(false)
     setPlayIndex(firstLineIndex)
     setIsPlaying(true)
 
     if (meta.title.trim()) {
       setTitlePhase('fadeIn')
       window.setTimeout(() => setTitlePhase('fadeOut'), TITLE_HOLD_MS)
-      window.setTimeout(() => setTitlePhase('hidden'), TITLE_HOLD_MS + 600)
+      window.setTimeout(() => setTitlePhase('hidden'), TITLE_HOLD_MS + TITLE_FADE_MS)
     } else {
       setTitlePhase('hidden')
     }
@@ -345,6 +383,8 @@ export default function StoryEditorPage() {
     setIsPlaying(false)
     setAutoMode(false)
     setMenuOpen(false)
+    setLogOpen(false)
+    setBackgroundOnly(false)
     setTitlePhase('hidden')
   }
 
@@ -387,6 +427,10 @@ export default function StoryEditorPage() {
   }
 
   const onTapAdvance = () => {
+    if (backgroundOnly) {
+      setBackgroundOnly(false)
+      return
+    }
     if (titlePhase !== 'hidden') {
       setTitlePhase('hidden')
       return
@@ -538,61 +582,78 @@ export default function StoryEditorPage() {
 
           <div className={`absolute inset-0 ${forceLandscape ? 'flex items-center justify-center' : ''}`}>
             <div className={forceLandscape ? 'h-[100vw] w-[100vh] origin-center rotate-90' : 'h-full w-full'}>
-              <div className="absolute right-4 top-4 z-[5] flex flex-col items-end gap-2" onClick={(event) => event.stopPropagation()}>
-                <div className="flex gap-2">
-                  <button type="button" className="rounded bg-slate-700/90 px-3 py-1 text-sm text-white italic" style={{ fontFamily: SHIN_MARU_FONT }} onClick={() => setAutoMode((prev) => !prev)}>AUTO</button>
-                  <button type="button" className="rounded bg-slate-700/90 px-3 py-1 text-sm text-white italic" style={{ fontFamily: SHIN_MARU_FONT }} onClick={() => setMenuOpen((prev) => !prev)}>MENU</button>
-                </div>
-                {menuOpen && (
-                  <div className="grid grid-cols-4 gap-2 rounded bg-slate-900/70 p-2 text-white">
-                    <button type="button" className="rounded bg-slate-700/80 p-2" title="拡大"><FontAwesomeIcon icon={faExpand} /></button>
-                    <button type="button" className="rounded bg-slate-700/80 p-2" title="設定"><FontAwesomeIcon icon={faGear} /></button>
-                    <button type="button" className="rounded bg-slate-700/80 p-2" title="メニュー"><FontAwesomeIcon icon={faBars} /></button>
-                    <button type="button" className="rounded bg-slate-700/80 p-2" title="スキップ" onClick={() => closePlayer()}><FontAwesomeIcon icon={faForward} /></button>
-                  </div>
-                )}
-              </div>
-
-              {titlePhase !== 'hidden' && meta.title.trim() && (
-                <div className={`absolute inset-0 z-[4] transition-opacity duration-500 ${titlePhase === 'fadeIn' ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
-                  <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 bg-white/96 py-5 text-center transition-opacity duration-500">
-                    <p className="text-2xl font-bold" style={{ color: '#3a4f88' }}>{meta.title}</p>
-                    {meta.summary.trim() && <p className="mt-1 text-sm" style={{ color: '#3a4f88' }}>{meta.summary}</p>}
-                  </div>
-                </div>
-              )}
-
-              {playingLine && titlePhase === 'hidden' && locationVisible && playingLine.locationLabel.trim() && (
-                <div className="absolute left-6 top-[34%] z-[3] rounded px-4 py-2 text-sm text-white transition-opacity duration-500" style={{ backgroundColor: 'rgba(42,66,91,0.65)' }}>
-                  {playingLine.locationLabel}
-                </div>
-              )}
-
-              {playingLine && (
+              {!backgroundOnly && (
                 <>
-                  {isLineFullyVisible && visibleChoices.length > 0 && titlePhase === 'hidden' && (
-                    <div className="absolute left-1/2 top-1/2 z-[3] grid w-[min(88vw,460px)] -translate-x-1/2 -translate-y-1/2 gap-2" onClick={(event) => event.stopPropagation()}>
-                      {visibleChoices.map((choice) => (
-                        <button key={choice.id} type="button" className="rounded bg-slate-900/60 px-4 py-3 text-left text-white hover:bg-slate-900/75" onClick={() => jumpToElementById(choice.nextElementId, choice.setFlag)}>
-                          {choice.label}
-                        </button>
-                      ))}
+                  <div className="absolute right-4 top-4 z-[5] flex flex-col items-end gap-2" onClick={(event) => event.stopPropagation()}>
+                    <div className="flex gap-2">
+                      <button type="button" className="rounded bg-white/90 px-3 py-1 text-sm text-slate-900 italic" style={{ fontFamily: SHIN_MARU_FONT }} onClick={() => setAutoMode((prev) => !prev)}>AUTO</button>
+                      <button type="button" className="rounded bg-white/90 px-3 py-1 text-sm text-slate-900 italic" style={{ fontFamily: SHIN_MARU_FONT }} onClick={() => setMenuOpen((prev) => !prev)}>MENU</button>
+                    </div>
+                    {menuOpen && (
+                      <div className="grid grid-cols-4 gap-2 rounded bg-white/90 p-2 text-slate-800">
+                        <button type="button" className="rounded bg-white p-2" title="拡大" onClick={() => { setBackgroundOnly(true); setMenuOpen(false) }}><FontAwesomeIcon icon={faExpand} /></button>
+                        <button type="button" className="rounded bg-white p-2" title="設定"><FontAwesomeIcon icon={faGear} /></button>
+                        <button type="button" className="rounded bg-white p-2" title="LOG" onClick={() => setLogOpen(true)}><FontAwesomeIcon icon={faBars} /></button>
+                        <button type="button" className="rounded bg-white p-2" title="スキップ" onClick={closePlayer}><FontAwesomeIcon icon={faForward} /></button>
+                      </div>
+                    )}
+                  </div>
+
+                  {titlePhase !== 'hidden' && meta.title.trim() && (
+                    <div className={`absolute inset-0 z-[4] transition-opacity duration-500 ${titlePhase === 'fadeIn' ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
+                      <div className={`absolute left-0 right-0 top-1/2 -translate-y-1/2 bg-white/96 py-5 text-center transition-opacity duration-500 ${titlePhase === 'fadeIn' ? 'opacity-100' : 'opacity-0'}`}>
+                        <p className="text-2xl font-bold" style={{ color: '#3a4f88' }}>{meta.title}</p>
+                        {meta.summary.trim() && <p className="mt-1 text-sm" style={{ color: '#3a4f88' }}>{meta.summary}</p>}
+                      </div>
                     </div>
                   )}
 
-                  <div className={`absolute inset-0 ${playingLine.effect === 'fade' ? 'opacity-80' : 'opacity-100'} ${playingLine.effect === 'shake' ? 'animate-bounce' : ''}`} style={{ pointerEvents: 'none' }} />
-
-                  <div className="absolute bottom-0 left-0 right-0 px-6 pb-8 pt-6" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(217,229,239,0.25) 4%, rgba(147,172,191,0.45) 9%, rgba(96,124,148,0.65) 18%, rgba(74,102,127,0.78) 38%, rgba(61,89,114,0.9) 62%, rgba(42,66,91,0.96) 100%)' }}>
-                    <div className="flex items-baseline gap-3" style={{ color: '#ffffff' }}>
-                      <p className="text-lg font-bold">{playingCharacter?.name ?? '未設定キャラクター'}</p>
-                      <p className="text-sm font-semibold" style={{ color: '#7cd0ff' }}>{playingCharacter?.affiliation ?? '未設定'}</p>
+                  {playingLine && titlePhase === 'hidden' && locationPhase !== 'hidden' && playingLine.locationLabel.trim() && (
+                    <div className={`absolute left-6 top-[34%] z-[3] rounded px-4 py-2 text-sm text-white transition-opacity duration-500 ${locationPhase === 'fadeIn' ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: 'rgba(42,66,91,0.65)' }}>
+                      {playingLine.locationLabel}
                     </div>
-                    <div className="mt-2 border-t border-white/60" />
-                    <p className="mt-3 min-h-16 whitespace-pre-wrap text-base" style={{ color: '#ffffff' }}>{visibleBody}</p>
-                    {isLineFullyVisible && visibleChoices.length === 0 && (
-                      <span className="absolute bottom-3 right-4 animate-bounce text-lg" style={{ color: '#7cd0ff' }}>▲</span>
-                    )}
-                  </div>
+                  )}
+
+                  {playingLine && isLineFullyVisible && visibleChoices.length > 0 && titlePhase === 'hidden' && (
+                    <div className="absolute left-1/2 top-1/2 z-[3] -translate-x-1/2 -translate-y-1/2" onClick={(event) => event.stopPropagation()}>
+                      <div className={`grid w-[min(88vw,460px)] gap-2 transition-all duration-300 ${choiceAppear ? 'scale-100 opacity-100 animate-bounce' : 'scale-75 opacity-0'}`}>
+                        {visibleChoices.map((choice) => (
+                          <button key={choice.id} type="button" className="rounded bg-white/90 px-4 py-3 text-left text-slate-900 hover:bg-white" onClick={() => jumpToElementById(choice.nextElementId, choice.setFlag)}>
+                            {choice.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {playingLine && (
+                    <>
+                      <div className={`absolute inset-0 ${playingLine.effect === 'fade' ? 'opacity-80' : 'opacity-100'} ${playingLine.effect === 'shake' ? 'animate-bounce' : ''}`} style={{ pointerEvents: 'none' }} />
+
+                      <div className="absolute bottom-0 left-0 right-0 px-6 pb-8 pt-6" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(217,229,239,0.25) 4%, rgba(147,172,191,0.45) 9%, rgba(96,124,148,0.65) 18%, rgba(74,102,127,0.78) 38%, rgba(61,89,114,0.9) 62%, rgba(42,66,91,0.96) 100%)' }}>
+                        <div className="flex items-baseline gap-3" style={{ color: '#ffffff' }}>
+                          <p className="text-lg font-bold">{playingCharacter?.name ?? '未設定キャラクター'}</p>
+                          <p className="text-sm font-semibold" style={{ color: '#7cd0ff' }}>{playingCharacter?.affiliation ?? '未設定'}</p>
+                        </div>
+                        <div className="mt-2 border-t border-white/60" />
+                        <p className="mt-3 min-h-16 whitespace-pre-wrap text-base" style={{ color: '#ffffff' }}>{visibleBody}</p>
+                        {isLineFullyVisible && visibleChoices.length === 0 && (
+                          <span className="absolute bottom-3 right-4 animate-bounce text-lg" style={{ color: '#7cd0ff' }}>▲</span>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {logOpen && (
+                    <div className="absolute inset-0 z-[6] flex items-center justify-center bg-black/45" onClick={() => setLogOpen(false)}>
+                      <div className="max-h-[70vh] w-[min(92vw,640px)] overflow-auto rounded bg-white p-4" onClick={(event) => event.stopPropagation()}>
+                        <h3 className="text-lg font-bold">LOG</h3>
+                        <ul className="mt-3 space-y-2 text-sm text-slate-700">
+                          {logs.length === 0 ? <li>まだログがありません。</li> : logs.map((log, index) => <li key={`${index}-${log.slice(0, 12)}`}>{log}</li>)}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
