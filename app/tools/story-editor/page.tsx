@@ -58,6 +58,14 @@ type BackgroundElement = {
 type StoryElement = LineElement | BackgroundElement
 
 
+type StoryLog = {
+  lineId: number
+  speaker: string
+  body: string
+  expressionImageUrl: string
+}
+
+
 const SHIN_MARU_FONT = '"MFW-PShinMGoPr6N-Medium", "M PLUS 1p", sans-serif'
 const TEXT_REVEAL_INTERVAL_MS = 38
 const AUTO_ADVANCE_DELAY_MS = 700
