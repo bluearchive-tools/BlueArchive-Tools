@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBars, faExpand, faForward, faGear, faXmark } from '@fortawesome/free-solid-svg-icons'
 
@@ -20,7 +20,6 @@ type StoryCharacter = {
   name: string
   affiliation: string
   portraitUrl: string
-  wikiTitle: string
   expressions: Array<{ name: string; imageUrl: string }>
 }
 
@@ -71,6 +70,12 @@ type StudentNameLookup = {
 }
 
 
+type ExpressionPickerState = {
+  open: boolean
+  mode: 'new-line' | 'edit-line'
+  lineId: number | null
+}
+
 const SHIN_MARU_FONT = '"MFW-PShinMGoPr6N-Medium", "M PLUS 1p", sans-serif'
 const TEXT_REVEAL_INTERVAL_MS = 38
 const AUTO_ADVANCE_DELAY_MS = 700
@@ -80,8 +85,8 @@ const LOCATION_SHOW_MS = 1500
 const LOCATION_FADE_MS = 500
 
 const DEFAULT_CHARACTERS: StoryCharacter[] = [
-  { id: 1, name: '先生', affiliation: 'シャーレ', portraitUrl: '', wikiTitle: '', expressions: [] },
-  { id: 2, name: 'アロナ', affiliation: 'シッテムの箱', portraitUrl: '', wikiTitle: 'Arona', expressions: [] },
+  { id: 1, name: '先生', affiliation: 'シャーレ', portraitUrl: '', expressions: [] },
+  { id: 2, name: 'アロナ', affiliation: 'シッテムの箱', portraitUrl: '', expressions: [] },
 ]
 
 const DEFAULT_ELEMENTS: StoryElement[] = [
@@ -148,7 +153,6 @@ export default function StoryEditorPage() {
   const [newCharacterName, setNewCharacterName] = useState('')
   const [newCharacterAffiliation, setNewCharacterAffiliation] = useState('')
   const [newCharacterPortraitUrl, setNewCharacterPortraitUrl] = useState('')
-  const [newCharacterWikiTitle, setNewCharacterWikiTitle] = useState('')
 
   const [lineCharacterId, setLineCharacterId] = useState(DEFAULT_CHARACTERS[0].id)
   const [lineBody, setLineBody] = useState('')
@@ -186,6 +190,7 @@ export default function StoryEditorPage() {
   const [editorView, setEditorView] = useState<EditorView>('timeline')
   const [expressionFetchStateByCharacter, setExpressionFetchStateByCharacter] = useState<Record<number, string>>({})
   const [studentNameLookup, setStudentNameLookup] = useState<StudentNameLookup[]>([])
+  const [expressionPicker, setExpressionPicker] = useState<ExpressionPickerState>({ open: false, mode: 'new-line', lineId: null })
 
   const flagsSet = useMemo(() => new Set(storyFlags), [storyFlags])
   const playingElement = playIndex >= 0 ? elements[playIndex] ?? null : null
@@ -204,6 +209,15 @@ export default function StoryEditorPage() {
     if (!playingLine) return []
     return playingLine.choices.filter((choice) => canShowChoice(choice, flagsSet))
   }, [flagsSet, playingLine])
+
+  const lineEditorCharacter = useMemo(
+    () => characters.find((character) => character.id === lineCharacterId) ?? null,
+    [characters, lineCharacterId],
+  )
+  const lineEditorExpression = useMemo(
+    () => lineEditorCharacter?.expressions.find((expression) => expression.name === lineExpressionName) ?? null,
+    [lineEditorCharacter, lineExpressionName],
+  )
 
   const isLineFullyVisible = playingLine ? visibleChars >= playingLine.body.length : true
   const visibleBody = playingLine ? playingLine.body.slice(0, visibleChars) : ''
@@ -341,14 +355,12 @@ export default function StoryEditorPage() {
       name: newCharacterName.trim(),
       affiliation: newCharacterAffiliation.trim(),
       portraitUrl: newCharacterPortraitUrl.trim(),
-      wikiTitle: newCharacterWikiTitle.trim(),
       expressions: [],
     }])
     setLineCharacterId(id)
     setNewCharacterName('')
     setNewCharacterAffiliation('')
     setNewCharacterPortraitUrl('')
-    setNewCharacterWikiTitle('')
   }
 
   const addLine = () => {
@@ -404,18 +416,15 @@ export default function StoryEditorPage() {
     })
   }
 
-  const resolveWikiTitle = (character: StoryCharacter) => {
-    const manualTitle = character.wikiTitle.trim()
-    if (manualTitle) return manualTitle
-
+  const resolveWikiTitle = useCallback((character: StoryCharacter) => {
     const hit = studentNameLookup.find((student) => student.aliases.some((alias) => alias === character.name.trim()))
     return hit?.englishName ?? ''
-  }
+  }, [studentNameLookup])
 
-  const fetchExpressionsFromWiki = async (character: StoryCharacter) => {
+  const fetchExpressionsFromWiki = useCallback(async (character: StoryCharacter) => {
     const title = resolveWikiTitle(character)
     if (!title) {
-      setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: 'wikiTitle未設定: students.json の英語名マッピングも未一致です' }))
+      setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: 'students.json の英語名マッピングが見つかりません' }))
       return
     }
 
@@ -430,12 +439,55 @@ export default function StoryEditorPage() {
         setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: '表情差分が見つかりませんでした' }))
         return
       }
-      updateCharacter(character.id, { expressions, wikiTitle: title })
+      updateCharacter(character.id, { expressions })
       setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: `${expressions.length} 件取得しました (${title})` }))
     } catch {
       setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: '取得に失敗しました' }))
     }
+  }, [resolveWikiTitle])
+
+  useEffect(() => {
+    const targets = characters.filter((character) => {
+      if (character.expressions.length > 0) return false
+      const status = expressionFetchStateByCharacter[character.id] ?? ''
+      if (status.startsWith('取得中')) return false
+      if (status.includes('取得しました')) return false
+      if (status.includes('失敗') || status.includes('見つかりません') || status.includes('見つかりませんでした')) return false
+      return resolveWikiTitle(character) !== ''
+    })
+
+    for (const target of targets) {
+      fetchExpressionsFromWiki(target).catch(() => undefined)
+    }
+  }, [characters, expressionFetchStateByCharacter, fetchExpressionsFromWiki, resolveWikiTitle])
+
+  const openExpressionPickerForNewLine = () => {
+    setExpressionPicker({ open: true, mode: 'new-line', lineId: null })
   }
+
+  const openExpressionPickerForLine = (lineId: number) => {
+    setExpressionPicker({ open: true, mode: 'edit-line', lineId })
+  }
+
+  const pickExpression = (expressionName: string) => {
+    if (expressionPicker.mode === 'new-line') {
+      setLineExpressionName(expressionName)
+    } else if (expressionPicker.lineId !== null) {
+      updateLineElement(expressionPicker.lineId, { expressionName })
+    }
+    setExpressionPicker((prev) => ({ ...prev, open: false }))
+  }
+
+  const pickerTargetLine = expressionPicker.mode === 'edit-line' && expressionPicker.lineId !== null
+    ? elements.find((element) => element.type === 'line' && element.id === expressionPicker.lineId) ?? null
+    : null
+  const pickerCharacterId = expressionPicker.mode === 'new-line'
+    ? lineCharacterId
+    : pickerTargetLine?.characterId ?? lineCharacterId
+  const pickerCharacter = characters.find((character) => character.id === pickerCharacterId) ?? null
+  const pickerSelectedExpression = expressionPicker.mode === 'new-line'
+    ? lineExpressionName
+    : pickerTargetLine?.expressionName ?? ''
 
   const removeElement = (id: number) => {
     setElements((prev) => prev.filter((element) => element.id !== id).map((element) => {
@@ -662,10 +714,10 @@ export default function StoryEditorPage() {
                     </div>
                     <div className="grid gap-3 md:grid-cols-4">
                       <input value={lineBody} onChange={(event) => setLineBody(event.target.value)} className="rounded border px-3 py-2 md:col-span-2" placeholder="本文" />
-                      <select value={lineExpressionName} onChange={(event) => setLineExpressionName(event.target.value)} className="rounded border px-3 py-2">
-                        <option value="">表情: なし</option>
-                        {(characters.find((character) => character.id === lineCharacterId)?.expressions ?? []).map((expression) => <option key={expression.name} value={expression.name}>{expression.name}</option>)}
-                      </select>
+                      <button type="button" onClick={openExpressionPickerForNewLine} className="flex items-center gap-2 rounded border px-3 py-2 text-left">
+                        {lineEditorExpression?.imageUrl ? <img src={lineEditorExpression.imageUrl} alt={lineEditorExpression.name} className="h-8 w-8 rounded object-cover" /> : <span className="inline-flex h-8 w-8 items-center justify-center rounded bg-gray-100 text-xs text-gray-500">-</span>}
+                        <span className="text-sm">{lineExpressionName || '表情を選択'}</span>
+                      </button>
                       <button type="button" onClick={addLine} disabled={!canAddLine} className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">追加</button>
                     </div>
                   </>
@@ -731,10 +783,12 @@ export default function StoryEditorPage() {
                                 <select value={element.characterId} onChange={(event) => updateLineElement(element.id, { characterId: Number(event.target.value) })} className="rounded border px-2 py-1 text-xs">
                                   {characters.map((targetCharacter) => <option key={targetCharacter.id} value={targetCharacter.id}>{targetCharacter.name} / {targetCharacter.affiliation}</option>)}
                                 </select>
-                                <select value={element.expressionName} onChange={(event) => updateLineElement(element.id, { expressionName: event.target.value })} className="rounded border px-2 py-1 text-xs">
-                                  <option value="">表情: なし</option>
-                                  {(characters.find((item) => item.id === element.characterId)?.expressions ?? []).map((expression) => <option key={expression.name} value={expression.name}>{expression.name}</option>)}
-                                </select>
+                                <button type="button" onClick={() => openExpressionPickerForLine(element.id)} className="flex items-center gap-2 rounded border px-2 py-1 text-xs text-left">
+                                  {(characters.find((item) => item.id === element.characterId)?.expressions.find((expression) => expression.name === element.expressionName)?.imageUrl)
+                                    ? <img src={characters.find((item) => item.id === element.characterId)?.expressions.find((expression) => expression.name === element.expressionName)?.imageUrl} alt={element.expressionName || '表情'} className="h-7 w-7 rounded object-cover" />
+                                    : <span className="inline-flex h-7 w-7 items-center justify-center rounded bg-gray-100 text-[10px] text-gray-500">-</span>}
+                                  <span>{element.expressionName || '表情を選択'}</span>
+                                </button>
                               </div>
                               <textarea value={element.body} onChange={(event) => updateLineElement(element.id, { body: event.target.value })} className="min-h-20 w-full rounded border px-2 py-1 text-xs" placeholder="本文" />
                               <div className="grid gap-2 md:grid-cols-3">
@@ -800,7 +854,6 @@ export default function StoryEditorPage() {
                 <input value={newCharacterName} onChange={(event) => setNewCharacterName(event.target.value)} className="rounded border px-3 py-2" placeholder="キャラクター名" />
                 <input value={newCharacterAffiliation} onChange={(event) => setNewCharacterAffiliation(event.target.value)} className="rounded border px-3 py-2" placeholder="所属" />
                 <input value={newCharacterPortraitUrl} onChange={(event) => setNewCharacterPortraitUrl(event.target.value)} className="rounded border px-3 py-2" placeholder="立ち絵URL" />
-                <input value={newCharacterWikiTitle} onChange={(event) => setNewCharacterWikiTitle(event.target.value)} className="rounded border px-3 py-2" placeholder="bluearchive.wiki タイトル" />
               </div>
               <button type="button" onClick={addCharacter} disabled={!canAddCharacter} className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">追加</button>
 
@@ -811,9 +864,7 @@ export default function StoryEditorPage() {
                       <input value={character.name} onChange={(event) => updateCharacter(character.id, { name: event.target.value })} className="rounded border px-2 py-1" placeholder="キャラクター名" />
                       <input value={character.affiliation} onChange={(event) => updateCharacter(character.id, { affiliation: event.target.value })} className="rounded border px-2 py-1" placeholder="所属" />
                       <input value={character.portraitUrl} onChange={(event) => updateCharacter(character.id, { portraitUrl: event.target.value })} className="rounded border px-2 py-1 md:col-span-2" placeholder="立ち絵URL" />
-                      <input value={character.wikiTitle} onChange={(event) => updateCharacter(character.id, { wikiTitle: event.target.value })} className="rounded border px-2 py-1" placeholder="bluearchive.wiki タイトル" />
                       <div className="flex gap-2">
-                        <button type="button" className="rounded bg-sky-600 px-3 py-1 text-xs text-white" onClick={() => fetchExpressionsFromWiki(character)}>表情差分を取得</button>
                         <button type="button" className="rounded border border-red-300 px-3 py-1 text-xs text-red-700" onClick={() => removeCharacter(character.id)}>削除</button>
                       </div>
                     </div>
@@ -848,6 +899,29 @@ export default function StoryEditorPage() {
           )}
         </div>
       </section>
+
+      {expressionPicker.open && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/40" onClick={() => setExpressionPicker((prev) => ({ ...prev, open: false }))}>
+          <div className="w-[min(92vw,860px)] rounded-xl bg-white p-4 shadow-xl" onClick={(event) => event.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-lg font-bold">表情を選択 {pickerCharacter ? `- ${pickerCharacter.name}` : ''}</h3>
+              <button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => setExpressionPicker((prev) => ({ ...prev, open: false }))}>閉じる</button>
+            </div>
+            <div className="mb-3">
+              <button type="button" className="rounded border border-gray-300 px-3 py-1 text-sm" onClick={() => pickExpression('')}>表情なしにする</button>
+            </div>
+            <div className="grid max-h-[60vh] grid-cols-2 gap-2 overflow-y-auto md:grid-cols-4">
+              {(pickerCharacter?.expressions ?? []).map((expression) => (
+                <button key={expression.name} type="button" className={`rounded border p-2 text-left ${pickerSelectedExpression === expression.name ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'}`} onClick={() => pickExpression(expression.name)}>
+                  <img src={expression.imageUrl} alt={expression.name} className="h-24 w-full rounded object-cover" />
+                  <p className="mt-1 truncate text-xs">{expression.name}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {isPlaying && (
         <div className={`fixed inset-0 z-[100] bg-white text-left ${playingLine?.effect === 'flash' ? 'animate-pulse' : ''}`} onClick={onTapAdvance} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') onTapAdvance() }}>
           <div className="absolute inset-0" style={{ backgroundColor: currentBackground.color, backgroundImage: currentBackground.imageUrl ? `url(${currentBackground.imageUrl})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center' }} />

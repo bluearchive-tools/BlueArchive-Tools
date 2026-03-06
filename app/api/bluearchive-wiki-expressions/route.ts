@@ -1,30 +1,82 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-type BlueArchiveWikiFile = {
-  name?: string
-  url?: string
-}
-
-type BlueArchiveWikiResponse = {
-  files?: BlueArchiveWikiFile[]
-}
-
 type ExpressionResult = {
   name: string
   imageUrl: string
 }
 
+function decodeHtml(value: string) {
+  return value
+    .replaceAll('&amp;', '&')
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+}
+
+function normalizeWikiTitle(title: string) {
+  return title.replaceAll(' ', '_')
+}
+
+function toOriginalImageUrl(url: string) {
+  const thumbMarker = '/thumb/'
+  const thumbIndex = url.indexOf(thumbMarker)
+  if (thumbIndex < 0) return url
+  const rest = url.slice(thumbIndex + thumbMarker.length)
+  const slashIndex = rest.lastIndexOf('/')
+  if (slashIndex < 0) return url
+  return `${url.slice(0, thumbIndex)}/${rest.slice(0, slashIndex)}`
+}
+
+function parseGalleryExpressions(html: string) {
+  const itemRegex = /<li[^>]*class="[^"]*gallerybox[^"]*"[\s\S]*?<\/li>/g
+  const fileHrefRegex = /href="([^"]*\/wiki\/File:[^"]*Portrait[^"]*\.webp[^"]*)"/i
+  const imgSrcRegex = /<img[^>]+src="([^"]+)"/i
+  const altRegex = /<img[^>]+alt="([^"]+)"/i
+
+  const matches = html.match(itemRegex) ?? []
+  const seen = new Set<string>()
+  const expressions: ExpressionResult[] = []
+
+  for (const item of matches) {
+    if (!/Portrait/i.test(item) || !/\.webp/i.test(item)) continue
+
+    const hrefMatch = item.match(fileHrefRegex)
+    const srcMatch = item.match(imgSrcRegex)
+    if (!hrefMatch || !srcMatch) continue
+
+    const rawHref = decodeHtml(hrefMatch[1] ?? '')
+    const rawSrc = decodeHtml(srcMatch[1] ?? '')
+    if (!rawHref || !rawSrc) continue
+
+    const fileName = rawHref.split('/wiki/File:')[1]?.split('?')[0] ?? ''
+    if (!fileName || seen.has(fileName)) continue
+    seen.add(fileName)
+
+    const imageUrl = toOriginalImageUrl(rawSrc)
+    const alt = decodeHtml(item.match(altRegex)?.[1] ?? fileName)
+    const name = alt.replace(/\.[^.]+$/, '')
+
+    expressions.push({ name, imageUrl })
+  }
+
+  return expressions
+}
+
 export async function GET(request: NextRequest) {
-  const title = request.nextUrl.searchParams.get('title')?.trim() ?? ''
-  if (!title) {
+  const rawTitle = request.nextUrl.searchParams.get('title')?.trim() ?? ''
+  if (!rawTitle) {
     return NextResponse.json({ message: 'title is required' }, { status: 400 })
   }
 
+  const title = normalizeWikiTitle(rawTitle)
+  const url = `https://bluearchive.wiki/wiki/${encodeURIComponent(title)}/gallery`
+
   try {
-    const response = await fetch(`https://bluearchive.wiki/wiki/${encodeURIComponent(title)}?output=1&format=json`, {
+    const response = await fetch(url, {
       cache: 'no-store',
       headers: {
-        Accept: 'application/json',
+        Accept: 'text/html,application/xhtml+xml',
       },
     })
 
@@ -32,16 +84,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: `wiki fetch failed: ${response.status}` }, { status: 502 })
     }
 
-    const payload = await response.json() as BlueArchiveWikiResponse
-    const files = Array.isArray(payload.files) ? payload.files : []
-
-    const expressions: ExpressionResult[] = files
-      .filter((file) => typeof file.name === 'string' && typeof file.url === 'string' && file.name.includes('Portrait') && file.name.includes('.webp'))
-      .map((file) => ({
-        name: file.name!.replace(/\.[^.]+$/, '').replace(/^.*?Portrait_?/, ''),
-        imageUrl: file.url!,
-      }))
-
+    const html = await response.text()
+    const expressions = parseGalleryExpressions(html)
     return NextResponse.json({ title, expressions })
   } catch {
     return NextResponse.json({ message: 'wiki fetch failed' }, { status: 502 })
