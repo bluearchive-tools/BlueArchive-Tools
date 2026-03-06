@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBars, faExpand, faForward, faGear, faXmark } from '@fortawesome/free-solid-svg-icons'
+import PageHelpButton from '../../../components/PageHelpButton'
 
 type StoryEffect = 'none' | 'flash' | 'shake' | 'fade'
 type ElementAddMode = 'character' | 'line' | 'background'
@@ -45,6 +46,7 @@ type LineElement = {
   effect: StoryEffect
   locationLabel: string
   expressionName: string
+  spritePosition: 'left' | 'center' | 'right'
   choices: StoryChoice[]
 }
 
@@ -100,13 +102,14 @@ const DEFAULT_ELEMENTS: StoryElement[] = [
     effect: 'fade',
     locationLabel: 'SCHALE BRIDGE',
     expressionName: '',
+    spritePosition: 'center',
     choices: [
       { id: 11, label: '正面突破', nextElementId: 2, setFlag: 'front', requireFlag: '' },
       { id: 12, label: '迂回ルート', nextElementId: 3, setFlag: 'detour', requireFlag: '' },
     ],
   },
-  { id: 2, type: 'line', characterId: 2, body: '正面ルートで進行します。', requireFlag: 'front', effect: 'flash', locationLabel: '', expressionName: '', choices: [] },
-  { id: 3, type: 'line', characterId: 2, body: '迂回ルートで静かに進行します。', requireFlag: 'detour', effect: 'shake', locationLabel: '', expressionName: '', choices: [] },
+  { id: 2, type: 'line', characterId: 2, body: '正面ルートで進行します。', requireFlag: 'front', effect: 'flash', locationLabel: '', expressionName: '', spritePosition: 'center', choices: [] },
+  { id: 3, type: 'line', characterId: 2, body: '迂回ルートで静かに進行します。', requireFlag: 'detour', effect: 'shake', locationLabel: '', expressionName: '', spritePosition: 'center', choices: [] },
 ]
 
 function canShowChoice(choice: StoryChoice, flags: Set<string>) {
@@ -164,6 +167,7 @@ export default function StoryEditorPage() {
   const [lineEffect, setLineEffect] = useState<StoryEffect>('none')
   const [lineLocationLabel, setLineLocationLabel] = useState('')
   const [lineExpressionName, setLineExpressionName] = useState('')
+  const [lineSpritePosition, setLineSpritePosition] = useState<'left' | 'center' | 'right'>('center')
 
   const [bgColor, setBgColor] = useState('#ffffff')
   const [bgImageUrl, setBgImageUrl] = useState('')
@@ -379,11 +383,13 @@ export default function StoryEditorPage() {
       effect: lineEffect,
       locationLabel: lineLocationLabel.trim(),
       expressionName: lineExpressionName,
+      spritePosition: lineSpritePosition,
       choices: [],
     }])
     setLineBody('')
     setLineLocationLabel('')
     setLineExpressionName('')
+    setLineSpritePosition('center')
     setChoiceEditByLine((prev) => ({ ...prev, [id]: { label: '', nextElementId: id, setFlag: '', requireFlag: '' } }))
   }
 
@@ -658,7 +664,10 @@ export default function StoryEditorPage() {
 
   return (
     <main className="space-y-4 p-4">
-      <h1 className="text-xl font-bold">ストーリーエディタ</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-xl font-bold">ストーリーエディタ</h1>
+        <PageHelpButton pageKey="story-editor" className="text-gray-700" />
+      </div>
 
       <section className="md:flex md:items-start md:gap-4">
         <aside className="rounded border bg-white p-3 md:w-60 md:shrink-0">
@@ -701,7 +710,7 @@ export default function StoryEditorPage() {
 
                 {addMode === 'line' && (
                   <>
-                    <div className="grid gap-3 md:grid-cols-4">
+                    <div className="grid gap-3 md:grid-cols-5">
                       <select value={lineCharacterId} onChange={(event) => {
                         const nextId = Number(event.target.value)
                         setLineCharacterId(nextId)
@@ -718,6 +727,11 @@ export default function StoryEditorPage() {
                         <option value="fade">効果: フェード</option>
                       </select>
                       <input value={lineLocationLabel} onChange={(event) => setLineLocationLabel(event.target.value)} className="rounded border px-3 py-2" placeholder="場所表示オプション(任意)" />
+                      <select value={lineSpritePosition} onChange={(event) => setLineSpritePosition(event.target.value as 'left' | 'center' | 'right')} className="rounded border px-3 py-2">
+                        <option value="left">立ち絵: 左</option>
+                        <option value="center">立ち絵: 中央</option>
+                        <option value="right">立ち絵: 右</option>
+                      </select>
                     </div>
                     <div className="grid gap-3 md:grid-cols-4">
                       <input value={lineBody} onChange={(event) => setLineBody(event.target.value)} className="rounded border px-3 py-2 md:col-span-2" placeholder="本文" />
@@ -796,6 +810,11 @@ export default function StoryEditorPage() {
                                     : <span className="inline-flex h-7 w-7 items-center justify-center rounded bg-gray-100 text-[10px] text-gray-500">-</span>}
                                   <span>{element.expressionName || '表情を選択'}</span>
                                 </button>
+                                <select value={element.spritePosition} onChange={(event) => updateLineElement(element.id, { spritePosition: event.target.value as 'left' | 'center' | 'right' })} className="rounded border px-2 py-1 text-xs">
+                                  <option value="left">立ち絵: 左</option>
+                                  <option value="center">立ち絵: 中央</option>
+                                  <option value="right">立ち絵: 右</option>
+                                </select>
                               </div>
                               <textarea value={element.body} onChange={(event) => updateLineElement(element.id, { body: event.target.value })} className="min-h-20 w-full rounded border px-2 py-1 text-xs" placeholder="本文" />
                               <div className="grid gap-2 md:grid-cols-3">
@@ -941,7 +960,7 @@ export default function StoryEditorPage() {
           <div className="absolute inset-0" style={{ backgroundColor: currentBackground.color, backgroundImage: currentBackground.imageUrl ? `url(${currentBackground.imageUrl})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center' }} />
 
           <div className={`absolute inset-0 ${forceLandscape ? 'flex items-center justify-center' : ''}`}>
-            <div className={forceLandscape ? 'h-[100vw] w-[100vh] origin-center rotate-90' : 'h-full w-full'}>
+            <div className={forceLandscape ? 'h-[100dvw] w-[100dvh] origin-center rotate-90' : 'h-full w-full'}>
               {!backgroundOnly && (
                 <>
                   <div className="absolute right-4 top-4 z-[5] flex flex-col items-end gap-2" onClick={(event) => event.stopPropagation()}>
@@ -1000,7 +1019,7 @@ export default function StoryEditorPage() {
                         <img
                           src={playingExpressionUrl || playingCharacter?.portraitUrl || ''}
                           alt={`${playingCharacter?.name ?? 'キャラクター'}立ち絵`}
-                          className="absolute bottom-12 left-1/2 z-[1] h-[108vh] -translate-x-1/2 object-contain"
+                          className={`absolute bottom-[-10vh] z-[1] h-[108vh] object-contain ${playingLine.spritePosition === 'left' ? 'left-[18%] -translate-x-1/2' : playingLine.spritePosition === 'right' ? 'left-[82%] -translate-x-1/2' : 'left-1/2 -translate-x-1/2'}`}
                           style={{ filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.38))' }}
                         />
                       )}
