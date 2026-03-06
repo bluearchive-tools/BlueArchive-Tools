@@ -22,25 +22,24 @@ function toOriginalImageUrl(url: string) {
   const thumbMarker = '/thumb/'
   const thumbIndex = url.indexOf(thumbMarker)
   if (thumbIndex < 0) return url
+
   const rest = url.slice(thumbIndex + thumbMarker.length)
   const slashIndex = rest.lastIndexOf('/')
   if (slashIndex < 0) return url
+
   return `${url.slice(0, thumbIndex)}/${rest.slice(0, slashIndex)}`
 }
 
 function parseGalleryExpressions(html: string) {
   const itemRegex = /<li[^>]*class="[^"]*gallerybox[^"]*"[\s\S]*?<\/li>/g
-  const fileHrefRegex = /href="([^"]*\/wiki\/File:[^"]*Portrait[^"]*\.webp[^"]*)"/i
+  const fileHrefRegex = /href="([^"]*\/wiki\/File:[^"]+\.(?:png|webp|jpg|jpeg)[^"]*)"/i
   const imgSrcRegex = /<img[^>]+src="([^"]+)"/i
-  const altRegex = /<img[^>]+alt="([^"]+)"/i
 
   const matches = html.match(itemRegex) ?? []
   const seen = new Set<string>()
   const expressions: ExpressionResult[] = []
 
   for (const item of matches) {
-    if (!/Portrait/i.test(item) || !/\.webp/i.test(item)) continue
-
     const hrefMatch = item.match(fileHrefRegex)
     const srcMatch = item.match(imgSrcRegex)
     if (!hrefMatch || !srcMatch) continue
@@ -49,15 +48,15 @@ function parseGalleryExpressions(html: string) {
     const rawSrc = decodeHtml(srcMatch[1] ?? '')
     if (!rawHref || !rawSrc) continue
 
-    const fileName = rawHref.split('/wiki/File:')[1]?.split('?')[0] ?? ''
+    const fileName = rawHref.split('/wiki/File:')[1]?.split('?')[0]?.split('#')[0] ?? ''
     if (!fileName || seen.has(fileName)) continue
     seen.add(fileName)
 
     const imageUrl = toOriginalImageUrl(rawSrc)
-    const alt = decodeHtml(item.match(altRegex)?.[1] ?? fileName)
-    const name = alt.replace(/\.[^.]+$/, '')
-
-    expressions.push({ name, imageUrl })
+    expressions.push({
+      name: fileName.replace(/\.[^.]+$/, ''),
+      imageUrl,
+    })
   }
 
   return expressions
