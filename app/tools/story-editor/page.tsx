@@ -65,6 +65,11 @@ type StoryLog = {
   expressionImageUrl: string
 }
 
+type StudentNameLookup = {
+  englishName: string
+  aliases: string[]
+}
+
 
 const SHIN_MARU_FONT = '"MFW-PShinMGoPr6N-Medium", "M PLUS 1p", sans-serif'
 const TEXT_REVEAL_INTERVAL_MS = 38
@@ -180,6 +185,7 @@ export default function StoryEditorPage() {
   const [choiceAppear, setChoiceAppear] = useState(false)
   const [editorView, setEditorView] = useState<EditorView>('timeline')
   const [expressionFetchStateByCharacter, setExpressionFetchStateByCharacter] = useState<Record<number, string>>({})
+  const [studentNameLookup, setStudentNameLookup] = useState<StudentNameLookup[]>([])
 
   const flagsSet = useMemo(() => new Set(storyFlags), [storyFlags])
   const playingElement = playIndex >= 0 ? elements[playIndex] ?? null : null
@@ -306,6 +312,27 @@ export default function StoryEditorPage() {
     }
   }, [isPlaying])
 
+  useEffect(() => {
+    const loadStudents = async () => {
+      try {
+        const response = await fetch('/api/students')
+        if (!response.ok) return
+        const payload = await response.json() as Array<{ name?: string; englishName?: string; aliases?: string[] }>
+        const lookup = payload
+          .filter((student) => typeof student.name === 'string' && typeof student.englishName === 'string' && student.englishName.trim() !== '')
+          .map((student) => ({
+            englishName: student.englishName!.trim(),
+            aliases: [student.name!.trim(), ...(Array.isArray(student.aliases) ? student.aliases.filter((alias) => typeof alias === 'string').map((alias) => alias.trim()) : [])],
+          }))
+        setStudentNameLookup(lookup)
+      } catch {
+        setStudentNameLookup([])
+      }
+    }
+
+    loadStudents().catch(() => undefined)
+  }, [])
+
   const addCharacter = () => {
     if (!canAddCharacter) return
     const id = Date.now()
@@ -377,32 +404,34 @@ export default function StoryEditorPage() {
     })
   }
 
+  const resolveWikiTitle = (character: StoryCharacter) => {
+    const manualTitle = character.wikiTitle.trim()
+    if (manualTitle) return manualTitle
+
+    const hit = studentNameLookup.find((student) => student.aliases.some((alias) => alias === character.name.trim()))
+    return hit?.englishName ?? ''
+  }
+
   const fetchExpressionsFromWiki = async (character: StoryCharacter) => {
-    const title = character.wikiTitle.trim()
+    const title = resolveWikiTitle(character)
     if (!title) {
-      setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: 'wikiTitle を入力してください' }))
+      setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: 'wikiTitle未設定: students.json の英語名マッピングも未一致です' }))
       return
     }
 
-    setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: '取得中...' }))
+    setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: `取得中... (${title})` }))
 
     try {
-      const response = await fetch(`https://bluearchive.wiki/wiki/${encodeURIComponent(title)}?output=1&format=json`)
+      const response = await fetch(`/api/bluearchive-wiki-expressions?title=${encodeURIComponent(title)}`)
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
-      const data = await response.json() as { files?: Array<{ name?: string; url?: string }> }
-      const rawFiles = Array.isArray(data.files) ? data.files : []
-      const expressions = rawFiles
-        .filter((file) => typeof file.name === 'string' && typeof file.url === 'string' && file.name.includes('Portrait') && file.name.includes('.webp'))
-        .map((file) => ({
-          name: file.name!.replace(/\.[^.]+$/, '').replace(/^.*?Portrait_?/, ''),
-          imageUrl: file.url!,
-        }))
+      const data = await response.json() as { expressions?: Array<{ name: string; imageUrl: string }> }
+      const expressions = Array.isArray(data.expressions) ? data.expressions : []
       if (expressions.length === 0) {
         setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: '表情差分が見つかりませんでした' }))
         return
       }
-      updateCharacter(character.id, { expressions })
-      setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: `${expressions.length} 件取得しました` }))
+      updateCharacter(character.id, { expressions, wikiTitle: title })
+      setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: `${expressions.length} 件取得しました (${title})` }))
     } catch {
       setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: '取得に失敗しました' }))
     }
