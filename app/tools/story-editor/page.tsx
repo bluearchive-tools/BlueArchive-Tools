@@ -479,7 +479,7 @@ export default function StoryEditorPage() {
   }
 
   const pickerTargetLine = expressionPicker.mode === 'edit-line' && expressionPicker.lineId !== null
-    ? elements.find((element) => element.type === 'line' && element.id === expressionPicker.lineId) ?? null
+    ? elements.find((element): element is LineElement => element.type === 'line' && element.id === expressionPicker.lineId) ?? null
     : null
   const pickerCharacterId = expressionPicker.mode === 'new-line'
     ? lineCharacterId
