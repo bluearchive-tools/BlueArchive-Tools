@@ -61,7 +61,7 @@ const BADGE_ICON_FILL_COLOR = { r: 34, g: 53, b: 81 }
 
 const STAR_NUMBER_FONT_NAME = 'StudentImageStarNumber'
 const STAR_NUMBER_FONT_FILE = '/fonts/student-image-star-number.otf'
-const STAR_NUMBER_FONT_FALLBACK = '"MFW-PUDShinMGoPr6N-Medium", sans-serif'
+const STAR_NUMBER_FONT_FALLBACK = '"MFW-PUDShinMGoPr6N-Medium", "M PLUS 1p", sans-serif'
 
 const BASE: Options = {
   level: 90,
@@ -321,7 +321,7 @@ function drawStarWithNumber(
   ctx.restore()
 
   const text = String(clamp(value, 0, 99))
-  ctx.font = `italic 700 ${Math.round(radius * 0.88)}px ${fontFamily}`
+  ctx.font = `italic 700 ${Math.round(radius * 0.94)}px ${fontFamily}`
   ctx.fillStyle = '#0f172a'
   ctx.strokeStyle = 'rgba(255,255,255,0.8)'
   ctx.lineWidth = Math.max(0.9, radius * 0.05)
@@ -498,19 +498,6 @@ function drawCard(
     ctx.restore()
   }
   ctx.restore()
-
-  const levelFont = Math.round(size * 0.135)
-  ctx.font = `italic 700 ${levelFont}px "MFW-PUDShinMGoPr6N-Medium", sans-serif`
-  ctx.fillStyle = '#ffffff'
-  ctx.strokeStyle = 'rgba(15,23,42,0.42)'
-  ctx.lineWidth = Math.max(1.9, size * 0.0095)
-  ctx.textAlign = 'left'
-  ctx.textBaseline = 'top'
-  const levelText = `Lv.${options.level}`
-  const levelX = size * options.levelXRatio
-  const levelY = frameTop + size * options.levelYRatio
-  ctx.strokeText(levelText, levelX, levelY)
-  ctx.fillText(levelText, levelX, levelY)
 
   const starRadius = size * 0.12
   const starX = size * 0.15
@@ -895,7 +882,23 @@ export default function StudentImageToolPage() {
 
       <section className="rounded border bg-slate-50 p-4">
         <h2 className="text-base font-semibold mb-3">プレビュー（固有1以上ならフェード点滅）</h2>
-        <canvas ref={canvasRef} className="rounded border bg-white max-w-full h-auto" />
+        <div className="relative max-w-full" style={{ width: options.size }}>
+          <canvas ref={canvasRef} className="block w-full rounded border bg-white h-auto" />
+          <span
+            className="pointer-events-none absolute italic font-bold text-white"
+            style={{
+              left: `${options.levelXRatio * 100}%`,
+              top: `${(0.05 + options.levelYRatio) * 100}%`,
+              fontSize: `${Math.round(options.size * 0.135)}px`,
+              fontFamily: '"MFW-PUDShinMGoPr6N-Medium", "M PLUS 1p", sans-serif',
+              WebkitTextStroke: `${Math.max(1.9, options.size * 0.0095)}px rgba(15,23,42,0.42)`,
+              paintOrder: 'stroke fill',
+              lineHeight: 1,
+            }}
+          >
+            {`Lv.${options.level}`}
+          </span>
+        </div>
       </section>
     </main>
   )

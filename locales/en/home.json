@@ -76,6 +76,14 @@
         "studentImage": {
           "title": "Student Image Maker",
           "description": "Generate PNG/GIF student icons with attack-type frame and stars"
+        },
+        "momotalkSimulator": {
+          "title": "Momotalk simulator",
+          "description": "Simulate a Momotalk-style chat screen"
+        },
+        "storyEditor": {
+          "title": "Story editor",
+          "description": "Create your own story and play it back"
         }
       }
     },
@@ -96,6 +104,10 @@
         "devMemos": {
           "title": "Development memos",
           "description": "Browse short notes about updates and implementation ideas"
+        },
+        "baMemos": {
+          "title": "Blue Archive info memos",
+          "description": "Browse short notes about Blue Archive information"
         }
       }
     }

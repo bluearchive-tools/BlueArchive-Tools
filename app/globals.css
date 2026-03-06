@@ -14,7 +14,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "MFW-PShinMGoPr6N-Medium", sans-serif;
+  --font-sans-fallback: "MFW-PShinMGoPr6N-Medium", "M PLUS 1p", sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
@@ -23,7 +23,7 @@ html,
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans);
+  font-family: var(--font-sans), var(--font-sans-fallback);
   font-weight: 500;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
@@ -107,6 +107,17 @@ body {
 @keyframes fadeOut {
   from { opacity: 1; }
   to { opacity: 0; }
+}
+
+@keyframes skipModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .hexagon {

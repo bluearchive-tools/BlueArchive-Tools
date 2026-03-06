@@ -9,9 +9,17 @@ import { config } from '@fortawesome/fontawesome-svg-core'
 import type { Metadata } from 'next'
 import { cookies, headers } from 'next/headers'
 import { createTranslator } from 'next-intl'
+import { M_PLUS_Rounded_1c } from 'next/font/google'
 import { DEFAULT_LOCALE, LOCALE_MESSAGES, SUPPORTED_LOCALES, parseLocale, type Locale } from '../lib/i18n/config'
 
 config.autoAddCss = false
+
+const mplus = M_PLUS_Rounded_1c({
+  weight: '500',
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-sans',
+})
 
 async function resolveRequestLocale(): Promise<Locale> {
   const cookieStore = await cookies()
@@ -61,7 +69,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const messages = loadMessages(locale)
 
   return (
-    <html lang={locale}>
+    <html lang={locale} className={mplus.variable}>
       <head>
         <link
           rel="stylesheet"
