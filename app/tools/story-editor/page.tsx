@@ -1,9 +1,12 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faBars, faExpand, faForward, faGear } from '@fortawesome/free-solid-svg-icons'
 
 type StoryEffect = 'none' | 'flash' | 'shake' | 'fade'
 type ElementAddMode = 'character' | 'line' | 'background'
+type TitlePhase = 'hidden' | 'fadeIn' | 'fadeOut'
 
 type StoryMeta = {
   title: string
@@ -36,6 +39,7 @@ type LineElement = {
   body: string
   requireFlag: string
   effect: StoryEffect
+  locationLabel: string
   choices: StoryChoice[]
 }
 
@@ -47,12 +51,11 @@ type BackgroundElement = {
 
 type StoryElement = LineElement | BackgroundElement
 
-const STAR_NUMBER_FONT_NAME = 'StudentImageStarNumber'
-const STAR_NUMBER_FONT_FILE = '/fonts/student-image-star-number.otf'
-const STAR_NUMBER_FONT_FALLBACK = '"MFW-PUDShinMGoPr6N-Medium", "M PLUS 1p", sans-serif'
+const SHIN_MARU_FONT = '"MFW-PShinMGoPr6N-Medium", "M PLUS 1p", sans-serif'
 const TEXT_REVEAL_INTERVAL_MS = 38
 const AUTO_ADVANCE_DELAY_MS = 700
-const TITLE_HOLD_MS = 1500
+const TITLE_HOLD_MS = 1000
+const LOCATION_HOLD_MS = 2000
 
 const DEFAULT_CHARACTERS: StoryCharacter[] = [
   { id: 1, name: '先生', affiliation: 'シャーレ' },
@@ -60,11 +63,7 @@ const DEFAULT_CHARACTERS: StoryCharacter[] = [
 ]
 
 const DEFAULT_ELEMENTS: StoryElement[] = [
-  {
-    id: 100,
-    type: 'background',
-    config: { color: '#ffffff', imageUrl: '' },
-  },
+  { id: 100, type: 'background', config: { color: '#ffffff', imageUrl: '' } },
   {
     id: 1,
     type: 'line',
@@ -72,29 +71,14 @@ const DEFAULT_ELEMENTS: StoryElement[] = [
     body: '今日の作戦は2ルートあります。どちらで進みますか？',
     requireFlag: '',
     effect: 'fade',
+    locationLabel: 'SCHALE BRIDGE',
     choices: [
       { id: 11, label: '正面突破', nextElementId: 2, setFlag: 'front', requireFlag: '' },
       { id: 12, label: '迂回ルート', nextElementId: 3, setFlag: 'detour', requireFlag: '' },
     ],
   },
-  {
-    id: 2,
-    type: 'line',
-    characterId: 2,
-    body: '正面ルートで進行します。',
-    requireFlag: 'front',
-    effect: 'flash',
-    choices: [],
-  },
-  {
-    id: 3,
-    type: 'line',
-    characterId: 2,
-    body: '迂回ルートで静かに進行します。',
-    requireFlag: 'detour',
-    effect: 'shake',
-    choices: [],
-  },
+  { id: 2, type: 'line', characterId: 2, body: '正面ルートで進行します。', requireFlag: 'front', effect: 'flash', locationLabel: '', choices: [] },
+  { id: 3, type: 'line', characterId: 2, body: '迂回ルートで静かに進行します。', requireFlag: 'detour', effect: 'shake', locationLabel: '', choices: [] },
 ]
 
 function canShowChoice(choice: StoryChoice, flags: Set<string>) {
@@ -127,9 +111,7 @@ function findLastBackgroundBefore(elements: StoryElement[], index: number) {
   for (let i = 0; i <= index; i += 1) {
     const element = elements[i]
     if (!element) continue
-    if (element.type === 'background') {
-      found = element.config
-    }
+    if (element.type === 'background') found = element.config
   }
   return found
 }
@@ -147,12 +129,12 @@ export default function StoryEditorPage() {
   const [lineBody, setLineBody] = useState('')
   const [lineRequireFlag, setLineRequireFlag] = useState('')
   const [lineEffect, setLineEffect] = useState<StoryEffect>('none')
+  const [lineLocationLabel, setLineLocationLabel] = useState('')
 
   const [bgColor, setBgColor] = useState('#ffffff')
   const [bgImageUrl, setBgImageUrl] = useState('')
 
   const [draggedId, setDraggedId] = useState<number | null>(null)
-
   const [choiceEditByLine, setChoiceEditByLine] = useState<Record<number, { label: string; nextElementId: number; setFlag: string; requireFlag: string }>>({})
 
   const [isPlaying, setIsPlaying] = useState(false)
@@ -160,8 +142,9 @@ export default function StoryEditorPage() {
   const [visibleChars, setVisibleChars] = useState(0)
   const [storyFlags, setStoryFlags] = useState<string[]>([])
   const [autoMode, setAutoMode] = useState(false)
-  const [titleVisible, setTitleVisible] = useState(false)
-  const [starNumberFontFamily, setStarNumberFontFamily] = useState(STAR_NUMBER_FONT_FALLBACK)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [titlePhase, setTitlePhase] = useState<TitlePhase>('hidden')
+  const [locationVisible, setLocationVisible] = useState(false)
   const [forceLandscape, setForceLandscape] = useState(false)
   const [currentBackground, setCurrentBackground] = useState<BackgroundConfig>({ color: '#ffffff', imageUrl: '' })
 
@@ -180,56 +163,18 @@ export default function StoryEditorPage() {
 
   const isLineFullyVisible = playingLine ? visibleChars >= playingLine.body.length : true
   const visibleBody = playingLine ? playingLine.body.slice(0, visibleChars) : ''
-
-  const canAddCharacter = useMemo(
-    () => newCharacterName.trim().length > 0 && newCharacterAffiliation.trim().length > 0,
-    [newCharacterAffiliation, newCharacterName],
-  )
-  const canAddLine = useMemo(
-    () => lineBody.trim().length > 0 && characters.some((character) => character.id === lineCharacterId),
-    [characters, lineBody, lineCharacterId],
-  )
+  const canAddCharacter = useMemo(() => newCharacterName.trim() !== '' && newCharacterAffiliation.trim() !== '', [newCharacterAffiliation, newCharacterName])
+  const canAddLine = useMemo(() => lineBody.trim() !== '' && characters.some((character) => character.id === lineCharacterId), [characters, lineBody, lineCharacterId])
 
   useEffect(() => {
-    let cancelled = false
-
-    const loadCustomStarFont = async () => {
-      if (typeof FontFace === 'undefined' || typeof document === 'undefined' || !document.fonts) {
-        setStarNumberFontFamily(STAR_NUMBER_FONT_FALLBACK)
-        return
-      }
-      try {
-        const face = new FontFace(STAR_NUMBER_FONT_NAME, `url(${STAR_NUMBER_FONT_FILE})`, {
-          style: 'normal',
-          weight: '700',
-        })
-        const loadedFace = await face.load()
-        if (cancelled) return
-        document.fonts.add(loadedFace)
-        await document.fonts.load(`700 24px ${STAR_NUMBER_FONT_NAME}`)
-        if (cancelled) return
-        setStarNumberFontFamily(`"${STAR_NUMBER_FONT_NAME}", ${STAR_NUMBER_FONT_FALLBACK}`)
-      } catch {
-        if (cancelled) return
-        setStarNumberFontFamily(STAR_NUMBER_FONT_FALLBACK)
-      }
-    }
-
-    loadCustomStarFont().catch(() => setStarNumberFontFamily(STAR_NUMBER_FONT_FALLBACK))
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!isPlaying || !playingLine || titleVisible) return
+    if (!isPlaying || !playingLine || titlePhase !== 'hidden') return
     setVisibleChars(0)
-  }, [isPlaying, playingLine, titleVisible])
+  }, [isPlaying, playingLine, titlePhase])
+
 
   useEffect(() => {
-    if (!isPlaying || !playingLine || titleVisible) return
+    if (!isPlaying || !playingLine || titlePhase !== 'hidden') return
     if (visibleChars >= playingLine.body.length) return
-
     const timerId = window.setInterval(() => {
       setVisibleChars((prev) => {
         const next = prev + 1
@@ -240,32 +185,34 @@ export default function StoryEditorPage() {
         return next
       })
     }, TEXT_REVEAL_INTERVAL_MS)
-
     return () => window.clearInterval(timerId)
-  }, [isPlaying, playingLine, titleVisible, visibleChars])
+  }, [isPlaying, playingLine, titlePhase, visibleChars])
 
   useEffect(() => {
-    if (!isPlaying || !autoMode || !playingLine || !isLineFullyVisible || titleVisible) return
+    if (!isPlaying || !playingLine || !playingLine.locationLabel.trim()) {
+      setLocationVisible(false)
+      return
+    }
+    setLocationVisible(true)
+    const timerId = window.setTimeout(() => setLocationVisible(false), LOCATION_HOLD_MS)
+    return () => window.clearTimeout(timerId)
+  }, [isPlaying, playIndex, playingLine])
+
+  useEffect(() => {
+    if (!isPlaying || !autoMode || !playingLine || !isLineFullyVisible || titlePhase !== 'hidden') return
     if (visibleChoices.length > 0) return
-
-    const timeoutId = window.setTimeout(() => {
-      goToNextLine()
-    }, AUTO_ADVANCE_DELAY_MS)
-
+    const timeoutId = window.setTimeout(() => goToNextLine(), AUTO_ADVANCE_DELAY_MS)
     return () => window.clearTimeout(timeoutId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoMode, isPlaying, isLineFullyVisible, playingLine, titleVisible, visibleChoices.length, flagsSet, playIndex, elements])
+  }, [autoMode, isPlaying, isLineFullyVisible, playingLine, titlePhase, visibleChoices.length, flagsSet, playIndex, elements])
 
   useEffect(() => {
     if (!isPlaying) return
-
     window.scrollTo({ top: 0, behavior: 'auto' })
-
     const bodyStyle = document.body.style
     const htmlStyle = document.documentElement.style
     const prevBodyOverflow = bodyStyle.overflow
     const prevHtmlOverflow = htmlStyle.overflow
-
     bodyStyle.overflow = 'hidden'
     htmlStyle.overflow = 'hidden'
 
@@ -306,8 +253,9 @@ export default function StoryEditorPage() {
   const addLine = () => {
     if (!canAddLine) return
     const id = Date.now()
-    setElements((prev) => [...prev, { id, type: 'line', characterId: lineCharacterId, body: lineBody.trim(), requireFlag: lineRequireFlag.trim(), effect: lineEffect, choices: [] }])
+    setElements((prev) => [...prev, { id, type: 'line', characterId: lineCharacterId, body: lineBody.trim(), requireFlag: lineRequireFlag.trim(), effect: lineEffect, locationLabel: lineLocationLabel.trim(), choices: [] }])
     setLineBody('')
+    setLineLocationLabel('')
     setChoiceEditByLine((prev) => ({ ...prev, [id]: { label: '', nextElementId: id, setFlag: '', requireFlag: '' } }))
   }
 
@@ -316,18 +264,22 @@ export default function StoryEditorPage() {
     setElements((prev) => [...prev, { id, type: 'background', config: { color: bgColor, imageUrl: bgImageUrl.trim() } }])
   }
 
+  const updateBackgroundElement = (id: number, patch: Partial<BackgroundConfig>) => {
+    setElements((prev) => prev.map((element) => {
+      if (element.type !== 'background' || element.id !== id) return element
+      return { ...element, config: { ...element.config, ...patch } }
+    }))
+  }
+
   const removeElement = (id: number) => {
     setElements((prev) => prev.filter((element) => element.id !== id).map((element) => {
       if (element.type !== 'line') return element
-      return {
-        ...element,
-        choices: element.choices.filter((choice) => choice.nextElementId !== id),
-      }
+      return { ...element, choices: element.choices.filter((choice) => choice.nextElementId !== id) }
     }))
   }
 
   const reorderElements = (fromId: number, toId: number) => {
-    if (fromId === toId) return
+    if (fromId == toId) return
     setElements((prev) => {
       const fromIndex = prev.findIndex((element) => element.id === fromId)
       const toIndex = prev.findIndex((element) => element.id === toId)
@@ -349,24 +301,13 @@ export default function StoryEditorPage() {
   const addChoiceToLine = (lineId: number) => {
     const edit = choiceEditByLine[lineId] ?? { label: '', nextElementId: lineId, setFlag: '', requireFlag: '' }
     if (!edit.label.trim()) return
-
     setElements((prev) => prev.map((element) => {
       if (element.type !== 'line' || element.id !== lineId) return element
       return {
         ...element,
-        choices: [
-          ...element.choices,
-          {
-            id: Date.now(),
-            label: edit.label.trim(),
-            nextElementId: edit.nextElementId,
-            setFlag: edit.setFlag.trim(),
-            requireFlag: edit.requireFlag.trim(),
-          },
-        ],
+        choices: [...element.choices, { id: Date.now(), label: edit.label.trim(), nextElementId: edit.nextElementId, setFlag: edit.setFlag.trim(), requireFlag: edit.requireFlag.trim() }],
       }
     }))
-
     updateChoiceEdit(lineId, { label: '', setFlag: '', requireFlag: '' })
   }
 
@@ -387,23 +328,24 @@ export default function StoryEditorPage() {
 
     setStoryFlags([])
     setAutoMode(false)
+    setMenuOpen(false)
     setPlayIndex(firstLineIndex)
     setIsPlaying(true)
 
     if (meta.title.trim()) {
-      setTitleVisible(true)
-      const timerId = window.setTimeout(() => {
-        setTitleVisible(false)
-      }, TITLE_HOLD_MS)
-      return () => window.clearTimeout(timerId)
+      setTitlePhase('fadeIn')
+      window.setTimeout(() => setTitlePhase('fadeOut'), TITLE_HOLD_MS)
+      window.setTimeout(() => setTitlePhase('hidden'), TITLE_HOLD_MS + 600)
+    } else {
+      setTitlePhase('hidden')
     }
-    setTitleVisible(false)
   }
 
   const closePlayer = () => {
     setIsPlaying(false)
     setAutoMode(false)
-    setTitleVisible(false)
+    setMenuOpen(false)
+    setTitlePhase('hidden')
   }
 
   const goToIndex = (nextIndex: number) => {
@@ -429,39 +371,32 @@ export default function StoryEditorPage() {
     if (setFlag.trim()) {
       setStoryFlags((prev) => (prev.includes(setFlag.trim()) ? prev : [...prev, setFlag.trim()]))
     }
-
     const index = elements.findIndex((element) => element.id === elementId)
     if (index < 0) {
       closePlayer()
       return
     }
-
-    const element = elements[index]
-    if (element.type === 'background') {
-      setCurrentBackground(element.config)
-      const nextLineIndex = findNextLineIndex(elements, index, flagsSet)
-      goToIndex(nextLineIndex)
+    const target = elements[index]
+    if (target.type === 'background') {
+      setCurrentBackground(target.config)
+      const nextLine = findNextLineIndex(elements, index, flagsSet)
+      goToIndex(nextLine)
       return
     }
-
     goToIndex(index)
   }
 
   const onTapAdvance = () => {
-    if (titleVisible) {
-      setTitleVisible(false)
+    if (titlePhase !== 'hidden') {
+      setTitlePhase('hidden')
       return
     }
-
     if (!playingLine) return
-
     if (!isLineFullyVisible) {
       setVisibleChars(playingLine.body.length)
       return
     }
-
     if (visibleChoices.length > 0) return
-
     goToNextLine()
   }
 
@@ -489,11 +424,9 @@ export default function StoryEditorPage() {
 
         {addMode === 'line' && (
           <>
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-4">
               <select value={lineCharacterId} onChange={(event) => setLineCharacterId(Number(event.target.value))} className="rounded border px-3 py-2">
-                {characters.map((character) => (
-                  <option key={character.id} value={character.id}>{character.name} / {character.affiliation}</option>
-                ))}
+                {characters.map((character) => <option key={character.id} value={character.id}>{character.name} / {character.affiliation}</option>)}
               </select>
               <input value={lineRequireFlag} onChange={(event) => setLineRequireFlag(event.target.value)} className="rounded border px-3 py-2" placeholder="表示条件フラグ(任意)" />
               <select value={lineEffect} onChange={(event) => setLineEffect(event.target.value as StoryEffect)} className="rounded border px-3 py-2">
@@ -502,6 +435,7 @@ export default function StoryEditorPage() {
                 <option value="shake">効果: シェイク</option>
                 <option value="fade">効果: フェード</option>
               </select>
+              <input value={lineLocationLabel} onChange={(event) => setLineLocationLabel(event.target.value)} className="rounded border px-3 py-2" placeholder="場所表示オプション(任意)" />
             </div>
             <div className="flex gap-3">
               <input value={lineBody} onChange={(event) => setLineBody(event.target.value)} className="flex-1 rounded border px-3 py-2" placeholder="本文" />
@@ -538,24 +472,16 @@ export default function StoryEditorPage() {
           {elements.map((element) => {
             if (element.type === 'background') {
               return (
-                <li
-                  key={element.id}
-                  draggable
-                  onDragStart={() => setDraggedId(element.id)}
-                  onDragOver={(event) => event.preventDefault()}
-                  onDrop={() => {
-                    if (draggedId === null) return
-                    reorderElements(draggedId, element.id)
-                    setDraggedId(null)
-                  }}
-                  className="rounded border border-blue-200 bg-blue-50 p-3"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
+                <li key={element.id} draggable onDragStart={() => setDraggedId(element.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedId === null) return; reorderElements(draggedId, element.id); setDraggedId(null) }} className="rounded border border-blue-200 bg-blue-50 p-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold">背景要素 #{element.id}</p>
-                      <p className="text-xs">color: {element.config.color} / image: {element.config.imageUrl || 'なし'}</p>
+                      <button type="button" onClick={() => removeElement(element.id)} className="text-xs text-red-600">削除</button>
                     </div>
-                    <button type="button" onClick={() => removeElement(element.id)} className="text-xs text-red-600">削除</button>
+                    <div className="grid gap-2 md:grid-cols-2">
+                      <input type="color" value={element.config.color} onChange={(event) => updateBackgroundElement(element.id, { color: event.target.value })} className="h-9 rounded border p-1" />
+                      <input value={element.config.imageUrl} onChange={(event) => updateBackgroundElement(element.id, { imageUrl: event.target.value })} className="rounded border px-2 py-1 text-xs" placeholder="背景画像URL(後から変更可能)" />
+                    </div>
                   </div>
                 </li>
               )
@@ -565,39 +491,26 @@ export default function StoryEditorPage() {
             const choiceEdit = choiceEditByLine[element.id] ?? { label: '', nextElementId: element.id, setFlag: '', requireFlag: '' }
 
             return (
-              <li
-                key={element.id}
-                draggable
-                onDragStart={() => setDraggedId(element.id)}
-                onDragOver={(event) => event.preventDefault()}
-                onDrop={() => {
-                  if (draggedId === null) return
-                  reorderElements(draggedId, element.id)
-                  setDraggedId(null)
-                }}
-                className="rounded border border-gray-200 bg-white p-3"
-              >
+              <li key={element.id} draggable onDragStart={() => setDraggedId(element.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedId === null) return; reorderElements(draggedId, element.id); setDraggedId(null) }} className="rounded border border-gray-200 bg-white p-3">
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold">セリフ要素 #{element.id} {character?.name ?? '未設定'} / {character?.affiliation ?? '未設定'}</p>
-                      <p className="text-xs text-gray-500">条件: {element.requireFlag || 'なし'} / 効果: {element.effect}</p>
+                      <p className="text-xs text-gray-500">条件:{element.requireFlag || 'なし'} / 効果:{element.effect} / 場所:{element.locationLabel || '-'}</p>
                       <p className="text-sm">{element.body}</p>
                     </div>
                     <button type="button" onClick={() => removeElement(element.id)} className="text-xs text-red-600">削除</button>
                   </div>
 
                   <div className="rounded border bg-slate-50 p-2">
-                    <p className="text-xs font-semibold">この要素の選択肢分岐（入れ子定義）</p>
+                    <p className="text-xs font-semibold">会話文オプション（選択肢分岐）</p>
                     <div className="mt-2 grid gap-2 md:grid-cols-4">
                       <input value={choiceEdit.label} onChange={(event) => updateChoiceEdit(element.id, { label: event.target.value })} className="rounded border px-2 py-1 text-xs" placeholder="ラベル" />
                       <select value={choiceEdit.nextElementId} onChange={(event) => updateChoiceEdit(element.id, { nextElementId: Number(event.target.value) })} className="rounded border px-2 py-1 text-xs">
-                        {elements.map((target) => (
-                          <option key={target.id} value={target.id}>遷移先 #{target.id} ({target.type})</option>
-                        ))}
+                        {elements.map((target) => <option key={target.id} value={target.id}>遷移先 #{target.id} ({target.type})</option>)}
                       </select>
                       <input value={choiceEdit.setFlag} onChange={(event) => updateChoiceEdit(element.id, { setFlag: event.target.value })} className="rounded border px-2 py-1 text-xs" placeholder="付与フラグ" />
-                      <input value={choiceEdit.requireFlag} onChange={(event) => updateChoiceEdit(element.id, { requireFlag: event.target.value })} className="rounded border px-2 py-1 text-xs" placeholder="表示条件フラグ" />
+                      <input value={choiceEdit.requireFlag} onChange={(event) => updateChoiceEdit(element.id, { requireFlag: event.target.value })} className="rounded border px-2 py-1 text-xs" placeholder="表示条件" />
                     </div>
                     <button type="button" className="mt-2 rounded bg-indigo-600 px-3 py-1 text-xs text-white" onClick={() => addChoiceToLine(element.id)}>選択肢追加</button>
 
@@ -620,35 +533,45 @@ export default function StoryEditorPage() {
       </section>
 
       {isPlaying && (
-        <div
-          className={`fixed inset-0 z-[100] bg-white text-left ${playingLine?.effect === 'flash' ? 'animate-pulse' : ''}`}
-          onClick={onTapAdvance}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') onTapAdvance()
-          }}
-        >
+        <div className={`fixed inset-0 z-[100] bg-white text-left ${playingLine?.effect === 'flash' ? 'animate-pulse' : ''}`} onClick={onTapAdvance} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') onTapAdvance() }}>
           <div className="absolute inset-0" style={{ backgroundColor: currentBackground.color, backgroundImage: currentBackground.imageUrl ? `url(${currentBackground.imageUrl})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center' }} />
 
           <div className={`absolute inset-0 ${forceLandscape ? 'flex items-center justify-center' : ''}`}>
             <div className={forceLandscape ? 'h-[100vw] w-[100vh] origin-center rotate-90' : 'h-full w-full'}>
-              <div className="absolute right-4 top-4 flex gap-2" onClick={(event) => event.stopPropagation()}>
-                <button type="button" className="rounded bg-slate-700/90 px-3 py-1 text-sm text-white" style={{ fontFamily: starNumberFontFamily }} onClick={() => setAutoMode((prev) => !prev)}>AUTO</button>
-                <button type="button" className="rounded bg-slate-700/90 px-3 py-1 text-sm text-white" style={{ fontFamily: starNumberFontFamily }} onClick={closePlayer}>MENU</button>
+              <div className="absolute right-4 top-4 z-[5] flex flex-col items-end gap-2" onClick={(event) => event.stopPropagation()}>
+                <div className="flex gap-2">
+                  <button type="button" className="rounded bg-slate-700/90 px-3 py-1 text-sm text-white italic" style={{ fontFamily: SHIN_MARU_FONT }} onClick={() => setAutoMode((prev) => !prev)}>AUTO</button>
+                  <button type="button" className="rounded bg-slate-700/90 px-3 py-1 text-sm text-white italic" style={{ fontFamily: SHIN_MARU_FONT }} onClick={() => setMenuOpen((prev) => !prev)}>MENU</button>
+                </div>
+                {menuOpen && (
+                  <div className="grid grid-cols-4 gap-2 rounded bg-slate-900/70 p-2 text-white">
+                    <button type="button" className="rounded bg-slate-700/80 p-2" title="拡大"><FontAwesomeIcon icon={faExpand} /></button>
+                    <button type="button" className="rounded bg-slate-700/80 p-2" title="設定"><FontAwesomeIcon icon={faGear} /></button>
+                    <button type="button" className="rounded bg-slate-700/80 p-2" title="メニュー"><FontAwesomeIcon icon={faBars} /></button>
+                    <button type="button" className="rounded bg-slate-700/80 p-2" title="スキップ" onClick={() => closePlayer()}><FontAwesomeIcon icon={faForward} /></button>
+                  </div>
+                )}
               </div>
 
-              {titleVisible && meta.title.trim() && (
-                <div className="absolute left-1/2 top-1/4 z-[3] -translate-x-1/2 rounded bg-black/40 px-6 py-3 text-center text-white">
-                  <p className="text-xl font-bold">{meta.title}</p>
-                  {meta.summary.trim() && <p className="mt-1 text-sm opacity-90">{meta.summary}</p>}
+              {titlePhase !== 'hidden' && meta.title.trim() && (
+                <div className={`absolute inset-0 z-[4] transition-opacity duration-500 ${titlePhase === 'fadeIn' ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
+                  <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 bg-white/96 py-5 text-center transition-opacity duration-500">
+                    <p className="text-2xl font-bold" style={{ color: '#3a4f88' }}>{meta.title}</p>
+                    {meta.summary.trim() && <p className="mt-1 text-sm" style={{ color: '#3a4f88' }}>{meta.summary}</p>}
+                  </div>
+                </div>
+              )}
+
+              {playingLine && titlePhase === 'hidden' && locationVisible && playingLine.locationLabel.trim() && (
+                <div className="absolute left-6 top-[34%] z-[3] rounded px-4 py-2 text-sm text-white transition-opacity duration-500" style={{ backgroundColor: 'rgba(42,66,91,0.65)' }}>
+                  {playingLine.locationLabel}
                 </div>
               )}
 
               {playingLine && (
                 <>
-                  {isLineFullyVisible && visibleChoices.length > 0 && !titleVisible && (
-                    <div className="absolute left-1/2 top-1/2 z-[2] grid w-[min(88vw,460px)] -translate-x-1/2 -translate-y-1/2 gap-2" onClick={(event) => event.stopPropagation()}>
+                  {isLineFullyVisible && visibleChoices.length > 0 && titlePhase === 'hidden' && (
+                    <div className="absolute left-1/2 top-1/2 z-[3] grid w-[min(88vw,460px)] -translate-x-1/2 -translate-y-1/2 gap-2" onClick={(event) => event.stopPropagation()}>
                       {visibleChoices.map((choice) => (
                         <button key={choice.id} type="button" className="rounded bg-slate-900/60 px-4 py-3 text-left text-white hover:bg-slate-900/75" onClick={() => jumpToElementById(choice.nextElementId, choice.setFlag)}>
                           {choice.label}
@@ -659,13 +582,16 @@ export default function StoryEditorPage() {
 
                   <div className={`absolute inset-0 ${playingLine.effect === 'fade' ? 'opacity-80' : 'opacity-100'} ${playingLine.effect === 'shake' ? 'animate-bounce' : ''}`} style={{ pointerEvents: 'none' }} />
 
-                  <div className="absolute bottom-0 left-0 right-0 px-6 pb-8 pt-6" style={{ background: 'linear-gradient(180deg, #ffffff 0%, #d9e5ef 4%, #93acbf 9%, #607c94 18%, #4a667f 38%, #3d5972 62%, #2a425b 100%)' }}>
+                  <div className="absolute bottom-0 left-0 right-0 px-6 pb-8 pt-6" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(217,229,239,0.25) 4%, rgba(147,172,191,0.45) 9%, rgba(96,124,148,0.65) 18%, rgba(74,102,127,0.78) 38%, rgba(61,89,114,0.9) 62%, rgba(42,66,91,0.96) 100%)' }}>
                     <div className="flex items-baseline gap-3" style={{ color: '#ffffff' }}>
                       <p className="text-lg font-bold">{playingCharacter?.name ?? '未設定キャラクター'}</p>
                       <p className="text-sm font-semibold" style={{ color: '#7cd0ff' }}>{playingCharacter?.affiliation ?? '未設定'}</p>
                     </div>
                     <div className="mt-2 border-t border-white/60" />
-                    <p className="mt-3 min-h-16 whitespace-pre-wrap text-base" style={{ color: '#ffffff' }}>{titleVisible ? '' : visibleBody}</p>
+                    <p className="mt-3 min-h-16 whitespace-pre-wrap text-base" style={{ color: '#ffffff' }}>{visibleBody}</p>
+                    {isLineFullyVisible && visibleChoices.length === 0 && (
+                      <span className="absolute bottom-3 right-4 animate-bounce text-lg" style={{ color: '#7cd0ff' }}>▲</span>
+                    )}
                   </div>
                 </>
               )}
