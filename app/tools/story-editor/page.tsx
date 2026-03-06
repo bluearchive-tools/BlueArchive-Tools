@@ -144,6 +144,10 @@ function findLastBackgroundBefore(elements: StoryElement[], index: number) {
   return found
 }
 
+function normalizeLookupName(value: string) {
+  return value.trim().replaceAll(' ', '').replaceAll('　', '').toLowerCase()
+}
+
 export default function StoryEditorPage() {
   const [meta, setMeta] = useState<StoryMeta>({ title: '', summary: '' })
   const [characters, setCharacters] = useState<StoryCharacter[]>(DEFAULT_CHARACTERS)
@@ -417,7 +421,8 @@ export default function StoryEditorPage() {
   }
 
   const resolveWikiTitle = useCallback((character: StoryCharacter) => {
-    const hit = studentNameLookup.find((student) => student.aliases.some((alias) => alias === character.name.trim()))
+    const normalized = normalizeLookupName(character.name)
+    const hit = studentNameLookup.find((student) => student.aliases.some((alias) => normalizeLookupName(alias) === normalized))
     return hit?.englishName ?? ''
   }, [studentNameLookup])
 
@@ -488,6 +493,12 @@ export default function StoryEditorPage() {
   const pickerSelectedExpression = expressionPicker.mode === 'new-line'
     ? lineExpressionName
     : pickerTargetLine?.expressionName ?? ''
+  const pickerFetchState = pickerCharacter ? (expressionFetchStateByCharacter[pickerCharacter.id] ?? '') : ''
+
+  const retryExpressionFetch = () => {
+    if (!pickerCharacter) return
+    fetchExpressionsFromWiki(pickerCharacter).catch(() => undefined)
+  }
 
   const removeElement = (id: number) => {
     setElements((prev) => prev.filter((element) => element.id !== id).map((element) => {
@@ -910,6 +921,13 @@ export default function StoryEditorPage() {
             <div className="mb-3">
               <button type="button" className="rounded border border-gray-300 px-3 py-1 text-sm" onClick={() => pickExpression('')}>表情なしにする</button>
             </div>
+            {(pickerCharacter?.expressions.length ?? 0) === 0 && (
+              <div className="mb-3 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                <p>このキャラクターの表情差分はまだ読み込まれていません。</p>
+                <p className="mt-1 text-xs">状態: {pickerFetchState || '未取得'}</p>
+                <button type="button" className="mt-2 rounded border border-amber-300 bg-white px-3 py-1 text-xs" onClick={retryExpressionFetch}>再取得</button>
+              </div>
+            )}
             <div className="grid max-h-[60vh] grid-cols-2 gap-2 overflow-y-auto md:grid-cols-4">
               {(pickerCharacter?.expressions ?? []).map((expression) => (
                 <button key={expression.name} type="button" className={`rounded border p-2 text-left ${pickerSelectedExpression === expression.name ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'}`} onClick={() => pickExpression(expression.name)}>
