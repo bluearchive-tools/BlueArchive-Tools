@@ -63,6 +63,7 @@ function parseGalleryExpressions(html: string, characterKey: string) {
     seen.add(fileName)
 
     const expressionName = fileName.replace(/\.[^.]+$/, '')
+    if (expressionName.includes('Banner') || expressionName.includes('Memorial_Lobby')) continue
     if (characterKey && !normalizeExpressionKey(expressionName).includes(characterKey)) continue
 
     const imageUrl = toOriginalImageUrl(rawSrc)

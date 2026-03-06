@@ -646,11 +646,7 @@ export default function StoryEditorPage() {
       setBackgroundOnly(false)
       return
     }
-    if (titlePhase !== 'hidden') {
-      setTitlePhase('hidden')
-      setDialogueReady(true)
-      return
-    }
+    if (titlePhase !== 'hidden') return
     if (!playingLine) return
     if (!isLineFullyVisible) {
       setVisibleChars(playingLine.body.length)
@@ -1004,12 +1000,12 @@ export default function StoryEditorPage() {
                         <img
                           src={playingExpressionUrl || playingCharacter?.portraitUrl || ''}
                           alt={`${playingCharacter?.name ?? 'キャラクター'}立ち絵`}
-                          className="absolute bottom-20 left-1/2 z-[2] h-[72vh] -translate-x-1/2 object-contain"
+                          className="absolute bottom-12 left-1/2 z-[1] h-[108vh] -translate-x-1/2 object-contain"
                           style={{ filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.38))' }}
                         />
                       )}
 
-                      <div className="absolute bottom-0 left-0 right-0 px-6 pb-8 pt-6" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(217,229,239,0.25) 4%, rgba(147,172,191,0.45) 9%, rgba(96,124,148,0.65) 18%, rgba(74,102,127,0.78) 38%, rgba(61,89,114,0.9) 62%, rgba(42,66,91,0.96) 100%)' }}>
+                      <div className="absolute bottom-0 left-0 right-0 z-[3] px-6 pb-8 pt-6" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(217,229,239,0.25) 4%, rgba(147,172,191,0.45) 9%, rgba(96,124,148,0.65) 18%, rgba(74,102,127,0.78) 38%, rgba(61,89,114,0.9) 62%, rgba(42,66,91,0.96) 100%)' }}>
                         <div className="flex items-baseline gap-3" style={{ color: '#ffffff' }}>
                           <p className="text-lg font-bold">{playingCharacter?.name ?? '未設定キャラクター'}</p>
                           <p className="text-sm font-semibold" style={{ color: '#7cd0ff' }}>{playingCharacter?.affiliation ?? '未設定'}</p>
