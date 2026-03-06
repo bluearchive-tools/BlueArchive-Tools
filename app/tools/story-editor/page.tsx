@@ -1000,17 +1000,19 @@ export default function StoryEditorPage() {
                   {playingLine && (
                     <>
                       <div className={`absolute inset-0 ${playingLine.effect === 'fade' ? 'opacity-80' : 'opacity-100'} ${playingLine.effect === 'shake' ? 'animate-bounce' : ''}`} style={{ pointerEvents: 'none' }} />
-                      {playingCharacter?.portraitUrl && (
-                        <img src={playingCharacter.portraitUrl} alt={`${playingCharacter.name}立ち絵`} className="absolute bottom-24 left-4 z-[2] h-[52vh] object-contain" style={{ filter: 'drop-shadow(0 10px 18px rgba(0,0,0,0.35))' }} />
+                      {(playingExpressionUrl || playingCharacter?.portraitUrl) && (
+                        <img
+                          src={playingExpressionUrl || playingCharacter?.portraitUrl || ''}
+                          alt={`${playingCharacter?.name ?? 'キャラクター'}立ち絵`}
+                          className="absolute bottom-20 left-1/2 z-[2] h-[72vh] -translate-x-1/2 object-contain"
+                          style={{ filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.38))' }}
+                        />
                       )}
 
                       <div className="absolute bottom-0 left-0 right-0 px-6 pb-8 pt-6" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(217,229,239,0.25) 4%, rgba(147,172,191,0.45) 9%, rgba(96,124,148,0.65) 18%, rgba(74,102,127,0.78) 38%, rgba(61,89,114,0.9) 62%, rgba(42,66,91,0.96) 100%)' }}>
-                        <div className="flex items-end gap-3" style={{ color: '#ffffff' }}>
-                          {playingExpressionUrl && <img src={playingExpressionUrl} alt={playingLine.expressionName || '表情'} className="h-14 w-14 rounded-md object-contain bg-slate-100" />}
-                          <div className="flex items-baseline gap-3">
-                            <p className="text-lg font-bold">{playingCharacter?.name ?? '未設定キャラクター'}</p>
-                            <p className="text-sm font-semibold" style={{ color: '#7cd0ff' }}>{playingCharacter?.affiliation ?? '未設定'}</p>
-                          </div>
+                        <div className="flex items-baseline gap-3" style={{ color: '#ffffff' }}>
+                          <p className="text-lg font-bold">{playingCharacter?.name ?? '未設定キャラクター'}</p>
+                          <p className="text-sm font-semibold" style={{ color: '#7cd0ff' }}>{playingCharacter?.affiliation ?? '未設定'}</p>
                         </div>
                         <div className="mt-2 border-t border-white/60" />
                         <p className="mt-3 min-h-16 whitespace-pre-wrap text-base" style={{ color: '#ffffff' }}>{dialogueReady ? visibleBody : ''}</p>
