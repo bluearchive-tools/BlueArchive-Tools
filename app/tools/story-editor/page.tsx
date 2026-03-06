@@ -8,6 +8,7 @@ type StoryEffect = 'none' | 'flash' | 'shake' | 'fade'
 type ElementAddMode = 'character' | 'line' | 'background'
 type TitlePhase = 'hidden' | 'fadeIn' | 'fadeOut'
 type FadePhase = 'hidden' | 'fadeIn' | 'fadeOut'
+type EditorView = 'timeline' | 'characters' | 'story'
 
 type StoryMeta = {
   title: string
@@ -148,6 +149,7 @@ export default function StoryEditorPage() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [logOpen, setLogOpen] = useState(false)
   const [skipConfirmOpen, setSkipConfirmOpen] = useState(false)
+  const [startPromptOpen, setStartPromptOpen] = useState(false)
   const [logs, setLogs] = useState<string[]>([])
   const [loggedLineId, setLoggedLineId] = useState<number | null>(null)
   const [backgroundOnly, setBackgroundOnly] = useState(false)
@@ -159,7 +161,7 @@ export default function StoryEditorPage() {
   const [forceLandscape, setForceLandscape] = useState(false)
   const [currentBackground, setCurrentBackground] = useState<BackgroundConfig>({ color: '#ffffff', imageUrl: '' })
   const [choiceAppear, setChoiceAppear] = useState(false)
-  const [editorView, setEditorView] = useState<'timeline' | 'characters'>('timeline')
+  const [editorView, setEditorView] = useState<EditorView>('timeline')
 
   const flagsSet = useMemo(() => new Set(storyFlags), [storyFlags])
   const playingElement = playIndex >= 0 ? elements[playIndex] ?? null : null
@@ -311,6 +313,13 @@ export default function StoryEditorPage() {
     }))
   }
 
+  const updateLineElement = (id: number, patch: Partial<Omit<LineElement, 'id' | 'type' | 'choices'>>) => {
+    setElements((prev) => prev.map((element) => {
+      if (element.type !== 'line' || element.id !== id) return element
+      return { ...element, ...patch }
+    }))
+  }
+
   const removeElement = (id: number) => {
     setElements((prev) => prev.filter((element) => element.id !== id).map((element) => {
       if (element.type !== 'line') return element
@@ -372,14 +381,21 @@ export default function StoryEditorPage() {
     setMenuOpen(false)
     setLogOpen(false)
     setSkipConfirmOpen(false)
+    setStartPromptOpen(true)
     setBackgroundOnly(false)
     setPlayIndex(firstLineIndex)
     setIsPlaying(true)
 
+    setTitlePhase('hidden')
+    setDialogueReady(false)
+  }
+
+  const startStoryPlayback = () => {
+    setStartPromptOpen(false)
+
     if (meta.title.trim()) {
       setDialogueReady(false)
       setTitlePhase('hidden')
-    setDialogueReady(true)
       window.setTimeout(() => setTitlePhase('fadeIn'), 16)
       window.setTimeout(() => setTitlePhase('fadeOut'), TITLE_HOLD_MS)
       window.setTimeout(() => {
@@ -398,6 +414,7 @@ export default function StoryEditorPage() {
     setMenuOpen(false)
     setLogOpen(false)
     setSkipConfirmOpen(false)
+    setStartPromptOpen(false)
     setBackgroundOnly(false)
     setTitlePhase('hidden')
   }
@@ -441,6 +458,10 @@ export default function StoryEditorPage() {
   }
 
   const onTapAdvance = () => {
+    if (startPromptOpen) {
+      startStoryPlayback()
+      return
+    }
     if (backgroundOnly) {
       setBackgroundOnly(false)
       return
@@ -460,11 +481,11 @@ export default function StoryEditorPage() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl space-y-4 p-4">
+    <main className="space-y-4 p-4 md:pl-72">
       <h1 className="text-xl font-bold">ストーリーエディタ</h1>
 
-      <section className="grid gap-4 md:grid-cols-[260px_1fr]">
-        <aside className="rounded border bg-white p-3">
+      <section>
+        <aside className="rounded border bg-white p-3 md:fixed md:left-4 md:top-20 md:w-60">
           <p className="mb-2 text-sm font-semibold text-gray-700">メニュー</p>
           <div className="space-y-1">
             <button
@@ -481,10 +502,17 @@ export default function StoryEditorPage() {
             >
               キャラクター定義
             </button>
+            <button
+              type="button"
+              onClick={() => setEditorView('story')}
+              className={`w-full rounded px-3 py-2 text-left text-sm ${editorView === 'story' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+            >
+              ストーリー定義
+            </button>
           </div>
         </aside>
 
-        <div className="space-y-3">
+        <div className="space-y-3 md:mx-auto md:max-w-5xl">
           {editorView === 'timeline' && (
             <>
               <section className="space-y-3 rounded border bg-white p-4">
@@ -533,14 +561,6 @@ export default function StoryEditorPage() {
               </section>
 
               <section className="space-y-3 rounded border bg-white p-4">
-                <h2 className="font-semibold">ストーリー定義</h2>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <input value={meta.title} onChange={(event) => setMeta((prev) => ({ ...prev, title: event.target.value }))} className="rounded border px-3 py-2" placeholder="タイトル" />
-                  <input value={meta.summary} onChange={(event) => setMeta((prev) => ({ ...prev, summary: event.target.value }))} className="rounded border px-3 py-2" placeholder="要約" />
-                </div>
-              </section>
-
-              <section className="space-y-3 rounded border bg-white p-4">
                 <div className="flex gap-2">
                   <button type="button" onClick={openPlayer} disabled={elements.length === 0} className="rounded bg-emerald-600 px-4 py-2 text-white disabled:opacity-50">再生</button>
                 </div>
@@ -578,29 +598,56 @@ export default function StoryEditorPage() {
                             <button type="button" onClick={() => removeElement(element.id)} className="text-xs text-red-600">削除</button>
                           </div>
 
-                          <div className="rounded border bg-slate-50 p-2">
-                            <p className="text-xs font-semibold">会話文オプション（選択肢分岐）</p>
-                            <div className="mt-2 grid gap-2 md:grid-cols-4">
-                              <input value={choiceEdit.label} onChange={(event) => updateChoiceEdit(element.id, { label: event.target.value })} className="rounded border px-2 py-1 text-xs" placeholder="ラベル" />
-                              <select value={choiceEdit.nextElementId} onChange={(event) => updateChoiceEdit(element.id, { nextElementId: Number(event.target.value) })} className="rounded border px-2 py-1 text-xs">
-                                {elements.map((target) => <option key={target.id} value={target.id}>遷移先 #{target.id} ({target.type})</option>)}
-                              </select>
-                              <input value={choiceEdit.setFlag} onChange={(event) => updateChoiceEdit(element.id, { setFlag: event.target.value })} className="rounded border px-2 py-1 text-xs" placeholder="付与フラグ" />
-                              <input value={choiceEdit.requireFlag} onChange={(event) => updateChoiceEdit(element.id, { requireFlag: event.target.value })} className="rounded border px-2 py-1 text-xs" placeholder="表示条件" />
-                            </div>
-                            <button type="button" className="mt-2 rounded bg-indigo-600 px-3 py-1 text-xs text-white" onClick={() => addChoiceToLine(element.id)}>選択肢追加</button>
-
-                            {element.choices.length > 0 && (
-                              <div className="mt-2 space-y-1 text-xs">
-                                {element.choices.map((choice) => (
-                                  <div key={choice.id} className="flex items-center justify-between gap-2 rounded bg-white p-1">
-                                    <span>{choice.label} → #{choice.nextElementId} / set:{choice.setFlag || '-'} / req:{choice.requireFlag || '-'}</span>
-                                    <button type="button" className="text-red-600" onClick={() => removeChoiceFromLine(element.id, choice.id)}>削除</button>
-                                  </div>
-                                ))}
+                          <details className="rounded border bg-slate-50 p-2">
+                            <summary className="cursor-pointer text-xs font-semibold">オプションを見る（選択肢分岐・表示条件）</summary>
+                            <div className="mt-2 space-y-2">
+                              <div className="grid gap-2 md:grid-cols-3">
+                                <input
+                                  value={element.requireFlag}
+                                  onChange={(event) => updateLineElement(element.id, { requireFlag: event.target.value })}
+                                  className="rounded border px-2 py-1 text-xs"
+                                  placeholder="表示条件フラグ"
+                                />
+                                <select
+                                  value={element.effect}
+                                  onChange={(event) => updateLineElement(element.id, { effect: event.target.value as StoryEffect })}
+                                  className="rounded border px-2 py-1 text-xs"
+                                >
+                                  <option value="none">効果: なし</option>
+                                  <option value="flash">効果: フラッシュ</option>
+                                  <option value="shake">効果: シェイク</option>
+                                  <option value="fade">効果: フェード</option>
+                                </select>
+                                <input
+                                  value={element.locationLabel}
+                                  onChange={(event) => updateLineElement(element.id, { locationLabel: event.target.value })}
+                                  className="rounded border px-2 py-1 text-xs"
+                                  placeholder="場所表示"
+                                />
                               </div>
-                            )}
-                          </div>
+
+                              <div className="grid gap-2 md:grid-cols-4">
+                                <input value={choiceEdit.label} onChange={(event) => updateChoiceEdit(element.id, { label: event.target.value })} className="rounded border px-2 py-1 text-xs" placeholder="ラベル" />
+                                <select value={choiceEdit.nextElementId} onChange={(event) => updateChoiceEdit(element.id, { nextElementId: Number(event.target.value) })} className="rounded border px-2 py-1 text-xs">
+                                  {elements.map((target) => <option key={target.id} value={target.id}>遷移先 #{target.id} ({target.type})</option>)}
+                                </select>
+                                <input value={choiceEdit.setFlag} onChange={(event) => updateChoiceEdit(element.id, { setFlag: event.target.value })} className="rounded border px-2 py-1 text-xs" placeholder="付与フラグ" />
+                                <input value={choiceEdit.requireFlag} onChange={(event) => updateChoiceEdit(element.id, { requireFlag: event.target.value })} className="rounded border px-2 py-1 text-xs" placeholder="表示条件" />
+                              </div>
+                              <button type="button" className="rounded bg-indigo-600 px-3 py-1 text-xs text-white" onClick={() => addChoiceToLine(element.id)}>選択肢追加</button>
+
+                              {element.choices.length > 0 && (
+                                <div className="space-y-1 text-xs">
+                                  {element.choices.map((choice) => (
+                                    <div key={choice.id} className="flex items-center justify-between gap-2 rounded bg-white p-1">
+                                      <span>{choice.label} → #{choice.nextElementId} / set:{choice.setFlag || '-'} / req:{choice.requireFlag || '-'}</span>
+                                      <button type="button" className="text-red-600" onClick={() => removeChoiceFromLine(element.id, choice.id)}>削除</button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </details>
                         </div>
                       </li>
                     )
@@ -627,6 +674,16 @@ export default function StoryEditorPage() {
                   </li>
                 ))}
               </ul>
+            </section>
+          )}
+
+          {editorView === 'story' && (
+            <section className="space-y-3 rounded border bg-white p-4">
+              <h2 className="font-semibold">ストーリー定義</h2>
+              <div className="grid gap-3 md:grid-cols-2">
+                <input value={meta.title} onChange={(event) => setMeta((prev) => ({ ...prev, title: event.target.value }))} className="rounded border px-3 py-2" placeholder="タイトル" />
+                <input value={meta.summary} onChange={(event) => setMeta((prev) => ({ ...prev, summary: event.target.value }))} className="rounded border px-3 py-2" placeholder="要約" />
+              </div>
             </section>
           )}
         </div>
@@ -658,7 +715,15 @@ export default function StoryEditorPage() {
                     <div className={`absolute inset-0 z-[4] transition-opacity duration-500 ${titlePhase === 'fadeIn' ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
                       <div className={`absolute left-0 right-0 top-1/2 -translate-y-1/2 bg-white/96 py-5 text-center transition-opacity duration-500 ${titlePhase === 'fadeIn' ? 'opacity-100' : 'opacity-0'}`}>
                         <p className="text-2xl font-bold" style={{ color: '#3a4f88' }}>{meta.title}</p>
-                        
+                        {meta.summary.trim() && <p className="mt-1 text-sm" style={{ color: '#3a4f88' }}>{meta.summary}</p>}
+                      </div>
+                    </div>
+                  )}
+
+                  {startPromptOpen && (
+                    <div className="absolute inset-0 z-[7] flex items-center justify-center bg-gray-500/95 text-center">
+                      <div>
+                        <p className="text-xl font-bold text-white">タップでストーリーを開始</p>
                       </div>
                     </div>
                   )}
