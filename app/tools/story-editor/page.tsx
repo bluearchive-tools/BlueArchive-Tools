@@ -153,6 +153,7 @@ export default function StoryEditorPage() {
 
   const [titlePhase, setTitlePhase] = useState<TitlePhase>('hidden')
   const [locationPhase, setLocationPhase] = useState<FadePhase>('hidden')
+  const [dialogueReady, setDialogueReady] = useState(true)
 
   const [forceLandscape, setForceLandscape] = useState(false)
   const [currentBackground, setCurrentBackground] = useState<BackgroundConfig>({ color: '#ffffff', imageUrl: '' })
@@ -177,13 +178,13 @@ export default function StoryEditorPage() {
   const canAddLine = useMemo(() => lineBody.trim() !== '' && characters.some((character) => character.id === lineCharacterId), [characters, lineBody, lineCharacterId])
 
   useEffect(() => {
-    if (!isPlaying || !playingLine || titlePhase !== 'hidden') return
+    if (!isPlaying || !playingLine || titlePhase !== 'hidden' || !dialogueReady) return
     setVisibleChars(0)
     setLoggedLineId(null)
-  }, [isPlaying, playingLine, titlePhase])
+  }, [dialogueReady, isPlaying, playingLine, titlePhase])
 
   useEffect(() => {
-    if (!isPlaying || !playingLine || titlePhase !== 'hidden') return
+    if (!isPlaying || !playingLine || titlePhase !== 'hidden' || !dialogueReady) return
     if (visibleChars >= playingLine.body.length) return
     const timerId = window.setInterval(() => {
       setVisibleChars((prev) => {
@@ -196,34 +197,36 @@ export default function StoryEditorPage() {
       })
     }, TEXT_REVEAL_INTERVAL_MS)
     return () => window.clearInterval(timerId)
-  }, [isPlaying, playingLine, titlePhase, visibleChars])
+  }, [dialogueReady, isPlaying, playingLine, titlePhase, visibleChars])
 
   useEffect(() => {
-    if (!isPlaying || !playingLine || titlePhase !== 'hidden') return
+    if (!isPlaying || !playingLine || titlePhase !== 'hidden' || !dialogueReady) return
     if (!isLineFullyVisible) return
     if (loggedLineId === playingLine.id) return
     const characterName = playingCharacter?.name ?? '未設定'
     setLogs((prev) => [...prev, `${characterName}: ${playingLine.body}`])
     setLoggedLineId(playingLine.id)
-  }, [isPlaying, isLineFullyVisible, loggedLineId, playingCharacter?.name, playingLine, titlePhase])
+  }, [dialogueReady, isPlaying, isLineFullyVisible, loggedLineId, playingCharacter?.name, playingLine, titlePhase])
 
   useEffect(() => {
-    if (!isPlaying || !playingLine || !playingLine.locationLabel.trim() || titlePhase !== 'hidden') {
+    if (!isPlaying || !playingLine || !playingLine.locationLabel.trim() || titlePhase !== 'hidden' || !dialogueReady) {
       setLocationPhase('hidden')
       return
     }
 
-    setLocationPhase('fadeIn')
+    setLocationPhase('hidden')
+    const fadeInId = window.setTimeout(() => setLocationPhase('fadeIn'), 16)
     const fadeOutId = window.setTimeout(() => setLocationPhase('fadeOut'), LOCATION_SHOW_MS)
     const hideId = window.setTimeout(() => setLocationPhase('hidden'), LOCATION_SHOW_MS + LOCATION_FADE_MS)
     return () => {
+      window.clearTimeout(fadeInId)
       window.clearTimeout(fadeOutId)
       window.clearTimeout(hideId)
     }
-  }, [isPlaying, playIndex, playingLine, titlePhase])
+  }, [dialogueReady, isPlaying, playIndex, playingLine, titlePhase])
 
   useEffect(() => {
-    if (!isPlaying || !autoMode || !playingLine || !isLineFullyVisible || titlePhase !== 'hidden') return
+    if (!isPlaying || !autoMode || !playingLine || !isLineFullyVisible || titlePhase !== 'hidden' || !dialogueReady) return
     if (visibleChoices.length > 0) return
     const timeoutId = window.setTimeout(() => goToNextLine(), AUTO_ADVANCE_DELAY_MS)
     return () => window.clearTimeout(timeoutId)
@@ -231,7 +234,7 @@ export default function StoryEditorPage() {
   }, [autoMode, isPlaying, isLineFullyVisible, playingLine, titlePhase, visibleChoices.length, flagsSet, playIndex, elements])
 
   useEffect(() => {
-    const canShowChoices = titlePhase === 'hidden' && isLineFullyVisible && visibleChoices.length > 0
+    const canShowChoices = titlePhase === 'hidden' && dialogueReady && isLineFullyVisible && visibleChoices.length > 0
     if (!canShowChoices) {
       setChoiceAppear(false)
       return
@@ -239,7 +242,7 @@ export default function StoryEditorPage() {
     setChoiceAppear(false)
     const id = window.setTimeout(() => setChoiceAppear(true), 16)
     return () => window.clearTimeout(id)
-  }, [isLineFullyVisible, titlePhase, visibleChoices.length, playIndex])
+  }, [dialogueReady, isLineFullyVisible, titlePhase, visibleChoices.length, playIndex])
 
   useEffect(() => {
     if (!isPlaying) return
@@ -371,11 +374,18 @@ export default function StoryEditorPage() {
     setIsPlaying(true)
 
     if (meta.title.trim()) {
-      setTitlePhase('fadeIn')
+      setDialogueReady(false)
+      setTitlePhase('hidden')
+    setDialogueReady(true)
+      window.setTimeout(() => setTitlePhase('fadeIn'), 16)
       window.setTimeout(() => setTitlePhase('fadeOut'), TITLE_HOLD_MS)
-      window.setTimeout(() => setTitlePhase('hidden'), TITLE_HOLD_MS + TITLE_FADE_MS)
+      window.setTimeout(() => {
+        setTitlePhase('hidden')
+        window.setTimeout(() => setDialogueReady(true), 220)
+      }, TITLE_HOLD_MS + TITLE_FADE_MS)
     } else {
       setTitlePhase('hidden')
+      setDialogueReady(true)
     }
   }
 
@@ -433,6 +443,7 @@ export default function StoryEditorPage() {
     }
     if (titlePhase !== 'hidden') {
       setTitlePhase('hidden')
+      setDialogueReady(true)
       return
     }
     if (!playingLine) return
@@ -614,11 +625,11 @@ export default function StoryEditorPage() {
                     </div>
                   )}
 
-                  {playingLine && isLineFullyVisible && visibleChoices.length > 0 && titlePhase === 'hidden' && (
+                  {playingLine && dialogueReady && isLineFullyVisible && visibleChoices.length > 0 && titlePhase === 'hidden' && (
                     <div className="absolute left-1/2 top-1/2 z-[3] -translate-x-1/2 -translate-y-1/2" onClick={(event) => event.stopPropagation()}>
-                      <div className={`grid w-[min(88vw,460px)] gap-2 transition-all duration-300 ${choiceAppear ? 'scale-100 opacity-100 animate-bounce' : 'scale-75 opacity-0'}`}>
+                      <div className={`grid w-[min(88vw,460px)] gap-2 transition-all duration-300 ${choiceAppear ? 'scale-100 opacity-100' : 'scale-75 opacity-0'}`}>
                         {visibleChoices.map((choice) => (
-                          <button key={choice.id} type="button" className="rounded bg-white/90 px-4 py-3 text-left text-slate-900 hover:bg-white" onClick={() => jumpToElementById(choice.nextElementId, choice.setFlag)}>
+                          <button key={choice.id} type="button" className="rounded bg-white/90 px-4 py-3 text-center text-slate-900 hover:bg-white" onClick={() => jumpToElementById(choice.nextElementId, choice.setFlag)}>
                             {choice.label}
                           </button>
                         ))}
@@ -636,7 +647,7 @@ export default function StoryEditorPage() {
                           <p className="text-sm font-semibold" style={{ color: '#7cd0ff' }}>{playingCharacter?.affiliation ?? '未設定'}</p>
                         </div>
                         <div className="mt-2 border-t border-white/60" />
-                        <p className="mt-3 min-h-16 whitespace-pre-wrap text-base" style={{ color: '#ffffff' }}>{visibleBody}</p>
+                        <p className="mt-3 min-h-16 whitespace-pre-wrap text-base" style={{ color: '#ffffff' }}>{dialogueReady ? visibleBody : ''}</p>
                         {isLineFullyVisible && visibleChoices.length === 0 && (
                           <span className="absolute bottom-3 right-4 animate-bounce text-lg" style={{ color: '#7cd0ff' }}>▲</span>
                         )}
