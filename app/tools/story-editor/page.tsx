@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBars, faExpand, faForward, faGear } from '@fortawesome/free-solid-svg-icons'
+import { faBars, faExpand, faForward, faGear, faXmark } from '@fortawesome/free-solid-svg-icons'
 
 type StoryEffect = 'none' | 'flash' | 'shake' | 'fade'
 type ElementAddMode = 'character' | 'line' | 'background'
@@ -19,6 +19,9 @@ type StoryCharacter = {
   id: number
   name: string
   affiliation: string
+  portraitUrl: string
+  wikiTitle: string
+  expressions: Array<{ name: string; imageUrl: string }>
 }
 
 type BackgroundConfig = {
@@ -42,6 +45,7 @@ type LineElement = {
   requireFlag: string
   effect: StoryEffect
   locationLabel: string
+  expressionName: string
   choices: StoryChoice[]
 }
 
@@ -53,6 +57,7 @@ type BackgroundElement = {
 
 type StoryElement = LineElement | BackgroundElement
 
+
 const SHIN_MARU_FONT = '"MFW-PShinMGoPr6N-Medium", "M PLUS 1p", sans-serif'
 const TEXT_REVEAL_INTERVAL_MS = 38
 const AUTO_ADVANCE_DELAY_MS = 700
@@ -62,8 +67,8 @@ const LOCATION_SHOW_MS = 1500
 const LOCATION_FADE_MS = 500
 
 const DEFAULT_CHARACTERS: StoryCharacter[] = [
-  { id: 1, name: '先生', affiliation: 'シャーレ' },
-  { id: 2, name: 'アロナ', affiliation: 'シッテムの箱' },
+  { id: 1, name: '先生', affiliation: 'シャーレ', portraitUrl: '', wikiTitle: '', expressions: [] },
+  { id: 2, name: 'アロナ', affiliation: 'シッテムの箱', portraitUrl: '', wikiTitle: 'Arona', expressions: [] },
 ]
 
 const DEFAULT_ELEMENTS: StoryElement[] = [
@@ -76,13 +81,14 @@ const DEFAULT_ELEMENTS: StoryElement[] = [
     requireFlag: '',
     effect: 'fade',
     locationLabel: 'SCHALE BRIDGE',
+    expressionName: '',
     choices: [
       { id: 11, label: '正面突破', nextElementId: 2, setFlag: 'front', requireFlag: '' },
       { id: 12, label: '迂回ルート', nextElementId: 3, setFlag: 'detour', requireFlag: '' },
     ],
   },
-  { id: 2, type: 'line', characterId: 2, body: '正面ルートで進行します。', requireFlag: 'front', effect: 'flash', locationLabel: '', choices: [] },
-  { id: 3, type: 'line', characterId: 2, body: '迂回ルートで静かに進行します。', requireFlag: 'detour', effect: 'shake', locationLabel: '', choices: [] },
+  { id: 2, type: 'line', characterId: 2, body: '正面ルートで進行します。', requireFlag: 'front', effect: 'flash', locationLabel: '', expressionName: '', choices: [] },
+  { id: 3, type: 'line', characterId: 2, body: '迂回ルートで静かに進行します。', requireFlag: 'detour', effect: 'shake', locationLabel: '', expressionName: '', choices: [] },
 ]
 
 function canShowChoice(choice: StoryChoice, flags: Set<string>) {
@@ -128,12 +134,15 @@ export default function StoryEditorPage() {
   const [addMode, setAddMode] = useState<ElementAddMode>('line')
   const [newCharacterName, setNewCharacterName] = useState('')
   const [newCharacterAffiliation, setNewCharacterAffiliation] = useState('')
+  const [newCharacterPortraitUrl, setNewCharacterPortraitUrl] = useState('')
+  const [newCharacterWikiTitle, setNewCharacterWikiTitle] = useState('')
 
   const [lineCharacterId, setLineCharacterId] = useState(DEFAULT_CHARACTERS[0].id)
   const [lineBody, setLineBody] = useState('')
   const [lineRequireFlag, setLineRequireFlag] = useState('')
   const [lineEffect, setLineEffect] = useState<StoryEffect>('none')
   const [lineLocationLabel, setLineLocationLabel] = useState('')
+  const [lineExpressionName, setLineExpressionName] = useState('')
 
   const [bgColor, setBgColor] = useState('#ffffff')
   const [bgImageUrl, setBgImageUrl] = useState('')
@@ -150,7 +159,7 @@ export default function StoryEditorPage() {
   const [logOpen, setLogOpen] = useState(false)
   const [skipConfirmOpen, setSkipConfirmOpen] = useState(false)
   const [startPromptOpen, setStartPromptOpen] = useState(false)
-  const [logs, setLogs] = useState<string[]>([])
+  const [logs, setLogs] = useState<StoryLog[]>([])
   const [loggedLineId, setLoggedLineId] = useState<number | null>(null)
   const [backgroundOnly, setBackgroundOnly] = useState(false)
 
@@ -162,6 +171,7 @@ export default function StoryEditorPage() {
   const [currentBackground, setCurrentBackground] = useState<BackgroundConfig>({ color: '#ffffff', imageUrl: '' })
   const [choiceAppear, setChoiceAppear] = useState(false)
   const [editorView, setEditorView] = useState<EditorView>('timeline')
+  const [expressionFetchStateByCharacter, setExpressionFetchStateByCharacter] = useState<Record<number, string>>({})
 
   const flagsSet = useMemo(() => new Set(storyFlags), [storyFlags])
   const playingElement = playIndex >= 0 ? elements[playIndex] ?? null : null
@@ -170,6 +180,11 @@ export default function StoryEditorPage() {
     () => characters.find((character) => character.id === (playingLine?.characterId ?? -1)) ?? null,
     [characters, playingLine?.characterId],
   )
+  const playingExpressionUrl = useMemo(() => {
+    if (!playingLine || !playingCharacter) return ''
+    const expression = playingCharacter.expressions.find((item) => item.name === playingLine.expressionName)
+    return expression?.imageUrl ?? ''
+  }, [playingCharacter, playingLine])
 
   const visibleChoices = useMemo(() => {
     if (!playingLine) return []
@@ -208,9 +223,9 @@ export default function StoryEditorPage() {
     if (!isLineFullyVisible) return
     if (loggedLineId === playingLine.id) return
     const characterName = playingCharacter?.name ?? '未設定'
-    setLogs((prev) => [...prev, `${characterName}: ${playingLine.body}`])
+    setLogs((prev) => [...prev, { lineId: playingLine.id, speaker: characterName, body: playingLine.body, expressionImageUrl: playingExpressionUrl }])
     setLoggedLineId(playingLine.id)
-  }, [dialogueReady, isPlaying, isLineFullyVisible, loggedLineId, playingCharacter?.name, playingLine, titlePhase])
+  }, [dialogueReady, isPlaying, isLineFullyVisible, loggedLineId, playingCharacter?.name, playingExpressionUrl, playingLine, titlePhase])
 
   useEffect(() => {
     if (!isPlaying || !playingLine || !playingLine.locationLabel.trim() || titlePhase !== 'hidden' || !dialogueReady) {
@@ -286,18 +301,38 @@ export default function StoryEditorPage() {
   const addCharacter = () => {
     if (!canAddCharacter) return
     const id = Date.now()
-    setCharacters((prev) => [...prev, { id, name: newCharacterName.trim(), affiliation: newCharacterAffiliation.trim() }])
+    setCharacters((prev) => [...prev, {
+      id,
+      name: newCharacterName.trim(),
+      affiliation: newCharacterAffiliation.trim(),
+      portraitUrl: newCharacterPortraitUrl.trim(),
+      wikiTitle: newCharacterWikiTitle.trim(),
+      expressions: [],
+    }])
     setLineCharacterId(id)
     setNewCharacterName('')
     setNewCharacterAffiliation('')
+    setNewCharacterPortraitUrl('')
+    setNewCharacterWikiTitle('')
   }
 
   const addLine = () => {
     if (!canAddLine) return
     const id = Date.now()
-    setElements((prev) => [...prev, { id, type: 'line', characterId: lineCharacterId, body: lineBody.trim(), requireFlag: lineRequireFlag.trim(), effect: lineEffect, locationLabel: lineLocationLabel.trim(), choices: [] }])
+    setElements((prev) => [...prev, {
+      id,
+      type: 'line',
+      characterId: lineCharacterId,
+      body: lineBody.trim(),
+      requireFlag: lineRequireFlag.trim(),
+      effect: lineEffect,
+      locationLabel: lineLocationLabel.trim(),
+      expressionName: lineExpressionName,
+      choices: [],
+    }])
     setLineBody('')
     setLineLocationLabel('')
+    setLineExpressionName('')
     setChoiceEditByLine((prev) => ({ ...prev, [id]: { label: '', nextElementId: id, setFlag: '', requireFlag: '' } }))
   }
 
@@ -318,6 +353,51 @@ export default function StoryEditorPage() {
       if (element.type !== 'line' || element.id !== id) return element
       return { ...element, ...patch }
     }))
+  }
+
+  const updateCharacter = (id: number, patch: Partial<Omit<StoryCharacter, 'id'>>) => {
+    setCharacters((prev) => prev.map((character) => (character.id === id ? { ...character, ...patch } : character)))
+  }
+
+  const removeCharacter = (id: number) => {
+    setCharacters((prev) => prev.filter((character) => character.id !== id))
+    setElements((prev) => prev.filter((element) => element.type !== 'line' || element.characterId !== id))
+    setLineCharacterId((prev) => {
+      if (prev !== id) return prev
+      const next = characters.find((character) => character.id !== id)
+      return next?.id ?? 0
+    })
+  }
+
+  const fetchExpressionsFromWiki = async (character: StoryCharacter) => {
+    const title = character.wikiTitle.trim()
+    if (!title) {
+      setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: 'wikiTitle を入力してください' }))
+      return
+    }
+
+    setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: '取得中...' }))
+
+    try {
+      const response = await fetch(`https://bluearchive.wiki/wiki/${encodeURIComponent(title)}?output=1&format=json`)
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const data = await response.json() as { files?: Array<{ name?: string; url?: string }> }
+      const rawFiles = Array.isArray(data.files) ? data.files : []
+      const expressions = rawFiles
+        .filter((file) => typeof file.name === 'string' && typeof file.url === 'string' && file.name.includes('Portrait') && file.name.includes('.webp'))
+        .map((file) => ({
+          name: file.name!.replace(/\.[^.]+$/, '').replace(/^.*?Portrait_?/, ''),
+          imageUrl: file.url!,
+        }))
+      if (expressions.length === 0) {
+        setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: '表情差分が見つかりませんでした' }))
+        return
+      }
+      updateCharacter(character.id, { expressions })
+      setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: `${expressions.length} 件取得しました` }))
+    } catch {
+      setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: '取得に失敗しました' }))
+    }
   }
 
   const removeElement = (id: number) => {
@@ -481,11 +561,11 @@ export default function StoryEditorPage() {
   }
 
   return (
-    <main className="space-y-4 p-4 md:pl-72">
+    <main className="space-y-4 p-4">
       <h1 className="text-xl font-bold">ストーリーエディタ</h1>
 
-      <section>
-        <aside className="rounded border bg-white p-3 md:fixed md:left-4 md:top-20 md:w-60">
+      <section className="md:flex md:items-start md:gap-4">
+        <aside className="rounded border bg-white p-3 md:w-60 md:shrink-0">
           <p className="mb-2 text-sm font-semibold text-gray-700">メニュー</p>
           <div className="space-y-1">
             <button
@@ -512,7 +592,7 @@ export default function StoryEditorPage() {
           </div>
         </aside>
 
-        <div className="space-y-3 md:mx-auto md:max-w-5xl">
+        <div className="min-w-0 flex-1 space-y-3 md:max-w-5xl">
           {editorView === 'timeline' && (
             <>
               <section className="space-y-3 rounded border bg-white p-4">
@@ -526,7 +606,12 @@ export default function StoryEditorPage() {
                 {addMode === 'line' && (
                   <>
                     <div className="grid gap-3 md:grid-cols-4">
-                      <select value={lineCharacterId} onChange={(event) => setLineCharacterId(Number(event.target.value))} className="rounded border px-3 py-2">
+                      <select value={lineCharacterId} onChange={(event) => {
+                        const nextId = Number(event.target.value)
+                        setLineCharacterId(nextId)
+                        const character = characters.find((item) => item.id === nextId)
+                        setLineExpressionName(character?.expressions[0]?.name ?? '')
+                      }} className="rounded border px-3 py-2">
                         {characters.map((character) => <option key={character.id} value={character.id}>{character.name} / {character.affiliation}</option>)}
                       </select>
                       <input value={lineRequireFlag} onChange={(event) => setLineRequireFlag(event.target.value)} className="rounded border px-3 py-2" placeholder="表示条件フラグ(任意)" />
@@ -538,8 +623,12 @@ export default function StoryEditorPage() {
                       </select>
                       <input value={lineLocationLabel} onChange={(event) => setLineLocationLabel(event.target.value)} className="rounded border px-3 py-2" placeholder="場所表示オプション(任意)" />
                     </div>
-                    <div className="flex gap-3">
-                      <input value={lineBody} onChange={(event) => setLineBody(event.target.value)} className="flex-1 rounded border px-3 py-2" placeholder="本文" />
+                    <div className="grid gap-3 md:grid-cols-4">
+                      <input value={lineBody} onChange={(event) => setLineBody(event.target.value)} className="rounded border px-3 py-2 md:col-span-2" placeholder="本文" />
+                      <select value={lineExpressionName} onChange={(event) => setLineExpressionName(event.target.value)} className="rounded border px-3 py-2">
+                        <option value="">表情: なし</option>
+                        {(characters.find((character) => character.id === lineCharacterId)?.expressions ?? []).map((expression) => <option key={expression.name} value={expression.name}>{expression.name}</option>)}
+                      </select>
                       <button type="button" onClick={addLine} disabled={!canAddLine} className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">追加</button>
                     </div>
                   </>
@@ -560,7 +649,7 @@ export default function StoryEditorPage() {
                 )}
               </section>
 
-              <section className="space-y-3 rounded border bg-white p-4">
+              <section className="space-y-3 bg-white p-4">
                 <div className="flex gap-2">
                   <button type="button" onClick={openPlayer} disabled={elements.length === 0} className="rounded bg-emerald-600 px-4 py-2 text-white disabled:opacity-50">再生</button>
                 </div>
@@ -599,8 +688,18 @@ export default function StoryEditorPage() {
                           </div>
 
                           <details className="rounded border bg-slate-50 p-2">
-                            <summary className="cursor-pointer text-xs font-semibold">オプションを見る（選択肢分岐・表示条件）</summary>
+                            <summary className="cursor-pointer text-xs font-semibold">編集・分岐オプション</summary>
                             <div className="mt-2 space-y-2">
+                              <div className="grid gap-2 md:grid-cols-2">
+                                <select value={element.characterId} onChange={(event) => updateLineElement(element.id, { characterId: Number(event.target.value) })} className="rounded border px-2 py-1 text-xs">
+                                  {characters.map((targetCharacter) => <option key={targetCharacter.id} value={targetCharacter.id}>{targetCharacter.name} / {targetCharacter.affiliation}</option>)}
+                                </select>
+                                <select value={element.expressionName} onChange={(event) => updateLineElement(element.id, { expressionName: event.target.value })} className="rounded border px-2 py-1 text-xs">
+                                  <option value="">表情: なし</option>
+                                  {(characters.find((item) => item.id === element.characterId)?.expressions ?? []).map((expression) => <option key={expression.name} value={expression.name}>{expression.name}</option>)}
+                                </select>
+                              </div>
+                              <textarea value={element.body} onChange={(event) => updateLineElement(element.id, { body: event.target.value })} className="min-h-20 w-full rounded border px-2 py-1 text-xs" placeholder="本文" />
                               <div className="grid gap-2 md:grid-cols-3">
                                 <input
                                   value={element.requireFlag}
@@ -663,14 +762,38 @@ export default function StoryEditorPage() {
               <div className="grid gap-3 md:grid-cols-2">
                 <input value={newCharacterName} onChange={(event) => setNewCharacterName(event.target.value)} className="rounded border px-3 py-2" placeholder="キャラクター名" />
                 <input value={newCharacterAffiliation} onChange={(event) => setNewCharacterAffiliation(event.target.value)} className="rounded border px-3 py-2" placeholder="所属" />
+                <input value={newCharacterPortraitUrl} onChange={(event) => setNewCharacterPortraitUrl(event.target.value)} className="rounded border px-3 py-2" placeholder="立ち絵URL" />
+                <input value={newCharacterWikiTitle} onChange={(event) => setNewCharacterWikiTitle(event.target.value)} className="rounded border px-3 py-2" placeholder="bluearchive.wiki タイトル" />
               </div>
               <button type="button" onClick={addCharacter} disabled={!canAddCharacter} className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">追加</button>
 
               <ul className="space-y-2 pt-2">
                 {characters.map((character) => (
                   <li key={character.id} className="rounded border bg-slate-50 p-3 text-sm">
-                    <p className="font-semibold">{character.name}</p>
-                    <p className="text-gray-600">{character.affiliation}</p>
+                    <div className="grid gap-2 md:grid-cols-2">
+                      <input value={character.name} onChange={(event) => updateCharacter(character.id, { name: event.target.value })} className="rounded border px-2 py-1" placeholder="キャラクター名" />
+                      <input value={character.affiliation} onChange={(event) => updateCharacter(character.id, { affiliation: event.target.value })} className="rounded border px-2 py-1" placeholder="所属" />
+                      <input value={character.portraitUrl} onChange={(event) => updateCharacter(character.id, { portraitUrl: event.target.value })} className="rounded border px-2 py-1 md:col-span-2" placeholder="立ち絵URL" />
+                      <input value={character.wikiTitle} onChange={(event) => updateCharacter(character.id, { wikiTitle: event.target.value })} className="rounded border px-2 py-1" placeholder="bluearchive.wiki タイトル" />
+                      <div className="flex gap-2">
+                        <button type="button" className="rounded bg-sky-600 px-3 py-1 text-xs text-white" onClick={() => fetchExpressionsFromWiki(character)}>表情差分を取得</button>
+                        <button type="button" className="rounded border border-red-300 px-3 py-1 text-xs text-red-700" onClick={() => removeCharacter(character.id)}>削除</button>
+                      </div>
+                    </div>
+                    {expressionFetchStateByCharacter[character.id] && <p className="mt-2 text-xs text-gray-600">{expressionFetchStateByCharacter[character.id]}</p>}
+                    {character.portraitUrl && (
+                      <img src={character.portraitUrl} alt={`${character.name} 立ち絵`} className="mt-2 h-24 rounded object-contain" />
+                    )}
+                    {character.expressions.length > 0 && (
+                      <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
+                        {character.expressions.map((expression) => (
+                          <div key={expression.name} className="rounded border bg-white p-1">
+                            <img src={expression.imageUrl} alt={expression.name} className="h-16 w-full rounded object-cover" />
+                            <p className="truncate text-[10px]">{expression.name}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -748,11 +871,17 @@ export default function StoryEditorPage() {
                   {playingLine && (
                     <>
                       <div className={`absolute inset-0 ${playingLine.effect === 'fade' ? 'opacity-80' : 'opacity-100'} ${playingLine.effect === 'shake' ? 'animate-bounce' : ''}`} style={{ pointerEvents: 'none' }} />
+                      {playingCharacter?.portraitUrl && (
+                        <img src={playingCharacter.portraitUrl} alt={`${playingCharacter.name}立ち絵`} className="absolute bottom-24 left-4 z-[2] h-[52vh] object-contain" style={{ filter: 'drop-shadow(0 10px 18px rgba(0,0,0,0.35))' }} />
+                      )}
 
                       <div className="absolute bottom-0 left-0 right-0 px-6 pb-8 pt-6" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(217,229,239,0.25) 4%, rgba(147,172,191,0.45) 9%, rgba(96,124,148,0.65) 18%, rgba(74,102,127,0.78) 38%, rgba(61,89,114,0.9) 62%, rgba(42,66,91,0.96) 100%)' }}>
-                        <div className="flex items-baseline gap-3" style={{ color: '#ffffff' }}>
-                          <p className="text-lg font-bold">{playingCharacter?.name ?? '未設定キャラクター'}</p>
-                          <p className="text-sm font-semibold" style={{ color: '#7cd0ff' }}>{playingCharacter?.affiliation ?? '未設定'}</p>
+                        <div className="flex items-end gap-3" style={{ color: '#ffffff' }}>
+                          {playingExpressionUrl && <img src={playingExpressionUrl} alt={playingLine.expressionName || '表情'} className="h-14 w-14 rounded-md object-cover" />}
+                          <div className="flex items-baseline gap-3">
+                            <p className="text-lg font-bold">{playingCharacter?.name ?? '未設定キャラクター'}</p>
+                            <p className="text-sm font-semibold" style={{ color: '#7cd0ff' }}>{playingCharacter?.affiliation ?? '未設定'}</p>
+                          </div>
                         </div>
                         <div className="mt-2 border-t border-white/60" />
                         <p className="mt-3 min-h-16 whitespace-pre-wrap text-base" style={{ color: '#ffffff' }}>{dialogueReady ? visibleBody : ''}</p>
@@ -764,36 +893,63 @@ export default function StoryEditorPage() {
                   )}
 
                   {skipConfirmOpen && (
-                    <div className="absolute inset-0 z-[6] flex items-center justify-center bg-black/40" onClick={() => setSkipConfirmOpen(false)}>
-                      <div className="w-[min(92vw,560px)] animate-[skipModalIn_.35s_ease-out] rounded-2xl bg-white p-5" onClick={(event) => event.stopPropagation()}>
-                        <p className="text-sm font-semibold text-gray-500">あらすじ</p>
-                        <p className="mt-1 text-lg font-bold">{meta.title || 'タイトル未設定'}</p>
-                        <p className="mt-1 whitespace-pre-wrap text-sm text-gray-700">{meta.summary || '要約未設定'}</p>
-                        <p className="mt-4 text-sm text-gray-700">※この話をスキップしますか？</p>
-                        <div className="mt-4 grid grid-cols-2 gap-3">
-                          <button type="button" className="rounded border px-4 py-2" onClick={() => setSkipConfirmOpen(false)}>キャンセル</button>
-                          <button
-                            type="button"
-                            className="rounded bg-blue-600 px-4 py-2 text-white"
-                            onClick={() => {
-                              setSkipConfirmOpen(false)
-                              closePlayer()
-                            }}
-                          >
-                            OK
-                          </button>
+                    <div className="absolute inset-0 z-[6] flex items-center justify-center bg-slate-900/45" onClick={() => setSkipConfirmOpen(false)}>
+                      <div className="w-[min(92vw,720px)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
+                        <div className="flex items-center justify-between border-b px-5 py-3" style={{ background: 'linear-gradient(120deg,#e7f2ff 0%,#f6fbff 45%,#ffffff 100%)' }}>
+                          <div className="text-center">
+                            <p className="text-3xl font-bold tracking-wide text-[#2d406f]">あらすじ</p>
+                            <div className="mx-auto mt-1 h-1 w-20 rounded bg-yellow-300" />
+                          </div>
+                          <button type="button" onClick={() => setSkipConfirmOpen(false)} className="text-3xl text-[#1e315f]"><FontAwesomeIcon icon={faXmark} /></button>
+                        </div>
+                        <div className="p-5">
+                          <p className="text-center text-2xl font-bold text-[#2f406d]">{meta.title || 'タイトル未設定'}</p>
+                          <div className="mt-4 rounded border bg-slate-100 p-4 text-lg leading-relaxed text-slate-700">{meta.summary || '要約未設定'}</div>
+                          <p className="mt-6 text-center text-3xl font-semibold text-[#2f406d]">※この話をスキップしますか？</p>
+                          <div className="mt-6 grid grid-cols-2 gap-4">
+                            <button type="button" className="rounded-xl bg-[#d9edf9] px-4 py-3 text-3xl font-bold text-[#24406b] shadow" onClick={() => setSkipConfirmOpen(false)}>キャンセル</button>
+                            <button
+                              type="button"
+                              className="rounded-xl bg-cyan-300 px-4 py-3 text-3xl font-bold text-[#24406b] shadow"
+                              onClick={() => {
+                                setSkipConfirmOpen(false)
+                                closePlayer()
+                              }}
+                            >
+                              OK
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
                   )}
 
                   {logOpen && (
-                    <div className="absolute inset-0 z-[6] flex items-center justify-center bg-black/45" onClick={() => setLogOpen(false)}>
-                      <div className="max-h-[70vh] w-[min(92vw,640px)] overflow-auto rounded bg-white p-4" onClick={(event) => event.stopPropagation()}>
-                        <h3 className="text-lg font-bold">LOG</h3>
-                        <ul className="mt-3 space-y-2 text-sm text-slate-700">
-                          {logs.length === 0 ? <li>まだログがありません。</li> : logs.map((log, index) => <li key={`${index}-${log.slice(0, 12)}`}>{log}</li>)}
-                        </ul>
+                    <div className="absolute inset-0 z-[6] flex items-center justify-center bg-slate-900/40" onClick={() => setLogOpen(false)}>
+                      <div className="flex h-[80vh] w-[min(95vw,1180px)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-[#f2f4f8] shadow-2xl" onClick={(event) => event.stopPropagation()}>
+                        <div className="flex items-center justify-center border-b bg-white px-5 py-3 text-[#2d406f]">
+                          <p className="text-4xl font-bold">LOG</p>
+                          <div className="absolute right-8"><button type="button" className="text-4xl" onClick={() => setLogOpen(false)}><FontAwesomeIcon icon={faXmark} /></button></div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4">
+                          {logs.length === 0 ? (
+                            <p className="text-sm text-slate-500">まだログがありません。</p>
+                          ) : (
+                            <ul className="space-y-3">
+                              {logs.map((log, index) => (
+                                <li key={`${log.lineId}-${index}`} className="flex items-end gap-3">
+                                  <div className="h-20 w-20 overflow-hidden rounded-lg border bg-white">
+                                    {log.expressionImageUrl ? <img src={log.expressionImageUrl} alt={log.speaker} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-xs text-slate-400">No Img</div>}
+                                  </div>
+                                  <div className="flex-1 rounded-xl bg-white p-3 shadow-sm">
+                                    <p className="text-2xl font-bold text-[#2f406d]">{log.speaker}</p>
+                                    <p className="mt-1 text-xl text-slate-700">{log.body}</p>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -806,3 +962,4 @@ export default function StoryEditorPage() {
     </main>
   )
 }
+
