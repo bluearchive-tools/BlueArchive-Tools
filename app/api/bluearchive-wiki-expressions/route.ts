@@ -18,6 +18,16 @@ function normalizeWikiTitle(title: string) {
   return title.replaceAll(' ', '_')
 }
 
+
+function normalizeExpressionKey(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+
+function titleToCharacterKey(title: string) {
+  const base = title.split('_(')[0] ?? title
+  return normalizeExpressionKey(base)
+}
+
 function toOriginalImageUrl(url: string) {
   const thumbMarker = '/thumb/'
   const thumbIndex = url.indexOf(thumbMarker)
@@ -30,7 +40,7 @@ function toOriginalImageUrl(url: string) {
   return `${url.slice(0, thumbIndex)}/${rest.slice(0, slashIndex)}`
 }
 
-function parseGalleryExpressions(html: string) {
+function parseGalleryExpressions(html: string, characterKey: string) {
   const itemRegex = /<li[^>]*class="[^"]*gallerybox[^"]*"[\s\S]*?<\/li>/g
   const fileHrefRegex = /href="([^"]*\/wiki\/File:[^"]+\.(?:png|webp|jpg|jpeg)[^"]*)"/i
   const imgSrcRegex = /<img[^>]+src="([^"]+)"/i
@@ -52,9 +62,12 @@ function parseGalleryExpressions(html: string) {
     if (!fileName || seen.has(fileName)) continue
     seen.add(fileName)
 
+    const expressionName = fileName.replace(/\.[^.]+$/, '')
+    if (characterKey && !normalizeExpressionKey(expressionName).includes(characterKey)) continue
+
     const imageUrl = toOriginalImageUrl(rawSrc)
     expressions.push({
-      name: fileName.replace(/\.[^.]+$/, ''),
+      name: expressionName,
       imageUrl,
     })
   }
@@ -84,7 +97,8 @@ export async function GET(request: NextRequest) {
     }
 
     const html = await response.text()
-    const expressions = parseGalleryExpressions(html)
+    const characterKey = titleToCharacterKey(title)
+    const expressions = parseGalleryExpressions(html, characterKey)
     return NextResponse.json({ title, expressions })
   } catch {
     return NextResponse.json({ message: 'wiki fetch failed' }, { status: 502 })

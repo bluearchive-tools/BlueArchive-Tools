@@ -726,7 +726,7 @@ export default function StoryEditorPage() {
                     <div className="grid gap-3 md:grid-cols-4">
                       <input value={lineBody} onChange={(event) => setLineBody(event.target.value)} className="rounded border px-3 py-2 md:col-span-2" placeholder="本文" />
                       <button type="button" onClick={openExpressionPickerForNewLine} className="flex items-center gap-2 rounded border px-3 py-2 text-left">
-                        {lineEditorExpression?.imageUrl ? <img src={lineEditorExpression.imageUrl} alt={lineEditorExpression.name} className="h-8 w-8 rounded object-cover" /> : <span className="inline-flex h-8 w-8 items-center justify-center rounded bg-gray-100 text-xs text-gray-500">-</span>}
+                        {lineEditorExpression?.imageUrl ? <img src={lineEditorExpression.imageUrl} alt={lineEditorExpression.name} className="h-8 w-8 rounded object-contain bg-slate-100" /> : <span className="inline-flex h-8 w-8 items-center justify-center rounded bg-gray-100 text-xs text-gray-500">-</span>}
                         <span className="text-sm">{lineExpressionName || '表情を選択'}</span>
                       </button>
                       <button type="button" onClick={addLine} disabled={!canAddLine} className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">追加</button>
@@ -796,7 +796,7 @@ export default function StoryEditorPage() {
                                 </select>
                                 <button type="button" onClick={() => openExpressionPickerForLine(element.id)} className="flex items-center gap-2 rounded border px-2 py-1 text-xs text-left">
                                   {(characters.find((item) => item.id === element.characterId)?.expressions.find((expression) => expression.name === element.expressionName)?.imageUrl)
-                                    ? <img src={characters.find((item) => item.id === element.characterId)?.expressions.find((expression) => expression.name === element.expressionName)?.imageUrl} alt={element.expressionName || '表情'} className="h-7 w-7 rounded object-cover" />
+                                    ? <img src={characters.find((item) => item.id === element.characterId)?.expressions.find((expression) => expression.name === element.expressionName)?.imageUrl} alt={element.expressionName || '表情'} className="h-7 w-7 rounded object-contain bg-slate-100" />
                                     : <span className="inline-flex h-7 w-7 items-center justify-center rounded bg-gray-100 text-[10px] text-gray-500">-</span>}
                                   <span>{element.expressionName || '表情を選択'}</span>
                                 </button>
@@ -887,7 +887,7 @@ export default function StoryEditorPage() {
                       <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
                         {character.expressions.map((expression) => (
                           <div key={expression.name} className="rounded border bg-white p-1">
-                            <img src={expression.imageUrl} alt={expression.name} className="h-16 w-full rounded object-cover" />
+                            <img src={expression.imageUrl} alt={expression.name} className="h-16 w-full rounded object-contain bg-slate-100" />
                             <p className="truncate text-[10px]">{expression.name}</p>
                           </div>
                         ))}
@@ -931,7 +931,7 @@ export default function StoryEditorPage() {
             <div className="grid max-h-[60vh] grid-cols-2 gap-2 overflow-y-auto md:grid-cols-4">
               {(pickerCharacter?.expressions ?? []).map((expression) => (
                 <button key={expression.name} type="button" className={`rounded border p-2 text-left ${pickerSelectedExpression === expression.name ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'}`} onClick={() => pickExpression(expression.name)}>
-                  <img src={expression.imageUrl} alt={expression.name} className="h-24 w-full rounded object-cover" />
+                  <img src={expression.imageUrl} alt={expression.name} className="h-24 w-full rounded object-contain bg-slate-100" />
                   <p className="mt-1 truncate text-xs">{expression.name}</p>
                 </button>
               ))}
@@ -1006,7 +1006,7 @@ export default function StoryEditorPage() {
 
                       <div className="absolute bottom-0 left-0 right-0 px-6 pb-8 pt-6" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(217,229,239,0.25) 4%, rgba(147,172,191,0.45) 9%, rgba(96,124,148,0.65) 18%, rgba(74,102,127,0.78) 38%, rgba(61,89,114,0.9) 62%, rgba(42,66,91,0.96) 100%)' }}>
                         <div className="flex items-end gap-3" style={{ color: '#ffffff' }}>
-                          {playingExpressionUrl && <img src={playingExpressionUrl} alt={playingLine.expressionName || '表情'} className="h-14 w-14 rounded-md object-cover" />}
+                          {playingExpressionUrl && <img src={playingExpressionUrl} alt={playingLine.expressionName || '表情'} className="h-14 w-14 rounded-md object-contain bg-slate-100" />}
                           <div className="flex items-baseline gap-3">
                             <p className="text-lg font-bold">{playingCharacter?.name ?? '未設定キャラクター'}</p>
                             <p className="text-sm font-semibold" style={{ color: '#7cd0ff' }}>{playingCharacter?.affiliation ?? '未設定'}</p>
@@ -1068,7 +1068,7 @@ export default function StoryEditorPage() {
                               {logs.map((log, index) => (
                                 <li key={`${log.lineId}-${index}`} className="flex items-end gap-3">
                                   <div className="h-20 w-20 overflow-hidden rounded-lg border bg-white">
-                                    {log.expressionImageUrl ? <img src={log.expressionImageUrl} alt={log.speaker} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-xs text-slate-400">No Img</div>}
+                                    {log.expressionImageUrl ? <img src={log.expressionImageUrl} alt={log.speaker} className="h-full w-full object-contain bg-slate-100" /> : <div className="flex h-full items-center justify-center text-xs text-slate-400">No Img</div>}
                                   </div>
                                   <div className="flex-1 rounded-xl bg-white p-3 shadow-sm">
                                     <p className="text-2xl font-bold text-[#2f406d]">{log.speaker}</p>
