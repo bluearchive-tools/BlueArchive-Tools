@@ -238,9 +238,12 @@ export default function StoryEditorPage() {
 
     const orientation = screen.orientation
     const lockOrientation = async () => {
-      if (!orientation || typeof orientation.lock !== 'function') return
+      const orientationWithLock = orientation as ScreenOrientation & {
+        lock?: (orientation: 'any' | 'natural' | 'landscape' | 'portrait' | 'portrait-primary' | 'portrait-secondary' | 'landscape-primary' | 'landscape-secondary') => Promise<void>
+      }
+      if (typeof orientationWithLock.lock !== 'function') return
       try {
-        await orientation.lock('landscape')
+        await orientationWithLock.lock('landscape')
       } catch {
         /* noop */
       }
