@@ -715,7 +715,6 @@ export default function StoryEditorPage() {
                     <div className={`absolute inset-0 z-[4] transition-opacity duration-500 ${titlePhase === 'fadeIn' ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
                       <div className={`absolute left-0 right-0 top-1/2 -translate-y-1/2 bg-white/96 py-5 text-center transition-opacity duration-500 ${titlePhase === 'fadeIn' ? 'opacity-100' : 'opacity-0'}`}>
                         <p className="text-2xl font-bold" style={{ color: '#3a4f88' }}>{meta.title}</p>
-                        {meta.summary.trim() && <p className="mt-1 text-sm" style={{ color: '#3a4f88' }}>{meta.summary}</p>}
                       </div>
                     </div>
                   )}
@@ -758,24 +757,24 @@ export default function StoryEditorPage() {
                         <div className="mt-2 border-t border-white/60" />
                         <p className="mt-3 min-h-16 whitespace-pre-wrap text-base" style={{ color: '#ffffff' }}>{dialogueReady ? visibleBody : ''}</p>
                         {isLineFullyVisible && visibleChoices.length === 0 && (
-                          <span className="absolute bottom-3 right-4 animate-bounce text-lg" style={{ color: '#7cd0ff' }}>▲</span>
+                          <span className="absolute bottom-3 right-4 animate-bounce text-lg" style={{ color: '#7cd0ff' }}>▼</span>
                         )}
                       </div>
                     </>
                   )}
 
                   {skipConfirmOpen && (
-                    <div className="absolute inset-0 z-[6] flex items-end justify-center bg-black/40" onClick={() => setSkipConfirmOpen(false)}>
-                      <div className="w-[min(92vw,560px)] animate-[fadeInUp_.35s_ease-out] rounded-t-2xl bg-white p-5" onClick={(event) => event.stopPropagation()}>
+                    <div className="absolute inset-0 z-[6] flex items-center justify-center bg-black/40" onClick={() => setSkipConfirmOpen(false)}>
+                      <div className="w-[min(92vw,560px)] animate-[skipModalIn_.35s_ease-out] rounded-2xl bg-white p-5" onClick={(event) => event.stopPropagation()}>
                         <p className="text-sm font-semibold text-gray-500">あらすじ</p>
                         <p className="mt-1 text-lg font-bold">{meta.title || 'タイトル未設定'}</p>
                         <p className="mt-1 whitespace-pre-wrap text-sm text-gray-700">{meta.summary || '要約未設定'}</p>
                         <p className="mt-4 text-sm text-gray-700">※この話をスキップしますか？</p>
                         <div className="mt-4 grid grid-cols-2 gap-3">
-                          <button type="button" className="animate-[fadeInUp_.35s_ease-out] rounded border px-4 py-2" onClick={() => setSkipConfirmOpen(false)}>キャンセル</button>
+                          <button type="button" className="rounded border px-4 py-2" onClick={() => setSkipConfirmOpen(false)}>キャンセル</button>
                           <button
                             type="button"
-                            className="animate-[fadeInUp_.35s_ease-out] rounded bg-blue-600 px-4 py-2 text-white"
+                            className="rounded bg-blue-600 px-4 py-2 text-white"
                             onClick={() => {
                               setSkipConfirmOpen(false)
                               closePlayer()

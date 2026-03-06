@@ -109,6 +109,17 @@ body {
   to { opacity: 0; }
 }
 
+@keyframes skipModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .hexagon {
   clip-path: polygon(
     50% 0%,
