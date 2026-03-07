@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBars, faExpand, faForward, faGear, faXmark } from '@fortawesome/free-solid-svg-icons'
 import PageHelpButton from '../../../components/PageHelpButton'
@@ -92,7 +92,7 @@ const DEFAULT_CHARACTERS: StoryCharacter[] = [
 ]
 
 const DEFAULT_ELEMENTS: StoryElement[] = [
-  { id: 100, type: 'background', config: { color: '#ffffff', imageUrl: '' } },
+  { id: 100, type: 'background', config: { color: '#ffffff', imageUrl: 'https://static.wikitide.net/bluearchivewiki/0/06/BG_MainOffice.jpg' } },
   {
     id: 1,
     type: 'line',
@@ -199,6 +199,7 @@ export default function StoryEditorPage() {
   const [expressionFetchStateByCharacter, setExpressionFetchStateByCharacter] = useState<Record<number, string>>({})
   const [studentNameLookup, setStudentNameLookup] = useState<StudentNameLookup[]>([])
   const [expressionPicker, setExpressionPicker] = useState<ExpressionPickerState>({ open: false, mode: 'new-line', lineId: null })
+  const logScrollRef = useRef<HTMLDivElement | null>(null)
 
   const flagsSet = useMemo(() => new Set(storyFlags), [storyFlags])
   const playingElement = playIndex >= 0 ? elements[playIndex] ?? null : null
@@ -298,6 +299,13 @@ export default function StoryEditorPage() {
     const id = window.setTimeout(() => setChoiceAppear(true), 16)
     return () => window.clearTimeout(id)
   }, [dialogueReady, isLineFullyVisible, titlePhase, visibleChoices.length, playIndex])
+
+  useEffect(() => {
+    if (!logOpen) return
+    const el = logScrollRef.current
+    if (!el) return
+    el.scrollTop = el.scrollHeight
+  }, [logOpen, logs.length])
 
   useEffect(() => {
     if (!isPlaying) return
@@ -648,6 +656,7 @@ export default function StoryEditorPage() {
       startStoryPlayback()
       return
     }
+    if (skipConfirmOpen || logOpen || expressionPicker.open || menuOpen) return
     if (backgroundOnly) {
       setBackgroundOnly(false)
       return
@@ -734,7 +743,7 @@ export default function StoryEditorPage() {
                       </select>
                     </div>
                     <div className="grid gap-3 md:grid-cols-4">
-                      <input value={lineBody} onChange={(event) => setLineBody(event.target.value)} className="rounded border px-3 py-2 md:col-span-2" placeholder="本文" />
+                      <textarea value={lineBody} onChange={(event) => setLineBody(event.target.value)} className="min-h-20 rounded border px-3 py-2 md:col-span-2" placeholder="本文" />
                       <button type="button" onClick={openExpressionPickerForNewLine} className="flex items-center gap-2 rounded border px-3 py-2 text-left">
                         {lineEditorExpression?.imageUrl ? <img src={lineEditorExpression.imageUrl} alt={lineEditorExpression.name} className="h-8 w-8 rounded object-contain bg-slate-100" /> : <span className="inline-flex h-8 w-8 items-center justify-center rounded bg-gray-100 text-xs text-gray-500">-</span>}
                         <span className="text-sm">{lineExpressionName || '表情を選択'}</span>
@@ -919,7 +928,7 @@ export default function StoryEditorPage() {
               <h2 className="font-semibold">ストーリー定義</h2>
               <div className="grid gap-3 md:grid-cols-2">
                 <input value={meta.title} onChange={(event) => setMeta((prev) => ({ ...prev, title: event.target.value }))} className="rounded border px-3 py-2" placeholder="タイトル" />
-                <input value={meta.summary} onChange={(event) => setMeta((prev) => ({ ...prev, summary: event.target.value }))} className="rounded border px-3 py-2" placeholder="要約" />
+                <textarea value={meta.summary} onChange={(event) => setMeta((prev) => ({ ...prev, summary: event.target.value }))} className="min-h-28 rounded border px-3 py-2 md:col-span-2" placeholder="要約" />
               </div>
             </section>
           )}
@@ -961,6 +970,14 @@ export default function StoryEditorPage() {
 
           <div className={`absolute inset-0 ${forceLandscape ? 'flex items-center justify-center' : ''}`}>
             <div className={forceLandscape ? 'h-[100dvw] w-[100dvh] origin-center rotate-90' : 'h-full w-full'}>
+              {playingLine && (playingExpressionUrl || playingCharacter?.portraitUrl) && (
+                <img
+                  src={playingExpressionUrl || playingCharacter?.portraitUrl || ''}
+                  alt={`${playingCharacter?.name ?? 'キャラクター'}立ち絵`}
+                  className={`absolute bottom-[-18vh] z-[1] h-[108vh] object-contain ${playingLine.spritePosition === 'left' ? 'left-[18%] -translate-x-1/2' : playingLine.spritePosition === 'right' ? 'left-[82%] -translate-x-1/2' : 'left-1/2 -translate-x-1/2'}`}
+                  style={{ filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.38))' }}
+                />
+              )}
               {!backgroundOnly && (
                 <>
                   <div className="absolute right-4 top-4 z-[5] flex flex-col items-end gap-2" onClick={(event) => event.stopPropagation()}>
@@ -1015,14 +1032,6 @@ export default function StoryEditorPage() {
                   {playingLine && (
                     <>
                       <div className={`absolute inset-0 ${playingLine.effect === 'fade' ? 'opacity-80' : 'opacity-100'} ${playingLine.effect === 'shake' ? 'animate-bounce' : ''}`} style={{ pointerEvents: 'none' }} />
-                      {(playingExpressionUrl || playingCharacter?.portraitUrl) && (
-                        <img
-                          src={playingExpressionUrl || playingCharacter?.portraitUrl || ''}
-                          alt={`${playingCharacter?.name ?? 'キャラクター'}立ち絵`}
-                          className={`absolute bottom-[-10vh] z-[1] h-[108vh] object-contain ${playingLine.spritePosition === 'left' ? 'left-[18%] -translate-x-1/2' : playingLine.spritePosition === 'right' ? 'left-[82%] -translate-x-1/2' : 'left-1/2 -translate-x-1/2'}`}
-                          style={{ filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.38))' }}
-                        />
-                      )}
 
                       <div className="absolute bottom-0 left-0 right-0 z-[3] px-6 pb-8 pt-6" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(217,229,239,0.25) 4%, rgba(147,172,191,0.45) 9%, rgba(96,124,148,0.65) 18%, rgba(74,102,127,0.78) 38%, rgba(61,89,114,0.9) 62%, rgba(42,66,91,0.96) 100%)' }}>
                         <div className="flex items-baseline gap-3" style={{ color: '#ffffff' }}>
@@ -1050,7 +1059,7 @@ export default function StoryEditorPage() {
                         </div>
                         <div className="p-5">
                           <p className="text-center text-2xl font-bold text-[#2f406d]">{meta.title || 'タイトル未設定'}</p>
-                          <div className="mt-4 rounded border bg-slate-100 p-4 text-lg leading-relaxed text-slate-700">{meta.summary || '要約未設定'}</div>
+                          <div className="mt-4 rounded border bg-slate-100 p-4 text-center text-lg leading-relaxed text-slate-700">{meta.summary || '要約未設定'}</div>
                           <p className="mt-6 text-center text-3xl font-semibold text-[#2f406d]">※この話をスキップしますか？</p>
                           <div className="mt-6 grid grid-cols-2 gap-4">
                             <button type="button" className="rounded-xl bg-[#d9edf9] px-4 py-3 text-3xl font-bold text-[#24406b] shadow" onClick={() => setSkipConfirmOpen(false)}>キャンセル</button>
@@ -1077,7 +1086,7 @@ export default function StoryEditorPage() {
                           <p className="text-4xl font-bold">LOG</p>
                           <div className="absolute right-8"><button type="button" className="text-4xl" onClick={() => setLogOpen(false)}><FontAwesomeIcon icon={faXmark} /></button></div>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-4">
+                        <div ref={logScrollRef} className="flex-1 overflow-y-auto p-4">
                           {logs.length === 0 ? (
                             <p className="text-sm text-slate-500">まだログがありません。</p>
                           ) : (
