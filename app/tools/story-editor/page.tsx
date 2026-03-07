@@ -7,6 +7,7 @@ import PageHelpButton from '../../../components/PageHelpButton'
 
 type StoryEffect = 'none' | 'flash' | 'shake' | 'fade'
 type ElementAddMode = 'character' | 'line' | 'background'
+type SpriteAction = 'show' | 'hide'
 type TitlePhase = 'hidden' | 'fadeIn' | 'fadeOut'
 type FadePhase = 'hidden' | 'fadeIn' | 'fadeOut'
 type EditorView = 'timeline' | 'characters' | 'story'
@@ -57,6 +58,15 @@ type BackgroundElement = {
 }
 
 type StoryElement = LineElement | BackgroundElement
+
+type SpriteCue = {
+  id: number
+  triggerElementId: number
+  action: SpriteAction
+  characterId: number
+  expressionName: string
+  position: 'left' | 'center' | 'right'
+}
 
 
 type StoryLog = {
@@ -171,6 +181,12 @@ export default function StoryEditorPage() {
 
   const [bgColor, setBgColor] = useState('#ffffff')
   const [bgImageUrl, setBgImageUrl] = useState('')
+  const [spriteCues, setSpriteCues] = useState<SpriteCue[]>([])
+  const [spriteTriggerElementId, setSpriteTriggerElementId] = useState<number>(DEFAULT_ELEMENTS[0]?.id ?? 0)
+  const [spriteAction, setSpriteAction] = useState<SpriteAction>('show')
+  const [spriteCharacterId, setSpriteCharacterId] = useState<number>(DEFAULT_CHARACTERS[0].id)
+  const [spriteExpressionName, setSpriteExpressionName] = useState('')
+  const [spritePosition, setSpritePosition] = useState<'left' | 'center' | 'right'>('center')
 
   const [draggedId, setDraggedId] = useState<number | null>(null)
   const [choiceEditByLine, setChoiceEditByLine] = useState<Record<number, { label: string; nextElementId: number; setFlag: string; requireFlag: string }>>({})
@@ -227,6 +243,46 @@ export default function StoryEditorPage() {
     () => lineEditorCharacter?.expressions.find((expression) => expression.name === lineExpressionName) ?? null,
     [lineEditorCharacter, lineExpressionName],
   )
+
+  const spriteEditorCharacter = useMemo(
+    () => characters.find((character) => character.id === spriteCharacterId) ?? null,
+    [characters, spriteCharacterId],
+  )
+
+  const activeSprite = useMemo(() => {
+    if (!playingLine || playIndex < 0) return null
+    let current: { characterId: number; expressionName: string; position: 'left' | 'center' | 'right' } | null = null
+
+    for (let i = 0; i <= playIndex; i += 1) {
+      const element = elements[i]
+      if (!element) continue
+      const targets = spriteCues.filter((cue) => cue.triggerElementId === element.id)
+      for (const cue of targets) {
+        if (cue.action === 'hide') {
+          if (cue.characterId === 0 || current?.characterId === cue.characterId) current = null
+          continue
+        }
+        current = {
+          characterId: cue.characterId,
+          expressionName: cue.expressionName,
+          position: cue.position,
+        }
+      }
+    }
+
+    return current
+  }, [elements, playIndex, playingLine, spriteCues])
+
+  const activeSpriteCharacter = useMemo(
+    () => characters.find((character) => character.id === (activeSprite?.characterId ?? -1)) ?? null,
+    [activeSprite?.characterId, characters],
+  )
+
+  const activeSpriteUrl = useMemo(() => {
+    if (!activeSpriteCharacter) return ''
+    const expression = activeSpriteCharacter.expressions.find((item) => item.name === activeSprite?.expressionName)
+    return expression?.imageUrl ?? activeSpriteCharacter.portraitUrl
+  }, [activeSprite?.expressionName, activeSpriteCharacter])
 
   const isLineFullyVisible = playingLine ? visibleChars >= playingLine.body.length : true
   const visibleBody = playingLine ? playingLine.body.slice(0, visibleChars) : ''
@@ -404,6 +460,26 @@ export default function StoryEditorPage() {
   const addBackgroundElement = () => {
     const id = Date.now()
     setElements((prev) => [...prev, { id, type: 'background', config: { color: bgColor, imageUrl: bgImageUrl.trim() } }])
+  }
+
+  const addSpriteCue = () => {
+    if (spriteTriggerElementId === 0) return
+    if (spriteAction === 'show' && !characters.some((character) => character.id === spriteCharacterId)) return
+    setSpriteCues((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        triggerElementId: spriteTriggerElementId,
+        action: spriteAction,
+        characterId: spriteCharacterId,
+        expressionName: spriteAction === 'show' ? spriteExpressionName : '',
+        position: spritePosition,
+      },
+    ])
+  }
+
+  const removeSpriteCue = (id: number) => {
+    setSpriteCues((prev) => prev.filter((cue) => cue.id !== id))
   }
 
   const updateBackgroundElement = (id: number, patch: Partial<BackgroundConfig>) => {
@@ -772,8 +848,46 @@ export default function StoryEditorPage() {
                 <div className="flex gap-2">
                   <button type="button" onClick={openPlayer} disabled={elements.length === 0} className="rounded bg-emerald-600 px-4 py-2 text-white disabled:opacity-50">再生</button>
                 </div>
-                <ul className="space-y-2">
-                  {elements.map((element) => {
+                <div className="grid gap-3 md:grid-cols-[320px_1fr]">
+                  <div className="space-y-3 rounded border bg-slate-50 p-3">
+                    <p className="font-semibold">立ち絵タイムライン</p>
+                    <div className="grid gap-2">
+                      <select value={spriteTriggerElementId} onChange={(event) => setSpriteTriggerElementId(Number(event.target.value))} className="rounded border px-2 py-1 text-sm">
+                        {elements.map((element) => <option key={element.id} value={element.id}>要素#{element.id} ({element.type === 'line' ? 'セリフ' : '背景'})</option>)}
+                      </select>
+                      <select value={spriteAction} onChange={(event) => setSpriteAction(event.target.value as SpriteAction)} className="rounded border px-2 py-1 text-sm">
+                        <option value="show">立ち絵を表示</option>
+                        <option value="hide">立ち絵を消去</option>
+                      </select>
+                      <select value={spriteCharacterId} onChange={(event) => setSpriteCharacterId(Number(event.target.value))} className="rounded border px-2 py-1 text-sm" disabled={spriteAction === 'hide'}>
+                        {characters.map((character) => <option key={character.id} value={character.id}>{character.name}</option>)}
+                      </select>
+                      <select value={spriteExpressionName} onChange={(event) => setSpriteExpressionName(event.target.value)} className="rounded border px-2 py-1 text-sm" disabled={spriteAction === 'hide'}>
+                        <option value="">表情なし(立ち絵)</option>
+                        {(spriteEditorCharacter?.expressions ?? []).map((expression) => <option key={expression.name} value={expression.name}>{expression.name}</option>)}
+                      </select>
+                      <select value={spritePosition} onChange={(event) => setSpritePosition(event.target.value as 'left' | 'center' | 'right')} className="rounded border px-2 py-1 text-sm" disabled={spriteAction === 'hide'}>
+                        <option value="left">左</option>
+                        <option value="center">中央</option>
+                        <option value="right">右</option>
+                      </select>
+                      <button type="button" onClick={addSpriteCue} className="rounded bg-indigo-600 px-3 py-1.5 text-sm text-white">立ち絵キュー追加</button>
+                    </div>
+                    <ul className="max-h-[420px] space-y-2 overflow-y-auto">
+                      {spriteCues.map((cue) => (
+                        <li key={cue.id} className="rounded border bg-white p-2 text-xs">
+                          <p>要素#{cue.triggerElementId} / {cue.action === 'show' ? '表示' : '消去'}</p>
+                          {cue.action === 'show' && (
+                            <p>{characters.find((character) => character.id === cue.characterId)?.name ?? '未設定'} / {cue.position} / {cue.expressionName || '立ち絵'}</p>
+                          )}
+                          <button type="button" className="mt-1 rounded border border-red-300 px-2 py-0.5 text-red-700" onClick={() => removeSpriteCue(cue.id)}>削除</button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <ul className="space-y-2">
+                    {elements.map((element) => {
                     if (element.type === 'background') {
                       return (
                         <li key={element.id} draggable onDragStart={() => setDraggedId(element.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedId === null) return; reorderElements(draggedId, element.id); setDraggedId(null) }} className="rounded border border-blue-200 bg-blue-50 p-3">
@@ -876,8 +990,9 @@ export default function StoryEditorPage() {
                         </div>
                       </li>
                     )
-                  })}
-                </ul>
+                    })}
+                  </ul>
+                </div>
               </section>
             </>
           )}
@@ -904,19 +1019,7 @@ export default function StoryEditorPage() {
                       </div>
                     </div>
                     {expressionFetchStateByCharacter[character.id] && <p className="mt-2 text-xs text-gray-600">{expressionFetchStateByCharacter[character.id]}</p>}
-                    {character.portraitUrl && (
-                      <img src={character.portraitUrl} alt={`${character.name} 立ち絵`} className="mt-2 h-24 rounded object-contain" />
-                    )}
-                    {character.expressions.length > 0 && (
-                      <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
-                        {character.expressions.map((expression) => (
-                          <div key={expression.name} className="rounded border bg-white p-1">
-                            <img src={expression.imageUrl} alt={expression.name} className="h-16 w-full rounded object-contain bg-slate-100" />
-                            <p className="truncate text-[10px]">{expression.name}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {character.expressions.length > 0 && <p className="mt-2 text-xs text-gray-600">表情差分 {character.expressions.length} 件取得済み</p>}
                   </li>
                 ))}
               </ul>
@@ -970,11 +1073,11 @@ export default function StoryEditorPage() {
 
           <div className={`absolute inset-0 ${forceLandscape ? 'flex items-center justify-center' : ''}`}>
             <div className={forceLandscape ? 'h-[100dvw] w-[100dvh] origin-center rotate-90' : 'h-full w-full'}>
-              {playingLine && (playingExpressionUrl || playingCharacter?.portraitUrl) && (
+              {(activeSpriteUrl || (playingLine && (playingExpressionUrl || playingCharacter?.portraitUrl))) && (
                 <img
-                  src={playingExpressionUrl || playingCharacter?.portraitUrl || ''}
-                  alt={`${playingCharacter?.name ?? 'キャラクター'}立ち絵`}
-                  className={`absolute bottom-[-18vh] z-[1] h-[108vh] object-contain ${playingLine.spritePosition === 'left' ? 'left-[18%] -translate-x-1/2' : playingLine.spritePosition === 'right' ? 'left-[82%] -translate-x-1/2' : 'left-1/2 -translate-x-1/2'}`}
+                  src={activeSpriteUrl || playingExpressionUrl || playingCharacter?.portraitUrl || ''}
+                  alt={`${activeSpriteCharacter?.name ?? playingCharacter?.name ?? 'キャラクター'}立ち絵`}
+                  className={`absolute bottom-[-18vh] z-[1] h-[108vh] object-contain ${(activeSprite?.position ?? playingLine?.spritePosition) === 'left' ? 'left-[18%] -translate-x-1/2' : (activeSprite?.position ?? playingLine?.spritePosition) === 'right' ? 'left-[82%] -translate-x-1/2' : 'left-1/2 -translate-x-1/2'}`}
                   style={{ filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.38))' }}
                 />
               )}
@@ -1050,16 +1153,16 @@ export default function StoryEditorPage() {
                   {skipConfirmOpen && (
                     <div className="absolute inset-0 z-[6] flex items-center justify-center bg-slate-900/45" onClick={() => setSkipConfirmOpen(false)}>
                       <div className="w-[min(92vw,720px)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
-                        <div className="flex items-center justify-between border-b px-5 py-3" style={{ background: 'linear-gradient(120deg,#e7f2ff 0%,#f6fbff 45%,#ffffff 100%)' }}>
+                        <div className="relative flex items-center justify-center border-b px-5 py-3" style={{ background: 'linear-gradient(120deg,#e7f2ff 0%,#f6fbff 45%,#ffffff 100%)' }}>
                           <div className="text-center">
                             <p className="text-3xl font-bold tracking-wide text-[#2d406f]">あらすじ</p>
                             <div className="mx-auto mt-1 h-1 w-20 rounded bg-yellow-300" />
                           </div>
-                          <button type="button" onClick={() => setSkipConfirmOpen(false)} className="text-3xl text-[#1e315f]"><FontAwesomeIcon icon={faXmark} /></button>
+                          <button type="button" onClick={() => setSkipConfirmOpen(false)} className="absolute right-5 text-3xl text-[#1e315f]"><FontAwesomeIcon icon={faXmark} /></button>
                         </div>
                         <div className="p-5">
                           <p className="text-center text-2xl font-bold text-[#2f406d]">{meta.title || 'タイトル未設定'}</p>
-                          <div className="mt-4 rounded border bg-slate-100 p-4 text-center text-lg leading-relaxed text-slate-700">{meta.summary || '要約未設定'}</div>
+                          <div className="mt-4 rounded border bg-slate-100 p-4 text-left text-lg leading-relaxed text-slate-700">{meta.summary || '要約未設定'}</div>
                           <p className="mt-6 text-center text-3xl font-semibold text-[#2f406d]">※この話をスキップしますか？</p>
                           <div className="mt-6 grid grid-cols-2 gap-4">
                             <button type="button" className="rounded-xl bg-[#d9edf9] px-4 py-3 text-3xl font-bold text-[#24406b] shadow" onClick={() => setSkipConfirmOpen(false)}>キャンセル</button>
@@ -1117,4 +1220,3 @@ export default function StoryEditorPage() {
     </main>
   )
 }
-
