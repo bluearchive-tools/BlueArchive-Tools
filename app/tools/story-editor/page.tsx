@@ -209,6 +209,7 @@ export default function StoryEditorPage() {
   const [dialogueReady, setDialogueReady] = useState(true)
 
   const [forceLandscape, setForceLandscape] = useState(false)
+  const [isMobileViewport, setIsMobileViewport] = useState(false)
   const [currentBackground, setCurrentBackground] = useState<BackgroundConfig>({ color: '#ffffff', imageUrl: '' })
   const [choiceAppear, setChoiceAppear] = useState(false)
   const [editorView, setEditorView] = useState<EditorView>('timeline')
@@ -373,9 +374,17 @@ export default function StoryEditorPage() {
     bodyStyle.overflow = 'hidden'
     htmlStyle.overflow = 'hidden'
 
-    const isMobile = window.matchMedia('(max-width: 900px)').matches
-    const isPortrait = window.matchMedia('(orientation: portrait)').matches
-    setForceLandscape(isMobile && isPortrait)
+    const mobileQuery = window.matchMedia('(max-width: 900px)')
+    const portraitQuery = window.matchMedia('(orientation: portrait)')
+
+    const updateViewportState = () => {
+      const mobile = mobileQuery.matches
+      const portrait = portraitQuery.matches
+      setIsMobileViewport(mobile)
+      setForceLandscape(mobile && portrait)
+    }
+
+    updateViewportState()
 
     const orientation = screen.orientation
     const lockOrientation = async () => {
@@ -391,10 +400,25 @@ export default function StoryEditorPage() {
     }
     lockOrientation().catch(() => undefined)
 
+    const addListener = (query: MediaQueryList) => {
+      if (typeof query.addEventListener === 'function') {
+        query.addEventListener('change', updateViewportState)
+        return () => query.removeEventListener('change', updateViewportState)
+      }
+      query.addListener(updateViewportState)
+      return () => query.removeListener(updateViewportState)
+    }
+
+    const removeMobileListener = addListener(mobileQuery)
+    const removePortraitListener = addListener(portraitQuery)
+
     return () => {
+      removeMobileListener()
+      removePortraitListener()
       bodyStyle.overflow = prevBodyOverflow
       htmlStyle.overflow = prevHtmlOverflow
       setForceLandscape(false)
+      setIsMobileViewport(false)
     }
   }, [isPlaying])
 
@@ -1071,8 +1095,8 @@ export default function StoryEditorPage() {
         <div className={`fixed inset-0 z-[100] bg-white text-left ${playingLine?.effect === 'flash' ? 'animate-pulse' : ''}`} onClick={onTapAdvance} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') onTapAdvance() }}>
           <div className="absolute inset-0" style={{ backgroundColor: currentBackground.color, backgroundImage: currentBackground.imageUrl ? `url(${currentBackground.imageUrl})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center' }} />
 
-          <div className={`absolute inset-0 ${forceLandscape ? 'flex items-center justify-center' : ''}`}>
-            <div className={forceLandscape ? 'h-[100dvw] w-[100dvh] origin-center rotate-90' : 'h-full w-full'}>
+          <div className={`absolute inset-0 ${forceLandscape ? 'flex items-center justify-center bg-black' : ''}`}>
+            <div className={forceLandscape ? 'relative h-[100dvw] w-[100dvh] origin-center rotate-90 overflow-hidden' : 'relative h-full w-full'}>
               {(activeSpriteUrl || (playingLine && (playingExpressionUrl || playingCharacter?.portraitUrl))) && (
                 <img
                   src={activeSpriteUrl || playingExpressionUrl || playingCharacter?.portraitUrl || ''}
@@ -1136,7 +1160,7 @@ export default function StoryEditorPage() {
                     <>
                       <div className={`absolute inset-0 ${playingLine.effect === 'fade' ? 'opacity-80' : 'opacity-100'} ${playingLine.effect === 'shake' ? 'animate-bounce' : ''}`} style={{ pointerEvents: 'none' }} />
 
-                      <div className="absolute bottom-0 left-0 right-0 z-[3] px-6 pb-8 pt-6" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(217,229,239,0.25) 4%, rgba(147,172,191,0.45) 9%, rgba(96,124,148,0.65) 18%, rgba(74,102,127,0.78) 38%, rgba(61,89,114,0.9) 62%, rgba(42,66,91,0.96) 100%)' }}>
+                      <div className={`absolute bottom-0 left-0 right-0 z-[3] pt-6 ${isMobileViewport ? 'px-4 pb-[max(1rem,env(safe-area-inset-bottom))]' : 'px-6 pb-8'}`} style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(217,229,239,0.25) 4%, rgba(147,172,191,0.45) 9%, rgba(96,124,148,0.65) 18%, rgba(74,102,127,0.78) 38%, rgba(61,89,114,0.9) 62%, rgba(42,66,91,0.96) 100%)' }}>
                         <div className="flex items-baseline gap-3" style={{ color: '#ffffff' }}>
                           <p className="text-lg font-bold">{playingCharacter?.name ?? '未設定キャラクター'}</p>
                           <p className="text-sm font-semibold" style={{ color: '#7cd0ff' }}>{playingCharacter?.affiliation ?? '未設定'}</p>
