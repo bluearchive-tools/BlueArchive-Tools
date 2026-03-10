@@ -321,7 +321,7 @@ function drawStarWithNumber(
   ctx.restore()
 
   const text = String(clamp(value, 0, 99))
-  ctx.font = `400 ${Math.round(radius * 0.98)}px ${fontFamily}`
+  ctx.font = `italic 400 ${Math.round(radius * 0.98)}px ${fontFamily}`
   ctx.fillStyle = '#0f172a'
   ctx.strokeStyle = 'rgba(255,255,255,0.8)'
   ctx.lineWidth = Math.max(1.2, radius * 0.058)
