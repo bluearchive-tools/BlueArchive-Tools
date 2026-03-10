@@ -61,7 +61,7 @@ const BADGE_ICON_FILL_COLOR = { r: 34, g: 53, b: 81 }
 
 const STAR_NUMBER_FONT_NAME = 'StudentImageStarNumber'
 const STAR_NUMBER_FONT_FILE = '/fonts/student-image-star-number.otf'
-const STAR_NUMBER_FONT_FALLBACK = '"MFW-PUDShinMGoPr6N-Medium", "M PLUS 1p", sans-serif'
+const STAR_NUMBER_FONT_FALLBACK = '"mfw-pshinmgopr6n-medium", "M PLUS 1p", sans-serif'
 
 const BASE: Options = {
   level: 90,
@@ -890,7 +890,7 @@ export default function StudentImageToolPage() {
               left: `${options.levelXRatio * 100}%`,
               top: `${(0.05 + options.levelYRatio) * 100}%`,
               fontSize: `${Math.round(options.size * 0.135)}px`,
-              fontFamily: '"MFW-PUDShinMGoPr6N-Medium", "M PLUS 1p", sans-serif',
+              fontFamily: '"mfw-pshinmgopr6n-medium", "M PLUS 1p", sans-serif',
               WebkitTextStroke: `${Math.max(1.9, options.size * 0.0095)}px rgba(15,23,42,0.42)`,
               paintOrder: 'stroke fill',
               lineHeight: 1,

@@ -88,7 +88,7 @@ type ExpressionPickerState = {
   lineId: number | null
 }
 
-const SHIN_MARU_FONT = '"MFW-PShinMGoPr6N-Medium", "M PLUS 1p", sans-serif'
+const SHIN_MARU_FONT = '"mfw-pshinmgopr6n-medium", "M PLUS 1p", sans-serif'
 const TEXT_REVEAL_INTERVAL_MS = 38
 const AUTO_ADVANCE_DELAY_MS = 700
 const TITLE_HOLD_MS = 1000
