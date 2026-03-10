@@ -114,6 +114,9 @@
         "Choose a username to personalize your profile.",
         "Usernames are required before accessing certain features."
       ]
+    },
+    "story-editor": {
+      "title": "Story Editor"
     }
   },
   "ja": {
@@ -231,6 +234,9 @@
         "プロフィール用のユーザー名を設定します。",
         "一部の機能利用前にユーザー名登録が必要です。"
       ]
+    },
+    "story-editor": {
+      "title": "ストーリーエディタ"
     }
   }
 }

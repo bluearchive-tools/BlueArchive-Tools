@@ -1,11 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBars, faExpand, faForward, faGear } from '@fortawesome/free-solid-svg-icons'
+import { faBars, faExpand, faForward, faGear, faXmark } from '@fortawesome/free-solid-svg-icons'
+import PageHelpButton from '../../../components/PageHelpButton'
 
 type StoryEffect = 'none' | 'flash' | 'shake' | 'fade'
 type ElementAddMode = 'character' | 'line' | 'background'
+type SpriteAction = 'show' | 'hide'
 type TitlePhase = 'hidden' | 'fadeIn' | 'fadeOut'
 type FadePhase = 'hidden' | 'fadeIn' | 'fadeOut'
 type EditorView = 'timeline' | 'characters' | 'story'
@@ -19,6 +21,8 @@ type StoryCharacter = {
   id: number
   name: string
   affiliation: string
+  portraitUrl: string
+  expressions: Array<{ name: string; imageUrl: string }>
 }
 
 type BackgroundConfig = {
@@ -42,6 +46,8 @@ type LineElement = {
   requireFlag: string
   effect: StoryEffect
   locationLabel: string
+  expressionName: string
+  spritePosition: 'left' | 'center' | 'right'
   choices: StoryChoice[]
 }
 
@@ -53,6 +59,35 @@ type BackgroundElement = {
 
 type StoryElement = LineElement | BackgroundElement
 
+type SpriteCue = {
+  id: number
+  triggerElementId: number
+  action: SpriteAction
+  characterId: number
+  expressionName: string
+  position: 'left' | 'center' | 'right'
+}
+
+
+type StoryLog = {
+  lineId: number
+  speaker: string
+  body: string
+  expressionImageUrl: string
+}
+
+type StudentNameLookup = {
+  englishName: string
+  aliases: string[]
+}
+
+
+type ExpressionPickerState = {
+  open: boolean
+  mode: 'new-line' | 'edit-line'
+  lineId: number | null
+}
+
 const SHIN_MARU_FONT = '"MFW-PShinMGoPr6N-Medium", "M PLUS 1p", sans-serif'
 const TEXT_REVEAL_INTERVAL_MS = 38
 const AUTO_ADVANCE_DELAY_MS = 700
@@ -62,12 +97,12 @@ const LOCATION_SHOW_MS = 1500
 const LOCATION_FADE_MS = 500
 
 const DEFAULT_CHARACTERS: StoryCharacter[] = [
-  { id: 1, name: '先生', affiliation: 'シャーレ' },
-  { id: 2, name: 'アロナ', affiliation: 'シッテムの箱' },
+  { id: 1, name: '先生', affiliation: 'シャーレ', portraitUrl: '', expressions: [] },
+  { id: 2, name: 'アロナ', affiliation: 'シッテムの箱', portraitUrl: '', expressions: [] },
 ]
 
 const DEFAULT_ELEMENTS: StoryElement[] = [
-  { id: 100, type: 'background', config: { color: '#ffffff', imageUrl: '' } },
+  { id: 100, type: 'background', config: { color: '#ffffff', imageUrl: 'https://static.wikitide.net/bluearchivewiki/0/06/BG_MainOffice.jpg' } },
   {
     id: 1,
     type: 'line',
@@ -76,13 +111,15 @@ const DEFAULT_ELEMENTS: StoryElement[] = [
     requireFlag: '',
     effect: 'fade',
     locationLabel: 'SCHALE BRIDGE',
+    expressionName: '',
+    spritePosition: 'center',
     choices: [
       { id: 11, label: '正面突破', nextElementId: 2, setFlag: 'front', requireFlag: '' },
       { id: 12, label: '迂回ルート', nextElementId: 3, setFlag: 'detour', requireFlag: '' },
     ],
   },
-  { id: 2, type: 'line', characterId: 2, body: '正面ルートで進行します。', requireFlag: 'front', effect: 'flash', locationLabel: '', choices: [] },
-  { id: 3, type: 'line', characterId: 2, body: '迂回ルートで静かに進行します。', requireFlag: 'detour', effect: 'shake', locationLabel: '', choices: [] },
+  { id: 2, type: 'line', characterId: 2, body: '正面ルートで進行します。', requireFlag: 'front', effect: 'flash', locationLabel: '', expressionName: '', spritePosition: 'center', choices: [] },
+  { id: 3, type: 'line', characterId: 2, body: '迂回ルートで静かに進行します。', requireFlag: 'detour', effect: 'shake', locationLabel: '', expressionName: '', spritePosition: 'center', choices: [] },
 ]
 
 function canShowChoice(choice: StoryChoice, flags: Set<string>) {
@@ -120,6 +157,10 @@ function findLastBackgroundBefore(elements: StoryElement[], index: number) {
   return found
 }
 
+function normalizeLookupName(value: string) {
+  return value.trim().replaceAll(' ', '').replaceAll('　', '').toLowerCase()
+}
+
 export default function StoryEditorPage() {
   const [meta, setMeta] = useState<StoryMeta>({ title: '', summary: '' })
   const [characters, setCharacters] = useState<StoryCharacter[]>(DEFAULT_CHARACTERS)
@@ -128,15 +169,24 @@ export default function StoryEditorPage() {
   const [addMode, setAddMode] = useState<ElementAddMode>('line')
   const [newCharacterName, setNewCharacterName] = useState('')
   const [newCharacterAffiliation, setNewCharacterAffiliation] = useState('')
+  const [newCharacterPortraitUrl, setNewCharacterPortraitUrl] = useState('')
 
   const [lineCharacterId, setLineCharacterId] = useState(DEFAULT_CHARACTERS[0].id)
   const [lineBody, setLineBody] = useState('')
   const [lineRequireFlag, setLineRequireFlag] = useState('')
   const [lineEffect, setLineEffect] = useState<StoryEffect>('none')
   const [lineLocationLabel, setLineLocationLabel] = useState('')
+  const [lineExpressionName, setLineExpressionName] = useState('')
+  const [lineSpritePosition, setLineSpritePosition] = useState<'left' | 'center' | 'right'>('center')
 
   const [bgColor, setBgColor] = useState('#ffffff')
   const [bgImageUrl, setBgImageUrl] = useState('')
+  const [spriteCues, setSpriteCues] = useState<SpriteCue[]>([])
+  const [spriteTriggerElementId, setSpriteTriggerElementId] = useState<number>(DEFAULT_ELEMENTS[0]?.id ?? 0)
+  const [spriteAction, setSpriteAction] = useState<SpriteAction>('show')
+  const [spriteCharacterId, setSpriteCharacterId] = useState<number>(DEFAULT_CHARACTERS[0].id)
+  const [spriteExpressionName, setSpriteExpressionName] = useState('')
+  const [spritePosition, setSpritePosition] = useState<'left' | 'center' | 'right'>('center')
 
   const [draggedId, setDraggedId] = useState<number | null>(null)
   const [choiceEditByLine, setChoiceEditByLine] = useState<Record<number, { label: string; nextElementId: number; setFlag: string; requireFlag: string }>>({})
@@ -150,7 +200,7 @@ export default function StoryEditorPage() {
   const [logOpen, setLogOpen] = useState(false)
   const [skipConfirmOpen, setSkipConfirmOpen] = useState(false)
   const [startPromptOpen, setStartPromptOpen] = useState(false)
-  const [logs, setLogs] = useState<string[]>([])
+  const [logs, setLogs] = useState<StoryLog[]>([])
   const [loggedLineId, setLoggedLineId] = useState<number | null>(null)
   const [backgroundOnly, setBackgroundOnly] = useState(false)
 
@@ -162,6 +212,10 @@ export default function StoryEditorPage() {
   const [currentBackground, setCurrentBackground] = useState<BackgroundConfig>({ color: '#ffffff', imageUrl: '' })
   const [choiceAppear, setChoiceAppear] = useState(false)
   const [editorView, setEditorView] = useState<EditorView>('timeline')
+  const [expressionFetchStateByCharacter, setExpressionFetchStateByCharacter] = useState<Record<number, string>>({})
+  const [studentNameLookup, setStudentNameLookup] = useState<StudentNameLookup[]>([])
+  const [expressionPicker, setExpressionPicker] = useState<ExpressionPickerState>({ open: false, mode: 'new-line', lineId: null })
+  const logScrollRef = useRef<HTMLDivElement | null>(null)
 
   const flagsSet = useMemo(() => new Set(storyFlags), [storyFlags])
   const playingElement = playIndex >= 0 ? elements[playIndex] ?? null : null
@@ -170,11 +224,65 @@ export default function StoryEditorPage() {
     () => characters.find((character) => character.id === (playingLine?.characterId ?? -1)) ?? null,
     [characters, playingLine?.characterId],
   )
+  const playingExpressionUrl = useMemo(() => {
+    if (!playingLine || !playingCharacter) return ''
+    const expression = playingCharacter.expressions.find((item) => item.name === playingLine.expressionName)
+    return expression?.imageUrl ?? ''
+  }, [playingCharacter, playingLine])
 
   const visibleChoices = useMemo(() => {
     if (!playingLine) return []
     return playingLine.choices.filter((choice) => canShowChoice(choice, flagsSet))
   }, [flagsSet, playingLine])
+
+  const lineEditorCharacter = useMemo(
+    () => characters.find((character) => character.id === lineCharacterId) ?? null,
+    [characters, lineCharacterId],
+  )
+  const lineEditorExpression = useMemo(
+    () => lineEditorCharacter?.expressions.find((expression) => expression.name === lineExpressionName) ?? null,
+    [lineEditorCharacter, lineExpressionName],
+  )
+
+  const spriteEditorCharacter = useMemo(
+    () => characters.find((character) => character.id === spriteCharacterId) ?? null,
+    [characters, spriteCharacterId],
+  )
+
+  const activeSprite = useMemo(() => {
+    if (!playingLine || playIndex < 0) return null
+    let current: { characterId: number; expressionName: string; position: 'left' | 'center' | 'right' } | null = null
+
+    for (let i = 0; i <= playIndex; i += 1) {
+      const element = elements[i]
+      if (!element) continue
+      const targets = spriteCues.filter((cue) => cue.triggerElementId === element.id)
+      for (const cue of targets) {
+        if (cue.action === 'hide') {
+          if (cue.characterId === 0 || current?.characterId === cue.characterId) current = null
+          continue
+        }
+        current = {
+          characterId: cue.characterId,
+          expressionName: cue.expressionName,
+          position: cue.position,
+        }
+      }
+    }
+
+    return current
+  }, [elements, playIndex, playingLine, spriteCues])
+
+  const activeSpriteCharacter = useMemo(
+    () => characters.find((character) => character.id === (activeSprite?.characterId ?? -1)) ?? null,
+    [activeSprite?.characterId, characters],
+  )
+
+  const activeSpriteUrl = useMemo(() => {
+    if (!activeSpriteCharacter) return ''
+    const expression = activeSpriteCharacter.expressions.find((item) => item.name === activeSprite?.expressionName)
+    return expression?.imageUrl ?? activeSpriteCharacter.portraitUrl
+  }, [activeSprite?.expressionName, activeSpriteCharacter])
 
   const isLineFullyVisible = playingLine ? visibleChars >= playingLine.body.length : true
   const visibleBody = playingLine ? playingLine.body.slice(0, visibleChars) : ''
@@ -208,9 +316,9 @@ export default function StoryEditorPage() {
     if (!isLineFullyVisible) return
     if (loggedLineId === playingLine.id) return
     const characterName = playingCharacter?.name ?? '未設定'
-    setLogs((prev) => [...prev, `${characterName}: ${playingLine.body}`])
+    setLogs((prev) => [...prev, { lineId: playingLine.id, speaker: characterName, body: playingLine.body, expressionImageUrl: playingExpressionUrl }])
     setLoggedLineId(playingLine.id)
-  }, [dialogueReady, isPlaying, isLineFullyVisible, loggedLineId, playingCharacter?.name, playingLine, titlePhase])
+  }, [dialogueReady, isPlaying, isLineFullyVisible, loggedLineId, playingCharacter?.name, playingExpressionUrl, playingLine, titlePhase])
 
   useEffect(() => {
     if (!isPlaying || !playingLine || !playingLine.locationLabel.trim() || titlePhase !== 'hidden' || !dialogueReady) {
@@ -249,6 +357,13 @@ export default function StoryEditorPage() {
   }, [dialogueReady, isLineFullyVisible, titlePhase, visibleChoices.length, playIndex])
 
   useEffect(() => {
+    if (!logOpen) return
+    const el = logScrollRef.current
+    if (!el) return
+    el.scrollTop = el.scrollHeight
+  }, [logOpen, logs.length])
+
+  useEffect(() => {
     if (!isPlaying) return
     window.scrollTo({ top: 0, behavior: 'auto' })
     const bodyStyle = document.body.style
@@ -283,27 +398,88 @@ export default function StoryEditorPage() {
     }
   }, [isPlaying])
 
+  useEffect(() => {
+    const loadStudents = async () => {
+      try {
+        const response = await fetch('/api/students')
+        if (!response.ok) return
+        const payload = await response.json() as Array<{ name?: string; englishName?: string; aliases?: string[] }>
+        const lookup = payload
+          .filter((student) => typeof student.name === 'string' && typeof student.englishName === 'string' && student.englishName.trim() !== '')
+          .map((student) => ({
+            englishName: student.englishName!.trim(),
+            aliases: [student.name!.trim(), ...(Array.isArray(student.aliases) ? student.aliases.filter((alias) => typeof alias === 'string').map((alias) => alias.trim()) : [])],
+          }))
+        setStudentNameLookup(lookup)
+      } catch {
+        setStudentNameLookup([])
+      }
+    }
+
+    loadStudents().catch(() => undefined)
+  }, [])
+
   const addCharacter = () => {
     if (!canAddCharacter) return
     const id = Date.now()
-    setCharacters((prev) => [...prev, { id, name: newCharacterName.trim(), affiliation: newCharacterAffiliation.trim() }])
+    setCharacters((prev) => [...prev, {
+      id,
+      name: newCharacterName.trim(),
+      affiliation: newCharacterAffiliation.trim(),
+      portraitUrl: newCharacterPortraitUrl.trim(),
+      expressions: [],
+    }])
     setLineCharacterId(id)
     setNewCharacterName('')
     setNewCharacterAffiliation('')
+    setNewCharacterPortraitUrl('')
   }
 
   const addLine = () => {
     if (!canAddLine) return
     const id = Date.now()
-    setElements((prev) => [...prev, { id, type: 'line', characterId: lineCharacterId, body: lineBody.trim(), requireFlag: lineRequireFlag.trim(), effect: lineEffect, locationLabel: lineLocationLabel.trim(), choices: [] }])
+    setElements((prev) => [...prev, {
+      id,
+      type: 'line',
+      characterId: lineCharacterId,
+      body: lineBody.trim(),
+      requireFlag: lineRequireFlag.trim(),
+      effect: lineEffect,
+      locationLabel: lineLocationLabel.trim(),
+      expressionName: lineExpressionName,
+      spritePosition: lineSpritePosition,
+      choices: [],
+    }])
     setLineBody('')
     setLineLocationLabel('')
+    setLineExpressionName('')
+    setLineSpritePosition('center')
     setChoiceEditByLine((prev) => ({ ...prev, [id]: { label: '', nextElementId: id, setFlag: '', requireFlag: '' } }))
   }
 
   const addBackgroundElement = () => {
     const id = Date.now()
     setElements((prev) => [...prev, { id, type: 'background', config: { color: bgColor, imageUrl: bgImageUrl.trim() } }])
+  }
+
+  const addSpriteCue = () => {
+    if (spriteTriggerElementId === 0) return
+    if (spriteAction === 'show' && !characters.some((character) => character.id === spriteCharacterId)) return
+    setSpriteCues((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        triggerElementId: spriteTriggerElementId,
+        action: spriteAction,
+        characterId: spriteCharacterId,
+        expressionName: spriteAction === 'show' ? spriteExpressionName : '',
+        position: spritePosition,
+      },
+    ])
+  }
+
+  const removeSpriteCue = (id: number) => {
+    setSpriteCues((prev) => prev.filter((cue) => cue.id !== id))
   }
 
   const updateBackgroundElement = (id: number, patch: Partial<BackgroundConfig>) => {
@@ -318,6 +494,100 @@ export default function StoryEditorPage() {
       if (element.type !== 'line' || element.id !== id) return element
       return { ...element, ...patch }
     }))
+  }
+
+  const updateCharacter = (id: number, patch: Partial<Omit<StoryCharacter, 'id'>>) => {
+    setCharacters((prev) => prev.map((character) => (character.id === id ? { ...character, ...patch } : character)))
+  }
+
+  const removeCharacter = (id: number) => {
+    setCharacters((prev) => prev.filter((character) => character.id !== id))
+    setElements((prev) => prev.filter((element) => element.type !== 'line' || element.characterId !== id))
+    setLineCharacterId((prev) => {
+      if (prev !== id) return prev
+      const next = characters.find((character) => character.id !== id)
+      return next?.id ?? 0
+    })
+  }
+
+  const resolveWikiTitle = useCallback((character: StoryCharacter) => {
+    const normalized = normalizeLookupName(character.name)
+    const hit = studentNameLookup.find((student) => student.aliases.some((alias) => normalizeLookupName(alias) === normalized))
+    return hit?.englishName ?? ''
+  }, [studentNameLookup])
+
+  const fetchExpressionsFromWiki = useCallback(async (character: StoryCharacter) => {
+    const title = resolveWikiTitle(character)
+    if (!title) {
+      setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: 'students.json の英語名マッピングが見つかりません' }))
+      return
+    }
+
+    setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: `取得中... (${title})` }))
+
+    try {
+      const response = await fetch(`/api/bluearchive-wiki-expressions?title=${encodeURIComponent(title)}`)
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const data = await response.json() as { expressions?: Array<{ name: string; imageUrl: string }> }
+      const expressions = Array.isArray(data.expressions) ? data.expressions : []
+      if (expressions.length === 0) {
+        setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: '表情差分が見つかりませんでした' }))
+        return
+      }
+      updateCharacter(character.id, { expressions })
+      setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: `${expressions.length} 件取得しました (${title})` }))
+    } catch {
+      setExpressionFetchStateByCharacter((prev) => ({ ...prev, [character.id]: '取得に失敗しました' }))
+    }
+  }, [resolveWikiTitle])
+
+  useEffect(() => {
+    const targets = characters.filter((character) => {
+      if (character.expressions.length > 0) return false
+      const status = expressionFetchStateByCharacter[character.id] ?? ''
+      if (status.startsWith('取得中')) return false
+      if (status.includes('取得しました')) return false
+      if (status.includes('失敗') || status.includes('見つかりません') || status.includes('見つかりませんでした')) return false
+      return resolveWikiTitle(character) !== ''
+    })
+
+    for (const target of targets) {
+      fetchExpressionsFromWiki(target).catch(() => undefined)
+    }
+  }, [characters, expressionFetchStateByCharacter, fetchExpressionsFromWiki, resolveWikiTitle])
+
+  const openExpressionPickerForNewLine = () => {
+    setExpressionPicker({ open: true, mode: 'new-line', lineId: null })
+  }
+
+  const openExpressionPickerForLine = (lineId: number) => {
+    setExpressionPicker({ open: true, mode: 'edit-line', lineId })
+  }
+
+  const pickExpression = (expressionName: string) => {
+    if (expressionPicker.mode === 'new-line') {
+      setLineExpressionName(expressionName)
+    } else if (expressionPicker.lineId !== null) {
+      updateLineElement(expressionPicker.lineId, { expressionName })
+    }
+    setExpressionPicker((prev) => ({ ...prev, open: false }))
+  }
+
+  const pickerTargetLine = expressionPicker.mode === 'edit-line' && expressionPicker.lineId !== null
+    ? elements.find((element): element is LineElement => element.type === 'line' && element.id === expressionPicker.lineId) ?? null
+    : null
+  const pickerCharacterId = expressionPicker.mode === 'new-line'
+    ? lineCharacterId
+    : pickerTargetLine?.characterId ?? lineCharacterId
+  const pickerCharacter = characters.find((character) => character.id === pickerCharacterId) ?? null
+  const pickerSelectedExpression = expressionPicker.mode === 'new-line'
+    ? lineExpressionName
+    : pickerTargetLine?.expressionName ?? ''
+  const pickerFetchState = pickerCharacter ? (expressionFetchStateByCharacter[pickerCharacter.id] ?? '') : ''
+
+  const retryExpressionFetch = () => {
+    if (!pickerCharacter) return
+    fetchExpressionsFromWiki(pickerCharacter).catch(() => undefined)
   }
 
   const removeElement = (id: number) => {
@@ -462,15 +732,12 @@ export default function StoryEditorPage() {
       startStoryPlayback()
       return
     }
+    if (skipConfirmOpen || logOpen || expressionPicker.open || menuOpen) return
     if (backgroundOnly) {
       setBackgroundOnly(false)
       return
     }
-    if (titlePhase !== 'hidden') {
-      setTitlePhase('hidden')
-      setDialogueReady(true)
-      return
-    }
+    if (titlePhase !== 'hidden') return
     if (!playingLine) return
     if (!isLineFullyVisible) {
       setVisibleChars(playingLine.body.length)
@@ -481,11 +748,14 @@ export default function StoryEditorPage() {
   }
 
   return (
-    <main className="space-y-4 p-4 md:pl-72">
-      <h1 className="text-xl font-bold">ストーリーエディタ</h1>
+    <main className="space-y-4 p-4">
+      <div className="flex items-center gap-2">
+        <h1 className="text-xl font-bold">ストーリーエディタ</h1>
+        <PageHelpButton pageKey="story-editor" className="text-gray-700" />
+      </div>
 
-      <section>
-        <aside className="rounded border bg-white p-3 md:fixed md:left-4 md:top-20 md:w-60">
+      <section className="md:flex md:items-start md:gap-4">
+        <aside className="rounded border bg-white p-3 md:w-60 md:shrink-0">
           <p className="mb-2 text-sm font-semibold text-gray-700">メニュー</p>
           <div className="space-y-1">
             <button
@@ -512,7 +782,7 @@ export default function StoryEditorPage() {
           </div>
         </aside>
 
-        <div className="space-y-3 md:mx-auto md:max-w-5xl">
+        <div className="min-w-0 flex-1 space-y-3 md:max-w-5xl">
           {editorView === 'timeline' && (
             <>
               <section className="space-y-3 rounded border bg-white p-4">
@@ -525,8 +795,13 @@ export default function StoryEditorPage() {
 
                 {addMode === 'line' && (
                   <>
-                    <div className="grid gap-3 md:grid-cols-4">
-                      <select value={lineCharacterId} onChange={(event) => setLineCharacterId(Number(event.target.value))} className="rounded border px-3 py-2">
+                    <div className="grid gap-3 md:grid-cols-5">
+                      <select value={lineCharacterId} onChange={(event) => {
+                        const nextId = Number(event.target.value)
+                        setLineCharacterId(nextId)
+                        const character = characters.find((item) => item.id === nextId)
+                        setLineExpressionName(character?.expressions[0]?.name ?? '')
+                      }} className="rounded border px-3 py-2">
                         {characters.map((character) => <option key={character.id} value={character.id}>{character.name} / {character.affiliation}</option>)}
                       </select>
                       <input value={lineRequireFlag} onChange={(event) => setLineRequireFlag(event.target.value)} className="rounded border px-3 py-2" placeholder="表示条件フラグ(任意)" />
@@ -537,9 +812,18 @@ export default function StoryEditorPage() {
                         <option value="fade">効果: フェード</option>
                       </select>
                       <input value={lineLocationLabel} onChange={(event) => setLineLocationLabel(event.target.value)} className="rounded border px-3 py-2" placeholder="場所表示オプション(任意)" />
+                      <select value={lineSpritePosition} onChange={(event) => setLineSpritePosition(event.target.value as 'left' | 'center' | 'right')} className="rounded border px-3 py-2">
+                        <option value="left">立ち絵: 左</option>
+                        <option value="center">立ち絵: 中央</option>
+                        <option value="right">立ち絵: 右</option>
+                      </select>
                     </div>
-                    <div className="flex gap-3">
-                      <input value={lineBody} onChange={(event) => setLineBody(event.target.value)} className="flex-1 rounded border px-3 py-2" placeholder="本文" />
+                    <div className="grid gap-3 md:grid-cols-4">
+                      <textarea value={lineBody} onChange={(event) => setLineBody(event.target.value)} className="min-h-20 rounded border px-3 py-2 md:col-span-2" placeholder="本文" />
+                      <button type="button" onClick={openExpressionPickerForNewLine} className="flex items-center gap-2 rounded border px-3 py-2 text-left">
+                        {lineEditorExpression?.imageUrl ? <img src={lineEditorExpression.imageUrl} alt={lineEditorExpression.name} className="h-8 w-8 rounded object-contain bg-slate-100" /> : <span className="inline-flex h-8 w-8 items-center justify-center rounded bg-gray-100 text-xs text-gray-500">-</span>}
+                        <span className="text-sm">{lineExpressionName || '表情を選択'}</span>
+                      </button>
                       <button type="button" onClick={addLine} disabled={!canAddLine} className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">追加</button>
                     </div>
                   </>
@@ -560,12 +844,50 @@ export default function StoryEditorPage() {
                 )}
               </section>
 
-              <section className="space-y-3 rounded border bg-white p-4">
+              <section className="space-y-3 bg-white p-4">
                 <div className="flex gap-2">
                   <button type="button" onClick={openPlayer} disabled={elements.length === 0} className="rounded bg-emerald-600 px-4 py-2 text-white disabled:opacity-50">再生</button>
                 </div>
-                <ul className="space-y-2">
-                  {elements.map((element) => {
+                <div className="grid gap-3 md:grid-cols-[320px_1fr]">
+                  <div className="space-y-3 rounded border bg-slate-50 p-3">
+                    <p className="font-semibold">立ち絵タイムライン</p>
+                    <div className="grid gap-2">
+                      <select value={spriteTriggerElementId} onChange={(event) => setSpriteTriggerElementId(Number(event.target.value))} className="rounded border px-2 py-1 text-sm">
+                        {elements.map((element) => <option key={element.id} value={element.id}>要素#{element.id} ({element.type === 'line' ? 'セリフ' : '背景'})</option>)}
+                      </select>
+                      <select value={spriteAction} onChange={(event) => setSpriteAction(event.target.value as SpriteAction)} className="rounded border px-2 py-1 text-sm">
+                        <option value="show">立ち絵を表示</option>
+                        <option value="hide">立ち絵を消去</option>
+                      </select>
+                      <select value={spriteCharacterId} onChange={(event) => setSpriteCharacterId(Number(event.target.value))} className="rounded border px-2 py-1 text-sm" disabled={spriteAction === 'hide'}>
+                        {characters.map((character) => <option key={character.id} value={character.id}>{character.name}</option>)}
+                      </select>
+                      <select value={spriteExpressionName} onChange={(event) => setSpriteExpressionName(event.target.value)} className="rounded border px-2 py-1 text-sm" disabled={spriteAction === 'hide'}>
+                        <option value="">表情なし(立ち絵)</option>
+                        {(spriteEditorCharacter?.expressions ?? []).map((expression) => <option key={expression.name} value={expression.name}>{expression.name}</option>)}
+                      </select>
+                      <select value={spritePosition} onChange={(event) => setSpritePosition(event.target.value as 'left' | 'center' | 'right')} className="rounded border px-2 py-1 text-sm" disabled={spriteAction === 'hide'}>
+                        <option value="left">左</option>
+                        <option value="center">中央</option>
+                        <option value="right">右</option>
+                      </select>
+                      <button type="button" onClick={addSpriteCue} className="rounded bg-indigo-600 px-3 py-1.5 text-sm text-white">立ち絵キュー追加</button>
+                    </div>
+                    <ul className="max-h-[420px] space-y-2 overflow-y-auto">
+                      {spriteCues.map((cue) => (
+                        <li key={cue.id} className="rounded border bg-white p-2 text-xs">
+                          <p>要素#{cue.triggerElementId} / {cue.action === 'show' ? '表示' : '消去'}</p>
+                          {cue.action === 'show' && (
+                            <p>{characters.find((character) => character.id === cue.characterId)?.name ?? '未設定'} / {cue.position} / {cue.expressionName || '立ち絵'}</p>
+                          )}
+                          <button type="button" className="mt-1 rounded border border-red-300 px-2 py-0.5 text-red-700" onClick={() => removeSpriteCue(cue.id)}>削除</button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <ul className="space-y-2">
+                    {elements.map((element) => {
                     if (element.type === 'background') {
                       return (
                         <li key={element.id} draggable onDragStart={() => setDraggedId(element.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedId === null) return; reorderElements(draggedId, element.id); setDraggedId(null) }} className="rounded border border-blue-200 bg-blue-50 p-3">
@@ -599,8 +921,25 @@ export default function StoryEditorPage() {
                           </div>
 
                           <details className="rounded border bg-slate-50 p-2">
-                            <summary className="cursor-pointer text-xs font-semibold">オプションを見る（選択肢分岐・表示条件）</summary>
+                            <summary className="cursor-pointer text-xs font-semibold">編集・分岐オプション</summary>
                             <div className="mt-2 space-y-2">
+                              <div className="grid gap-2 md:grid-cols-2">
+                                <select value={element.characterId} onChange={(event) => updateLineElement(element.id, { characterId: Number(event.target.value) })} className="rounded border px-2 py-1 text-xs">
+                                  {characters.map((targetCharacter) => <option key={targetCharacter.id} value={targetCharacter.id}>{targetCharacter.name} / {targetCharacter.affiliation}</option>)}
+                                </select>
+                                <button type="button" onClick={() => openExpressionPickerForLine(element.id)} className="flex items-center gap-2 rounded border px-2 py-1 text-xs text-left">
+                                  {(characters.find((item) => item.id === element.characterId)?.expressions.find((expression) => expression.name === element.expressionName)?.imageUrl)
+                                    ? <img src={characters.find((item) => item.id === element.characterId)?.expressions.find((expression) => expression.name === element.expressionName)?.imageUrl} alt={element.expressionName || '表情'} className="h-7 w-7 rounded object-contain bg-slate-100" />
+                                    : <span className="inline-flex h-7 w-7 items-center justify-center rounded bg-gray-100 text-[10px] text-gray-500">-</span>}
+                                  <span>{element.expressionName || '表情を選択'}</span>
+                                </button>
+                                <select value={element.spritePosition} onChange={(event) => updateLineElement(element.id, { spritePosition: event.target.value as 'left' | 'center' | 'right' })} className="rounded border px-2 py-1 text-xs">
+                                  <option value="left">立ち絵: 左</option>
+                                  <option value="center">立ち絵: 中央</option>
+                                  <option value="right">立ち絵: 右</option>
+                                </select>
+                              </div>
+                              <textarea value={element.body} onChange={(event) => updateLineElement(element.id, { body: event.target.value })} className="min-h-20 w-full rounded border px-2 py-1 text-xs" placeholder="本文" />
                               <div className="grid gap-2 md:grid-cols-3">
                                 <input
                                   value={element.requireFlag}
@@ -651,8 +990,9 @@ export default function StoryEditorPage() {
                         </div>
                       </li>
                     )
-                  })}
-                </ul>
+                    })}
+                  </ul>
+                </div>
               </section>
             </>
           )}
@@ -663,14 +1003,23 @@ export default function StoryEditorPage() {
               <div className="grid gap-3 md:grid-cols-2">
                 <input value={newCharacterName} onChange={(event) => setNewCharacterName(event.target.value)} className="rounded border px-3 py-2" placeholder="キャラクター名" />
                 <input value={newCharacterAffiliation} onChange={(event) => setNewCharacterAffiliation(event.target.value)} className="rounded border px-3 py-2" placeholder="所属" />
+                <input value={newCharacterPortraitUrl} onChange={(event) => setNewCharacterPortraitUrl(event.target.value)} className="rounded border px-3 py-2" placeholder="立ち絵URL" />
               </div>
               <button type="button" onClick={addCharacter} disabled={!canAddCharacter} className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">追加</button>
 
               <ul className="space-y-2 pt-2">
                 {characters.map((character) => (
                   <li key={character.id} className="rounded border bg-slate-50 p-3 text-sm">
-                    <p className="font-semibold">{character.name}</p>
-                    <p className="text-gray-600">{character.affiliation}</p>
+                    <div className="grid gap-2 md:grid-cols-2">
+                      <input value={character.name} onChange={(event) => updateCharacter(character.id, { name: event.target.value })} className="rounded border px-2 py-1" placeholder="キャラクター名" />
+                      <input value={character.affiliation} onChange={(event) => updateCharacter(character.id, { affiliation: event.target.value })} className="rounded border px-2 py-1" placeholder="所属" />
+                      <input value={character.portraitUrl} onChange={(event) => updateCharacter(character.id, { portraitUrl: event.target.value })} className="rounded border px-2 py-1 md:col-span-2" placeholder="立ち絵URL" />
+                      <div className="flex gap-2">
+                        <button type="button" className="rounded border border-red-300 px-3 py-1 text-xs text-red-700" onClick={() => removeCharacter(character.id)}>削除</button>
+                      </div>
+                    </div>
+                    {expressionFetchStateByCharacter[character.id] && <p className="mt-2 text-xs text-gray-600">{expressionFetchStateByCharacter[character.id]}</p>}
+                    {character.expressions.length > 0 && <p className="mt-2 text-xs text-gray-600">表情差分 {character.expressions.length} 件取得済み</p>}
                   </li>
                 ))}
               </ul>
@@ -682,18 +1031,56 @@ export default function StoryEditorPage() {
               <h2 className="font-semibold">ストーリー定義</h2>
               <div className="grid gap-3 md:grid-cols-2">
                 <input value={meta.title} onChange={(event) => setMeta((prev) => ({ ...prev, title: event.target.value }))} className="rounded border px-3 py-2" placeholder="タイトル" />
-                <input value={meta.summary} onChange={(event) => setMeta((prev) => ({ ...prev, summary: event.target.value }))} className="rounded border px-3 py-2" placeholder="要約" />
+                <textarea value={meta.summary} onChange={(event) => setMeta((prev) => ({ ...prev, summary: event.target.value }))} className="min-h-28 rounded border px-3 py-2 md:col-span-2" placeholder="要約" />
               </div>
             </section>
           )}
         </div>
       </section>
+
+      {expressionPicker.open && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/40" onClick={() => setExpressionPicker((prev) => ({ ...prev, open: false }))}>
+          <div className="w-[min(92vw,860px)] rounded-xl bg-white p-4 shadow-xl" onClick={(event) => event.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-lg font-bold">表情を選択 {pickerCharacter ? `- ${pickerCharacter.name}` : ''}</h3>
+              <button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => setExpressionPicker((prev) => ({ ...prev, open: false }))}>閉じる</button>
+            </div>
+            <div className="mb-3">
+              <button type="button" className="rounded border border-gray-300 px-3 py-1 text-sm" onClick={() => pickExpression('')}>表情なしにする</button>
+            </div>
+            {(pickerCharacter?.expressions.length ?? 0) === 0 && (
+              <div className="mb-3 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                <p>このキャラクターの表情差分はまだ読み込まれていません。</p>
+                <p className="mt-1 text-xs">状態: {pickerFetchState || '未取得'}</p>
+                <button type="button" className="mt-2 rounded border border-amber-300 bg-white px-3 py-1 text-xs" onClick={retryExpressionFetch}>再取得</button>
+              </div>
+            )}
+            <div className="grid max-h-[60vh] grid-cols-2 gap-2 overflow-y-auto md:grid-cols-4">
+              {(pickerCharacter?.expressions ?? []).map((expression) => (
+                <button key={expression.name} type="button" className={`rounded border p-2 text-left ${pickerSelectedExpression === expression.name ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'}`} onClick={() => pickExpression(expression.name)}>
+                  <img src={expression.imageUrl} alt={expression.name} className="h-24 w-full rounded object-contain bg-slate-100" />
+                  <p className="mt-1 truncate text-xs">{expression.name}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {isPlaying && (
         <div className={`fixed inset-0 z-[100] bg-white text-left ${playingLine?.effect === 'flash' ? 'animate-pulse' : ''}`} onClick={onTapAdvance} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') onTapAdvance() }}>
           <div className="absolute inset-0" style={{ backgroundColor: currentBackground.color, backgroundImage: currentBackground.imageUrl ? `url(${currentBackground.imageUrl})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center' }} />
 
           <div className={`absolute inset-0 ${forceLandscape ? 'flex items-center justify-center' : ''}`}>
-            <div className={forceLandscape ? 'h-[100vw] w-[100vh] origin-center rotate-90' : 'h-full w-full'}>
+            <div className={forceLandscape ? 'h-[100dvw] w-[100dvh] origin-center rotate-90' : 'h-full w-full'}>
+              {(activeSpriteUrl || (playingLine && (playingExpressionUrl || playingCharacter?.portraitUrl))) && (
+                <img
+                  src={activeSpriteUrl || playingExpressionUrl || playingCharacter?.portraitUrl || ''}
+                  alt={`${activeSpriteCharacter?.name ?? playingCharacter?.name ?? 'キャラクター'}立ち絵`}
+                  className={`absolute bottom-[-18vh] z-[1] h-[108vh] object-contain ${(activeSprite?.position ?? playingLine?.spritePosition) === 'left' ? 'left-[18%] -translate-x-1/2' : (activeSprite?.position ?? playingLine?.spritePosition) === 'right' ? 'left-[82%] -translate-x-1/2' : 'left-1/2 -translate-x-1/2'}`}
+                  style={{ filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.38))' }}
+                />
+              )}
               {!backgroundOnly && (
                 <>
                   <div className="absolute right-4 top-4 z-[5] flex flex-col items-end gap-2" onClick={(event) => event.stopPropagation()}>
@@ -749,7 +1136,7 @@ export default function StoryEditorPage() {
                     <>
                       <div className={`absolute inset-0 ${playingLine.effect === 'fade' ? 'opacity-80' : 'opacity-100'} ${playingLine.effect === 'shake' ? 'animate-bounce' : ''}`} style={{ pointerEvents: 'none' }} />
 
-                      <div className="absolute bottom-0 left-0 right-0 px-6 pb-8 pt-6" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(217,229,239,0.25) 4%, rgba(147,172,191,0.45) 9%, rgba(96,124,148,0.65) 18%, rgba(74,102,127,0.78) 38%, rgba(61,89,114,0.9) 62%, rgba(42,66,91,0.96) 100%)' }}>
+                      <div className="absolute bottom-0 left-0 right-0 z-[3] px-6 pb-8 pt-6" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(217,229,239,0.25) 4%, rgba(147,172,191,0.45) 9%, rgba(96,124,148,0.65) 18%, rgba(74,102,127,0.78) 38%, rgba(61,89,114,0.9) 62%, rgba(42,66,91,0.96) 100%)' }}>
                         <div className="flex items-baseline gap-3" style={{ color: '#ffffff' }}>
                           <p className="text-lg font-bold">{playingCharacter?.name ?? '未設定キャラクター'}</p>
                           <p className="text-sm font-semibold" style={{ color: '#7cd0ff' }}>{playingCharacter?.affiliation ?? '未設定'}</p>
@@ -764,36 +1151,63 @@ export default function StoryEditorPage() {
                   )}
 
                   {skipConfirmOpen && (
-                    <div className="absolute inset-0 z-[6] flex items-center justify-center bg-black/40" onClick={() => setSkipConfirmOpen(false)}>
-                      <div className="w-[min(92vw,560px)] animate-[skipModalIn_.35s_ease-out] rounded-2xl bg-white p-5" onClick={(event) => event.stopPropagation()}>
-                        <p className="text-sm font-semibold text-gray-500">あらすじ</p>
-                        <p className="mt-1 text-lg font-bold">{meta.title || 'タイトル未設定'}</p>
-                        <p className="mt-1 whitespace-pre-wrap text-sm text-gray-700">{meta.summary || '要約未設定'}</p>
-                        <p className="mt-4 text-sm text-gray-700">※この話をスキップしますか？</p>
-                        <div className="mt-4 grid grid-cols-2 gap-3">
-                          <button type="button" className="rounded border px-4 py-2" onClick={() => setSkipConfirmOpen(false)}>キャンセル</button>
-                          <button
-                            type="button"
-                            className="rounded bg-blue-600 px-4 py-2 text-white"
-                            onClick={() => {
-                              setSkipConfirmOpen(false)
-                              closePlayer()
-                            }}
-                          >
-                            OK
-                          </button>
+                    <div className="absolute inset-0 z-[6] flex items-center justify-center bg-slate-900/45" onClick={() => setSkipConfirmOpen(false)}>
+                      <div className="w-[min(92vw,720px)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
+                        <div className="relative flex items-center justify-center border-b px-5 py-3" style={{ background: 'linear-gradient(120deg,#e7f2ff 0%,#f6fbff 45%,#ffffff 100%)' }}>
+                          <div className="text-center">
+                            <p className="text-3xl font-bold tracking-wide text-[#2d406f]">あらすじ</p>
+                            <div className="mx-auto mt-1 h-1 w-20 rounded bg-yellow-300" />
+                          </div>
+                          <button type="button" onClick={() => setSkipConfirmOpen(false)} className="absolute right-5 text-3xl text-[#1e315f]"><FontAwesomeIcon icon={faXmark} /></button>
+                        </div>
+                        <div className="p-5">
+                          <p className="text-center text-2xl font-bold text-[#2f406d]">{meta.title || 'タイトル未設定'}</p>
+                          <div className="mt-4 rounded border bg-slate-100 p-4 text-left text-lg leading-relaxed text-slate-700">{meta.summary || '要約未設定'}</div>
+                          <p className="mt-6 text-center text-3xl font-semibold text-[#2f406d]">※この話をスキップしますか？</p>
+                          <div className="mt-6 grid grid-cols-2 gap-4">
+                            <button type="button" className="rounded-xl bg-[#d9edf9] px-4 py-3 text-3xl font-bold text-[#24406b] shadow" onClick={() => setSkipConfirmOpen(false)}>キャンセル</button>
+                            <button
+                              type="button"
+                              className="rounded-xl bg-cyan-300 px-4 py-3 text-3xl font-bold text-[#24406b] shadow"
+                              onClick={() => {
+                                setSkipConfirmOpen(false)
+                                closePlayer()
+                              }}
+                            >
+                              OK
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
                   )}
 
                   {logOpen && (
-                    <div className="absolute inset-0 z-[6] flex items-center justify-center bg-black/45" onClick={() => setLogOpen(false)}>
-                      <div className="max-h-[70vh] w-[min(92vw,640px)] overflow-auto rounded bg-white p-4" onClick={(event) => event.stopPropagation()}>
-                        <h3 className="text-lg font-bold">LOG</h3>
-                        <ul className="mt-3 space-y-2 text-sm text-slate-700">
-                          {logs.length === 0 ? <li>まだログがありません。</li> : logs.map((log, index) => <li key={`${index}-${log.slice(0, 12)}`}>{log}</li>)}
-                        </ul>
+                    <div className="absolute inset-0 z-[6] flex items-center justify-center bg-slate-900/40" onClick={() => setLogOpen(false)}>
+                      <div className="flex h-[80vh] w-[min(95vw,1180px)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-[#f2f4f8] shadow-2xl" onClick={(event) => event.stopPropagation()}>
+                        <div className="flex items-center justify-center border-b bg-white px-5 py-3 text-[#2d406f]">
+                          <p className="text-4xl font-bold">LOG</p>
+                          <div className="absolute right-8"><button type="button" className="text-4xl" onClick={() => setLogOpen(false)}><FontAwesomeIcon icon={faXmark} /></button></div>
+                        </div>
+                        <div ref={logScrollRef} className="flex-1 overflow-y-auto p-4">
+                          {logs.length === 0 ? (
+                            <p className="text-sm text-slate-500">まだログがありません。</p>
+                          ) : (
+                            <ul className="space-y-3">
+                              {logs.map((log, index) => (
+                                <li key={`${log.lineId}-${index}`} className="flex items-end gap-3">
+                                  <div className="h-20 w-20 overflow-hidden rounded-lg border bg-white">
+                                    {log.expressionImageUrl ? <img src={log.expressionImageUrl} alt={log.speaker} className="h-full w-full object-contain bg-slate-100" /> : <div className="flex h-full items-center justify-center text-xs text-slate-400">No Img</div>}
+                                  </div>
+                                  <div className="flex-1 rounded-xl bg-white p-3 shadow-sm">
+                                    <p className="text-2xl font-bold text-[#2f406d]">{log.speaker}</p>
+                                    <p className="mt-1 text-xl text-slate-700">{log.body}</p>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
