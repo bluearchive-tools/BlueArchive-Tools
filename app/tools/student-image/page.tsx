@@ -61,7 +61,7 @@ const BADGE_ICON_FILL_COLOR = { r: 34, g: 53, b: 81 }
 
 const STAR_NUMBER_FONT_NAME = 'StudentImageStarNumber'
 const STAR_NUMBER_FONT_FILE = '/fonts/student-image-star-number.otf'
-const STAR_NUMBER_FONT_FALLBACK = '"mfw-pshinmgopr6n-medium", "M PLUS 1p", sans-serif'
+const STAR_NUMBER_FONT_FALLBACK = '"mfw-pshinmgopr6n-medium", "M PLUS Rounded 1c", "M PLUS 1p", sans-serif'
 
 const BASE: Options = {
   level: 90,
@@ -321,14 +321,15 @@ function drawStarWithNumber(
   ctx.restore()
 
   const text = String(clamp(value, 0, 99))
-  ctx.font = `italic 700 ${Math.round(radius * 0.94)}px ${fontFamily}`
+  ctx.font = `italic 400 ${Math.round(radius * 0.98)}px ${fontFamily}`
   ctx.fillStyle = '#0f172a'
   ctx.strokeStyle = 'rgba(255,255,255,0.8)'
-  ctx.lineWidth = Math.max(0.9, radius * 0.05)
+  ctx.lineWidth = Math.max(1.2, radius * 0.058)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.strokeText(text, x - radius * 0.05, y + radius * 0.02)
-  ctx.fillText(text, x - radius * 0.05, y + radius * 0.02)
+  ctx.lineJoin = 'round'
+  ctx.strokeText(text, x, y + radius * 0.03)
+  ctx.fillText(text, x, y + radius * 0.03)
 
   ctx.restore()
 }
@@ -611,12 +612,12 @@ export default function StudentImageToolPage() {
       try {
         const face = new FontFace(STAR_NUMBER_FONT_NAME, `url(${STAR_NUMBER_FONT_FILE})`, {
           style: 'normal',
-          weight: '700',
+          weight: '400',
         })
         const loadedFace = await face.load()
         if (cancelled) return
         document.fonts.add(loadedFace)
-        await document.fonts.load(`700 32px ${STAR_NUMBER_FONT_NAME}`)
+        await document.fonts.load(`400 32px "${STAR_NUMBER_FONT_NAME}"`)
         if (cancelled) return
         setStarNumberFontFamily(`"${STAR_NUMBER_FONT_NAME}", ${STAR_NUMBER_FONT_FALLBACK}`)
       } catch {
