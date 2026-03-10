@@ -321,14 +321,15 @@ function drawStarWithNumber(
   ctx.restore()
 
   const text = String(clamp(value, 0, 99))
-  ctx.font = `700 ${Math.round(radius * 0.94)}px ${fontFamily}`
+  ctx.font = `400 ${Math.round(radius * 0.98)}px ${fontFamily}`
   ctx.fillStyle = '#0f172a'
   ctx.strokeStyle = 'rgba(255,255,255,0.8)'
-  ctx.lineWidth = Math.max(0.9, radius * 0.05)
+  ctx.lineWidth = Math.max(1.2, radius * 0.058)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.strokeText(text, x - radius * 0.05, y + radius * 0.02)
-  ctx.fillText(text, x - radius * 0.05, y + radius * 0.02)
+  ctx.lineJoin = 'round'
+  ctx.strokeText(text, x, y + radius * 0.03)
+  ctx.fillText(text, x, y + radius * 0.03)
 
   ctx.restore()
 }
