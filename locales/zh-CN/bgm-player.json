@@ -1,29 +1,29 @@
 {
-  "title": "BGM player",
-  "description": "Play Blue Archive BGM tracks.",
-  "nowPlaying": "Now playing",
-  "empty": "Select a track to start playback.",
+  "title": "背景音乐播放器",
+  "description": "播放《蔚蓝档案》BGM 曲目。",
+  "nowPlaying": "正在播放",
+  "empty": "选择曲目开始播放。",
   "playbackOptions": {
-    "title": "Playback options",
-    "loop": "Loop",
-    "autoAdvance": "Auto advance",
-    "previous": "Previous",
-    "next": "Next"
+    "title": "播放选项",
+    "loop": "环形",
+    "autoAdvance": "自动前进",
+    "previous": "以前的",
+    "next": "下一个"
   },
   "playlist": {
-    "title": "Playlist",
-    "add": "Add",
-    "remove": "Remove",
-    "empty": "No tracks in the playlist.",
-    "play": "Play from start",
-    "active": "Playing from playlist",
-    "filtered": "Playing from list"
+    "title": "播放列表",
+    "add": "添加",
+    "remove": "消除",
+    "empty": "播放列表中没有曲目。",
+    "play": "从头开始播放",
+    "active": "从播放列表播放",
+    "filtered": "从列表中播放"
   },
   "filters": {
-    "all": "All",
-    "category": "Category",
-    "search": "Search",
-    "searchPlaceholder": "Search by title or file name",
-    "count": "{count} tracks"
+    "all": "全部",
+    "category": "类别",
+    "search": "搜索",
+    "searchPlaceholder": "按标题或文件名搜索",
+    "count": "{count} 曲目"
   }
 }

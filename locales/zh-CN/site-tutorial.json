@@ -1,23 +1,35 @@
 {
   "prompt": {
-    "title": "Start the tutorial?",
-    "body": "We can walk you through the basics of this site.",
-    "yes": "Yes",
-    "no": "No"
+    "title": "开始教程？",
+    "body": "我们可以引导您了解本网站的基础知识。",
+    "yes": "是",
+    "no": "否"
   },
   "tutorial": {
-    "title": "Site tutorial",
-    "skip": "Skip",
-    "back": "Back",
-    "next": "Next",
-    "finish": "Finish",
-    "stepLabel": "Step {current} / {total}"
+    "title": "站点教程",
+    "skip": "跳过动画",
+    "back": "后退",
+    "next": "下一頁",
+    "finish": "完成日期",
+    "stepLabel": "步骤{current} / {total}"
   },
   "steps": {
-    "step1": { "title": "Home", "text": "You can choose tools and mini games from the home screen.", "selector": "[data-tutorial=\"home-main\"]" },
-    "step2": { "title": "Students", "text": "Use this section for student-related features.", "selector": "[data-tutorial=\"home-links\"]" },
-    "step3": { "title": "Tools", "text": "Open calculators and utility tools from here.", "selector": "[data-tutorial=\"tools-links\"]" },
-    "step4": "Use BGM DJ to mix with two decks and a crossfader.",
-    "step5": "Play the BGM quiz mini game for a quick challenge."
+    "step1": {
+      "title": "主页",
+      "text": "您可以从主屏幕选择工具和迷你游戏。",
+      "selector": "[data-tutorial = \"home-main\"]"
+    },
+    "step2": {
+      "title": "学员",
+      "text": "使用此部分获取与学生相关的功能。",
+      "selector": "[data-tutorial = \"home-links\"]"
+    },
+    "step3": {
+      "title": "工具",
+      "text": "从此处打开计算器和实用程序工具。",
+      "selector": "[data-tutorial = \"tools-links\"]"
+    },
+    "step4": "使用BGM DJ与两个卡组和一个交叉推子混合。",
+    "step5": "玩BGM测验迷你游戏，快速挑战。"
   }
 }

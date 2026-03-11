@@ -1,113 +1,113 @@
 {
-  "pageTitle": "BlueArchive Tools",
+  "pageTitle": "蔚蓝档案工具",
   "sections": {
     "students": {
-      "title": "Student management",
-      "description": "Check and edit your student data",
+      "title": "学生管理",
+      "description": "检查并编辑您的学生数据",
       "actions": {
         "view": {
-          "title": "View students",
-          "description": "Display the students you have saved"
+          "title": "显示学生",
+          "description": "显示您已保存的学生"
         },
         "import": {
-          "title": "Import students",
-          "description": "Import student data from screenshots"
+          "title": "批量导入学生",
+          "description": "从屏幕截图导入学生数据"
         },
         "squads": {
-          "title": "Manage squads",
-          "description": "Build and organize squads"
+          "title": "管理小队",
+          "description": "建立和组织小队"
         }
       }
     },
     "tlTools": {
-      "title": "TL tools (beta)",
-      "description": "Utilities to help you craft timelines",
+      "title": "TL工具（测试版）",
+      "description": "帮助您制定时间表的实用程序",
       "actions": {
         "search": {
-          "title": "Search TLs",
-          "description": "Find existing timelines"
+          "title": "搜索组长",
+          "description": "查找现有时间表"
         },
         "maker": {
-          "title": "TL maker",
-          "description": "Create timelines from scratch"
+          "title": "时间轴制作器",
+          "description": "从头开始创建时间表"
         },
         "makerDev": {
-          "title": "TL maker (dev)",
-          "description": "Try experimental timeline features"
+          "title": "时间轴制作器（开发版）",
+          "description": "试用实验性时间轴功能"
         },
         "videoToTl": {
-          "title": "Video to TL",
-          "description": "Generate a timeline from a video"
+          "title": "视频到TL",
+          "description": "从视频生成时间轴"
         }
       }
     },
     "tools": {
-      "title": "Utilities",
-      "description": "Handy tools for daily play",
+      "title": "工具",
+      "description": "方便的日常游戏工具",
       "actions": {
         "eventSchedule": {
-          "title": "Event schedule",
-          "description": "Check upcoming events"
+          "title": "活动时间表",
+          "description": "查看即将举行的活动"
         },
         "divineCalc": {
-          "title": "Eleph calculator",
-          "description": "Calculate required Elephs"
+          "title": "大象计算器",
+          "description": "计算所需的大象"
         },
         "bgmPlayer": {
-          "title": "BGM player",
-          "description": "Play Blue Archive BGM tracks"
+          "title": "BGM播放器",
+          "description": "播放蓝色存档BGM曲目"
         },
         "bgmDj": {
           "title": "BGM DJ",
-          "description": "Mix BGM with two decks"
+          "description": "将BGM与两个卡组混合"
         },
         "bondCalc": {
-          "title": "Bond calculator",
-          "description": "Calculate required materials, shortages, and suggested runs for bond leveling"
+          "title": "债券计算器",
+          "description": "计算所需的材料、短缺和债券调平的建议运行"
         },
         "trainingPlanning": {
-          "title": "Training planning",
-          "description": "Access star, bond, and level planning calculators in one place"
+          "title": "培训计划",
+          "description": "在一个地方访问STAR、BOND和LEVEL规划计算器"
         },
         "levelCalc": {
-          "title": "Level calculator",
-          "description": "Calculate required reports and run estimates for leveling"
+          "title": "液位计算器",
+          "description": "计算所需报告并运行调平估算"
         },
         "studentImage": {
-          "title": "Student Image Maker",
-          "description": "Generate PNG/GIF student icons with attack-type frame and stars"
+          "title": "学生形象制作器",
+          "description": "生成带有攻击型框架和星星的PNG/GIF学生图标"
         },
         "momotalkSimulator": {
-          "title": "Momotalk simulator",
-          "description": "Simulate a Momotalk-style chat screen"
+          "title": "Momotalk 模拟器",
+          "description": "模拟Momotalk风格的聊天屏幕"
         },
         "storyEditor": {
-          "title": "Story editor",
-          "description": "Create your own story and play it back"
+          "title": "故事编辑器",
+          "description": "创建自己的故事并回放"
         }
       }
     },
     "minigames": {
-      "title": "Mini games",
-      "description": "Quick breaks you can play right away",
+      "title": "小游戏",
+      "description": "您可以立即进行快速休息",
       "actions": {
         "bgmQuiz": {
-          "title": "BGM quiz",
-          "description": "Guess the track name from the hint"
+          "title": "BGM测验",
+          "description": "从提示中猜出曲目名称"
         }
       }
     },
     "others": {
-      "title": "Others",
-      "description": "Support pages and development-oriented contents",
+      "title": "其他地区",
+      "description": "支持页面和面向发展的内容",
       "actions": {
         "devMemos": {
-          "title": "Development memos",
-          "description": "Browse short notes about updates and implementation ideas"
+          "title": "开发备忘录",
+          "description": "浏览有关更新和实施想法的简短说明"
         },
         "baMemos": {
-          "title": "Blue Archive info memos",
-          "description": "Browse short notes about Blue Archive information"
+          "title": "蔚蓝档案信息备忘录",
+          "description": "浏览与《蔚蓝档案》相关的信息备忘录。"
         }
       }
     }
