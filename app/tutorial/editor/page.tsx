@@ -11,7 +11,7 @@ const PICK_RESULT_KEY = 'app:siteTutorialPickResult'
 type StepItem = { key: string; text: string; selector: string; title: string }
 type PickerMessage = { type: 'tutorial-selector-picked'; selector: string }
 type PickResult = { selector: string; pickedAt: number }
-type LocaleKey = 'ja' | 'en'
+type LocaleKey = 'ja' | 'en' | 'zh-CN' | 'zh-TW'
 
 const compareStepKeys = (a: string, b: string) => {
   const partA = a.match(/^(.*?)(\d+)$/)
@@ -24,7 +24,8 @@ const compareStepKeys = (a: string, b: string) => {
 }
 
 const getDefaultSteps = (locale: LocaleKey): StepItem[] => {
-  const map = (tutorialSteps as Record<LocaleKey, Record<string, { text?: string; selector?: string; title?: string }>>)[locale]
+  const maps = tutorialSteps as Record<LocaleKey, Record<string, { text?: string; selector?: string; title?: string }>>
+  const map = maps[locale] ?? maps.en
   return Object.entries(map)
     .sort(([a], [b]) => compareStepKeys(a, b))
     .map(([key, value]) => ({ key, text: value.text ?? '', selector: value.selector ?? '', title: value.title ?? '' }))

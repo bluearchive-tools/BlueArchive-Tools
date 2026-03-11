@@ -1,0 +1,118 @@
+{
+  "appTitle": "BlueArchive Tools",
+  "siteDescription": "收錄蔚藍檔案實用工具與小遊戲的網站。",
+  "auth": {
+    "login": "Log in",
+    "loginWithGoogle": "Sign in with Google",
+    "loginWithDiscord": "Continue with Discord",
+    "logout": "Sign out"
+  },
+  "actions": {
+    "close": "Close"
+  },
+  "messages": {
+    "loginPrompt": "登入後可獲得更完整的使用體驗！"
+  },
+  "bondCalc": {
+    "description": "Estimate required amount, shortage, and farming runs from current/target bond and owned materials.",
+    "studentLabel": "Student",
+    "currentBondLabel": "Current bond",
+    "targetBondLabel": "Target bond",
+    "ownedMaterialsLabel": "Owned materials (optional)",
+    "resultTitle": "Calculation result",
+    "requiredBondPoint": "Required bond points: {value}",
+    "ownedBondPoint": "Owned material bond points: {value}",
+    "shortageBondPoint": "Shortage bond points: {value}",
+    "materialBreakdownTitle": "Required & shortage by material",
+    "requiredCount": "Required: {value}",
+    "shortageCount": "Shortage: {value}",
+    "runRecommendationTitle": "Recommended farming runs",
+    "runLine": "{material}: about {runs} runs at {stage}",
+    "bestRunPlan": "Fastest estimate: about {runs} runs with {material} at {stage}",
+    "materials": {
+      "basic": "Basic gift",
+      "advanced": "Advanced gift",
+      "premium": "Premium gift"
+    }
+  },
+  "levelCalc": {
+    "description": "Estimate required EXP, shortages, and farming runs from current/target level and owned reports.",
+    "currentLevelLabel": "Current level",
+    "targetLevelLabel": "Target level",
+    "ownedMaterialsLabel": "Owned reports (optional)",
+    "resultTitle": "Calculation result",
+    "requiredExp": "Required EXP: {value}",
+    "ownedExp": "Owned report EXP: {value}",
+    "shortageExp": "Shortage EXP: {value}",
+    "materialBreakdownTitle": "Required & shortage by report",
+    "requiredCount": "Required: {value}",
+    "shortageCount": "Shortage: {value}",
+    "runRecommendationTitle": "Recommended farming runs",
+    "runLine": "{material}: about {runs} runs at {stage}",
+    "bestRunPlan": "Fastest estimate: about {runs} runs with {material} at {stage}",
+    "materials": {
+      "reportT1": "Beginner report",
+      "reportT2": "Intermediate report",
+      "reportT3": "Advanced report",
+      "reportT4": "Superior report"
+    }
+  },
+  "trainingPlanning": {
+    "description": "Show current status on the left, edit target status on the right, and automatically calculate required materials.",
+    "studentLabel": "Student",
+    "currentStatusTitle": "Current status (saved data)",
+    "targetStatusTitle": "Target status (editable)",
+    "setMaxButton": "Set all to max (Ctrl/Cmd+click sets bond to 50)",
+    "resultTitle": "Required materials",
+    "sections": {
+      "star": "Star",
+      "level": "Level",
+      "bond": "Bond",
+      "skill": "Skill",
+      "equipment": "Equipment"
+    },
+    "starRequired": "Required Eleph (star): {value}",
+    "uniqueStarRequired": "Required Eleph (unique): {value}",
+    "totalElephRequired": "Total required student Eleph: {value}",
+    "levelRequiredExp": "Required EXP: {value}",
+    "bondRequiredPoint": "Required bond points: {value}",
+    "skillRequiredExp": "Required skill EXP: {value}",
+    "equipRequiredExp": "Required equipment EXP: {value}",
+    "materialsLine": "Estimated materials (T1/T2/T3/T4): {t1} / {t2} / {t3} / {t4}",
+    "multiPlanTitle": "Multi-student plans",
+    "addPlanButton": "Add student",
+    "removePlanButton": "Remove",
+    "detailButton": "Calculation details",
+    "multiPlanElephTotal": "Total required student Eleph across plans: {value}",
+    "noPlan": "No students have been added yet.",
+    "detailModalTitle": "Detail (Eleph exchange settings)",
+    "detailOwnedEleph": "Owned student Eleph",
+    "detailRate": "Current exchange rate",
+    "detailRemaining": "Remaining exchange count",
+    "detailNeededEleph": "Required student Eleph: {value}",
+    "detailOwnedUsedEleph": "Covered by owned Eleph: {value}",
+    "detailExchangeNeededEleph": "Need to exchange: {value}",
+    "detailRequiredDivine": "Required exchange currency: {value}",
+    "detailUnexchangeableEleph": "Over exchange cap: {value}",
+    "close": "Close",
+    "labels": {
+      "star": "Star",
+      "uniqueStar": "Unique ★",
+      "level": "Level",
+      "bond": "Bond",
+      "equip1": "Equipment 1 Lv",
+      "equip2": "Equipment 2 Lv",
+      "equip3": "Equipment 3 Lv",
+      "exSkill": "EX Skill",
+      "normalSkill": "Normal Skill",
+      "passiveSkill": "Passive Skill",
+      "subSkill": "Sub Skill"
+    },
+    "dashboardTitle": "Training planning dashboard",
+    "dashboardTotalDivine": "Total required exchange currency: {value}",
+    "editPlanButton": "Edit",
+    "backToDashboard": "Back to dashboard",
+    "addPlanModalTitle": "Add a student to plan",
+    "planElephLine": "Need: {student} Eleph x{value} (exchange currency x{divine})"
+  }
+}

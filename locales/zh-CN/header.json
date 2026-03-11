@@ -1,0 +1,25 @@
+{
+  "brand": "BlueArchive Tools",
+  "actions": {
+    "notices": "公告",
+    "settings": "设置",
+    "toggleTheme": "切换主题",
+    "about": "关于本页"
+  },
+  "account": {
+    "label": "账号",
+    "mypage": "用户设置",
+    "userProfile": "用户页面",
+    "signOut": "登出",
+    "signInWithGoogle": "使用 Google 登录",
+    "signInWithDiscord": "使用 Discord 登录"
+  },
+  "locale": {
+    "label": "语言",
+    "ariaLabel": "选择显示语言",
+    "ja": "日本語",
+    "en": "English",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文"
+  }
+}

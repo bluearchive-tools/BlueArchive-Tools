@@ -7,7 +7,7 @@ import rehypeRaw from 'rehype-raw'
 import helpContent from '../../../data/pageHelp.json'
 
 const CUSTOM_HELP_MD_STORAGE_KEY = 'customHelpMarkdown'
-const SUPPORTED_LOCALES = ['ja', 'en'] as const
+const SUPPORTED_LOCALES = ['ja', 'en', 'zh-CN', 'zh-TW'] as const
 
 const markdownComponents = {
   img: ({ alt, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => (

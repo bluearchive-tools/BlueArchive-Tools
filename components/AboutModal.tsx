@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { useTheme } from './ThemeProvider'
 import { useLocale } from 'next-intl'
@@ -25,7 +26,8 @@ export default function AboutModal({ open, onClose, currentPath }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const closeLabel = useMemo(() => (locale === 'ja' ? '閉じる' : 'Close'), [locale])
+  const closeLabel = useMemo(() => (locale === 'ja' ? '閉じる' : locale === 'zh-CN' ? '关闭' : locale === 'zh-TW' ? '關閉' : 'Close'), [locale])
+  const legalLabel = useMemo(() => (locale === 'ja' ? '利用規約・プライバシー' : locale === 'zh-CN' ? '服务条款与隐私政策' : locale === 'zh-TW' ? '服務條款與隱私權政策' : 'Terms & Privacy'), [locale])
 
   useEffect(() => {
     if (open) {
@@ -123,6 +125,11 @@ export default function AboutModal({ open, onClose, currentPath }: Props) {
           <button onClick={onClose} aria-label={closeLabel} className="text-lg leading-none">
             ×
           </button>
+        </div>
+        <div className="mb-2">
+          <Link href="/about" className="text-sm text-blue-600 underline" onClick={onClose}>
+            {legalLabel}
+          </Link>
         </div>
         <div className="space-y-2 overflow-y-auto pr-1">
           {loading && <p className="text-sm text-gray-500 dark:text-gray-300">読み込み中...</p>}

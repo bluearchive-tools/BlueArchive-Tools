@@ -1,0 +1,115 @@
+{
+  "pageTitle": "BlueArchive Tools",
+  "sections": {
+    "students": {
+      "title": "Student management",
+      "description": "Check and edit your student data",
+      "actions": {
+        "view": {
+          "title": "View students",
+          "description": "Display the students you have saved"
+        },
+        "import": {
+          "title": "Import students",
+          "description": "Import student data from screenshots"
+        },
+        "squads": {
+          "title": "Manage squads",
+          "description": "Build and organize squads"
+        }
+      }
+    },
+    "tlTools": {
+      "title": "TL tools (beta)",
+      "description": "Utilities to help you craft timelines",
+      "actions": {
+        "search": {
+          "title": "Search TLs",
+          "description": "Find existing timelines"
+        },
+        "maker": {
+          "title": "TL maker",
+          "description": "Create timelines from scratch"
+        },
+        "makerDev": {
+          "title": "TL maker (dev)",
+          "description": "Try experimental timeline features"
+        },
+        "videoToTl": {
+          "title": "Video to TL",
+          "description": "Generate a timeline from a video"
+        }
+      }
+    },
+    "tools": {
+      "title": "Utilities",
+      "description": "Handy tools for daily play",
+      "actions": {
+        "eventSchedule": {
+          "title": "Event schedule",
+          "description": "Check upcoming events"
+        },
+        "divineCalc": {
+          "title": "Eleph calculator",
+          "description": "Calculate required Elephs"
+        },
+        "bgmPlayer": {
+          "title": "BGM player",
+          "description": "Play Blue Archive BGM tracks"
+        },
+        "bgmDj": {
+          "title": "BGM DJ",
+          "description": "Mix BGM with two decks"
+        },
+        "bondCalc": {
+          "title": "Bond calculator",
+          "description": "Calculate required materials, shortages, and suggested runs for bond leveling"
+        },
+        "trainingPlanning": {
+          "title": "Training planning",
+          "description": "Access star, bond, and level planning calculators in one place"
+        },
+        "levelCalc": {
+          "title": "Level calculator",
+          "description": "Calculate required reports and run estimates for leveling"
+        },
+        "studentImage": {
+          "title": "Student Image Maker",
+          "description": "Generate PNG/GIF student icons with attack-type frame and stars"
+        },
+        "momotalkSimulator": {
+          "title": "Momotalk simulator",
+          "description": "Simulate a Momotalk-style chat screen"
+        },
+        "storyEditor": {
+          "title": "Story editor",
+          "description": "Create your own story and play it back"
+        }
+      }
+    },
+    "minigames": {
+      "title": "Mini games",
+      "description": "Quick breaks you can play right away",
+      "actions": {
+        "bgmQuiz": {
+          "title": "BGM quiz",
+          "description": "Guess the track name from the hint"
+        }
+      }
+    },
+    "others": {
+      "title": "Others",
+      "description": "Support pages and development-oriented contents",
+      "actions": {
+        "devMemos": {
+          "title": "Development memos",
+          "description": "Browse short notes about updates and implementation ideas"
+        },
+        "baMemos": {
+          "title": "Blue Archive info memos",
+          "description": "Browse short notes about Blue Archive information"
+        }
+      }
+    }
+  }
+}

@@ -18,6 +18,8 @@
     "label": "Language",
     "ariaLabel": "Select display language",
     "ja": "日本語",
-    "en": "English"
+    "en": "English",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文"
   }
 }
