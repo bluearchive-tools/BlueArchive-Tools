@@ -39,6 +39,14 @@ type StudentJsonLike = {
   aliases: string[]
 }
 
+type BaseStats = {
+  hp: number
+  attack: number
+  defense: number
+  heal: number
+  range: number
+}
+
 const TYPE_MAP: Record<string, string> = {
   TANK: 'タンク',
   TANKER: 'タンク',
@@ -73,6 +81,24 @@ function extractByLabel($: cheerio.CheerioAPI, label: string) {
   return normalizeText(row.find('td').first().text())
 }
 
+function extractNumbersFromSkillText(text: string) {
+  const matched = text.replaceAll(',', '').match(/-?\d+(?:\.\d+)?/g) ?? []
+  return matched.map((value) => Number(value))
+}
+
+function buildSkillValuesByLevel(levelEffects: string[]) {
+  const matrix = levelEffects.map((effect) => extractNumbersFromSkillText(effect))
+  const width = matrix.reduce((max, row) => Math.max(max, row.length), 0)
+  const values: Record<string, number[]> = {}
+
+  for (let col = 0; col < width; col += 1) {
+    const key = `value${col + 1}`
+    values[key] = matrix.map((row) => row[col] ?? 0)
+  }
+
+  return values
+}
+
 function parseSkillTableRows(rows: string[][]): { base: SkillBlock; plus: SkillBlock | null } {
   const titleRow = rows[0] ?? []
   const headerRow = rows[1] ?? []
@@ -88,16 +114,16 @@ function parseSkillTableRows(rows: string[][]): { base: SkillBlock; plus: SkillB
   const baseEffectIndex = effectColumnIndexes[0] ?? 1
   const plusEffectIndex = effectColumnIndexes[1] ?? -1
 
-  const baseText = normalizeText(dataRows[0]?.[baseEffectIndex] ?? '')
-  const plusText = plusEffectIndex >= 0 ? normalizeText(dataRows[0]?.[plusEffectIndex] ?? '') : ''
+  const baseLevelEffects = dataRows.map((row) => normalizeText(row[baseEffectIndex] ?? ''))
+  const plusLevelEffects = plusEffectIndex >= 0 ? dataRows.map((row) => normalizeText(row[plusEffectIndex] ?? '')) : []
 
   const base: SkillBlock = {
     title: baseTitle,
-    text: baseText,
-    values: {},
+    text: baseLevelEffects[0] ?? '',
+    values: buildSkillValuesByLevel(baseLevelEffects),
   }
 
-  if (!plusTitle && !plusText) {
+  if (!plusTitle && plusLevelEffects.length === 0) {
     return { base, plus: null }
   }
 
@@ -105,8 +131,8 @@ function parseSkillTableRows(rows: string[][]): { base: SkillBlock; plus: SkillB
     base,
     plus: {
       title: plusTitle || `${baseTitle}+`,
-      text: plusText,
-      values: {},
+      text: plusLevelEffects[0] ?? '',
+      values: buildSkillValuesByLevel(plusLevelEffects),
     },
   }
 }
@@ -168,16 +194,39 @@ function extractTextLine(source: string, label: string) {
   return normalizeText(source.match(re)?.[1] ?? '')
 }
 
-function extractSkillSectionFromProxy(source: string, label: string) {
-  const start = source.indexOf(label)
-  if (start < 0) return null
-  const next = source.slice(start + label.length).search(/(?:\n|\r)#+\s*(?:EX|ノーマル|パッシブ|サブ)スキル/)
-  const end = next >= 0 ? start + label.length + next : Math.min(source.length, start + 5000)
+function extractSectionByHeading(source: string, heading: string) {
+  const start = source.indexOf(heading)
+  if (start < 0) return ''
+  const rest = source.slice(start + heading.length)
+  const nextHeadingOffset = rest.search(/(?:\n|\r)#+\s*[^\n]+/)
+  const end = nextHeadingOffset >= 0 ? start + heading.length + nextHeadingOffset : source.length
   return source.slice(start, end)
 }
 
+function parseProxyTableRow(line: string) {
+  const cells = line.split('|').map((cell) => normalizeText(cell))
+  while (cells.length > 0 && cells[0] === '') cells.shift()
+  while (cells.length > 0 && cells[cells.length - 1] === '') cells.pop()
+  return cells
+}
+
+function extractSkillSectionFromProxy(source: string, label: string) {
+  const section = extractSectionByHeading(source, label)
+  if (!section) return null
+
+  const rows = section
+    .split('\n')
+    .map((line) => normalizeText(line))
+    .filter((line) => line.includes('|'))
+    .map((line) => parseProxyTableRow(line))
+    .filter((cells) => cells.length >= 2)
+
+  if (rows.length < 2) return null
+  return parseSkillTableRows(rows)
+}
+
 function extractSkillsFromProxyText(source: string): Record<string, SkillBlock> {
-  const map: Array<{ heading: string; key: string; plusKey: string }> = [
+  const mapping: Array<{ heading: string; key: string; plusKey: string }> = [
     { heading: 'EXスキル', key: 'ex', plusKey: 'exPlus' },
     { heading: 'ノーマルスキル', key: 'normal', plusKey: 'normalPlus' },
     { heading: 'パッシブスキル', key: 'passive', plusKey: 'passivePlus' },
@@ -186,19 +235,9 @@ function extractSkillsFromProxyText(source: string): Record<string, SkillBlock> 
 
   const result: Record<string, SkillBlock> = {}
 
-  for (const item of map) {
-    const section = extractSkillSectionFromProxy(source, item.heading)
-    if (!section) continue
-
-    const rows = section
-      .split('\n')
-      .map((line) => normalizeText(line))
-      .filter((line) => line.includes('|'))
-      .map((line) => line.split('|').map((cell) => normalizeText(cell)).filter((cell) => cell !== ''))
-      .filter((cells) => cells.length >= 2)
-
-    if (rows.length < 2) continue
-    const parsed = parseSkillTableRows(rows)
+  for (const item of mapping) {
+    const parsed = extractSkillSectionFromProxy(source, item.heading)
+    if (!parsed) continue
     result[item.key] = parsed.base
     if (parsed.plus) result[item.plusKey] = parsed.plus
   }
@@ -249,7 +288,6 @@ async function requestText(url: string, headers: Record<string, string>) {
   return { ok: response.ok, status: response.status, text }
 }
 
-
 function extractUniqueWeaponFromHtml($: cheerio.CheerioAPI) {
   const heading = $('h2, h3').filter((_, el) => normalizeText($(el).text()).startsWith('固有武器')).first()
   if (!heading.length) return { name: '', hp: 0, attack: 0, heal: 0 }
@@ -262,9 +300,12 @@ function extractUniqueWeaponFromHtml($: cheerio.CheerioAPI) {
 
   let lv1Index = 1
   rows.each((_, row) => {
-    const cells = $(row).find('th,td').toArray().map((cell) => normalizeText($(cell).text()))
-    const idx = cells.findIndex((cell) => /Lv\.?1/i.test(cell))
-    if (idx >= 0) lv1Index = idx
+    const cells = $(row)
+      .find('th,td')
+      .toArray()
+      .map((cell) => normalizeText($(cell).text()))
+    const index = cells.findIndex((cell) => /Lv\.?1/i.test(cell))
+    if (index >= 0) lv1Index = index
   })
 
   const readLv1 = (label: string) => {
@@ -272,7 +313,10 @@ function extractUniqueWeaponFromHtml($: cheerio.CheerioAPI) {
       .filter((_, tr) => normalizeText($(tr).find('th,td').first().text()).includes(label))
       .first()
     if (!row.length) return 0
-    const cells = row.find('th,td').toArray().map((cell) => normalizeText($(cell).text()))
+    const cells = row
+      .find('th,td')
+      .toArray()
+      .map((cell) => normalizeText($(cell).text()))
     return parseNumber(cells[lv1Index] ?? '')
   }
 
@@ -292,13 +336,12 @@ function extractUniqueWeaponFromProxyText(source: string) {
   const end = Math.min(source.length, lvHeaderIndex + 1600)
   const chunk = source.slice(start, end)
 
-  const nameMatch = chunk.match(new RegExp('\\|\\s*([^|\\n]+?)\\s*\\|\\s*\\|\\s*---'))
+  const nameMatch = chunk.match(/\|\s*([^|\n]+?)\s*\|\s*\|\s*---/)
   const name = normalizeText(nameMatch?.[1] ?? '')
 
   const pick = (label: string) => {
     const re = new RegExp(`\\|\\s*${label}\\s*\\|\\s*(-?\\d+(?:,\\d+)*)\\s*\\|`)
-    const matched = chunk.match(re)
-    return parseNumber(matched?.[1] ?? '')
+    return parseNumber(chunk.match(re)?.[1] ?? '')
   }
 
   return {
@@ -309,6 +352,65 @@ function extractUniqueWeaponFromProxyText(source: string) {
   }
 }
 
+function extractBaseStatsFromHtml($: cheerio.CheerioAPI): BaseStats {
+  const heading = $('h3')
+    .filter((_, el) => normalizeText($(el).text()).startsWith('ステータス(初期値/MAX値)'))
+    .first()
+
+  if (!heading.length) {
+    return {
+      hp: parseNumber(extractByLabel($, 'HP')),
+      attack: parseNumber(extractByLabel($, '攻撃力')),
+      defense: parseNumber(extractByLabel($, '防御力')),
+      heal: parseNumber(extractByLabel($, '治癒力')),
+      range: parseNumber(extractByLabel($, '射程距離') || extractByLabel($, '射程')),
+    }
+  }
+
+  const table = heading.nextAll('div.ie5').first().find('table.style_table').first()
+  if (!table.length) {
+    return { hp: 0, attack: 0, defense: 0, heal: 0, range: 0 }
+  }
+
+  const read = (label: string) => {
+    const row = table
+      .find('tr')
+      .filter((_, tr) => normalizeText($(tr).find('th,td').first().text()).includes(label))
+      .first()
+    if (!row.length) return 0
+    const cells = row.find('th,td').toArray().map((cell) => normalizeText($(cell).text()))
+    for (let i = 1; i < cells.length; i += 1) {
+      if (cells[i] && cells[i] !== '-') return parseNumber(cells[i])
+    }
+    return 0
+  }
+
+  return {
+    hp: read('HP'),
+    attack: read('攻撃力'),
+    defense: read('防御力'),
+    heal: read('治癒力'),
+    range: read('射程距離') || read('射程'),
+  }
+}
+
+function extractBaseStatsFromProxyText(source: string): BaseStats {
+  const section = extractSectionByHeading(source, 'ステータス(初期値/MAX値)')
+  const target = section || source
+
+  const pick = (label: string) => {
+    const re = new RegExp(`\\|\\s*${label}\\s*\\|\\s*([^|\\n]+)\\|`)
+    return parseNumber(target.match(re)?.[1] ?? '')
+  }
+
+  return {
+    hp: pick('HP'),
+    attack: pick('攻撃力'),
+    defense: pick('防御力'),
+    heal: pick('治癒力'),
+    range: pick('射程距離') || pick('射程'),
+  }
+}
 
 function parseFromHtml(html: string) {
   const $ = cheerio.load(html)
@@ -331,11 +433,13 @@ function parseFromHtml(html: string) {
   student.cost = parseNumber(extractByLabel($, 'コスト'))
   student.normalInterval = parseNumber(extractByLabel($, '通常攻撃'))
   student.skills = extractSkillsFromHtml($)
-  student.hp = parseNumber(extractByLabel($, 'HP'))
-  student.attack = parseNumber(extractByLabel($, '攻撃力'))
-  student.defense = parseNumber(extractByLabel($, '防御力'))
-  student.heal = parseNumber(extractByLabel($, '治癒力'))
-  student.range = parseNumber(extractByLabel($, '射程距離') || extractByLabel($, '射程'))
+
+  const baseStats = extractBaseStatsFromHtml($)
+  student.hp = baseStats.hp
+  student.attack = baseStats.attack
+  student.defense = baseStats.defense
+  student.heal = baseStats.heal
+  student.range = baseStats.range
   student.uniqueWeapon = extractUniqueWeaponFromHtml($)
 
   return student
@@ -354,7 +458,13 @@ function parseFromProxyText(text: string) {
   student.position = POSITION_MAP[extractTextLine(text, 'ポジション').toUpperCase()] ?? 'BACK'
   student.cost = parseNumber(extractTextLine(text, 'コスト'))
   student.skills = extractSkillsFromProxyText(text)
-  student.range = parseNumber(extractTextLine(text, '射程距離') || extractTextLine(text, '射程'))
+
+  const baseStats = extractBaseStatsFromProxyText(text)
+  student.hp = baseStats.hp
+  student.attack = baseStats.attack
+  student.defense = baseStats.defense
+  student.heal = baseStats.heal
+  student.range = baseStats.range
   student.uniqueWeapon = extractUniqueWeaponFromProxyText(text)
 
   return student
