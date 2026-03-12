@@ -73,18 +73,94 @@ function extractByLabel($: cheerio.CheerioAPI, label: string) {
   return normalizeText(row.find('td').first().text())
 }
 
-function extractSkillBlock($: cheerio.CheerioAPI, label: string): SkillBlock {
-  const row = $('tr')
-    .filter((_, el) => normalizeText($(el).find('th').first().text()).includes(label))
-    .first()
-  if (!row.length) return EMPTY_SKILL
+function parseSkillTableRows(rows: string[][]): { base: SkillBlock; plus: SkillBlock | null } {
+  const titleRow = rows[0] ?? []
+  const headerRow = rows[1] ?? []
+  const dataRows = rows.filter((row) => /^\d+$/.test(row[0] ?? ''))
 
-  const td = row.find('td').first()
-  return {
-    title: normalizeText(td.find('strong').first().text() || td.find('b').first().text()),
-    text: normalizeText(td.text()),
+  const effectColumnIndexes = headerRow
+    .map((header, index) => ({ header, index }))
+    .filter((item) => item.header.includes('効果'))
+    .map((item) => item.index)
+
+  const baseTitle = normalizeText(titleRow[1] ?? '')
+  const plusTitle = normalizeText(titleRow[2] ?? '')
+  const baseEffectIndex = effectColumnIndexes[0] ?? 1
+  const plusEffectIndex = effectColumnIndexes[1] ?? -1
+
+  const baseText = normalizeText(dataRows[0]?.[baseEffectIndex] ?? '')
+  const plusText = plusEffectIndex >= 0 ? normalizeText(dataRows[0]?.[plusEffectIndex] ?? '') : ''
+
+  const base: SkillBlock = {
+    title: baseTitle,
+    text: baseText,
     values: {},
   }
+
+  if (!plusTitle && !plusText) {
+    return { base, plus: null }
+  }
+
+  return {
+    base,
+    plus: {
+      title: plusTitle || `${baseTitle}+`,
+      text: plusText,
+      values: {},
+    },
+  }
+}
+
+function extractSkillTableByHeading($: cheerio.CheerioAPI, headingLabel: string) {
+  const heading = $('h3')
+    .filter((_, el) => normalizeText($(el).text()).startsWith(headingLabel))
+    .first()
+
+  if (!heading.length) return null
+
+  const container = heading.nextAll('div.ie5').first()
+  if (!container.length) return null
+
+  const table = container.find('table.style_table').first()
+  if (!table.length) return null
+
+  const rows = table
+    .find('tr')
+    .toArray()
+    .map((row) =>
+      $(row)
+        .find('th,td')
+        .toArray()
+        .map((cell) => normalizeText($(cell).text())),
+    )
+
+  if (rows.length < 2) return null
+  return parseSkillTableRows(rows)
+}
+
+function extractSkillsFromHtml($: cheerio.CheerioAPI): Record<string, SkillBlock> {
+  const skills: Record<string, SkillBlock> = {}
+
+  const ex = extractSkillTableByHeading($, 'EXスキル')
+  const normal = extractSkillTableByHeading($, 'ノーマルスキル')
+  const passive = extractSkillTableByHeading($, 'パッシブスキル')
+  const sub = extractSkillTableByHeading($, 'サブスキル')
+
+  if (ex) skills.ex = ex.base
+  if (normal) {
+    skills.normal = normal.base
+    if (normal.plus) skills.normalPlus = normal.plus
+  }
+  if (passive) {
+    skills.passive = passive.base
+    if (passive.plus) skills.passivePlus = passive.plus
+  }
+  if (sub) {
+    skills.sub = sub.base
+    if (sub.plus) skills.subPlus = sub.plus
+  }
+
+  return skills
 }
 
 function extractTextLine(source: string, label: string) {
@@ -92,19 +168,42 @@ function extractTextLine(source: string, label: string) {
   return normalizeText(source.match(re)?.[1] ?? '')
 }
 
-function extractSkillFromText(source: string, label: string): SkillBlock {
-  const idx = source.indexOf(label)
-  if (idx < 0) return EMPTY_SKILL
-  const chunk = source.slice(idx, idx + 700)
-  const lines = chunk
-    .split('\n')
-    .map((line) => normalizeText(line))
-    .filter(Boolean)
-  return {
-    title: lines[1] ?? '',
-    text: lines.slice(1, 4).join(' / '),
-    values: {},
+function extractSkillSectionFromProxy(source: string, label: string) {
+  const start = source.indexOf(label)
+  if (start < 0) return null
+  const next = source.slice(start + label.length).search(/(?:\n|\r)#+\s*(?:EX|ノーマル|パッシブ|サブ)スキル/)
+  const end = next >= 0 ? start + label.length + next : Math.min(source.length, start + 5000)
+  return source.slice(start, end)
+}
+
+function extractSkillsFromProxyText(source: string): Record<string, SkillBlock> {
+  const map: Array<{ heading: string; key: string; plusKey: string }> = [
+    { heading: 'EXスキル', key: 'ex', plusKey: 'exPlus' },
+    { heading: 'ノーマルスキル', key: 'normal', plusKey: 'normalPlus' },
+    { heading: 'パッシブスキル', key: 'passive', plusKey: 'passivePlus' },
+    { heading: 'サブスキル', key: 'sub', plusKey: 'subPlus' },
+  ]
+
+  const result: Record<string, SkillBlock> = {}
+
+  for (const item of map) {
+    const section = extractSkillSectionFromProxy(source, item.heading)
+    if (!section) continue
+
+    const rows = section
+      .split('\n')
+      .map((line) => normalizeText(line))
+      .filter((line) => line.includes('|'))
+      .map((line) => line.split('|').map((cell) => normalizeText(cell)).filter((cell) => cell !== ''))
+      .filter((cells) => cells.length >= 2)
+
+    if (rows.length < 2) continue
+    const parsed = parseSkillTableRows(rows)
+    result[item.key] = parsed.base
+    if (parsed.plus) result[item.plusKey] = parsed.plus
   }
+
+  return result
 }
 
 function makeStudentBase(name: string): StudentJsonLike {
@@ -231,12 +330,7 @@ function parseFromHtml(html: string) {
 
   student.cost = parseNumber(extractByLabel($, 'コスト'))
   student.normalInterval = parseNumber(extractByLabel($, '通常攻撃'))
-  student.skills = {
-    ex: extractSkillBlock($, 'EXスキル'),
-    normal: extractSkillBlock($, 'ノーマルスキル'),
-    passive: extractSkillBlock($, 'パッシブスキル'),
-    sub: extractSkillBlock($, 'サブスキル'),
-  }
+  student.skills = extractSkillsFromHtml($)
   student.hp = parseNumber(extractByLabel($, 'HP'))
   student.attack = parseNumber(extractByLabel($, '攻撃力'))
   student.defense = parseNumber(extractByLabel($, '防御力'))
@@ -259,12 +353,7 @@ function parseFromProxyText(text: string) {
   student.characterType = TYPE_MAP[classText] ?? 'アタッカー'
   student.position = POSITION_MAP[extractTextLine(text, 'ポジション').toUpperCase()] ?? 'BACK'
   student.cost = parseNumber(extractTextLine(text, 'コスト'))
-  student.skills = {
-    ex: extractSkillFromText(text, 'EXスキル'),
-    normal: extractSkillFromText(text, 'ノーマルスキル'),
-    passive: extractSkillFromText(text, 'パッシブスキル'),
-    sub: extractSkillFromText(text, 'サブスキル'),
-  }
+  student.skills = extractSkillsFromProxyText(text)
   student.range = parseNumber(extractTextLine(text, '射程距離') || extractTextLine(text, '射程'))
   student.uniqueWeapon = extractUniqueWeaponFromProxyText(text)
 
