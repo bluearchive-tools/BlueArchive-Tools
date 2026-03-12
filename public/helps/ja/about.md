@@ -33,7 +33,6 @@ ChatGPT Codexを使用して開発しております。
 
 こちらのDiscordサーバーでサポートを行っております。
 
-
 <iframe
   src="https://discord.com/widget?id=1454408885820592302&theme=dark"
   width="350"

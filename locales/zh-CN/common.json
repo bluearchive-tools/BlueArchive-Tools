@@ -1,0 +1,118 @@
+{
+  "appTitle": "蓝色档案工具",
+  "siteDescription": "有用的 Blue Archive 工具和迷你游戏的集合。",
+  "auth": {
+    "login": "登录",
+    "loginWithGoogle": "使用 Google 登录",
+    "loginWithDiscord": "继续不和谐",
+    "logout": "登出"
+  },
+  "actions": {
+    "close": "关闭"
+  },
+  "messages": {
+    "loginPrompt": "登录以充分利用 BlueArchive 工具！"
+  },
+  "bondCalc": {
+    "description": "根据当前/目标债券和自有材料估计所需数量、短缺和农业运行。",
+    "studentLabel": "学生",
+    "currentBondLabel": "当前债券",
+    "targetBondLabel": "目标债券",
+    "ownedMaterialsLabel": "自有材料（可选）",
+    "resultTitle": "计算结果",
+    "requiredBondPoint": "所需粘合点：{value}",
+    "ownedBondPoint": "拥有的材料粘合点：{value}",
+    "shortageBondPoint": "短缺保证金点：{value}",
+    "materialBreakdownTitle": "按材料划分的需求和短缺",
+    "requiredCount": "必填：{value}",
+    "shortageCount": "短缺：{value}",
+    "runRecommendationTitle": "推荐农耕运行",
+    "runLine": "{material}：大约 {runs} 在 {stage} 运行",
+    "bestRunPlan": "最快估计：大约 {runs} 与 {material} 在 {stage} 运行",
+    "materials": {
+      "basic": "基本礼物",
+      "advanced": "高级礼品",
+      "premium": "优质礼品"
+    }
+  },
+  "levelCalc": {
+    "description": "根据当前/目标水平和拥有的报告估计所需的 EXP、短缺和农业运行。",
+    "currentLevelLabel": "当前级别",
+    "targetLevelLabel": "目标水平",
+    "ownedMaterialsLabel": "拥有的报告（可选）",
+    "resultTitle": "计算结果",
+    "requiredExp": "所需经验：{value}",
+    "ownedExp": "拥有的报告 EXP：{value}",
+    "shortageExp": "短缺经验：{value}",
+    "materialBreakdownTitle": "报告要求和短缺",
+    "requiredCount": "必填：{value}",
+    "shortageCount": "短缺：{value}",
+    "runRecommendationTitle": "推荐农耕运行",
+    "runLine": "{material}：大约 {runs} 在 {stage} 运行",
+    "bestRunPlan": "最快估计：大约 {runs} 与 {material} 在 {stage} 运行",
+    "materials": {
+      "reportT1": "初学者报告",
+      "reportT2": "中间报告",
+      "reportT3": "高级报告",
+      "reportT4": "上级报告"
+    }
+  },
+  "trainingPlanning": {
+    "description": "左侧显示当前状态，右侧编辑目标状态，并自动计算所需材料。",
+    "studentLabel": "学生",
+    "currentStatusTitle": "当前状态（已保存数据）",
+    "targetStatusTitle": "目标状态（可编辑）",
+    "setMaxButton": "将全部设置为最大值（Ctrl/Cmd+单击将键设置为 50）",
+    "resultTitle": "所需材料",
+    "sections": {
+      "star": "星星",
+      "level": "等级",
+      "bond": "纽带",
+      "skill": "技能",
+      "equipment": "设备"
+    },
+    "starRequired": "所需大象（星号）：{value}",
+    "uniqueStarRequired": "所需大象（唯一）：{value}",
+    "totalElephRequired": "所需学生大象总数：{value}",
+    "levelRequiredExp": "所需经验：{value}",
+    "bondRequiredPoint": "所需粘合点：{value}",
+    "skillRequiredExp": "所需技能经验值：{value}",
+    "equipRequiredExp": "所需设备经验值：{value}",
+    "materialsLine": "预计材料 (T1/T2/T3/T4)： {t1} / {t2} / {t3} / {t4}",
+    "multiPlanTitle": "多学生计划",
+    "addPlanButton": "添加学生",
+    "removePlanButton": "消除",
+    "detailButton": "计算详情",
+    "multiPlanElephTotal": "跨计划所需的学生大象总数：{value}",
+    "noPlan": "尚未添加任何学生。",
+    "detailModalTitle": "详细信息（大象交换设置）",
+    "detailOwnedEleph": "拥有的学生Eleph",
+    "detailRate": "目前汇率",
+    "detailRemaining": "剩余兑换数量",
+    "detailNeededEleph": "所需学生大象：{value}",
+    "detailOwnedUsedEleph": "由拥有的大象覆盖：{value}",
+    "detailExchangeNeededEleph": "需要兑换：{value}",
+    "detailRequiredDivine": "所需兑换货币：{value}",
+    "detailUnexchangeableEleph": "超额兑换上限：{value}",
+    "close": "关闭",
+    "labels": {
+      "star": "星星",
+      "uniqueStar": "独特★",
+      "level": "等级",
+      "bond": "纽带",
+      "equip1": "装备1级",
+      "equip2": "装备2级",
+      "equip3": "装备3级",
+      "exSkill": "EX技能",
+      "normalSkill": "普通技能",
+      "passiveSkill": "被动技能",
+      "subSkill": "子技能"
+    },
+    "dashboardTitle": "培训计划仪表板",
+    "dashboardTotalDivine": "所需兑换货币总计：{value}",
+    "editPlanButton": "编辑",
+    "backToDashboard": "返回仪表板",
+    "addPlanModalTitle": "将学生添加到计划中",
+    "planElephLine": "需要：{student}大象x{value}（兑换货币x{divine}）"
+  }
+}

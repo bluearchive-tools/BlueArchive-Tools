@@ -1,5 +1,6 @@
 {
   "appTitle": "BlueArchive Tools",
+  "siteDescription": "A collection of useful Blue Archive tools and mini games.",
   "auth": {
     "login": "Log in",
     "loginWithGoogle": "Sign in with Google",

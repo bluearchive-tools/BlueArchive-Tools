@@ -1,5 +1,6 @@
 {
   "appTitle": "BlueArchive Tools",
+  "siteDescription": "ブルーアーカイブ向けの便利ツールやミニゲームをまとめたサイトです。",
   "auth": {
     "login": "ログイン",
     "loginWithGoogle": "Googleでログイン",

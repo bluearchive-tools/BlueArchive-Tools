@@ -8,7 +8,7 @@ Currently viewing: {{path}}
 
 ## Community Discord
 
-Chat with other players, share findings, and get updates.
+Join our Discord community for support and updates.
 
 <iframe
   src="https://discord.com/widget?id=1454408885820592302&theme=dark"

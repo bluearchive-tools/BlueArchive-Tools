@@ -1,0 +1,35 @@
+{
+  "prompt": {
+    "title": "開始教程？",
+    "body": "我們可以引導您瞭解本網站的基礎知識。",
+    "yes": "是",
+    "no": "否"
+  },
+  "tutorial": {
+    "title": "站點教程",
+    "skip": "跳過動畫",
+    "back": "後退",
+    "next": "下一頁",
+    "finish": "完成日期",
+    "stepLabel": "步驟{current} / {total}"
+  },
+  "steps": {
+    "step1": {
+      "title": "主頁",
+      "text": "您可以從主螢幕選擇工具和迷你遊戲。",
+      "selector": "[data-tutorial = \"home-main\"]"
+    },
+    "step2": {
+      "title": "學員",
+      "text": "使用此部分獲取與學生相關的功能。",
+      "selector": "[data-tutorial = \"home-links\"]"
+    },
+    "step3": {
+      "title": "工具",
+      "text": "從此處開啟計算器和實用程式工具。",
+      "selector": "[data-tutorial = \"tools-links\"]"
+    },
+    "step4": "使用BGM DJ與兩個卡組和一個交叉推子混合。",
+    "step5": "玩BGM測驗迷你遊戲，快速挑戰。"
+  }
+}
