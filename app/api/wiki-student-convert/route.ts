@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
+import type { Element } from 'domhandler'
 
 type SkillBlock = {
   title: string
@@ -603,9 +604,9 @@ function applyCustomMappings(student: StudentJsonLike, $: cheerio.CheerioAPI, ma
   return next as StudentJsonLike
 }
 
-function buildCssPath($: cheerio.CheerioAPI, element: cheerio.Element) {
+function buildCssPath($: cheerio.CheerioAPI, element: Element) {
   const parts: string[] = []
-  let current: cheerio.Element | undefined = element
+  let current: Element | undefined = element
 
   while (current && current.type === 'tag') {
     const node = $(current)
@@ -626,7 +627,7 @@ function buildCssPath($: cheerio.CheerioAPI, element: cheerio.Element) {
     const siblings = $(parent)
       .children(tagName)
       .toArray()
-      .filter((item): item is cheerio.Element => item.type === 'tag')
+      .filter((item): item is Element => item.type === 'tag')
 
     const index = siblings.findIndex((item) => item === current) + 1
     parts.unshift(`${tagName}:nth-of-type(${Math.max(1, index)})`)
@@ -641,8 +642,8 @@ function buildStructureFromHtml($: cheerio.CheerioAPI) {
   const fields: InspectField[] = []
 
   if (startHeading.length) {
-    const scopeElements: cheerio.Element[] = []
-    let cursor = startHeading.next()[0] as cheerio.Element | undefined
+    const scopeElements: Element[] = []
+    let cursor = startHeading.next()[0] as Element | undefined
 
     while (cursor) {
       const node = $(cursor)
@@ -651,7 +652,7 @@ function buildStructureFromHtml($: cheerio.CheerioAPI) {
       if (tag === 'h2' && headingText.startsWith('コメントフォーム')) break
 
       scopeElements.push(cursor)
-      cursor = node.next()[0] as cheerio.Element | undefined
+      cursor = node.next()[0] as Element | undefined
     }
 
     const scoped = $('<div></div>')
