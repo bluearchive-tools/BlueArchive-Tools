@@ -31,6 +31,14 @@ ChatGPT Codexを使用して開発しております。
 
 ## サポート用Discordサーバー
 
-Discord埋め込み表示は環境により利用できないため、以下の招待リンクをご利用ください。
+こちらのDiscordサーバーでサポートを行っております。
 
-- https://discord.gg/bluearchive-tools
+<iframe
+  src="https://discord.com/widget?id=1454408885820592302&theme=dark"
+  width="350"
+  height="500"
+  title="Discordコミュニティウィジェット"
+  allowtransparency="true"
+  frameborder="0"
+  sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+></iframe>
