@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
-import type { Element } from 'domhandler'
+import type { AnyNode, Element, ParentNode } from 'domhandler'
 
 type SkillBlock = {
   title: string
@@ -97,7 +97,7 @@ function parseNumber(value: string) {
 
 function extractByLabel($: cheerio.CheerioAPI, label: string) {
   const row = $('tr')
-    .filter((_, el) => normalizeText($(el).find('th').first().text()).includes(label))
+    .filter((_: number, el: Element) => normalizeText($(el).find('th').first().text()).includes(label))
     .first()
   if (!row.length) return ''
   return normalizeText(row.find('td').first().text())
@@ -149,7 +149,7 @@ function buildSkillTemplateAndValues(levelEffects: string[]) {
   const replacementByIndex = new Map<number, string>()
 
   for (let i = 0; i < firstTokens.length; i += 1) {
-    const seq = rows.map((row) => row[i]?.value).filter((v): v is number => Number.isFinite(v))
+    const seq = rows.map((row: NumberToken[]) => row[i]?.value).filter((v): v is number => Number.isFinite(v))
     if (seq.length !== rows.length) continue
 
     const isConstant = seq.every((value) => value === seq[0])
@@ -196,9 +196,9 @@ function parseSkillTableRows(rows: string[][]): { base: SkillBlock; plus: SkillB
     return normalizeText(row[row.length - 1] ?? '')
   }
 
-  const baseLevelEffects = dataRows.map((row) => readEffect(row, baseEffectIndex)).filter(Boolean)
+  const baseLevelEffects = dataRows.map((row: string[]) => readEffect(row, baseEffectIndex)).filter(Boolean)
   const plusLevelEffects =
-    plusEffectIndex >= 0 ? dataRows.map((row) => readEffect(row, plusEffectIndex)).filter(Boolean) : []
+    plusEffectIndex >= 0 ? dataRows.map((row: string[]) => readEffect(row, plusEffectIndex)).filter(Boolean) : []
 
   const baseExtracted = buildSkillTemplateAndValues(baseLevelEffects)
   const base: SkillBlock = {
@@ -224,7 +224,7 @@ function parseSkillTableRows(rows: string[][]): { base: SkillBlock; plus: SkillB
 
 function extractSkillTableByHeading($: cheerio.CheerioAPI, headingLabel: string) {
   const heading = $('h3')
-    .filter((_, el) => normalizeText($(el).text()).startsWith(headingLabel))
+    .filter((_: number, el: Element) => normalizeText($(el).text()).startsWith(headingLabel))
     .first()
 
   if (!heading.length) return null
@@ -238,11 +238,11 @@ function extractSkillTableByHeading($: cheerio.CheerioAPI, headingLabel: string)
   const rows = table
     .find('tr')
     .toArray()
-    .map((row) =>
+    .map((row: AnyNode) =>
       $(row)
         .find('th,td')
         .toArray()
-        .map((cell) => normalizeText($(cell).text())),
+        .map((cell: AnyNode) => normalizeText($(cell).text())),
     )
 
   if (rows.length < 2) return null
@@ -374,7 +374,7 @@ async function requestText(url: string, headers: Record<string, string>) {
 }
 
 function extractUniqueWeaponFromHtml($: cheerio.CheerioAPI) {
-  const heading = $('h2, h3').filter((_, el) => normalizeText($(el).text()).startsWith('固有武器')).first()
+  const heading = $('h2, h3').filter((_: number, el: Element) => normalizeText($(el).text()).startsWith('固有武器')).first()
   if (!heading.length) return { name: '', hp: 0, attack: 0, heal: 0 }
 
   const table = heading.nextAll('table').first()
@@ -384,24 +384,24 @@ function extractUniqueWeaponFromHtml($: cheerio.CheerioAPI) {
   const name = normalizeText(rows.first().find('th,td').first().text())
 
   let lv1Index = 1
-  rows.each((_, row) => {
+  rows.each((_: number, row: Element) => {
     const cells = $(row)
       .find('th,td')
       .toArray()
-      .map((cell) => normalizeText($(cell).text()))
-    const index = cells.findIndex((cell) => /Lv\.?1/i.test(cell))
+      .map((cell: AnyNode) => normalizeText($(cell).text()))
+    const index = cells.findIndex((cell: string) => /Lv\.?1/i.test(cell))
     if (index >= 0) lv1Index = index
   })
 
   const readLv1 = (label: string) => {
     const row = rows
-      .filter((_, tr) => normalizeText($(tr).find('th,td').first().text()).includes(label))
+      .filter((_: number, tr: Element) => normalizeText($(tr).find('th,td').first().text()).includes(label))
       .first()
     if (!row.length) return 0
     const cells = row
       .find('th,td')
       .toArray()
-      .map((cell) => normalizeText($(cell).text()))
+      .map((cell: AnyNode) => normalizeText($(cell).text()))
     return parseNumber(cells[lv1Index] ?? '')
   }
 
@@ -439,7 +439,7 @@ function extractUniqueWeaponFromProxyText(source: string) {
 
 function extractBaseStatsFromHtml($: cheerio.CheerioAPI): BaseStats {
   const heading = $('h3')
-    .filter((_, el) => normalizeText($(el).text()).startsWith('ステータス(初期値/MAX値)'))
+    .filter((_: number, el: Element) => normalizeText($(el).text()).startsWith('ステータス(初期値/MAX値)'))
     .first()
 
   if (!heading.length) {
@@ -460,10 +460,10 @@ function extractBaseStatsFromHtml($: cheerio.CheerioAPI): BaseStats {
   const read = (label: string) => {
     const row = table
       .find('tr')
-      .filter((_, tr) => normalizeText($(tr).find('th,td').first().text()).includes(label))
+      .filter((_: number, tr: Element) => normalizeText($(tr).find('th,td').first().text()).includes(label))
       .first()
     if (!row.length) return 0
-    const cells = row.find('th,td').toArray().map((cell) => normalizeText($(cell).text()))
+    const cells = row.find('th,td').toArray().map((cell: AnyNode) => normalizeText($(cell).text()))
     for (let i = 1; i < cells.length; i += 1) {
       if (cells[i] && cells[i] !== '-') return parseNumber(cells[i])
     }
@@ -618,7 +618,7 @@ function buildCssPath($: cheerio.CheerioAPI, element: Element) {
       break
     }
 
-    const parentNode = current.parent
+    const parentNode: ParentNode | null = current.parent
     const parent: Element | null = parentNode !== null && parentNode.type === 'tag' ? parentNode : null
     if (!parent) {
       parts.unshift(tagName)
@@ -628,9 +628,9 @@ function buildCssPath($: cheerio.CheerioAPI, element: Element) {
     const siblings = $(parent)
       .children(tagName)
       .toArray()
-      .filter((item): item is Element => item.type === 'tag')
+      .filter((item: AnyNode): item is Element => item.type === 'tag')
 
-    const index = siblings.findIndex((item) => item === current) + 1
+    const index = siblings.findIndex((item: Element) => item === current) + 1
     parts.unshift(`${tagName}:nth-of-type(${Math.max(1, index)})`)
     current = parent
   }
@@ -639,7 +639,7 @@ function buildCssPath($: cheerio.CheerioAPI, element: Element) {
 }
 
 function buildStructureFromHtml($: cheerio.CheerioAPI) {
-  const startHeading = $('h2').filter((_, el) => normalizeText($(el).text()).startsWith('基本情報')).first()
+  const startHeading = $('h2').filter((_: number, el: Element) => normalizeText($(el).text()).startsWith('基本情報')).first()
   const fields: InspectField[] = []
 
   if (startHeading.length) {
@@ -659,7 +659,7 @@ function buildStructureFromHtml($: cheerio.CheerioAPI) {
     const scoped = $('<div></div>')
     for (const el of scopeElements) scoped.append($(el).clone())
 
-    scoped.find('tr').each((_, tr) => {
+    scoped.find('tr').each((_: number, tr: Element) => {
       const row = $(tr)
       const th = row.find('th').first()
       const td = row.find('td').first()
