@@ -8,4 +8,6 @@ BlueArchive Tools 是由社群驅動的實用工具集合，協助你規劃、�
 
 ## 社群 Discord
 
-歡迎加入 Discord 與其他玩家交流、分享與取得更新。
+部分環境下 Discord 嵌入可能無法使用，請改用邀請連結：
+
+- https://discord.gg/bluearchive-tools

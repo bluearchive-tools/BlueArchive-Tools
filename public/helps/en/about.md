@@ -8,14 +8,6 @@ Currently viewing: {{path}}
 
 ## Community Discord
 
-Chat with other players, share findings, and get updates.
+Discord embed may not be available in some environments. Please use this invite link instead:
 
-<iframe
-  src="https://discord.com/widget?id=1454408885820592302&theme=dark"
-  width="350"
-  height="500"
-  title="Discord community widget"
-  allowtransparency="true"
-  frameborder="0"
-  sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
-></iframe>
+- https://discord.gg/bluearchive-tools
