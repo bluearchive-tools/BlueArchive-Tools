@@ -150,6 +150,67 @@ async function requestText(url: string, headers: Record<string, string>) {
   return { ok: response.ok, status: response.status, text }
 }
 
+
+function extractUniqueWeaponFromHtml($: cheerio.CheerioAPI) {
+  const heading = $('h2, h3').filter((_, el) => normalizeText($(el).text()).startsWith('固有武器')).first()
+  if (!heading.length) return { name: '', hp: 0, attack: 0, heal: 0 }
+
+  const table = heading.nextAll('table').first()
+  if (!table.length) return { name: '', hp: 0, attack: 0, heal: 0 }
+
+  const rows = table.find('tr')
+  const name = normalizeText(rows.first().find('th,td').first().text())
+
+  let lv1Index = 1
+  rows.each((_, row) => {
+    const cells = $(row).find('th,td').toArray().map((cell) => normalizeText($(cell).text()))
+    const idx = cells.findIndex((cell) => /Lv\.?1/i.test(cell))
+    if (idx >= 0) lv1Index = idx
+  })
+
+  const readLv1 = (label: string) => {
+    const row = rows
+      .filter((_, tr) => normalizeText($(tr).find('th,td').first().text()).includes(label))
+      .first()
+    if (!row.length) return 0
+    const cells = row.find('th,td').toArray().map((cell) => normalizeText($(cell).text()))
+    return parseNumber(cells[lv1Index] ?? '')
+  }
+
+  return {
+    name,
+    hp: readLv1('最大HP'),
+    attack: readLv1('攻撃力'),
+    heal: readLv1('治癒力'),
+  }
+}
+
+function extractUniqueWeaponFromProxyText(source: string) {
+  const lvHeaderIndex = source.indexOf('Lv.1 | Lv.30')
+  if (lvHeaderIndex < 0) return { name: '', hp: 0, attack: 0, heal: 0 }
+
+  const start = Math.max(0, lvHeaderIndex - 1200)
+  const end = Math.min(source.length, lvHeaderIndex + 1600)
+  const chunk = source.slice(start, end)
+
+  const nameMatch = chunk.match(new RegExp('\\|\\s*([^|\\n]+?)\\s*\\|\\s*\\|\\s*---'))
+  const name = normalizeText(nameMatch?.[1] ?? '')
+
+  const pick = (label: string) => {
+    const re = new RegExp(`\\|\\s*${label}\\s*\\|\\s*(-?\\d+(?:,\\d+)*)\\s*\\|`)
+    const matched = chunk.match(re)
+    return parseNumber(matched?.[1] ?? '')
+  }
+
+  return {
+    name,
+    hp: pick('最大HP'),
+    attack: pick('攻撃力'),
+    heal: pick('治癒力'),
+  }
+}
+
+
 function parseFromHtml(html: string) {
   const $ = cheerio.load(html)
   const ogTitle = $('meta[property="og:title"]').attr('content') ?? ''
@@ -180,7 +241,8 @@ function parseFromHtml(html: string) {
   student.attack = parseNumber(extractByLabel($, '攻撃力'))
   student.defense = parseNumber(extractByLabel($, '防御力'))
   student.heal = parseNumber(extractByLabel($, '治癒力'))
-  student.range = parseNumber(extractByLabel($, '射程'))
+  student.range = parseNumber(extractByLabel($, '射程距離') || extractByLabel($, '射程'))
+  student.uniqueWeapon = extractUniqueWeaponFromHtml($)
 
   return student
 }
@@ -203,6 +265,8 @@ function parseFromProxyText(text: string) {
     passive: extractSkillFromText(text, 'パッシブスキル'),
     sub: extractSkillFromText(text, 'サブスキル'),
   }
+  student.range = parseNumber(extractTextLine(text, '射程距離') || extractTextLine(text, '射程'))
+  student.uniqueWeapon = extractUniqueWeaponFromProxyText(text)
 
   return student
 }
