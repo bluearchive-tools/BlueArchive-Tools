@@ -54,6 +54,13 @@ type MappingRule = {
   valueType?: 'text' | 'number' | 'json'
 }
 
+type InspectField = {
+  label: string
+  selector: string
+  value: string
+  html: string
+}
+
 type NumberToken = {
   value: number
   raw: string
@@ -596,46 +603,100 @@ function applyCustomMappings(student: StudentJsonLike, $: cheerio.CheerioAPI, ma
   return next as StudentJsonLike
 }
 
-function buildStructureFromHtml($: cheerio.CheerioAPI) {
-  const headings = $('h2, h3')
-    .toArray()
-    .map((el) => {
-      const heading = $(el)
-      const text = normalizeText(heading.text())
-      const nextTable = heading.nextAll('table.style_table').first()
-      const rows = nextTable
-        .find('tr')
-        .toArray()
-        .slice(0, 3)
-        .map((row) =>
-          $(row)
-            .find('th,td')
-            .toArray()
-            .map((cell) => normalizeText($(cell).text())),
-        )
-      return { heading: text, selector: (el as unknown as { name?: string }).name ?? 'unknown', previewRows: rows }
-    })
-    .filter((item) => item.heading)
+function buildCssPath($: cheerio.CheerioAPI, element: cheerio.Element) {
+  const parts: string[] = []
+  let current: cheerio.Element | undefined = element
 
-  const labels = $('th')
-    .toArray()
-    .map((el) => normalizeText($(el).text()))
-    .filter(Boolean)
+  while (current && current.type === 'tag') {
+    const node = $(current)
+    const id = node.attr('id')
+    const tagName = current.tagName?.toLowerCase() ?? 'div'
+
+    if (id) {
+      parts.unshift(`#${id}`)
+      break
+    }
+
+    const parent = current.parent && current.parent.type === 'tag' ? current.parent : null
+    if (!parent) {
+      parts.unshift(tagName)
+      break
+    }
+
+    const siblings = $(parent)
+      .children(tagName)
+      .toArray()
+      .filter((item): item is cheerio.Element => item.type === 'tag')
+
+    const index = siblings.findIndex((item) => item === current) + 1
+    parts.unshift(`${tagName}:nth-of-type(${Math.max(1, index)})`)
+    current = parent
+  }
+
+  return parts.join(' > ')
+}
+
+function buildStructureFromHtml($: cheerio.CheerioAPI) {
+  const startHeading = $('h2').filter((_, el) => normalizeText($(el).text()).startsWith('基本情報')).first()
+  const fields: InspectField[] = []
+
+  if (startHeading.length) {
+    const scopeElements: cheerio.Element[] = []
+    let cursor = startHeading.next()[0] as cheerio.Element | undefined
+
+    while (cursor) {
+      const node = $(cursor)
+      const tag = cursor.tagName?.toLowerCase() ?? ''
+      const headingText = tag in { h2: 1, h3: 1 } ? normalizeText(node.text()) : ''
+      if (tag === 'h2' && headingText.startsWith('コメントフォーム')) break
+
+      scopeElements.push(cursor)
+      cursor = node.next()[0] as cheerio.Element | undefined
+    }
+
+    const scoped = $('<div></div>')
+    for (const el of scopeElements) scoped.append($(el).clone())
+
+    scoped.find('tr').each((_, tr) => {
+      const row = $(tr)
+      const th = row.find('th').first()
+      const td = row.find('td').first()
+      if (!th.length || !td.length) return
+
+      const label = normalizeText(th.text())
+      const value = normalizeText(td.text())
+      if (!label || !value) return
+
+      const selector = buildCssPath($, td[0])
+      fields.push({
+        label,
+        selector,
+        value,
+        html: (td.prop('outerHTML') as string | undefined) ?? '',
+      })
+    })
+  }
+
+  const uniqueFields = fields.filter((field, index) => {
+    return fields.findIndex((item) => item.label === field.label && item.selector === field.selector) === index
+  })
 
   return {
     title: normalizeText($('title').text()),
-    labels: Array.from(new Set(labels)).slice(0, 200),
-    headings: headings.slice(0, 80),
+    fieldCount: uniqueFields.length,
+    fields: uniqueFields,
+    rawHtml: $.html(),
   }
 }
 
 function buildStructureFromProxyText(source: string) {
   const lines = source.split('\n').map((line) => normalizeText(line)).filter(Boolean)
-  const headingLines = lines.filter((line) => /^#+\s*/.test(line)).slice(0, 120)
-  const tableLines = lines.filter((line) => line.includes('|')).slice(0, 200)
+  const headingLines = lines.filter((line) => /^#+\s*/.test(line)).slice(0, 200)
+  const tableLines = lines.filter((line) => line.includes('|')).slice(0, 300)
   return {
     headingLines,
     tableLines,
+    rawText: source,
   }
 }
 
