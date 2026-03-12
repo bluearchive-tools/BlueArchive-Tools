@@ -656,27 +656,52 @@ function buildStructureFromHtml($: cheerio.CheerioAPI) {
       cursor = node.next()[0] as Element | undefined
     }
 
-    const scoped = $('<div></div>')
-    for (const el of scopeElements) scoped.append($(el).clone())
+    const rowElements: Element[] = []
+    const seenRows = new Set<Element>()
 
-    scoped.find('tr').each((_: number, tr: Element) => {
-      const row = $(tr)
+    for (const scopeElement of scopeElements) {
+      const tagName = scopeElement.tagName?.toLowerCase() ?? ''
+      if (tagName === 'tr') {
+        if (!seenRows.has(scopeElement)) {
+          seenRows.add(scopeElement)
+          rowElements.push(scopeElement)
+        }
+        continue
+      }
+
+      const nestedRows = $(scopeElement)
+        .find('tr')
+        .toArray()
+        .filter((node: AnyNode): node is Element => node.type === 'tag')
+
+      for (const rowElement of nestedRows) {
+        if (seenRows.has(rowElement)) continue
+        seenRows.add(rowElement)
+        rowElements.push(rowElement)
+      }
+    }
+
+    for (const rowElement of rowElements) {
+      const row = $(rowElement)
       const th = row.find('th').first()
       const td = row.find('td').first()
-      if (!th.length || !td.length) return
+      if (!th.length || !td.length) continue
+
+      const tdNode = td.get(0)
+      if (!tdNode || tdNode.type !== 'tag') continue
 
       const label = normalizeText(th.text())
       const value = normalizeText(td.text())
-      if (!label || !value) return
+      if (!label || !value) continue
 
-      const selector = buildCssPath($, td[0])
+      const selector = buildCssPath($, tdNode)
       fields.push({
         label,
         selector,
         value,
         html: (td.prop('outerHTML') as string | undefined) ?? '',
       })
-    })
+    }
   }
 
   const uniqueFields = fields.filter((field, index) => {
