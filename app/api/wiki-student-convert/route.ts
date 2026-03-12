@@ -47,6 +47,13 @@ type BaseStats = {
   range: number
 }
 
+type MappingRule = {
+  path: string
+  selector: string
+  attr?: string
+  valueType?: 'text' | 'number' | 'json'
+}
+
 type NumberToken = {
   value: number
   raw: string
@@ -540,9 +547,110 @@ function parseFromProxyText(text: string) {
   return student
 }
 
+
+function setByPath(target: Record<string, unknown>, path: string, value: unknown) {
+  const parts = path.split('.').map((part) => part.trim()).filter(Boolean)
+  if (parts.length === 0) return
+
+  let cursor: Record<string, unknown> = target
+  for (let i = 0; i < parts.length - 1; i += 1) {
+    const key = parts[i]
+    const next = cursor[key]
+    if (!next || typeof next !== 'object' || Array.isArray(next)) {
+      cursor[key] = {}
+    }
+    cursor = cursor[key] as Record<string, unknown>
+  }
+  cursor[parts[parts.length - 1]] = value
+}
+
+function applyCustomMappings(student: StudentJsonLike, $: cheerio.CheerioAPI, mappings: MappingRule[]) {
+  const next = JSON.parse(JSON.stringify(student)) as Record<string, unknown>
+
+  for (const mapping of mappings) {
+    if (!mapping.path || !mapping.selector) continue
+    const element = $(mapping.selector).first()
+    if (!element.length) continue
+
+    const raw = mapping.attr ? element.attr(mapping.attr) ?? '' : element.text()
+    const text = normalizeText(raw)
+    const mode = mapping.valueType ?? 'text'
+
+    if (mode === 'number') {
+      setByPath(next, mapping.path, parseNumber(text))
+      continue
+    }
+
+    if (mode === 'json') {
+      try {
+        setByPath(next, mapping.path, JSON.parse(text) as unknown)
+      } catch {
+        // ignore invalid json
+      }
+      continue
+    }
+
+    setByPath(next, mapping.path, text)
+  }
+
+  return next as StudentJsonLike
+}
+
+function buildStructureFromHtml($: cheerio.CheerioAPI) {
+  const headings = $('h2, h3')
+    .toArray()
+    .map((el) => {
+      const heading = $(el)
+      const text = normalizeText(heading.text())
+      const nextTable = heading.nextAll('table.style_table').first()
+      const rows = nextTable
+        .find('tr')
+        .toArray()
+        .slice(0, 3)
+        .map((row) =>
+          $(row)
+            .find('th,td')
+            .toArray()
+            .map((cell) => normalizeText($(cell).text())),
+        )
+      return { heading: text, selector: (el as unknown as { name?: string }).name ?? 'unknown', previewRows: rows }
+    })
+    .filter((item) => item.heading)
+
+  const labels = $('th')
+    .toArray()
+    .map((el) => normalizeText($(el).text()))
+    .filter(Boolean)
+
+  return {
+    title: normalizeText($('title').text()),
+    labels: Array.from(new Set(labels)).slice(0, 200),
+    headings: headings.slice(0, 80),
+  }
+}
+
+function buildStructureFromProxyText(source: string) {
+  const lines = source.split('\n').map((line) => normalizeText(line)).filter(Boolean)
+  const headingLines = lines.filter((line) => /^#+\s*/.test(line)).slice(0, 120)
+  const tableLines = lines.filter((line) => line.includes('|')).slice(0, 200)
+  return {
+    headingLines,
+    tableLines,
+  }
+}
+
+
 export async function POST(request: NextRequest) {
-  const body = (await request.json().catch(() => null)) as { url?: string } | null
+  const body = (await request.json().catch(() => null)) as {
+    url?: string
+    mode?: 'convert' | 'inspect'
+    mappings?: MappingRule[]
+  } | null
+
   const rawUrl = body?.url?.trim() ?? ''
+  const mode = body?.mode ?? 'convert'
+  const mappings = Array.isArray(body?.mappings) ? body?.mappings : []
+
   if (!rawUrl) return NextResponse.json({ message: 'url is required' }, { status: 400 })
 
   let url: URL
@@ -564,7 +672,16 @@ export async function POST(request: NextRequest) {
     })
 
     if (direct.ok) {
-      return NextResponse.json({ student: parseFromHtml(direct.text), source: 'direct' })
+      const $ = cheerio.load(direct.text)
+      if (mode === 'inspect') {
+        return NextResponse.json({ source: 'direct', structure: buildStructureFromHtml($) })
+      }
+
+      let student = parseFromHtml(direct.text)
+      if (mappings.length > 0) {
+        student = applyCustomMappings(student, $, mappings)
+      }
+      return NextResponse.json({ student, source: 'direct' })
     }
 
     const proxyUrl = `https://r.jina.ai/http://${url.host}${url.pathname}${url.search}`
@@ -577,7 +694,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: `fetch failed: direct=${direct.status}, proxy=${proxy.status}` }, { status: 502 })
     }
 
-    return NextResponse.json({ student: parseFromProxyText(proxy.text), source: 'proxy' })
+    if (mode === 'inspect') {
+      return NextResponse.json({ source: 'proxy', structure: buildStructureFromProxyText(proxy.text) })
+    }
+
+    const student = parseFromProxyText(proxy.text)
+    if (mappings.length > 0) {
+      return NextResponse.json({
+        student,
+        source: 'proxy',
+        warning: 'proxyモードではCSS selectorのカスタムマッピングは適用されません',
+      })
+    }
+
+    return NextResponse.json({ student, source: 'proxy' })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'convert failed'
     return NextResponse.json({ message }, { status: 500 })
