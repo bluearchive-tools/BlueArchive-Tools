@@ -618,7 +618,8 @@ function buildCssPath($: cheerio.CheerioAPI, element: Element) {
       break
     }
 
-    const parent = current.parent && current.parent.type === 'tag' ? current.parent : null
+    const parentNode = current.parent
+    const parent: Element | null = parentNode !== null && parentNode.type === 'tag' ? parentNode : null
     if (!parent) {
       parts.unshift(tagName)
       break
