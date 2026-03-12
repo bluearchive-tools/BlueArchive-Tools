@@ -117,6 +117,9 @@
     },
     "story-editor": {
       "title": "Story Editor"
+    },
+    "wiki-student-converter": {
+      "title": "Wikiru student converter"
     }
   },
   "ja": {
@@ -237,6 +240,9 @@
     },
     "story-editor": {
       "title": "ストーリーエディタ"
+    },
+    "wiki-student-converter": {
+      "title": "Wikiru生徒変換"
     }
   }
 }

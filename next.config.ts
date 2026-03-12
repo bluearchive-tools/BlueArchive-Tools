@@ -48,7 +48,7 @@ const nextConfig: NextConfig = {
           {
             key: 'Content-Security-Policy',
             value:
-              "default-src 'self'; img-src 'self' data: https: blob:; media-src 'self' https: blob:; style-src 'self' 'unsafe-inline' https://accounts.google.com https://morisawafonts.net; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com https://static.cloudflareinsights.com https://vercel.live; connect-src 'self' https: wss:; font-src 'self' data: https:; frame-src 'self' https://accounts.google.com https://www.youtube.com https://player.bilibili.com https://vercel.live; object-src 'none'; base-uri 'self'; frame-ancestors 'self'",
+              "default-src 'self'; img-src 'self' data: https: blob:; media-src 'self' https: blob:; style-src 'self' 'unsafe-inline' https://accounts.google.com https://morisawafonts.net; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com https://static.cloudflareinsights.com https://vercel.live; connect-src 'self' https: wss:; font-src 'self' data: https:; frame-src 'self' https://accounts.google.com https://www.youtube.com https://player.bilibili.com https://vercel.live https://discord.com https://*.discord.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'",
           },
         ],
       },

@@ -27,6 +27,8 @@ type Options = {
   blinkHoldMs: number
   levelXRatio: number
   levelYRatio: number
+  starNumberXRatio: number
+  starNumberYRatio: number
   badgeMarginRight: number
   badgeMarginBottom: number
 }
@@ -74,8 +76,10 @@ const BASE: Options = {
   borderBottom: 45,
   skewRatio: 0.11,
   blinkHoldMs: 18000,
-  levelXRatio: 0.11,
-  levelYRatio: 0.02,
+  levelXRatio: 0.12,
+  levelYRatio: 0.04,
+  starNumberXRatio: 0,
+  starNumberYRatio: 0.08,
   badgeMarginRight: 3,
   badgeMarginBottom: 3,
 }
@@ -265,6 +269,8 @@ function drawStarWithNumber(
   value: number,
   fontFamily: string,
   alpha = 1,
+  numberXRatio = 0,
+  numberYRatio = 0.08,
 ) {
   ctx.save()
   ctx.globalAlpha = alpha
@@ -283,8 +289,8 @@ function drawStarWithNumber(
   ctx.lineJoin = 'round'
   ctx.stroke()
 
-  const centerX = x
-  const centerY = y + radius * 0.08
+  const centerX = x + radius * numberXRatio
+  const centerY = y + radius * numberYRatio
   const facetOuter: Point[] = []
   for (let i = 0; i < 5; i += 1) {
     const angle = -Math.PI / 2 + (Math.PI * 2 * i) / 5
@@ -503,10 +509,36 @@ function drawCard(
   const starRadius = size * 0.12
   const starX = size * 0.15
   const starY = frameTop + frameHeight - Math.max(starRadius * 1.18, size * 0.12)
-  drawStarWithNumber(ctx, starX, starY, starRadius, '#fde047', '#f59e0b', '#92400e', options.stars, starNumberFontFamily)
+  drawStarWithNumber(
+    ctx,
+    starX,
+    starY,
+    starRadius,
+    '#fde047',
+    '#f59e0b',
+    '#92400e',
+    options.stars,
+    starNumberFontFamily,
+    1,
+    options.starNumberXRatio,
+    options.starNumberYRatio,
+  )
 
   if (options.unique >= 1 && blueStarAlpha > 0) {
-    drawStarWithNumber(ctx, starX, starY, starRadius, '#7dd3fc', '#3b82f6', '#1e3a8a', options.unique, starNumberFontFamily, blueStarAlpha)
+    drawStarWithNumber(
+      ctx,
+      starX,
+      starY,
+      starRadius,
+      '#7dd3fc',
+      '#3b82f6',
+      '#1e3a8a',
+      options.unique,
+      starNumberFontFamily,
+      blueStarAlpha,
+      options.starNumberXRatio,
+      options.starNumberYRatio,
+    )
   }
 
   if (shouldWarn) {
@@ -870,6 +902,16 @@ export default function StudentImageToolPage() {
           <label className="space-y-1 text-sm">
             <span className="font-semibold">Lv位置Y比率</span>
             <input type="number" min={-0.05} max={0.3} step={0.005} value={options.levelYRatio} onChange={(event) => setOptions((prev) => ({ ...prev, levelYRatio: clamp(Number(event.target.value), -0.05, 0.3) }))} className="w-full rounded border px-3 py-2" />
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="font-semibold">星数字位置X比率</span>
+            <input type="number" min={-0.5} max={0.5} step={0.01} value={options.starNumberXRatio} onChange={(event) => setOptions((prev) => ({ ...prev, starNumberXRatio: clamp(Number(event.target.value), -0.5, 0.5) }))} className="w-full rounded border px-3 py-2" />
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="font-semibold">星数字位置Y比率</span>
+            <input type="number" min={-0.5} max={0.5} step={0.01} value={options.starNumberYRatio} onChange={(event) => setOptions((prev) => ({ ...prev, starNumberYRatio: clamp(Number(event.target.value), -0.5, 0.5) }))} className="w-full rounded border px-3 py-2" />
           </label>
         </div>
 
