@@ -47,6 +47,13 @@ type BaseStats = {
   range: number
 }
 
+type NumberToken = {
+  value: number
+  raw: string
+  start: number
+  end: number
+}
+
 const TYPE_MAP: Record<string, string> = {
   TANK: 'タンク',
   TANKER: 'タンク',
@@ -81,22 +88,77 @@ function extractByLabel($: cheerio.CheerioAPI, label: string) {
   return normalizeText(row.find('td').first().text())
 }
 
-function extractNumbersFromSkillText(text: string) {
-  const matched = text.replaceAll(',', '').match(/-?\d+(?:\.\d+)?/g) ?? []
-  return matched.map((value) => Number(value))
+function parseTokens(text: string): NumberToken[] {
+  const regex = /-?\d+(?:\.\d+)?/g
+  const tokens: NumberToken[] = []
+  let match = regex.exec(text)
+  while (match) {
+    const raw = match[0] ?? ''
+    const start = match.index
+    tokens.push({
+      raw,
+      value: Number(raw),
+      start,
+      end: start + raw.length,
+    })
+    match = regex.exec(text)
+  }
+  return tokens
 }
 
-function buildSkillValuesByLevel(levelEffects: string[]) {
-  const matrix = levelEffects.map((effect) => extractNumbersFromSkillText(effect))
-  const width = matrix.reduce((max, row) => Math.max(max, row.length), 0)
-  const values: Record<string, number[]> = {}
+function inferValueKey(text: string, token: NumberToken) {
+  const before = text.slice(Math.max(0, token.start - 18), token.start)
+  const after = text.slice(token.end, Math.min(text.length, token.end + 18))
+  const around = `${before}${token.raw}${after}`
+  const hasPercent = after.trimStart().startsWith('%') || after.trimStart().startsWith('％')
 
-  for (let col = 0; col < width; col += 1) {
-    const key = `value${col + 1}`
-    values[key] = matrix.map((row) => row[col] ?? 0)
+  if (around.includes('会心ダメージ率')) return 'critdamage'
+  if (around.includes('会心率')) return 'crit'
+  if (around.includes('会心ダメージ')) return hasPercent ? 'critdamage' : 'critdamagenum'
+  if (around.includes('会心値')) return hasPercent ? 'crit' : 'critnum'
+  if (around.includes('特攻')) return hasPercent ? 'type' : 'typenum'
+  if (around.includes('ダメージ')) return 'damage'
+  if (around.includes('攻撃力')) return hasPercent ? 'attack' : 'attacknum'
+  return hasPercent ? 'value' : 'valuenum'
+}
+
+function buildSkillTemplateAndValues(levelEffects: string[]) {
+  const normalized = levelEffects.map((line) => normalizeText(line))
+  const first = normalized[0] ?? ''
+  const firstTokens = parseTokens(first)
+  if (firstTokens.length === 0) return { text: first, values: {} as Record<string, number[]> }
+
+  const rows = normalized.map((line) => parseTokens(line))
+  const values: Record<string, number[]> = {}
+  const keyUsage: Record<string, number> = {}
+  const replacementByIndex = new Map<number, string>()
+
+  for (let i = 0; i < firstTokens.length; i += 1) {
+    const seq = rows.map((row) => row[i]?.value).filter((v): v is number => Number.isFinite(v))
+    if (seq.length !== rows.length) continue
+
+    const isConstant = seq.every((value) => value === seq[0])
+    if (isConstant) continue
+
+    const base = inferValueKey(first, firstTokens[i])
+    keyUsage[base] = (keyUsage[base] ?? 0) + 1
+    const key = keyUsage[base] === 1 ? base : `${base}${keyUsage[base]}`
+
+    values[key] = seq
+    replacementByIndex.set(i, `{${key}}`)
   }
 
-  return values
+  let cursor = 0
+  let output = ''
+  for (let i = 0; i < firstTokens.length; i += 1) {
+    const token = firstTokens[i]
+    output += first.slice(cursor, token.start)
+    output += replacementByIndex.get(i) ?? token.raw
+    cursor = token.end
+  }
+  output += first.slice(cursor)
+
+  return { text: output, values }
 }
 
 function parseSkillTableRows(rows: string[][]): { base: SkillBlock; plus: SkillBlock | null } {
@@ -114,25 +176,33 @@ function parseSkillTableRows(rows: string[][]): { base: SkillBlock; plus: SkillB
   const baseEffectIndex = effectColumnIndexes[0] ?? 1
   const plusEffectIndex = effectColumnIndexes[1] ?? -1
 
-  const baseLevelEffects = dataRows.map((row) => normalizeText(row[baseEffectIndex] ?? ''))
-  const plusLevelEffects = plusEffectIndex >= 0 ? dataRows.map((row) => normalizeText(row[plusEffectIndex] ?? '')) : []
+  const readEffect = (row: string[], index: number) => {
+    if (index >= 0 && row[index]) return normalizeText(row[index])
+    return normalizeText(row[row.length - 1] ?? '')
+  }
 
+  const baseLevelEffects = dataRows.map((row) => readEffect(row, baseEffectIndex)).filter(Boolean)
+  const plusLevelEffects =
+    plusEffectIndex >= 0 ? dataRows.map((row) => readEffect(row, plusEffectIndex)).filter(Boolean) : []
+
+  const baseExtracted = buildSkillTemplateAndValues(baseLevelEffects)
   const base: SkillBlock = {
     title: baseTitle,
-    text: baseLevelEffects[0] ?? '',
-    values: buildSkillValuesByLevel(baseLevelEffects),
+    text: baseExtracted.text,
+    values: baseExtracted.values,
   }
 
   if (!plusTitle && plusLevelEffects.length === 0) {
     return { base, plus: null }
   }
 
+  const plusExtracted = buildSkillTemplateAndValues(plusLevelEffects)
   return {
     base,
     plus: {
       title: plusTitle || `${baseTitle}+`,
-      text: plusLevelEffects[0] ?? '',
-      values: buildSkillValuesByLevel(plusLevelEffects),
+      text: plusExtracted.text,
+      values: plusExtracted.values,
     },
   }
 }
