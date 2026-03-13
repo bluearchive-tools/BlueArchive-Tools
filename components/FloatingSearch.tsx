@@ -76,6 +76,7 @@ const SEARCH_PAGES: SearchEntry[] = [
   { label: 'BGMプレイヤー', path: '/tools/bgm-player', keywords: ['bgm', 'music', 'player'] },
   { label: 'BGM DJ', path: '/tools/bgm-dj', keywords: ['bgm', 'dj', 'music'] },
   { label: '生徒画像作成', path: '/tools/student-image', keywords: ['student', 'image', 'icon', 'gif'] },
+  { label: 'Wiki生徒変換', path: '/tools/wiki-student-converter', keywords: ['wiki', 'students', 'json', 'wikiru'] },
   { label: 'デコレーション', path: '/decorations', keywords: ['decoration'] },
   { label: 'ヘルプ(ローカル)', path: '/help/editor', keywords: ['help'] },
 ]

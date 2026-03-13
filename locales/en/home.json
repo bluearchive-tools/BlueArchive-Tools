@@ -84,6 +84,10 @@
         "storyEditor": {
           "title": "Story editor",
           "description": "Create your own story and play it back"
+        },
+        "wikiStudentConverter": {
+          "title": "Wiki student converter",
+          "description": "Generate a students.json template from a wikiru URL"
         }
       }
     },

@@ -84,6 +84,10 @@
         "storyEditor": {
           "title": "故事编辑器",
           "description": "创建自己的故事并回放"
+        },
+        "wikiStudentConverter": {
+          "title": "Wiki学生转换",
+          "description": "从wikiru URL生成students.json模板"
         }
       }
     },

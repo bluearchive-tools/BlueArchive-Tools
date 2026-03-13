@@ -84,6 +84,10 @@
         "storyEditor": {
           "title": "ストーリーエディタ",
           "description": "自分でストーリーを作成して再生できます"
+        },
+        "wikiStudentConverter": {
+          "title": "Wiki生徒変換",
+          "description": "wikiru URLからstudents.json形式の雛形を生成"
         }
       }
     },
