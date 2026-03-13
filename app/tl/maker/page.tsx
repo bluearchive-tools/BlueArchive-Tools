@@ -3723,8 +3723,8 @@ function resolveBuffText(
       onClick={hidePopups}
     >
       <div className="flex items-center gap-2 mb-2">
-        <h1 className="text-xl font-bold">TLメーカー（dev）</h1>
-        <PageHelpButton pageKey="tl-maker-dev" />
+        <h1 className="text-xl font-bold">TLメーカー</h1>
+        <PageHelpButton pageKey="tl-maker" />
       </div>
       {globalCss && <style jsx global>{globalCss}</style>}
       {toasts.length > 0 && (
@@ -3937,7 +3937,7 @@ function resolveBuffText(
           close={() => setShowEnemyModal(false)}
         />
       )}
-      <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} currentPath="/tl/maker-dev" />
+      <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} currentPath="/tl/maker" />
 
       {showCreateModal && (
         <div

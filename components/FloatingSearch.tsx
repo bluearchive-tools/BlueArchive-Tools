@@ -62,7 +62,6 @@ const SEARCH_PAGES: SearchEntry[] = [
   { label: 'ホーム', path: '/', keywords: ['home', 'top'] },
   { label: '設定', path: '/mypage', keywords: ['settings', 'user'] },
   { label: 'TLメーカー', path: '/tl/maker', keywords: ['tl', 'maker'] },
-  { label: 'TLメーカー(dev)', path: '/tl/maker-dev', keywords: ['tl', 'maker', 'dev'] },
   { label: 'TL検索', path: '/tl/search', keywords: ['tl', 'search'] },
   { label: 'TL取得', path: '/tl/update', keywords: ['tl', 'update'] },
   { label: 'TLダメージ計算', path: '/tl/damage', keywords: ['tl', 'damage'] },
