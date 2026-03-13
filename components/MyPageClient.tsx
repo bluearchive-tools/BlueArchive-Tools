@@ -2403,7 +2403,7 @@ export default function MyPageClient({
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold">ショートカットキー</h3>
-                <p className="text-sm text-gray-500">TLメーカーdev・検索バー・ヘルプ/チュートリアルのショートカットキーを設定します</p>
+                <p className="text-sm text-gray-500">TLメーカー・検索バー・ヘルプ/チュートリアルのショートカットキーを設定します</p>
               </div>
               <button
                 type="button"
