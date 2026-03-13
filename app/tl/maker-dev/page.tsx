@@ -1858,6 +1858,14 @@ useEffect(() => {
   const projectKey = (gid: string | null, idx: number) =>
     gid ? `tlMakerProject_${gid}_${idx}` : 'tlMakerProject_default'
 
+  const getSquadMembers = (group: SquadGroup | null, index: number): string[] => {
+    const fallback = Array(6).fill('') as string[]
+    if (!group) return fallback
+    const squad = group.squads[index]
+    if (!squad) return fallback
+    return [...squad.strikers, ...squad.specials]
+  }
+
   const loadProject = (
     gid: string | null,
     idx: number,
@@ -2071,9 +2079,9 @@ useEffect(() => {
       const gid = m ? m[1] : null
       const idx = m ? parseInt(m[2]) : 0
       const g = gid ? parsed.find((gr) => gr.id === gid) || null : null
+      const members = getSquadMembers(g, idx)
       setSelectedGroup(g)
       setSquadIndex(idx)
-      const members = g ? [...g.squads[idx].strikers, ...g.squads[idx].specials] : Array(6).fill('')
       const loaded = loadProject(gid, idx, members)
       if (!loaded) addNormalSkills(members)
       setInitialized(true)
@@ -4246,6 +4254,7 @@ function resolveBuffText(
                     if (members.some((m) => m)) {
                       addNormalSkills(members)
                     }
+                    setSelectedGroup(null)
                     setSquadIndex(0)
                   } else if (selectedGroup) {
                     const sq = selectedGroup.squads[0]
