@@ -8,6 +8,7 @@ import { faBilibili, faYoutube } from '@fortawesome/free-brands-svg-icons'
 import { Timeline } from '../../../types/timeline'
 import PageHelpButton from '../../../components/PageHelpButton'
 import StudentSelect from '../../../components/StudentSelect'
+import StudentImageStyleCard from '../../../components/StudentImageStyleCard'
 import {
   compareTlCompatibility,
   parseTlFormation,
@@ -79,6 +80,8 @@ type VideoSettings = {
   ownerUserId?: string | null
   hideTlUntilYoutube?: boolean
 }
+
+type FormationCardStyle = 'student-image' | 'compact'
 
 type EditSquad = {
   strikers: string[]
@@ -198,6 +201,7 @@ export default function TLSearchPage() {
     visibility: VideoVisibility
     allowedUserIds: string[]
     hideTlUntilYoutube: boolean
+    formationCardStyle: FormationCardStyle
   } | null>(null)
   const [youtubeChannelId, setYoutubeChannelId] = useState<string | null>(null)
   const [bilibiliUid, setBilibiliUid] = useState<string | null>(null)
@@ -550,6 +554,8 @@ export default function TLSearchPage() {
               : [],
             hideTlUntilYoutube:
               typeof obj.hideTlUntilYoutube === 'boolean' ? obj.hideTlUntilYoutube : true,
+            formationCardStyle:
+              obj.formationCardStyle === 'compact' ? 'compact' : 'student-image',
           })
         } else {
           setUserTlDefaults({
@@ -558,6 +564,7 @@ export default function TLSearchPage() {
             visibility: 'public',
             allowedUserIds: [],
             hideTlUntilYoutube: true,
+            formationCardStyle: 'student-image',
           })
         }
       }
@@ -1503,6 +1510,8 @@ export default function TLSearchPage() {
     [openTlFormationMembers, ownedStudentStats, studentNameMap]
   )
 
+  const formationCardStyle: FormationCardStyle = userTlDefaults?.formationCardStyle ?? 'student-image'
+
   const visibleTimelines = timelines.filter((t) => {
     const settings = videoSettingsMap[t.videoid]
     if (!settings) return true
@@ -2183,6 +2192,17 @@ export default function TLSearchPage() {
                                   const level = member.level ?? undefined
                                   const star = member.star ?? student?.initialStars ?? 1
                                   const uniqueStar = member.unique_star ?? 0
+                                  if (formationCardStyle === 'student-image') {
+                                    return (
+                                      <StudentImageStyleCard
+                                        key={i}
+                                        student={student}
+                                        memberLevel={level}
+                                        memberStar={star}
+                                        memberUniqueStar={uniqueStar}
+                                      />
+                                    )
+                                  }
                                   const ringColor = ATTACK_TYPE_RING_COLORS[student?.attackType ?? ''] ?? '#64748b'
                                   return (
                                     <div

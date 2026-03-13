@@ -83,6 +83,7 @@ type TlDefaultSettings = {
   visibility: 'public' | 'restricted' | 'private'
   allowedUserIds: string[]
   hideTlUntilYoutube: boolean
+  formationCardStyle: 'student-image' | 'compact'
 }
 
 const detectIsMacPlatform = () => {
@@ -147,6 +148,7 @@ const normalizeTlDefaults = (raw: unknown): TlDefaultSettings => {
     visibility: 'public',
     allowedUserIds: [],
     hideTlUntilYoutube: true,
+    formationCardStyle: 'student-image',
   }
   if (!raw) return defaults
   let parsed: unknown = raw
@@ -171,6 +173,10 @@ const normalizeTlDefaults = (raw: unknown): TlDefaultSettings => {
       : defaults.allowedUserIds,
     hideTlUntilYoutube:
       typeof obj.hideTlUntilYoutube === 'boolean' ? obj.hideTlUntilYoutube : defaults.hideTlUntilYoutube,
+    formationCardStyle:
+      obj.formationCardStyle === 'compact' || obj.formationCardStyle === 'student-image'
+        ? obj.formationCardStyle
+        : defaults.formationCardStyle,
   }
 }
 
@@ -2099,6 +2105,31 @@ export default function MyPageClient({
                   />
                   <span>動画を開くまでTLを非表示にする</span>
                 </label>
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-600">TL検索の編成カード表示デザイン</p>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="tl-default-formation-card-style"
+                      checked={tlDefaults.formationCardStyle === 'student-image'}
+                      onChange={() =>
+                        setTlDefaults((prev) => ({ ...prev, formationCardStyle: 'student-image' }))
+                      }
+                    />
+                    <span>生徒アイコンビューワーと同じデザイン（推奨）</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="tl-default-formation-card-style"
+                      checked={tlDefaults.formationCardStyle === 'compact'}
+                      onChange={() =>
+                        setTlDefaults((prev) => ({ ...prev, formationCardStyle: 'compact' }))
+                      }
+                    />
+                    <span>コンパクトデザイン（旧表示）</span>
+                  </label>
+                </div>
                 <div className="space-y-2">
                   <p className="text-xs text-gray-600">TL検索の公開範囲</p>
                   <label className="flex items-center gap-2">
