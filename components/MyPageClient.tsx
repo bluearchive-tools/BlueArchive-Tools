@@ -385,6 +385,7 @@ export default function MyPageClient({
   const [busy, setBusy] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingSocial, setSavingSocial] = useState(false)
+  const [savingEnvironment, setSavingEnvironment] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [toasts, setToasts] = useState<Array<{ id: number; text: string }>>([])
   const [showUserId, setShowUserId] = useState(false)
@@ -1197,6 +1198,27 @@ export default function MyPageClient({
       return
     }
     setMessage('ソーシャル設定を更新しました')
+  }
+
+  const saveEnvironmentSettings = async () => {
+    if (!session?.user) {
+      setMessage('この設定はログイン後に保存できます。')
+      return
+    }
+    setSavingEnvironment(true)
+    setMessage(null)
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        tl_default_settings: tlDefaults,
+      })
+      .eq('id', session.user.id)
+    setSavingEnvironment(false)
+    if (error) {
+      setMessage(`環境設定の更新に失敗しました: ${error.message}`)
+      return
+    }
+    setMessage('環境設定を更新しました')
   }
 
   const saveProfile = async () => {
@@ -2332,6 +2354,16 @@ export default function MyPageClient({
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={saveEnvironmentSettings}
+                  disabled={savingEnvironment}
+                  className="rounded border border-blue-300 px-3 py-1 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
+                >
+                  {savingEnvironment ? '保存中...' : '環境設定を保存'}
+                </button>
               </div>
             </div>
           </section>
