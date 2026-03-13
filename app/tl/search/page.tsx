@@ -8,6 +8,7 @@ import { faBilibili, faYoutube } from '@fortawesome/free-brands-svg-icons'
 import { Timeline } from '../../../types/timeline'
 import PageHelpButton from '../../../components/PageHelpButton'
 import StudentSelect from '../../../components/StudentSelect'
+import StudentImageStyleCard from '../../../components/StudentImageStyleCard'
 import {
   compareTlCompatibility,
   parseTlFormation,
@@ -31,6 +32,21 @@ interface Student {
   position: string
   exHitDelay?: number
   normalHitDelay?: number
+}
+
+type FormationMember = {
+  id: string
+  name?: string
+  level?: number
+  star?: number
+  unique_star?: number
+}
+
+const ATTACK_TYPE_RING_COLORS: Record<string, string> = {
+  爆発: '#920b05',
+  貫通: '#c08b0b',
+  神秘: '#296c99',
+  振動: '#b060aa',
 }
 
 interface Season {
@@ -64,6 +80,8 @@ type VideoSettings = {
   ownerUserId?: string | null
   hideTlUntilYoutube?: boolean
 }
+
+type FormationCardStyle = 'student-image' | 'compact'
 
 type EditSquad = {
   strikers: string[]
@@ -126,6 +144,44 @@ const parseVideoRef = (videoid: string) => {
 const toStoredVideoId = (platform: 'youtube' | 'bilibili', id: string) =>
   platform === 'bilibili' ? `bili:${id}` : id
 
+const TL_DEFAULT_SETTINGS_STORAGE_KEY = 'app:tlDefaultSettings'
+
+const toFormationNumber = (value: unknown): number | undefined => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined
+  return value
+}
+
+const parseFormationTeams = (formation: string): FormationMember[][] => {
+  if (!formation || formation === '[]') return []
+  try {
+    const parsed = JSON.parse(formation)
+    if (!Array.isArray(parsed)) return []
+    return parsed.map((team): FormationMember[] => {
+      if (!Array.isArray(team)) return []
+      return team
+        .map((member) => {
+          if (typeof member === 'string') {
+            return { id: member }
+          }
+          if (!member || typeof member !== 'object') return null
+          const record = member as Record<string, unknown>
+          const memberId = typeof record.id === 'string' ? record.id : ''
+          if (!memberId) return null
+          return {
+            id: memberId,
+            name: typeof record.name === 'string' ? record.name : undefined,
+            level: toFormationNumber(record.level),
+            star: toFormationNumber(record.star),
+            unique_star: toFormationNumber(record.unique_star),
+          }
+        })
+        .filter((member): member is FormationMember => Boolean(member?.id))
+    })
+  } catch {
+    return []
+  }
+}
+
 export default function TLSearchPage() {
   const session = useSession()
   const supabase = useSupabaseClient()
@@ -147,6 +203,7 @@ export default function TLSearchPage() {
     visibility: VideoVisibility
     allowedUserIds: string[]
     hideTlUntilYoutube: boolean
+    formationCardStyle: FormationCardStyle
   } | null>(null)
   const [youtubeChannelId, setYoutubeChannelId] = useState<string | null>(null)
   const [bilibiliUid, setBilibiliUid] = useState<string | null>(null)
@@ -499,6 +556,8 @@ export default function TLSearchPage() {
               : [],
             hideTlUntilYoutube:
               typeof obj.hideTlUntilYoutube === 'boolean' ? obj.hideTlUntilYoutube : true,
+            formationCardStyle:
+              obj.formationCardStyle === 'compact' ? 'compact' : 'student-image',
           })
         } else {
           setUserTlDefaults({
@@ -507,6 +566,42 @@ export default function TLSearchPage() {
             visibility: 'public',
             allowedUserIds: [],
             hideTlUntilYoutube: true,
+            formationCardStyle: 'student-image',
+          })
+        }
+      } else if (typeof window !== 'undefined') {
+        try {
+          const raw = window.localStorage.getItem(TL_DEFAULT_SETTINGS_STORAGE_KEY)
+          if (raw) {
+            const parsed = JSON.parse(raw) as Record<string, unknown>
+            setUserTlDefaults({
+              includeSquad: typeof parsed.includeSquad === 'boolean' ? parsed.includeSquad : true,
+              allowTl: typeof parsed.allowTl === 'boolean' ? parsed.allowTl : true,
+              visibility:
+                parsed.visibility === 'public' ||
+                parsed.visibility === 'restricted' ||
+                parsed.visibility === 'private'
+                  ? parsed.visibility
+                  : 'public',
+              allowedUserIds: Array.isArray(parsed.allowedUserIds)
+                ? (parsed.allowedUserIds as string[]).filter(Boolean)
+                : [],
+              hideTlUntilYoutube:
+                typeof parsed.hideTlUntilYoutube === 'boolean'
+                  ? parsed.hideTlUntilYoutube
+                  : true,
+              formationCardStyle:
+                parsed.formationCardStyle === 'compact' ? 'compact' : 'student-image',
+            })
+          }
+        } catch {
+          setUserTlDefaults({
+            includeSquad: true,
+            allowTl: true,
+            visibility: 'public',
+            allowedUserIds: [],
+            hideTlUntilYoutube: true,
+            formationCardStyle: 'student-image',
           })
         }
       }
@@ -1436,6 +1531,10 @@ export default function TLSearchPage() {
     () => (openTl ? parseTlFormation(openTl.formation) : []),
     [openTl]
   )
+  const openTlFormationTeams = useMemo(
+    () => (openTl ? parseFormationTeams(openTl.formation) : []),
+    [openTl]
+  )
   const studentNameMap = useMemo(() => {
     const map: Record<string, string> = {}
     students.forEach((student) => {
@@ -1447,6 +1546,8 @@ export default function TLSearchPage() {
     () => compareTlCompatibility(openTlFormationMembers, ownedStudentStats, studentNameMap),
     [openTlFormationMembers, ownedStudentStats, studentNameMap]
   )
+
+  const formationCardStyle: FormationCardStyle = userTlDefaults?.formationCardStyle ?? 'student-image'
 
   const visibleTimelines = timelines.filter((t) => {
     const settings = videoSettingsMap[t.videoid]
@@ -2113,49 +2214,60 @@ export default function TLSearchPage() {
                         </div>
                       )}
                     </div>
-                    {openTl.formation &&
-                      openTl.formation !== '[]' &&
+                    {openTlFormationTeams.length > 0 &&
                       students.length > 0 && (
                         <div className="mt-2 space-y-1 text-sm">
                           <h5 className="font-semibold text-xs text-gray-600">編成</h5>
-                          {JSON.parse(openTl.formation).map(
-                            (team: unknown[], idx: number) => (
+                          {openTlFormationTeams.map(
+                            (team: FormationMember[], idx: number) => (
                               <div key={idx} className="space-y-1">
                                 <p className="text-xs text-gray-500">部隊{idx + 1}</p>
                                 <div className="flex flex-wrap gap-2">
-                                {team.map((member: unknown, i: number) => {
-                                  const obj =
-                                    member as
-                                      | { id?: string; name?: string; level?: number }
-                                      | string
-                                  const id = typeof obj === 'string' ? obj : obj.id || ''
-                                  const name =
-                                    typeof obj === 'object' && obj && 'name' in obj
-                                      ? (obj as { name?: string }).name
-                                      : undefined
-                                  const lv =
-                                    typeof obj === 'object' &&
-                                    obj &&
-                                    'level' in obj &&
-                                    obj.level
-                                      ? ` Lv${obj.level}`
-                                      : ''
+                                {team.map((member, i: number) => {
+                                  const id = member.id
                                   const student = students.find((s) => s.id === id)
+                                  const level = member.level ?? undefined
+                                  const star = member.star
+                                  const uniqueStar = member.unique_star
+                                  if (formationCardStyle === 'student-image') {
+                                    return (
+                                      <StudentImageStyleCard
+                                        key={i}
+                                        student={student}
+                                        memberLevel={level}
+                                        memberStar={star}
+                                        memberUniqueStar={uniqueStar}
+                                      />
+                                    )
+                                  }
+                                  const ringColor = ATTACK_TYPE_RING_COLORS[student?.attackType ?? ''] ?? '#64748b'
                                   return (
-                                    <div key={i} className="flex items-center gap-2 rounded border px-2 py-1">
+                                    <div
+                                      key={i}
+                                      className="relative h-14 w-14 overflow-hidden rounded-md border-2 bg-gray-100"
+                                      style={{ borderColor: ringColor }}
+                                      title={student?.name ?? member.name ?? id}
+                                    >
                                       {student?.image ? (
                                         <img
                                           src={student.image}
                                           alt={student.name}
-                                          className="h-6 w-6 rounded object-cover"
+                                          className="h-full w-full object-cover"
                                         />
                                       ) : (
-                                        <div className="h-6 w-6 rounded bg-gray-200" />
+                                        <div className="h-full w-full bg-gray-200" />
                                       )}
-                                      <span className="text-xs">
-                                        {student ? student.name : name || id}
-                                        {lv}
-                                      </span>
+                                      <div className="absolute inset-x-0 bottom-0 bg-black/70 px-1 py-[1px] text-center text-[10px] font-semibold text-white">
+                                        {typeof level === 'number' ? `Lv.${level}` : 'Lv.?'}
+                                      </div>
+                                      <div className="absolute left-0.5 top-0.5 rounded bg-black/70 px-1 text-[10px] font-semibold text-white">
+                                        ★{typeof star === 'number' ? star : '?'}
+                                      </div>
+                                      {typeof uniqueStar === 'number' && uniqueStar > 0 && (
+                                        <div className="absolute right-0.5 top-0.5 rounded bg-sky-700/80 px-1 text-[10px] font-semibold text-white">
+                                          UE{uniqueStar}
+                                        </div>
+                                      )}
                                     </div>
                                   )
                                 })}

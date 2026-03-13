@@ -83,6 +83,7 @@ type TlDefaultSettings = {
   visibility: 'public' | 'restricted' | 'private'
   allowedUserIds: string[]
   hideTlUntilYoutube: boolean
+  formationCardStyle: 'student-image' | 'compact'
 }
 
 const detectIsMacPlatform = () => {
@@ -94,6 +95,7 @@ const defaultSearchShortcut = (preferMeta: boolean) => (preferMeta ? 'Cmd+K' : '
 
 const SEARCH_SHORTCUT_STORAGE_KEY = 'app:searchShortcut'
 const HELP_SHORTCUT_STORAGE_KEY = 'app:helpShortcut'
+const TL_DEFAULT_SETTINGS_STORAGE_KEY = 'app:tlDefaultSettings'
 const defaultHelpShortcut = (preferMeta: boolean) => (preferMeta ? 'Cmd+/' : 'Ctrl+/')
 
 const formatShortcutFromEvent = (event: ReactKeyboardEvent<HTMLInputElement>) => {
@@ -147,6 +149,7 @@ const normalizeTlDefaults = (raw: unknown): TlDefaultSettings => {
     visibility: 'public',
     allowedUserIds: [],
     hideTlUntilYoutube: true,
+    formationCardStyle: 'student-image',
   }
   if (!raw) return defaults
   let parsed: unknown = raw
@@ -171,6 +174,10 @@ const normalizeTlDefaults = (raw: unknown): TlDefaultSettings => {
       : defaults.allowedUserIds,
     hideTlUntilYoutube:
       typeof obj.hideTlUntilYoutube === 'boolean' ? obj.hideTlUntilYoutube : defaults.hideTlUntilYoutube,
+    formationCardStyle:
+      obj.formationCardStyle === 'compact' || obj.formationCardStyle === 'student-image'
+        ? obj.formationCardStyle
+        : defaults.formationCardStyle,
   }
 }
 
@@ -379,6 +386,7 @@ export default function MyPageClient({
   const [busy, setBusy] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingSocial, setSavingSocial] = useState(false)
+  const [savingEnvironment, setSavingEnvironment] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [toasts, setToasts] = useState<Array<{ id: number; text: string }>>([])
   const [showUserId, setShowUserId] = useState(false)
@@ -420,6 +428,17 @@ export default function MyPageClient({
       !isLoggedIn && section !== 'header' && section !== 'shortcuts' && section !== 'data',
     [isLoggedIn]
   )
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || isLoggedIn) return
+    try {
+      const raw = window.localStorage.getItem(TL_DEFAULT_SETTINGS_STORAGE_KEY)
+      if (!raw) return
+      setTlDefaults(normalizeTlDefaults(raw))
+    } catch {
+      /* ignore */
+    }
+  }, [isLoggedIn])
 
   const handleSectionChange = useCallback(
     (section: typeof activeSection) => {
@@ -1193,6 +1212,41 @@ export default function MyPageClient({
     setMessage('ソーシャル設定を更新しました')
   }
 
+  const saveEnvironmentSettings = async () => {
+    if (!session?.user) {
+      try {
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(TL_DEFAULT_SETTINGS_STORAGE_KEY, JSON.stringify(tlDefaults))
+        }
+        setMessage('環境設定をローカルに保存しました')
+      } catch {
+        setMessage('ローカル保存に失敗しました')
+      }
+      return
+    }
+    setSavingEnvironment(true)
+    setMessage(null)
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        tl_default_settings: tlDefaults,
+      })
+      .eq('id', session.user.id)
+    setSavingEnvironment(false)
+    if (error) {
+      setMessage(`環境設定の更新に失敗しました: ${error.message}`)
+      return
+    }
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(TL_DEFAULT_SETTINGS_STORAGE_KEY, JSON.stringify(tlDefaults))
+      }
+    } catch {
+      /* ignore */
+    }
+    setMessage('環境設定を更新しました')
+  }
+
   const saveProfile = async () => {
     if (!session?.user) return
     setSavingProfile(true)
@@ -1533,7 +1587,7 @@ export default function MyPageClient({
             }`}
             onClick={() => handleSectionChange('header')}
           >
-            ヘッダー設定
+            環境設定
           </button>
           <button
             className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
@@ -2267,8 +2321,8 @@ export default function MyPageClient({
           >
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold">ヘッダー設定</h3>
-                <p className="text-sm text-gray-500">ヘッダーに表示する設定を管理します</p>
+                <h3 className="text-lg font-semibold">環境設定</h3>
+                <p className="text-sm text-gray-500">表示や操作に関する設定を管理します</p>
               </div>
             </div>
             <div className="space-y-4 text-sm">
@@ -2284,6 +2338,31 @@ export default function MyPageClient({
                 >
                   {dark ? 'ライトモードに切替' : 'ダークモードに切替'}
                 </button>
+              </div>
+              <div className="rounded border border-gray-200 bg-gray-50 p-3 text-sm space-y-2">
+                <p className="font-semibold text-gray-700">TL検索の編成カード表示デザイン</p>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="tl-default-formation-card-style"
+                    checked={tlDefaults.formationCardStyle === 'student-image'}
+                    onChange={() =>
+                      setTlDefaults((prev) => ({ ...prev, formationCardStyle: 'student-image' }))
+                    }
+                  />
+                  <span>生徒アイコンビューワーと同じデザイン（推奨）</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="tl-default-formation-card-style"
+                    checked={tlDefaults.formationCardStyle === 'compact'}
+                    onChange={() =>
+                      setTlDefaults((prev) => ({ ...prev, formationCardStyle: 'compact' }))
+                    }
+                  />
+                  <span>コンパクトデザイン（旧表示）</span>
+                </label>
               </div>
               <div className="flex items-center justify-between rounded border border-gray-200 bg-gray-50 px-3 py-2">
                 <div>
@@ -2301,6 +2380,16 @@ export default function MyPageClient({
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={saveEnvironmentSettings}
+                  disabled={savingEnvironment}
+                  className="rounded border border-blue-300 px-3 py-1 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60"
+                >
+                  {savingEnvironment ? '保存中...' : '環境設定を保存'}
+                </button>
               </div>
             </div>
           </section>
