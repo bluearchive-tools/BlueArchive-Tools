@@ -102,6 +102,16 @@ const BUILTIN_SELECTOR_MAP: Record<string, string> = {
   uniqueWeaponName: '#body > div:nth-of-type(20) > table:nth-of-type(1) > thead:nth-of-type(1) > tr:nth-of-type(1) > th:nth-of-type(1)',
 }
 
+const UNIQUE_WEAPON_ATTACK_SELECTORS: string[] = [
+  BUILTIN_SELECTOR_MAP.uniqueWeaponAttack,
+  '#body > div:nth-of-type(26) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(10) > td:nth-of-type(1)',
+]
+
+const UNIQUE_WEAPON_HP_SELECTORS: string[] = [
+  BUILTIN_SELECTOR_MAP.uniqueWeaponHp,
+  '#body > div:nth-of-type(26) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(11) > td:nth-of-type(1)',
+]
+
 function normalizeText(value: string) {
   return value.replace(/\s+/g, ' ').replaceAll('\u3000', ' ').trim()
 }
@@ -181,6 +191,10 @@ function inferValueKey(text: string, token: NumberToken) {
   if (around.includes('会心率')) return 'crit'
   if (around.includes('会心ダメージ')) return hasPercent ? 'critdamage' : 'critdamagenum'
   if (around.includes('会心値')) return hasPercent ? 'crit' : 'critnum'
+  if (around.includes('コストを獲得')) return 'costnum'
+  if (around.includes('コスト回復力')) return 'cost'
+  if (around.includes('HP')) return hasPercent ? 'hp' : 'hpnum'
+  if (around.includes('防御力')) return hasPercent ? 'defense' : 'defensenum'
   if (around.includes('特攻')) return hasPercent ? 'type' : 'typenum'
   if (around.includes('ダメージ')) return 'damage'
   if (around.includes('攻撃力')) return hasPercent ? 'attack' : 'attacknum'
@@ -563,9 +577,20 @@ function readBySelector($: cheerio.CheerioAPI, selector: string) {
   return normalizeText(node.text())
 }
 
+function readBySelectors($: cheerio.CheerioAPI, selectors: string[]) {
+  for (const selector of selectors) {
+    const value = readBySelector($, selector)
+    if (value) return value
+  }
+  return ''
+}
+
 function extractUniqueWeaponNameFromHtml($: cheerio.CheerioAPI) {
   const byFixedSelector = readBySelector($, BUILTIN_SELECTOR_MAP.uniqueWeaponName)
   if (byFixedSelector) return byFixedSelector
+
+  const byAltSelector = readBySelector($, '#body > div:nth-of-type(26) > table:nth-of-type(1) > thead:nth-of-type(1) > tr:nth-of-type(1) > th:nth-of-type(1)')
+  if (byAltSelector) return byAltSelector
 
   const heading = $('h2, h3').filter((_: number, el: Element) => normalizeText($(el).text()).startsWith('固有武器')).first()
   if (!heading.length) return ''
@@ -619,8 +644,8 @@ function parseFromHtml(html: string) {
   student.uniqueWeapon = extractUniqueWeaponFromHtml($)
   const uniqueWeaponName = extractUniqueWeaponNameFromHtml($)
   if (uniqueWeaponName) student.uniqueWeapon.name = uniqueWeaponName
-  const uniqueWeaponAttackBySelector = parseNumber(readBySelector($, BUILTIN_SELECTOR_MAP.uniqueWeaponAttack))
-  const uniqueWeaponHpBySelector = parseNumber(readBySelector($, BUILTIN_SELECTOR_MAP.uniqueWeaponHp))
+  const uniqueWeaponAttackBySelector = parseNumber(readBySelectors($, UNIQUE_WEAPON_ATTACK_SELECTORS))
+  const uniqueWeaponHpBySelector = parseNumber(readBySelectors($, UNIQUE_WEAPON_HP_SELECTORS))
   const uniqueWeaponHealBySelector = parseNumber(readBySelector($, BUILTIN_SELECTOR_MAP.uniqueWeaponHeal))
   if (uniqueWeaponAttackBySelector > 0) student.uniqueWeapon.attack = uniqueWeaponAttackBySelector
   if (uniqueWeaponHpBySelector > 0) student.uniqueWeapon.hp = uniqueWeaponHpBySelector
