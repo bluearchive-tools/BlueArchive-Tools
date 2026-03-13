@@ -443,7 +443,11 @@ export default function StudentImageStyleCard({ student, memberLevel, memberStar
   useEffect(() => {
     let cancelled = false
     const loadFont = async () => {
-      if (fontLoaded || typeof FontFace === 'undefined' || typeof document === 'undefined' || !document.fonts) {
+      if (fontLoaded) {
+        setFontFamily(`"${STAR_NUMBER_FONT_NAME}", ${STAR_NUMBER_FONT_FALLBACK}`)
+        return
+      }
+      if (typeof FontFace === 'undefined' || typeof document === 'undefined' || !document.fonts) {
         setFontFamily(STAR_NUMBER_FONT_FALLBACK)
         return
       }
@@ -526,11 +530,11 @@ export default function StudentImageStyleCard({ student, memberLevel, memberStar
       <span
         className="pointer-events-none absolute italic font-bold text-white"
         style={{
-          left: '21%',
+          left: '16%',
           top: '11%',
-          fontSize: '26px',
+          fontSize: '20px',
           fontFamily: '"mfw-pshinmgopr6n-medium", "M PLUS 1p", sans-serif',
-          WebkitTextStroke: '3px rgba(15,23,42,0.42)',
+          WebkitTextStroke: '2.2px rgba(15,23,42,0.42)',
           paintOrder: 'stroke fill',
           lineHeight: 1,
         }}
