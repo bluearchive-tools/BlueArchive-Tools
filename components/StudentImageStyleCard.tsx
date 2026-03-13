@@ -530,11 +530,11 @@ export default function StudentImageStyleCard({ student, memberLevel, memberStar
       <span
         className="pointer-events-none absolute italic font-bold text-white"
         style={{
-          left: '16%',
-          top: '11%',
-          fontSize: '20px',
+          left: '12%',
+          top: '10%',
+          fontSize: '12px',
           fontFamily: '"mfw-pshinmgopr6n-medium", "M PLUS 1p", sans-serif',
-          WebkitTextStroke: '2.2px rgba(15,23,42,0.42)',
+          WebkitTextStroke: '1.6px rgba(15,23,42,0.42)',
           paintOrder: 'stroke fill',
           lineHeight: 1,
         }}

@@ -1539,7 +1539,7 @@ export default function MyPageClient({
             }`}
             onClick={() => handleSectionChange('header')}
           >
-            ヘッダー設定
+            環境設定
           </button>
           <button
             className={`w-full text-left rounded px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${
@@ -2106,31 +2106,6 @@ export default function MyPageClient({
                   <span>動画を開くまでTLを非表示にする</span>
                 </label>
                 <div className="space-y-2">
-                  <p className="text-xs text-gray-600">TL検索の編成カード表示デザイン</p>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="tl-default-formation-card-style"
-                      checked={tlDefaults.formationCardStyle === 'student-image'}
-                      onChange={() =>
-                        setTlDefaults((prev) => ({ ...prev, formationCardStyle: 'student-image' }))
-                      }
-                    />
-                    <span>生徒アイコンビューワーと同じデザイン（推奨）</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="tl-default-formation-card-style"
-                      checked={tlDefaults.formationCardStyle === 'compact'}
-                      onChange={() =>
-                        setTlDefaults((prev) => ({ ...prev, formationCardStyle: 'compact' }))
-                      }
-                    />
-                    <span>コンパクトデザイン（旧表示）</span>
-                  </label>
-                </div>
-                <div className="space-y-2">
                   <p className="text-xs text-gray-600">TL検索の公開範囲</p>
                   <label className="flex items-center gap-2">
                     <input
@@ -2298,8 +2273,8 @@ export default function MyPageClient({
           >
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold">ヘッダー設定</h3>
-                <p className="text-sm text-gray-500">ヘッダーに表示する設定を管理します</p>
+                <h3 className="text-lg font-semibold">環境設定</h3>
+                <p className="text-sm text-gray-500">表示や操作に関する設定を管理します</p>
               </div>
             </div>
             <div className="space-y-4 text-sm">
@@ -2315,6 +2290,31 @@ export default function MyPageClient({
                 >
                   {dark ? 'ライトモードに切替' : 'ダークモードに切替'}
                 </button>
+              </div>
+              <div className="rounded border border-gray-200 bg-gray-50 p-3 text-sm space-y-2">
+                <p className="font-semibold text-gray-700">TL検索の編成カード表示デザイン</p>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="tl-default-formation-card-style"
+                    checked={tlDefaults.formationCardStyle === 'student-image'}
+                    onChange={() =>
+                      setTlDefaults((prev) => ({ ...prev, formationCardStyle: 'student-image' }))
+                    }
+                  />
+                  <span>生徒アイコンビューワーと同じデザイン（推奨）</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="tl-default-formation-card-style"
+                    checked={tlDefaults.formationCardStyle === 'compact'}
+                    onChange={() =>
+                      setTlDefaults((prev) => ({ ...prev, formationCardStyle: 'compact' }))
+                    }
+                  />
+                  <span>コンパクトデザイン（旧表示）</span>
+                </label>
               </div>
               <div className="flex items-center justify-between rounded border border-gray-200 bg-gray-50 px-3 py-2">
                 <div>
