@@ -86,6 +86,17 @@ const POSITION_MAP: Record<string, string> = {
 
 const EMPTY_SKILL: SkillBlock = { title: '', text: '', values: {} }
 
+const INSPECT_START_SELECTOR = '#body > div:nth-of-type(3) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(3) > td:nth-of-type(1)'
+
+const BUILTIN_SELECTOR_MAP: Record<string, string> = {
+  role: '#body > div:nth-of-type(3) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(5) > td:nth-of-type(1)',
+  position: '#body > div:nth-of-type(3) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(6) > td:nth-of-type(1)',
+  characterType: '#body > div:nth-of-type(3) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(7) > td:nth-of-type(1)',
+  uniqueWeaponAttack: '#body > div:nth-of-type(20) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(10) > td:nth-of-type(1)',
+  uniqueWeaponHp: '#body > div:nth-of-type(20) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(11) > td:nth-of-type(1)',
+  uniqueWeaponHeal: '#body > div:nth-of-type(20) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(12) > td:nth-of-type(1)',
+}
+
 function normalizeText(value: string) {
   return value.replace(/\s+/g, ' ').replaceAll('\u3000', ' ').trim()
 }
@@ -541,6 +552,12 @@ function extractBaseStatsFromProxyText(source: string): BaseStats {
   }
 }
 
+function readBySelector($: cheerio.CheerioAPI, selector: string) {
+  const node = $(selector).first()
+  if (!node.length) return ''
+  return normalizeText(node.text())
+}
+
 function parseFromHtml(html: string) {
   const $ = cheerio.load(html)
   const ogTitle = $('meta[property="og:title"]').attr('content') ?? ''
@@ -552,11 +569,16 @@ function parseFromHtml(html: string) {
   student.attackType = extractByLabelWithBasicInfo($, ['攻撃タイプ'])
   student.defenseType = extractByLabelWithBasicInfo($, ['防御タイプ'])
 
-  const classText = extractByLabelWithBasicInfo($, ['クラス', '役割']).toUpperCase()
+  const roleRaw =
+    readBySelector($, BUILTIN_SELECTOR_MAP.role) || extractByLabelWithBasicInfo($, ['クラス', '役割'])
+  const classText = roleRaw.toUpperCase()
   student.role = classText.includes('SPECIAL') ? 'SPECIAL' : 'STRIKER'
-  student.characterType = TYPE_MAP[classText] ?? 'アタッカー'
+  student.characterType =
+    readBySelector($, BUILTIN_SELECTOR_MAP.characterType) || TYPE_MAP[classText] || 'アタッカー'
 
-  const positionKey = extractByLabelWithBasicInfo($, ['ポジション', '配置']).toUpperCase()
+  const positionRaw =
+    readBySelector($, BUILTIN_SELECTOR_MAP.position) || extractByLabelWithBasicInfo($, ['ポジション', '配置'])
+  const positionKey = positionRaw.toUpperCase()
   student.position = POSITION_MAP[positionKey] ?? 'BACK'
 
   student.cost = parseNumber(extractByLabelWithBasicInfo($, ['コスト']))
@@ -570,6 +592,12 @@ function parseFromHtml(html: string) {
   student.heal = baseStats.heal
   student.range = baseStats.range
   student.uniqueWeapon = extractUniqueWeaponFromHtml($)
+  const attackBySelector = parseNumber(readBySelector($, BUILTIN_SELECTOR_MAP.uniqueWeaponAttack))
+  const hpBySelector = parseNumber(readBySelector($, BUILTIN_SELECTOR_MAP.uniqueWeaponHp))
+  const healBySelector = parseNumber(readBySelector($, BUILTIN_SELECTOR_MAP.uniqueWeaponHeal))
+  if (attackBySelector > 0) student.uniqueWeapon.attack = attackBySelector
+  if (hpBySelector > 0) student.uniqueWeapon.hp = hpBySelector
+  if (healBySelector > 0) student.uniqueWeapon.heal = healBySelector
 
   return student
 }
@@ -684,29 +712,34 @@ function buildCssPath($: cheerio.CheerioAPI, element: Element) {
 
 function buildStructureFromHtml($: cheerio.CheerioAPI) {
   const fields: InspectField[] = []
+  const allRows = $('tr').toArray().filter((node: AnyNode): node is Element => node.type === 'tag')
 
-  $('tr').each((_: number, tr: Element) => {
+  const startCell = $(INSPECT_START_SELECTOR).first()
+  const startRowNode = startCell.length ? startCell.closest('tr').get(0) : undefined
+  const startIndex = startRowNode ? allRows.findIndex((row: Element) => row === startRowNode) : -1
+  const targetRows = startIndex >= 0 ? allRows.slice(startIndex) : allRows
+
+  for (const tr of targetRows) {
     const row = $(tr)
     const cells = row.find('th,td').toArray().filter((node: AnyNode): node is Element => node.type === 'tag')
-    if (cells.length < 2) return
+    if (cells.length < 2) continue
 
     const label = normalizeText($(cells[0]).text())
-    if (!label) return
+    if (!label) continue
 
     for (let i = 1; i < cells.length; i += 1) {
       const cell = cells[i]
       const value = normalizeText($(cell).text())
       if (!value) continue
 
-      const selector = buildCssPath($, cell)
       fields.push({
         label: i === 1 ? label : `${label}[${i + 1}]`,
-        selector,
+        selector: buildCssPath($, cell),
         value,
         html: ($(cell).prop('outerHTML') as string | undefined) ?? '',
       })
     }
-  })
+  }
 
   const uniqueFields = fields.filter((field, index) => {
     return fields.findIndex((item) => item.label === field.label && item.selector === field.selector) === index
