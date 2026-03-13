@@ -30,8 +30,6 @@ type Options = {
   borderSide: number
   borderBottom: number
   skewRatio: number
-  levelXRatio: number
-  levelYRatio: number
   starNumberXRatio: number
   starNumberYRatio: number
   badgeMarginRight: number
@@ -70,8 +68,6 @@ const BASE: Options = {
   borderSide: 5,
   borderBottom: 45,
   skewRatio: 0.11,
-  levelXRatio: 0.12,
-  levelYRatio: 0.04,
   starNumberXRatio: 0,
   starNumberYRatio: 0.08,
   badgeMarginRight: 3,
@@ -238,7 +234,7 @@ const drawStarWithNumber = (
   colorTop: string,
   colorBottom: string,
   stroke: string,
-  value: number,
+  value: number | '?',
   fontFamily: string,
   alpha = 1,
   numberXRatio = 0,
@@ -246,37 +242,69 @@ const drawStarWithNumber = (
 ) => {
   ctx.save()
   ctx.globalAlpha = alpha
+
   drawStarShape(ctx, x, y, radius)
   const grad = ctx.createLinearGradient(x, y - radius, x, y + radius)
-  grad.addColorStop(0, colorTop)
+  grad.addColorStop(0, '#f0fdff')
+  grad.addColorStop(0.28, colorTop)
+  grad.addColorStop(0.72, colorBottom)
   grad.addColorStop(1, colorBottom)
   ctx.fillStyle = grad
   ctx.fill()
+
   ctx.strokeStyle = stroke
-  ctx.lineWidth = Math.max(2, radius * 0.08)
+  ctx.lineWidth = Math.max(1.1, radius * 0.06)
+  ctx.lineJoin = 'round'
   ctx.stroke()
-  const text = String(Math.max(1, Math.floor(value)))
-  ctx.fillStyle = '#1f2937'
-  ctx.font = `700 ${Math.round(radius * 1.15)}px ${fontFamily}`
+
+  const centerX = x + radius * numberXRatio
+  const centerY = y + radius * numberYRatio
+  const facetOuter: Point[] = []
+  for (let i = 0; i < 5; i += 1) {
+    const angle = -Math.PI / 2 + (Math.PI * 2 * i) / 5
+    facetOuter.push({
+      x: x + Math.cos(angle) * radius * 0.78,
+      y: y + Math.sin(angle) * radius * 0.78,
+    })
+  }
+
+  ctx.save()
+  drawStarShape(ctx, x, y, radius * 0.97)
+  ctx.clip()
+  for (let i = 0; i < 5; i += 1) {
+    const p1 = facetOuter[i]
+    const p2 = facetOuter[(i + 1) % 5]
+    ctx.beginPath()
+    ctx.moveTo(centerX, centerY)
+    ctx.lineTo(p1.x, p1.y)
+    ctx.lineTo(p2.x, p2.y)
+    ctx.closePath()
+    ctx.fillStyle = i % 2 === 0 ? 'rgba(255,255,255,0.34)' : 'rgba(255,255,255,0.18)'
+    ctx.fill()
+  }
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.42)'
+  ctx.lineWidth = Math.max(0.9, radius * 0.03)
+  for (let i = 0; i < 5; i += 1) {
+    const p = facetOuter[i]
+    ctx.beginPath()
+    ctx.moveTo(centerX, centerY)
+    ctx.lineTo(p.x, p.y)
+    ctx.stroke()
+  }
+  ctx.restore()
+
+  const text = value === '?' ? '?' : String(clamp(value, 0, 99))
+  ctx.font = `italic 400 ${Math.round(radius * 0.98)}px ${fontFamily}`
+  ctx.fillStyle = '#0f172a'
+  ctx.strokeStyle = 'rgba(255,255,255,0.8)'
+  ctx.lineWidth = Math.max(1.2, radius * 0.058)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText(text, x + radius * numberXRatio, y + radius * numberYRatio)
-  ctx.restore()
-}
+  ctx.lineJoin = 'round'
+  ctx.strokeText(text, x, y + radius * 0.03)
+  ctx.fillText(text, x, y + radius * 0.03)
 
-const drawLevel = (ctx: CanvasRenderingContext2D, options: Options) => {
-  const text = `Lv.${options.level}`
-  const x = options.size * options.levelXRatio
-  const y = options.size * options.levelYRatio
-  ctx.save()
-  ctx.fillStyle = '#ffffff'
-  ctx.strokeStyle = '#000000'
-  ctx.lineWidth = Math.max(2, options.size * 0.006)
-  ctx.font = `700 ${Math.round(options.size * 0.08)}px ${STAR_NUMBER_FONT_FALLBACK}`
-  ctx.textAlign = 'left'
-  ctx.textBaseline = 'top'
-  ctx.strokeText(text, x, y)
-  ctx.fillText(text, x, y)
   ctx.restore()
 }
 
@@ -323,6 +351,8 @@ const drawCard = (
   originalAttackType: string,
   options: Options,
   fontFamily: string,
+  starValue: number | '?',
+  uniqueValue?: number,
 ) => {
   const size = options.size
   const frameHeight = size * 0.88
@@ -375,14 +405,12 @@ const drawCard = (
   }
   ctx.restore()
 
-  drawLevel(ctx, options)
-
   const starRadius = size * 0.12
   const starX = size * 0.15
   const starY = frameTop + frameHeight - Math.max(starRadius * 1.18, size * 0.12)
-  drawStarWithNumber(ctx, starX, starY, starRadius, '#fde047', '#f59e0b', '#92400e', options.stars, fontFamily, 1, options.starNumberXRatio, options.starNumberYRatio)
-  if (options.unique >= 1) {
-    drawStarWithNumber(ctx, starX, starY, starRadius, '#7dd3fc', '#3b82f6', '#1e3a8a', options.unique, fontFamily, 1, options.starNumberXRatio, options.starNumberYRatio)
+  drawStarWithNumber(ctx, starX, starY, starRadius, '#fde047', '#f59e0b', '#92400e', starValue, fontFamily, 1, options.starNumberXRatio, options.starNumberYRatio)
+  if (typeof uniqueValue === 'number' && uniqueValue >= 1) {
+    drawStarWithNumber(ctx, starX, starY, starRadius, '#7dd3fc', '#3b82f6', '#1e3a8a', uniqueValue, fontFamily, 1, options.starNumberXRatio, options.starNumberYRatio)
   }
 
   if (attackType !== originalAttackType) {
@@ -405,15 +433,12 @@ export default function StudentImageStyleCard({ student, memberLevel, memberStar
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [fontFamily, setFontFamily] = useState(STAR_NUMBER_FONT_FALLBACK)
 
-  const options = useMemo(() => {
-    const stars = memberStar ?? student?.initialStars ?? 1
-    return {
-      ...BASE,
-      level: clamp(memberLevel ?? BASE.level, 1, 999),
-      stars: clamp(stars, 1, 99),
-      unique: clamp(memberUniqueStar ?? 0, 0, 99),
-    }
-  }, [memberLevel, memberStar, memberUniqueStar, student?.initialStars])
+  const options = useMemo(() => ({
+    ...BASE,
+    level: clamp(memberLevel ?? BASE.level, 1, 999),
+    stars: clamp(memberStar ?? BASE.stars, 1, 99),
+    unique: clamp(memberUniqueStar ?? BASE.unique, 0, 99),
+  }), [memberLevel, memberStar, memberUniqueStar])
 
   useEffect(() => {
     let cancelled = false
@@ -447,7 +472,10 @@ export default function StudentImageStyleCard({ student, memberLevel, memberStar
     const draw = async () => {
       const canvas = canvasRef.current
       if (!canvas || !student?.image) return
-      const attackType: AttackType = student.attackType === '貫通' || student.attackType === '神秘' || student.attackType === '振動' ? student.attackType : '爆発'
+      const attackType: AttackType =
+        student.attackType === '貫通' || student.attackType === '神秘' || student.attackType === '振動'
+          ? student.attackType
+          : '爆発'
       const image = await loadImage(student.image)
       const iconUrl = CHARACTER_TYPE_ICONS[student.characterType]
       let badgeIcon: HTMLCanvasElement | null = null
@@ -464,25 +492,51 @@ export default function StudentImageStyleCard({ student, memberLevel, memberStar
       canvas.height = options.size
       const ctx = canvas.getContext('2d')
       if (!ctx) return
-      drawCard(ctx, image, badgeIcon, attackType, student.attackType, options, fontFamily)
+      drawCard(
+        ctx,
+        image,
+        badgeIcon,
+        attackType,
+        student.attackType,
+        options,
+        fontFamily,
+        typeof memberStar === 'number' ? memberStar : '?',
+        memberUniqueStar,
+      )
     }
     void draw()
     return () => {
       cancelled = true
     }
-  }, [fontFamily, options, student])
+  }, [fontFamily, memberStar, memberUniqueStar, options, student])
+
+  const levelText = typeof memberLevel === 'number' ? `Lv.${memberLevel}` : 'Lv.?'
 
   if (!student) {
-    return <div className="h-14 w-14 rounded bg-gray-200" />
+    return (
+      <div className="relative" style={{ width: 84, height: 84 }}>
+        <div className="h-full w-full rounded-md border-2 border-gray-400 bg-gray-200 flex items-center justify-center text-3xl font-bold text-gray-600">?</div>
+      </div>
+    )
   }
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={BASE.size}
-      height={BASE.size}
-      className="h-14 w-14"
-      title={student.name}
-    />
+    <div className="relative" style={{ width: 84, height: 84 }} title={student.name}>
+      <canvas ref={canvasRef} width={BASE.size} height={BASE.size} className="h-full w-full" />
+      <span
+        className="pointer-events-none absolute italic font-bold text-white"
+        style={{
+          left: '21%',
+          top: '11%',
+          fontSize: '26px',
+          fontFamily: '"mfw-pshinmgopr6n-medium", "M PLUS 1p", sans-serif',
+          WebkitTextStroke: '3px rgba(15,23,42,0.42)',
+          paintOrder: 'stroke fill',
+          lineHeight: 1,
+        }}
+      >
+        {levelText}
+      </span>
+    </div>
   )
 }

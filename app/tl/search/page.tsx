@@ -2190,8 +2190,8 @@ export default function TLSearchPage() {
                                   const id = member.id
                                   const student = students.find((s) => s.id === id)
                                   const level = member.level ?? undefined
-                                  const star = member.star ?? student?.initialStars ?? 1
-                                  const uniqueStar = member.unique_star ?? 0
+                                  const star = member.star
+                                  const uniqueStar = member.unique_star
                                   if (formationCardStyle === 'student-image') {
                                     return (
                                       <StudentImageStyleCard
@@ -2224,9 +2224,9 @@ export default function TLSearchPage() {
                                         {typeof level === 'number' ? `Lv.${level}` : 'Lv.?'}
                                       </div>
                                       <div className="absolute left-0.5 top-0.5 rounded bg-black/70 px-1 text-[10px] font-semibold text-white">
-                                        ★{star}
+                                        ★{typeof star === 'number' ? star : '?'}
                                       </div>
-                                      {uniqueStar > 0 && (
+                                      {typeof uniqueStar === 'number' && uniqueStar > 0 && (
                                         <div className="absolute right-0.5 top-0.5 rounded bg-sky-700/80 px-1 text-[10px] font-semibold text-white">
                                           UE{uniqueStar}
                                         </div>
