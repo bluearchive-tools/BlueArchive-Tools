@@ -95,6 +95,40 @@ function parseNumber(value: string) {
   return matched ? Number(matched[0]) : 0
 }
 
+function readBasicInfoMap($: cheerio.CheerioAPI) {
+  const map: Record<string, string> = {}
+  const heading = $('h2').filter((_: number, el: Element) => normalizeText($(el).text()).startsWith('基本情報')).first()
+  const roots = heading.length ? heading.nextUntil('h2') : $('#body')
+
+  roots.find('tr').each((_: number, tr: Element) => {
+    const row = $(tr)
+    const cells = row.find('th,td').toArray().filter((node: AnyNode): node is Element => node.type === 'tag')
+    if (cells.length < 2) return
+
+    const label = normalizeText($(cells[0]).text())
+    const value = normalizeText($(cells[1]).text())
+    if (!label || !value) return
+    if (!(label in map)) map[label] = value
+  })
+
+  return map
+}
+
+function extractByLabelWithBasicInfo($: cheerio.CheerioAPI, labels: string[]) {
+  const basicInfo = readBasicInfoMap($)
+  for (const label of labels) {
+    const exact = basicInfo[label]
+    if (exact) return exact
+  }
+
+  for (const label of labels) {
+    const loose = extractByLabel($, label)
+    if (loose) return loose
+  }
+
+  return ''
+}
+
 function extractByLabel($: cheerio.CheerioAPI, label: string) {
   const row = $('tr')
     .filter((_: number, el: Element) => normalizeText($(el).find('th').first().text()).includes(label))
@@ -393,23 +427,33 @@ function extractUniqueWeaponFromHtml($: cheerio.CheerioAPI) {
     if (index >= 0) lv1Index = index
   })
 
-  const readLv1 = (label: string) => {
+  const readLv1 = (labels: string[]) => {
     const row = rows
-      .filter((_: number, tr: Element) => normalizeText($(tr).find('th,td').first().text()).includes(label))
+      .filter((_: number, tr: Element) => {
+        const cells = $(tr)
+          .find('th,td')
+          .toArray()
+          .map((cell: AnyNode) => normalizeText($(cell).text()))
+        const firstCell = cells[0] ?? ''
+        return labels.some((label) => firstCell.includes(label))
+      })
       .first()
     if (!row.length) return 0
+
     const cells = row
       .find('th,td')
       .toArray()
       .map((cell: AnyNode) => normalizeText($(cell).text()))
-    return parseNumber(cells[lv1Index] ?? '')
+
+    if (cells[lv1Index]) return parseNumber(cells[lv1Index])
+    return parseNumber(cells.find((cell: string) => /-?\d/.test(cell)) ?? '')
   }
 
   return {
     name,
-    hp: readLv1('最大HP'),
-    attack: readLv1('攻撃力'),
-    heal: readLv1('治癒力'),
+    hp: readLv1(['最大HP', 'HP']),
+    attack: readLv1(['攻撃力']),
+    heal: readLv1(['治癒力', '回復力']),
   }
 }
 
@@ -505,18 +549,18 @@ function parseFromHtml(html: string) {
 
   student.image = $('meta[property="og:image"]').attr('content') ?? ''
   student.initialStars = Number(ogTitle.match(/星(\d+)/)?.[1] ?? '1')
-  student.attackType = extractByLabel($, '攻撃タイプ')
-  student.defenseType = extractByLabel($, '防御タイプ')
+  student.attackType = extractByLabelWithBasicInfo($, ['攻撃タイプ'])
+  student.defenseType = extractByLabelWithBasicInfo($, ['防御タイプ'])
 
-  const classText = extractByLabel($, 'クラス').toUpperCase()
+  const classText = extractByLabelWithBasicInfo($, ['クラス', '役割']).toUpperCase()
   student.role = classText.includes('SPECIAL') ? 'SPECIAL' : 'STRIKER'
   student.characterType = TYPE_MAP[classText] ?? 'アタッカー'
 
-  const positionKey = extractByLabel($, 'ポジション').toUpperCase()
+  const positionKey = extractByLabelWithBasicInfo($, ['ポジション', '配置']).toUpperCase()
   student.position = POSITION_MAP[positionKey] ?? 'BACK'
 
-  student.cost = parseNumber(extractByLabel($, 'コスト'))
-  student.normalInterval = parseNumber(extractByLabel($, '通常攻撃'))
+  student.cost = parseNumber(extractByLabelWithBasicInfo($, ['コスト']))
+  student.normalInterval = parseNumber(extractByLabelWithBasicInfo($, ['通常攻撃']))
   student.skills = extractSkillsFromHtml($)
 
   const baseStats = extractBaseStatsFromHtml($)
@@ -639,70 +683,30 @@ function buildCssPath($: cheerio.CheerioAPI, element: Element) {
 }
 
 function buildStructureFromHtml($: cheerio.CheerioAPI) {
-  const startHeading = $('h2').filter((_: number, el: Element) => normalizeText($(el).text()).startsWith('基本情報')).first()
   const fields: InspectField[] = []
 
-  if (startHeading.length) {
-    const scopeElements: Element[] = []
-    let cursor = startHeading.next()[0] as Element | undefined
+  $('tr').each((_: number, tr: Element) => {
+    const row = $(tr)
+    const cells = row.find('th,td').toArray().filter((node: AnyNode): node is Element => node.type === 'tag')
+    if (cells.length < 2) return
 
-    while (cursor) {
-      const node = $(cursor)
-      const tag = cursor.tagName?.toLowerCase() ?? ''
-      const headingText = tag in { h2: 1, h3: 1 } ? normalizeText(node.text()) : ''
-      if (tag === 'h2' && headingText.startsWith('コメントフォーム')) break
+    const label = normalizeText($(cells[0]).text())
+    if (!label) return
 
-      scopeElements.push(cursor)
-      cursor = node.next()[0] as Element | undefined
-    }
+    for (let i = 1; i < cells.length; i += 1) {
+      const cell = cells[i]
+      const value = normalizeText($(cell).text())
+      if (!value) continue
 
-    const rowElements: Element[] = []
-    const seenRows = new Set<Element>()
-
-    for (const scopeElement of scopeElements) {
-      const tagName = scopeElement.tagName?.toLowerCase() ?? ''
-      if (tagName === 'tr') {
-        if (!seenRows.has(scopeElement)) {
-          seenRows.add(scopeElement)
-          rowElements.push(scopeElement)
-        }
-        continue
-      }
-
-      const nestedRows = $(scopeElement)
-        .find('tr')
-        .toArray()
-        .filter((node: AnyNode): node is Element => node.type === 'tag')
-
-      for (const rowElement of nestedRows) {
-        if (seenRows.has(rowElement)) continue
-        seenRows.add(rowElement)
-        rowElements.push(rowElement)
-      }
-    }
-
-    for (const rowElement of rowElements) {
-      const row = $(rowElement)
-      const th = row.find('th').first()
-      const td = row.find('td').first()
-      if (!th.length || !td.length) continue
-
-      const tdNode = td.get(0)
-      if (!tdNode || tdNode.type !== 'tag') continue
-
-      const label = normalizeText(th.text())
-      const value = normalizeText(td.text())
-      if (!label || !value) continue
-
-      const selector = buildCssPath($, tdNode)
+      const selector = buildCssPath($, cell)
       fields.push({
-        label,
+        label: i === 1 ? label : `${label}[${i + 1}]`,
         selector,
         value,
-        html: (td.prop('outerHTML') as string | undefined) ?? '',
+        html: ($(cell).prop('outerHTML') as string | undefined) ?? '',
       })
     }
-  }
+  })
 
   const uniqueFields = fields.filter((field, index) => {
     return fields.findIndex((item) => item.label === field.label && item.selector === field.selector) === index
