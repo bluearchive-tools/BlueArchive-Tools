@@ -240,6 +240,21 @@ async function fetchYouTubeSnippets(videoIds) {
   return out
 }
 
+async function fetchSingleYouTubeSnippet(videoId) {
+  if (!videoId || API_KEYS.length === 0) return null
+
+  const base = 'https://www.googleapis.com/youtube/v3/videos?part=snippet&id='
+  for (const key of API_KEYS) {
+    const res = await fetch(`${base}${encodeURIComponent(videoId)}&key=${key}`)
+    if (!res.ok) continue
+    const data = await res.json()
+    const item = data.items?.[0]
+    if (item?.snippet) return item.snippet
+  }
+
+  return null
+}
+
 async function ensureTables(seasons) {
   // DB テーブルは手動で作成済みであることを想定
   for (const s of seasons) {
@@ -271,7 +286,14 @@ async function update() {
 
   for (const info of videos) {
     const vid = info.id.videoId
-    const snippet = ytSnippets[vid] || info.snippet || {}
+    let snippet = ytSnippets[vid] || null
+    if (!snippet) {
+      snippet = await fetchSingleYouTubeSnippet(vid)
+    }
+    if (!snippet) {
+      console.warn(`[updateYoutube] Failed to fetch full snippet for video: ${vid}`)
+      continue
+    }
     const seasonNum = guessSeason(snippet, raid.seasons)
     const table = seasonNum ? `tl_${seasonNum.toLowerCase()}` : 'tl_unknown'
     const { data: exist } = await supabase
