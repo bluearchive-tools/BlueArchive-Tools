@@ -95,6 +95,11 @@ const BUILTIN_SELECTOR_MAP: Record<string, string> = {
   uniqueWeaponAttack: '#body > div:nth-of-type(20) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(10) > td:nth-of-type(1)',
   uniqueWeaponHp: '#body > div:nth-of-type(20) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(11) > td:nth-of-type(1)',
   uniqueWeaponHeal: '#body > div:nth-of-type(20) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(12) > td:nth-of-type(1)',
+  cost: '#body > div:nth-of-type(7) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(2) > td:nth-of-type(2)',
+  range: '#body > div:nth-of-type(4) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(5) > td:nth-of-type(2)',
+  attack: '#body > div:nth-of-type(4) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(2) > td:nth-of-type(2)',
+  defense: '#body > div:nth-of-type(4) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(2) > td:nth-of-type(3)',
+  uniqueWeaponName: '#body > div:nth-of-type(20) > table:nth-of-type(1) > thead:nth-of-type(1) > tr:nth-of-type(1) > th:nth-of-type(1)',
 }
 
 function normalizeText(value: string) {
@@ -558,6 +563,22 @@ function readBySelector($: cheerio.CheerioAPI, selector: string) {
   return normalizeText(node.text())
 }
 
+function extractUniqueWeaponNameFromHtml($: cheerio.CheerioAPI) {
+  const byFixedSelector = readBySelector($, BUILTIN_SELECTOR_MAP.uniqueWeaponName)
+  if (byFixedSelector) return byFixedSelector
+
+  const heading = $('h2, h3').filter((_: number, el: Element) => normalizeText($(el).text()).startsWith('固有武器')).first()
+  if (!heading.length) return ''
+
+  const area = heading.nextAll('div.ie5').first()
+  if (!area.length) return ''
+
+  const name = normalizeText(area.find('table.style_table thead th').first().text())
+  if (name) return name
+
+  return normalizeText(area.find('table.style_table tr').first().find('th,td').first().text())
+}
+
 function parseFromHtml(html: string) {
   const $ = cheerio.load(html)
   const ogTitle = $('meta[property="og:title"]').attr('content') ?? ''
@@ -581,23 +602,29 @@ function parseFromHtml(html: string) {
   const positionKey = positionRaw.toUpperCase()
   student.position = POSITION_MAP[positionKey] ?? 'BACK'
 
-  student.cost = parseNumber(extractByLabelWithBasicInfo($, ['コスト']))
+  const costBySelector = parseNumber(readBySelector($, BUILTIN_SELECTOR_MAP.cost))
+  student.cost = costBySelector > 0 ? costBySelector : parseNumber(extractByLabelWithBasicInfo($, ['コスト']))
   student.normalInterval = parseNumber(extractByLabelWithBasicInfo($, ['通常攻撃']))
   student.skills = extractSkillsFromHtml($)
 
   const baseStats = extractBaseStatsFromHtml($)
   student.hp = baseStats.hp
-  student.attack = baseStats.attack
-  student.defense = baseStats.defense
+  const attackBySelector = parseNumber(readBySelector($, BUILTIN_SELECTOR_MAP.attack))
+  const defenseBySelector = parseNumber(readBySelector($, BUILTIN_SELECTOR_MAP.defense))
+  const rangeBySelector = parseNumber(readBySelector($, BUILTIN_SELECTOR_MAP.range))
+  student.attack = attackBySelector > 0 ? attackBySelector : baseStats.attack
+  student.defense = defenseBySelector > 0 ? defenseBySelector : baseStats.defense
   student.heal = baseStats.heal
-  student.range = baseStats.range
+  student.range = rangeBySelector > 0 ? rangeBySelector : baseStats.range
   student.uniqueWeapon = extractUniqueWeaponFromHtml($)
-  const attackBySelector = parseNumber(readBySelector($, BUILTIN_SELECTOR_MAP.uniqueWeaponAttack))
-  const hpBySelector = parseNumber(readBySelector($, BUILTIN_SELECTOR_MAP.uniqueWeaponHp))
-  const healBySelector = parseNumber(readBySelector($, BUILTIN_SELECTOR_MAP.uniqueWeaponHeal))
-  if (attackBySelector > 0) student.uniqueWeapon.attack = attackBySelector
-  if (hpBySelector > 0) student.uniqueWeapon.hp = hpBySelector
-  if (healBySelector > 0) student.uniqueWeapon.heal = healBySelector
+  const uniqueWeaponName = extractUniqueWeaponNameFromHtml($)
+  if (uniqueWeaponName) student.uniqueWeapon.name = uniqueWeaponName
+  const uniqueWeaponAttackBySelector = parseNumber(readBySelector($, BUILTIN_SELECTOR_MAP.uniqueWeaponAttack))
+  const uniqueWeaponHpBySelector = parseNumber(readBySelector($, BUILTIN_SELECTOR_MAP.uniqueWeaponHp))
+  const uniqueWeaponHealBySelector = parseNumber(readBySelector($, BUILTIN_SELECTOR_MAP.uniqueWeaponHeal))
+  if (uniqueWeaponAttackBySelector > 0) student.uniqueWeapon.attack = uniqueWeaponAttackBySelector
+  if (uniqueWeaponHpBySelector > 0) student.uniqueWeapon.hp = uniqueWeaponHpBySelector
+  if (uniqueWeaponHealBySelector > 0) student.uniqueWeapon.heal = uniqueWeaponHealBySelector
 
   return student
 }
