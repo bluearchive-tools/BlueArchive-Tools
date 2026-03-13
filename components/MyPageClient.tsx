@@ -95,6 +95,7 @@ const defaultSearchShortcut = (preferMeta: boolean) => (preferMeta ? 'Cmd+K' : '
 
 const SEARCH_SHORTCUT_STORAGE_KEY = 'app:searchShortcut'
 const HELP_SHORTCUT_STORAGE_KEY = 'app:helpShortcut'
+const TL_DEFAULT_SETTINGS_STORAGE_KEY = 'app:tlDefaultSettings'
 const defaultHelpShortcut = (preferMeta: boolean) => (preferMeta ? 'Cmd+/' : 'Ctrl+/')
 
 const formatShortcutFromEvent = (event: ReactKeyboardEvent<HTMLInputElement>) => {
@@ -427,6 +428,17 @@ export default function MyPageClient({
       !isLoggedIn && section !== 'header' && section !== 'shortcuts' && section !== 'data',
     [isLoggedIn]
   )
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || isLoggedIn) return
+    try {
+      const raw = window.localStorage.getItem(TL_DEFAULT_SETTINGS_STORAGE_KEY)
+      if (!raw) return
+      setTlDefaults(normalizeTlDefaults(raw))
+    } catch {
+      /* ignore */
+    }
+  }, [isLoggedIn])
 
   const handleSectionChange = useCallback(
     (section: typeof activeSection) => {
@@ -1202,7 +1214,14 @@ export default function MyPageClient({
 
   const saveEnvironmentSettings = async () => {
     if (!session?.user) {
-      setMessage('この設定はログイン後に保存できます。')
+      try {
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(TL_DEFAULT_SETTINGS_STORAGE_KEY, JSON.stringify(tlDefaults))
+        }
+        setMessage('環境設定をローカルに保存しました')
+      } catch {
+        setMessage('ローカル保存に失敗しました')
+      }
       return
     }
     setSavingEnvironment(true)
@@ -1217,6 +1236,13 @@ export default function MyPageClient({
     if (error) {
       setMessage(`環境設定の更新に失敗しました: ${error.message}`)
       return
+    }
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(TL_DEFAULT_SETTINGS_STORAGE_KEY, JSON.stringify(tlDefaults))
+      }
+    } catch {
+      /* ignore */
     }
     setMessage('環境設定を更新しました')
   }

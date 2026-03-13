@@ -144,6 +144,8 @@ const parseVideoRef = (videoid: string) => {
 const toStoredVideoId = (platform: 'youtube' | 'bilibili', id: string) =>
   platform === 'bilibili' ? `bili:${id}` : id
 
+const TL_DEFAULT_SETTINGS_STORAGE_KEY = 'app:tlDefaultSettings'
+
 const toFormationNumber = (value: unknown): number | undefined => {
   if (typeof value !== 'number' || !Number.isFinite(value)) return undefined
   return value
@@ -558,6 +560,41 @@ export default function TLSearchPage() {
               obj.formationCardStyle === 'compact' ? 'compact' : 'student-image',
           })
         } else {
+          setUserTlDefaults({
+            includeSquad: true,
+            allowTl: true,
+            visibility: 'public',
+            allowedUserIds: [],
+            hideTlUntilYoutube: true,
+            formationCardStyle: 'student-image',
+          })
+        }
+      } else if (typeof window !== 'undefined') {
+        try {
+          const raw = window.localStorage.getItem(TL_DEFAULT_SETTINGS_STORAGE_KEY)
+          if (raw) {
+            const parsed = JSON.parse(raw) as Record<string, unknown>
+            setUserTlDefaults({
+              includeSquad: typeof parsed.includeSquad === 'boolean' ? parsed.includeSquad : true,
+              allowTl: typeof parsed.allowTl === 'boolean' ? parsed.allowTl : true,
+              visibility:
+                parsed.visibility === 'public' ||
+                parsed.visibility === 'restricted' ||
+                parsed.visibility === 'private'
+                  ? parsed.visibility
+                  : 'public',
+              allowedUserIds: Array.isArray(parsed.allowedUserIds)
+                ? (parsed.allowedUserIds as string[]).filter(Boolean)
+                : [],
+              hideTlUntilYoutube:
+                typeof parsed.hideTlUntilYoutube === 'boolean'
+                  ? parsed.hideTlUntilYoutube
+                  : true,
+              formationCardStyle:
+                parsed.formationCardStyle === 'compact' ? 'compact' : 'student-image',
+            })
+          }
+        } catch {
           setUserTlDefaults({
             includeSquad: true,
             allowTl: true,
