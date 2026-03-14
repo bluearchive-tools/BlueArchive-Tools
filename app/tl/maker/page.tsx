@@ -2326,8 +2326,12 @@ useEffect(() => {
             ? Math.max(0, (st?.normalMotionDuration || 0) - travel)
             : Math.max(0, (gimmickSkill?.duration || 0) - travel)
       const skillDef = skillKind === 'ex' ? st?.skills?.ex : st?.skills?.normal
-      const options = skillKind === 'gimmick'
-        ? Object.values(gimmick?.skills ?? {}).map((sk) => ({ label: sk.name, skill: { title: sk.name, type: sk.type }, duration: sk.duration } satisfies SkillOption))
+      const options: SkillOption[] = skillKind === 'gimmick'
+        ? Object.values(gimmick?.skills ?? {}).map((sk): SkillOption => ({
+            label: sk.name,
+            skill: { title: sk.name, type: sk.type },
+            duration: sk.duration,
+          }))
         : flattenSkillEntries(getSkillEntries(skillDef))
       const pickedOption = options[skillOptionIndex]
       const costValue = pickedOption?.cost ?? (skillCost === '' ? 0 : skillCost)
