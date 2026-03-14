@@ -89,6 +89,8 @@ interface Enemy {
 interface GimmickSkill {
   name: string
   type?: string
+  text?: string
+  values?: SkillValues
   hitDelay?: number
   duration?: number
   effectDuration?: number
@@ -586,7 +588,7 @@ export default function TLMakerPage() {
     x: number
     y: number
     text: string
-    target?: string
+    target?: string | string[]
   } | null>(null)
   const [row, setRow] = useState(0)
   const [start, setStart] = useState(0)
@@ -2088,7 +2090,7 @@ useEffect(() => {
       const gimmick = gimmicks.find((g) => g.id === gimmickId)
       const options: SkillOption[] = Object.values(gimmick?.skills ?? {}).map((sk) => ({
         label: sk.name,
-        skill: { title: sk.name, type: sk.type },
+        skill: { title: sk.name, type: sk.type, text: sk.text, values: sk.values },
         duration: sk.duration,
       }))
       return options
@@ -2329,7 +2331,7 @@ useEffect(() => {
       const options: SkillOption[] = skillKind === 'gimmick'
         ? Object.values(gimmick?.skills ?? {}).map((sk): SkillOption => ({
             label: sk.name,
-            skill: { title: sk.name, type: sk.type },
+            skill: { title: sk.name, type: sk.type, text: sk.text, values: sk.values },
             duration: sk.duration,
           }))
         : flattenSkillEntries(getSkillEntries(skillDef))
@@ -3308,6 +3310,46 @@ function sumSpecialSub(
   }
 
   const getEffectiveTarget = (ev: SkillEvent) => getEffectiveTargets(ev)[0] ?? ev.row
+
+  const getRowDisplayName = (idx: number) => {
+    const id = rowStudents[idx]
+    if (!id) return `行${idx + 1}`
+    const st = students.find((s) => s.id === id)
+    if (st) return st.name
+    const en = enemies.find((e) => `enemy:${e.id}` === id)
+    if (en) return en.name
+    const gimmick = gimmicks.find((g) => `gimmick:${g.id}` === id)
+    if (gimmick) return gimmick.name
+    return `行${idx + 1}`
+  }
+
+  const getTargetNames = (ev: SkillEvent): string[] =>
+    getEffectiveTargets(ev).map((targetIdx) => getRowDisplayName(targetIdx))
+
+  const getPopupTarget = (ev: SkillEvent): string | string[] | undefined => {
+    if (!isTargetableSkill(ev)) return undefined
+    const names = getTargetNames(ev)
+    if (names.length <= 1) return names[0]
+    return names
+  }
+
+  const resolveGimmickSkillForEvent = (ev: SkillEvent): SkillData | undefined => {
+    const rowId = rowStudents[ev.row]
+    if (!rowId.startsWith('gimmick:')) return undefined
+    const gimmick = gimmicks.find((g) => `gimmick:${g.id}` === rowId)
+    if (!gimmick?.skills) return undefined
+    if (ev.skillRef) {
+      const byName = Object.values(gimmick.skills).find((sk) => sk.name === ev.skillRef)
+      if (byName) {
+        return { title: byName.name, type: byName.type, text: byName.text, values: byName.values }
+      }
+    }
+    const byLabel = Object.values(gimmick.skills).find((sk) => sk.name === ev.label)
+    if (byLabel) {
+      return { title: byLabel.name, type: byLabel.type, text: byLabel.text, values: byLabel.values }
+    }
+    return undefined
+  }
 
   const getActiveBuffs = (rowIdx: number, t: number) => {
     return skills
@@ -6603,17 +6645,9 @@ setBuffPopup({
                     const stats = getStats(rowStudents[ev.row])
                     const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
                     const skillDef = ev.type === 'normal' ? st?.skills?.normal : st?.skills?.ex
-                    const skill = resolveSkillForEvent(skillDef, ev)
+                    const skill = resolveSkillForEvent(skillDef, ev) ?? resolveGimmickSkillForEvent(ev)
                     const text = formatSkillText(skill, level)
-                    const targetId = getEffectiveTarget(ev)
-                    const targetName = isTargetableSkill(ev)
-                      ? (() => {
-                          const id = rowStudents[targetId]
-                          const st2 = students.find((s) => s.id === id)
-                          const en = enemies.find((e) => `enemy:${e.id}` === id)
-                          return st2 ? st2.name : en ? en.name : `行${targetId + 1}`
-                        })()
-                      : undefined
+                    const targetName = getPopupTarget(ev)
                     setSelected([{ type: 'skill', id: ev.id }])
                     if (ev.label) {
                       setSkills((prev) => prev.map((sk) => ({ ...sk, show: sk.id === ev.id })))
@@ -6688,17 +6722,9 @@ setBuffPopup({
                       const stats = getStats(rowStudents[ev.row])
                       const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
                       const skillDef = ev.type === 'normal' ? st?.skills?.normal : st?.skills?.ex
-                      const skill = resolveSkillForEvent(skillDef, ev)
+                      const skill = resolveSkillForEvent(skillDef, ev) ?? resolveGimmickSkillForEvent(ev)
                       const text = formatSkillText(skill, level)
-                      const targetId = getEffectiveTarget(ev)
-                      const targetName = isTargetableSkill(ev)
-                        ? (() => {
-                            const id = rowStudents[targetId]
-                            const st2 = students.find((s) => s.id === id)
-                            const en = enemies.find((e) => `enemy:${e.id}` === id)
-                            return st2 ? st2.name : en ? en.name : `行${targetId + 1}`
-                          })()
-                        : undefined
+                      const targetName = getPopupTarget(ev)
                       if (selected.some((sel) => sel.type === 'skill' && sel.id === ev.id)) {
                         const newShow = !ev.show
                         setSkills((prev) =>
@@ -7170,7 +7196,12 @@ setBuffPopup({
           onClick={(e) => e.stopPropagation()}
         >
           <div className="whitespace-pre-wrap mb-1">{skillPopup.text}</div>
-          {skillPopup.target && <div>対象: {skillPopup.target}</div>}
+          {skillPopup.target && (
+            <div>
+              対象:{' '}
+              {Array.isArray(skillPopup.target) ? skillPopup.target.join(' / ') : skillPopup.target}
+            </div>
+          )}
         </div>
       )}
       {costDetailPopup && (
