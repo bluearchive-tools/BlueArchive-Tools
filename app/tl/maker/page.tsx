@@ -4310,6 +4310,37 @@ function resolveBuffText(
                   placeholder="例: クロカゲ・市街地"
                 />
               </label>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block text-sm text-gray-600">
+                  難易度
+                  <select
+                    value={raidDifficulty}
+                    onChange={(e) => setRaidDifficulty(e.target.value as RaidDifficulty)}
+                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  >
+                    <option value="NORMAL">NORMAL</option>
+                    <option value="HARD">HARD</option>
+                    <option value="VERYHARD">VERYHARD</option>
+                    <option value="HARDCORE">HARDCORE</option>
+                    <option value="EXTREME">EXTREME</option>
+                    <option value="INSANE">INSANE</option>
+                    <option value="TORMENT">TORMENT</option>
+                    <option value="LUNATIC">LUNATIC</option>
+                  </select>
+                </label>
+                <label className="block text-sm text-gray-600">
+                  TL長さ
+                  <select
+                    value={totalSeconds}
+                    onChange={(e) => setTotalSeconds(parseInt(e.target.value, 10))}
+                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  >
+                    <option value={180}>3:00</option>
+                    <option value={240}>4:00</option>
+                    <option value={270}>4:30</option>
+                  </select>
+                </label>
+              </div>
               <label className="block text-sm text-gray-600">
                 編成
                 <select
@@ -5251,7 +5282,7 @@ function resolveBuffText(
               <FontAwesomeIcon icon={faTimes} />
             </button>
             <div className="text-lg font-semibold">設定</div>
-            <div className="grid gap-4 md:grid-cols-[180px,1fr]">
+            <div className="grid grid-cols-[180px,1fr] gap-4">
               <div className="border rounded p-2 space-y-1 h-fit">
                 <button type="button" onClick={() => setSettingsTab('project')} className={`w-full text-left rounded px-2 py-1 ${settingsTab === 'project' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'}`}>プロジェクト設定</button>
                 <button type="button" onClick={() => setSettingsTab('environment')} className={`w-full text-left rounded px-2 py-1 ${settingsTab === 'environment' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'}`}>環境設定</button>
