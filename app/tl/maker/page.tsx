@@ -22,6 +22,7 @@ import {
   faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons'
 import AddEnemyModal from '../../../components/AddEnemyModal'
+import AddGimmickModal from '../../../components/AddGimmickModal'
 import PageHelpButton from '../../../components/PageHelpButton'
 import equipmentJson from '@/data/equipment.json'
 import AboutModal from '../../../components/AboutModal'
@@ -85,6 +86,22 @@ interface Enemy {
   attackOrder?: { time: number; skill: string }[]
 }
 
+interface GimmickSkill {
+  name: string
+  type?: string
+  hitDelay?: number
+  duration?: number
+  effectDuration?: number
+}
+
+interface Gimmick {
+  id: string
+  name: string
+  side: 'enemy' | 'ally'
+  skills?: Record<string, GimmickSkill>
+  triggers?: Array<{ time: number; skill: string }>
+}
+
 interface UserStudent {
   level: number
   ex_skill: number
@@ -103,7 +120,7 @@ interface SkillEvent {
   type?: string
   travel?: number
   motion?: number
-  target?: number
+  target?: number | number[]
   cost?: number
   costRecovery?: {
     amount: number
@@ -592,7 +609,7 @@ export default function TLMakerPage() {
   const [showMenu, setShowMenu] = useState(false)
   const [showAddRowMenu, setShowAddRowMenu] = useState(false)
   const [selectedType, setSelectedType] = useState<'skill' | 'event' | null>(null)
-  const [skillKind, setSkillKind] = useState<'ex' | 'normal'>('ex')
+  const [skillKind, setSkillKind] = useState<'ex' | 'normal' | 'gimmick'>('ex')
   const [skillOptionIndex, setSkillOptionIndex] = useState(0)
   const [timeScale, setTimeScale] = useState(20) // px per second
   const [applyTravel, setApplyTravel] = useState(false)
@@ -1147,8 +1164,10 @@ const startResizePluginWindow = useCallback(
   const [hideHeader, setHideHeader] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showEnemyModal, setShowEnemyModal] = useState(false)
+  const [showGimmickModal, setShowGimmickModal] = useState(false)
   const [includeStats, setIncludeStats] = useState(false)
   const [enemies, setEnemies] = useState<Enemy[]>([])
+  const [gimmicks, setGimmicks] = useState<Gimmick[]>([])
   const [defaultTargets, setDefaultTargets] = useState({ attack: 0, debuff: 0 })
   const [tlStats, setTlStats] = useState<Record<string, UserStudent>>({})
   const [defaultLevels, setDefaultLevels] = useState({ ex: 5, normal: 10, passive: 10, sub: 10 })
@@ -1181,6 +1200,7 @@ const startResizePluginWindow = useCallback(
     showPluginModal ||
     !!openPluginWindow ||
     showEnemyModal ||
+    showGimmickModal ||
     aboutOpen
 
 useEffect(() => {
@@ -1704,6 +1724,34 @@ useEffect(() => {
     if (events.length) setSkills((prev) => [...prev, ...events])
   }
 
+
+  const addGimmickRow = (gimmickId: string) => {
+    const idx = rowStudents.length
+    setRowStudents((prev) => [...prev, `gimmick:${gimmickId}`])
+    const gimmick = gimmicks.find((g) => g.id === gimmickId)
+    if (!gimmick?.triggers?.length) return
+    const now = Date.now()
+    const events: SkillEvent[] = gimmick.triggers.map((trigger, i) => {
+      const info = gimmick.skills?.[trigger.skill]
+      const hitDelay = info?.hitDelay ?? 0
+      const duration = info?.duration ?? 0
+      const effectDuration = info?.effectDuration ?? 0
+      const startTime = snapTime(trigger.time)
+      return {
+        id: now + i,
+        row: idx,
+        start: startTime,
+        end: snapTime(startTime + hitDelay + duration + effectDuration),
+        label: info?.name || trigger.skill,
+        type: 'other',
+        travel: hitDelay,
+        motion: duration,
+        skillRef: info?.name || trigger.skill,
+      }
+    })
+    if (events.length) setSkills((prev) => [...prev, ...events])
+  }
+
   const addNormalSkills = (members: string[]) => {
     const now = Date.now()
     const events: SkillEvent[] = []
@@ -1959,9 +2007,18 @@ useEffect(() => {
         /* ignore */
       }
     }
+    const loadGimmicks = async () => {
+      try {
+        const res = await fetch('/api/gimmicks')
+        if (res.ok) setGimmicks(await res.json())
+      } catch {
+        /* ignore */
+      }
+    }
     loadStudents()
     loadEvents()
     loadEnemies()
+    loadGimmicks()
     const map: Record<string, UserStudent> = {}
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)
@@ -2023,16 +2080,37 @@ useEffect(() => {
 
   const skillOptions = useMemo(() => {
     if (selectedType !== 'skill') return []
-    const st = students.find((s) => s.id === rowStudents[row])
+    const rowId = rowStudents[row]
+    if (!rowId) return []
+    if (rowId.startsWith('gimmick:')) {
+      if (skillKind !== 'gimmick') return []
+      const gimmickId = rowId.slice('gimmick:'.length)
+      const gimmick = gimmicks.find((g) => g.id === gimmickId)
+      const options: SkillOption[] = Object.values(gimmick?.skills ?? {}).map((sk) => ({
+        label: sk.name,
+        skill: { title: sk.name, type: sk.type },
+        duration: sk.duration,
+      }))
+      return options
+    }
+    const st = students.find((s) => s.id === rowId)
     if (!st) return []
+    if (skillKind === 'gimmick') return []
     const skillDef = skillKind === 'ex' ? st.skills?.ex : st.skills?.normal
     return flattenSkillEntries(getSkillEntries(skillDef))
-  }, [selectedType, students, rowStudents, row, skillKind])
+  }, [selectedType, students, rowStudents, row, skillKind, gimmicks])
 
   useEffect(() => {
     if (selectedType !== 'skill') return
+    const rowId = rowStudents[row]
+    if (rowId?.startsWith('gimmick:') && skillKind !== 'gimmick') {
+      setSkillKind('gimmick')
+    }
+    if (!rowId?.startsWith('gimmick:') && skillKind === 'gimmick') {
+      setSkillKind('ex')
+    }
     setSkillOptionIndex(0)
-  }, [row, skillKind, selectedType])
+  }, [row, skillKind, selectedType, rowStudents])
 
   useEffect(() => {
     if (skillOptionIndex >= skillOptions.length) {
@@ -2048,7 +2126,12 @@ useEffect(() => {
       setSkillCost(opt.cost)
       return
     }
-    const st = students.find((s) => s.id === rowStudents[row])
+    const rowId = rowStudents[row]
+    if (rowId.startsWith('gimmick:')) {
+      setSkillCost(0)
+      return
+    }
+    const st = students.find((s) => s.id === rowId)
     if (!st) return
     setSkillCost(st.cost ?? 0)
   }, [selectedType, skillOptions, skillOptionIndex, rowStudents, row, students, skillCostTouched])
@@ -2062,9 +2145,21 @@ useEffect(() => {
 
   useEffect(() => {
     if (selectedType !== 'skill') return
-    const st = students.find((s) => s.id === rowStudents[row])
-    if (!st) return
+    const rowId = rowStudents[row]
     const opt = skillOptions[skillOptionIndex]
+    if (rowId.startsWith('gimmick:')) {
+      const gimmick = gimmicks.find((g) => `gimmick:${g.id}` === rowId)
+      const picked = Object.values(gimmick?.skills ?? {})[skillOptionIndex]
+      const dur = opt?.duration ?? picked?.duration
+      const travel = picked?.hitDelay ?? 0
+      if (dur !== undefined) {
+        const extra = applyTravel ? 0 : travel
+        setEnd(snapTime(start + dur + extra))
+      }
+      return
+    }
+    const st = students.find((s) => s.id === rowId)
+    if (!st) return
     const dur =
       opt?.duration ?? (skillKind === 'ex' ? st.exDuration : st.normalDuration)
     if (dur !== undefined) {
@@ -2075,11 +2170,18 @@ useEffect(() => {
       const extra = applyTravel ? 0 : travel
       setEnd(snapTime(start + dur + extra))
     }
-  }, [row, start, selectedType, rowStudents, students, applyTravel, skillKind])
+  }, [row, start, selectedType, rowStudents, students, applyTravel, skillKind, skillOptions, skillOptionIndex, gimmicks])
 
   useEffect(() => {
     if (selectedType !== 'skill') return
-    const st = students.find((s) => s.id === rowStudents[row])
+    const rowId = rowStudents[row]
+    if (rowId.startsWith('gimmick:')) {
+      if (!skillCostTouched) setSkillCost(0)
+      if (!costRecoveryTriggerTouched) setCostRecoveryTrigger(snapTime(start))
+      if (!costRecoveryApplyBonusTouched) setCostRecoveryApplyBonus(false)
+      return
+    }
+    const st = students.find((s) => s.id === rowId)
     if (!st) return
     if (!skillCostTouched) {
       setSkillCost(st.cost ?? 0)
@@ -2201,11 +2303,18 @@ useEffect(() => {
   const addEvent = () => {
     const id = Date.now()
     if (selectedType === 'skill') {
-      const st = students.find((s) => s.id === rowStudents[row])
+      const rowId = rowStudents[row]
+      const st = students.find((s) => s.id === rowId)
+      const gimmick = rowId.startsWith('gimmick:')
+        ? gimmicks.find((g) => g.id === rowId.slice('gimmick:'.length))
+        : undefined
+      const gimmickSkill = skillKind === 'gimmick' ? Object.values(gimmick?.skills ?? {})[skillOptionIndex] : undefined
       const travel =
         skillKind === 'ex'
           ? st?.exHitDelay || 0
-          : st?.normalHitDelay || 0
+          : skillKind === 'normal'
+            ? st?.normalHitDelay || 0
+            : gimmickSkill?.hitDelay || 0
       const duration = end - start
       const baseStart = snapTime(applyTravel ? start - travel : start)
       let s = baseStart
@@ -2213,9 +2322,13 @@ useEffect(() => {
       const motion =
         skillKind === 'ex'
           ? Math.max(0, (st?.exMotionDuration || 0) - travel)
-          : Math.max(0, (st?.normalMotionDuration || 0) - travel)
+          : skillKind === 'normal'
+            ? Math.max(0, (st?.normalMotionDuration || 0) - travel)
+            : Math.max(0, (gimmickSkill?.duration || 0) - travel)
       const skillDef = skillKind === 'ex' ? st?.skills?.ex : st?.skills?.normal
-      const options = flattenSkillEntries(getSkillEntries(skillDef))
+      const options = skillKind === 'gimmick'
+        ? Object.values(gimmick?.skills ?? {}).map((sk) => ({ label: sk.name, skill: { title: sk.name, type: sk.type }, duration: sk.duration } satisfies SkillOption))
+        : flattenSkillEntries(getSkillEntries(skillDef))
       const pickedOption = options[skillOptionIndex]
       const costValue = pickedOption?.cost ?? (skillCost === '' ? 0 : skillCost)
       if (skillKind === 'ex' && waitCost && costValue > 0) {
@@ -2261,7 +2374,7 @@ useEffect(() => {
       const fallbackLabel =
         pickedOption?.label ||
         getPrimarySkillOption(skillDef)?.label ||
-        (skillKind === 'ex' ? 'EX' : 'NS')
+        (skillKind === 'ex' ? 'EX' : skillKind === 'normal' ? 'NS' : 'ギミック')
       const lbl =
         label ||
         pickedOption?.label ||
@@ -2290,7 +2403,7 @@ useEffect(() => {
           label: lbl,
           travel,
           motion,
-          type: skillKind,
+          type: skillKind === 'gimmick' ? 'other' : skillKind,
           cost: costValue,
           ...(costRecoveryEnabled &&
           (costRecoveryDuration === '' ? 0 : costRecoveryDuration) > 0 &&
@@ -3181,20 +3294,23 @@ function sumSpecialSub(
     return t === 'buff' || t === 'attack' || t === 'debuff'
   }
 
-  const getEffectiveTarget = (ev: SkillEvent) => {
-    if (ev.target !== undefined) return ev.target
+  const getEffectiveTargets = (ev: SkillEvent): number[] => {
+    if (Array.isArray(ev.target)) return ev.target
+    if (typeof ev.target === 'number') return [ev.target]
     const t = getSkillType(ev)
-    if (t === 'attack') return defaultTargets.attack
-    if (t === 'debuff') return defaultTargets.debuff
-    return ev.row
+    if (t === 'attack') return [defaultTargets.attack]
+    if (t === 'debuff') return [defaultTargets.debuff]
+    return [ev.row]
   }
+
+  const getEffectiveTarget = (ev: SkillEvent) => getEffectiveTargets(ev)[0] ?? ev.row
 
   const getActiveBuffs = (rowIdx: number, t: number) => {
     return skills
       .filter((ev) => isBuffSkill(ev))
       .filter((ev) => {
-        const target = getEffectiveTarget(ev)
-        if (target !== rowIdx) return false
+        const targets = getEffectiveTargets(ev)
+        if (!targets.includes(rowIdx)) return false
         const start = ev.start + (ev.travel || 0)
         return start <= t && t <= ev.end
       })
@@ -3214,8 +3330,8 @@ function sumSpecialSub(
     skills
       .filter((ev) => isBuffSkill(ev))
       .forEach((ev) => {
-        const target = getEffectiveTarget(ev)
-        if (target !== rowIdx) return
+        const targets = getEffectiveTargets(ev)
+        if (!targets.includes(rowIdx)) return
         const start = ev.start + (ev.travel || 0)
       if (start <= t && t <= ev.end) {
         const st = students.find((s) => s.id === rowStudents[ev.row])
@@ -3239,8 +3355,8 @@ function sumSpecialSub(
   skills
     .filter((ev) => isBuffSkill(ev))
     .forEach((ev) => {
-      const target = getEffectiveTarget(ev)
-      if (target !== rowIdx) return
+      const targets = getEffectiveTargets(ev)
+      if (!targets.includes(rowIdx)) return
 
       const start = ev.start + (ev.travel || 0)
       if (!(start <= t && t <= ev.end)) return
@@ -3937,6 +4053,13 @@ function resolveBuffText(
           close={() => setShowEnemyModal(false)}
         />
       )}
+      {showGimmickModal && (
+        <AddGimmickModal
+          gimmicks={gimmicks}
+          addRow={addGimmickRow}
+          close={() => setShowGimmickModal(false)}
+        />
+      )}
       <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} currentPath="/tl/maker" />
 
       {showCreateModal && (
@@ -4232,6 +4355,16 @@ function resolveBuffText(
                 className="block w-full text-left px-2 py-1 hover:bg-gray-200"
               >
                 敵行追加
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowGimmickModal(true)
+                  setShowMenu(false)
+                }}
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+              >
+                ギミック追加
               </button>
             </div>
           )}
@@ -4613,9 +4746,15 @@ function resolveBuffText(
                 >
                   {rowStudents.map((id, idx) => {
                     const st = students.find((s) => s.id === id)
+                    const gimmick = id.startsWith('gimmick:')
+                      ? gimmicks.find((g) => `gimmick:${g.id}` === id)
+                      : undefined
+                    const enemy = id.startsWith('enemy:')
+                      ? enemies.find((e) => `enemy:${e.id}` === id)
+                      : undefined
                     return (
                       <option key={idx} value={idx}>
-                        {st ? st.name : `行${idx + 1}`}
+                        {st ? st.name : gimmick ? `【ギミック】${gimmick.name}` : enemy ? `【敵】${enemy.name}` : `行${idx + 1}`}
                       </option>
                     )
                   })}
@@ -4625,11 +4764,12 @@ function resolveBuffText(
                 <span>種類:</span>
                 <select
                   value={skillKind}
-                  onChange={(e) => setSkillKind(e.target.value as 'ex' | 'normal')}
+                  onChange={(e) => setSkillKind(e.target.value as 'ex' | 'normal' | 'gimmick')}
                   className="border rounded p-1 w-24"
                 >
                   <option value="ex">EX</option>
                   <option value="normal">NS</option>
+                  {rowStudents[row]?.startsWith('gimmick:') && <option value="gimmick">ギミック</option>}
                 </select>
               </label>
               {skillOptions.length > 1 && (
@@ -6092,6 +6232,16 @@ setBuffPopup({
                 >
                   敵行追加
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowGimmickModal(true)
+                    setShowAddRowMenu(false)
+                  }}
+                  className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                >
+                  ギミック追加
+                </button>
               </div>
             )}
           </div>
@@ -6772,8 +6922,7 @@ setBuffPopup({
                 <button
                   type="button"
                   onClick={() => {
-                    setBuffMenu({ id: eventMenu.id, x: eventMenu.x, y: eventMenu.y })
-                    setEventMenu(null)
+                    setBuffMenu({ id: eventMenu.id, x: eventMenu.x + 160, y: eventMenu.y })
                   }}
                   className="block w-full text-left px-2 py-1 hover:bg-gray-200"
                 >
@@ -6938,7 +7087,7 @@ setBuffPopup({
       )}
       {buffMenu && (
         <div
-          className="fixed bg-white border rounded shadow text-sm z-40 tl-popover"
+          className="fixed bg-white border rounded shadow text-sm z-40 tl-popover min-w-48"
           style={{ left: buffMenu.x, top: buffMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -6946,26 +7095,39 @@ setBuffPopup({
             const sk = skills.find((s) => s.id === buffMenu.id)
             const t = sk ? getSkillType(sk) : undefined
             const enemiesOnly = t === 'attack' || t === 'debuff'
+            const selectedTargets = Array.isArray(sk?.target)
+              ? sk.target
+              : typeof sk?.target === 'number'
+                ? [sk.target]
+                : []
             return rowStudents.map((id, idx) => {
               if (enemiesOnly && !id.startsWith('enemy:')) return null
               const st = students.find((s) => s.id === id)
               const enemy = enemies.find((e) => `enemy:${e.id}` === id)
+              const gimmick = gimmicks.find((g) => `gimmick:${g.id}` === id)
+              const checked = selectedTargets.includes(idx)
               return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => {
-                    setSkills((prev) =>
-                      prev.map((sk2) =>
-                        sk2.id === buffMenu.id ? { ...sk2, target: idx } : sk2
+                <label key={idx} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-200">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => {
+                      setSkills((prev) =>
+                        prev.map((sk2) => {
+                          if (sk2.id !== buffMenu.id) return sk2
+                          const cur = Array.isArray(sk2.target)
+                            ? sk2.target
+                            : typeof sk2.target === 'number'
+                              ? [sk2.target]
+                              : []
+                          const next = cur.includes(idx) ? cur.filter((v) => v !== idx) : [...cur, idx]
+                          return { ...sk2, target: next }
+                        })
                       )
-                    )
-                    setBuffMenu(null)
-                  }}
-                  className="block w-full text-left px-2 py-1 hover:bg-gray-200"
-                >
-                  {st ? st.name : enemy ? enemy.name : `行${idx + 1}`}
-                </button>
+                    }}
+                  />
+                  <span>{st ? st.name : enemy ? enemy.name : gimmick ? `【ギミック】${gimmick.name}` : `行${idx + 1}`}</span>
+                </label>
               )
             })
           })()}

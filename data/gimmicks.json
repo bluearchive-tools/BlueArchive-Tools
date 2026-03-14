@@ -1,0 +1,27 @@
+[
+  {
+    "id": "gimmick-summon-tower",
+    "name": "召喚塔",
+    "side": "enemy",
+    "skills": {
+      "laser": {
+        "name": "レーザー照射",
+        "type": "attack",
+        "hitDelay": 1.2,
+        "duration": 3,
+        "effectDuration": 2
+      },
+      "debuff_field": {
+        "name": "弱体フィールド",
+        "type": "debuff",
+        "hitDelay": 0.5,
+        "duration": 4,
+        "effectDuration": 6
+      }
+    },
+    "triggers": [
+      { "time": 15, "skill": "laser" },
+      { "time": 35, "skill": "debuff_field" }
+    ]
+  }
+]
