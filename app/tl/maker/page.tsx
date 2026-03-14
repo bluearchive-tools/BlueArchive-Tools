@@ -140,6 +140,7 @@ interface MarkerEvent {
   label: string
   duration: number
   skillable: boolean
+  endLineSquad?: number
   show?: boolean
 }
 
@@ -573,6 +574,17 @@ const armorBonus: Record<string, Record<string, number>> = {
   '振動': { '軽装備': 1, '特殊装甲': 1.5, '弾力装甲': 2, '重装甲': 0.5 },
 }
 
+const difficultyTimeMultiplier: Record<'NORMAL' | 'HARD' | 'VERYHARD' | 'HARDCORE' | 'EXTREME' | 'INSANE' | 'TORMENT' | 'LUNATIC', number> = {
+  NORMAL: 120,
+  HARD: 240,
+  VERYHARD: 480,
+  HARDCORE: 960,
+  EXTREME: 1440,
+  INSANE: 1920,
+  TORMENT: 2400,
+  LUNATIC: 2880,
+}
+
 
 export default function TLMakerPage() {
   const [students, setStudents] = useState<Student[]>([])
@@ -605,12 +617,13 @@ export default function TLMakerPage() {
   const [costRecoveryApplyBonus, setCostRecoveryApplyBonus] = useState(false)
   const [costRecoveryApplyBonusTouched, setCostRecoveryApplyBonusTouched] = useState(false)
   const [templateId, setTemplateId] = useState('')
+  const [endLineSquad, setEndLineSquad] = useState(0)
   const [showForm, setShowForm] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [squads, setSquads] = useState<{ name: string; members: string[] }[]>([])
   const [showMenu, setShowMenu] = useState(false)
   const [showAddRowMenu, setShowAddRowMenu] = useState(false)
-  const [selectedType, setSelectedType] = useState<'skill' | 'event' | null>(null)
+  const [selectedType, setSelectedType] = useState<'skill' | 'event' | 'endLine' | null>(null)
   const [skillKind, setSkillKind] = useState<'ex' | 'normal' | 'gimmick'>('ex')
   const [skillOptionIndex, setSkillOptionIndex] = useState(0)
   const [timeScale, setTimeScale] = useState(20) // px per second
@@ -626,6 +639,7 @@ export default function TLMakerPage() {
   const [showEditMenu, setShowEditMenu] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [movingSkill, setMovingSkill] = useState<{ id: number; offset: number } | null>(null)
+  const [movingMarker, setMovingMarker] = useState<{ id: number; offset: number } | null>(null)
   const [moveModeSkill, setMoveModeSkill] = useState<number | null>(null)
   const scrollLock = useRef(0)
   const [playheadMenu, setPlayheadMenu] = useState<{ x: number; y: number } | null>(null)
@@ -1163,6 +1177,7 @@ const startResizePluginWindow = useCallback(
   const [textTL, setTextTL] = useState('')
   const [showCostLines, setShowCostLines] = useState(false)
   const [showDamageCalc, setShowDamageCalc] = useState(false)
+  const [raidDifficulty, setRaidDifficulty] = useState<'NORMAL' | 'HARD' | 'VERYHARD' | 'HARDCORE' | 'EXTREME' | 'INSANE' | 'TORMENT' | 'LUNATIC'>('INSANE')
   const [hideHeader, setHideHeader] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showEnemyModal, setShowEnemyModal] = useState(false)
@@ -1411,6 +1426,18 @@ useEffect(() => {
   useEffect(() => {
     localStorage.setItem('tlLength', String(totalSeconds))
   }, [totalSeconds])
+
+  useEffect(() => {
+    const raw = localStorage.getItem('tlRaidDifficulty')
+    if (!raw) return
+    if (raw === 'NORMAL' || raw === 'HARD' || raw === 'VERYHARD' || raw === 'HARDCORE' || raw === 'EXTREME' || raw === 'INSANE' || raw === 'TORMENT' || raw === 'LUNATIC') {
+      setRaidDifficulty(raw)
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('tlRaidDifficulty', raidDifficulty)
+  }, [raidDifficulty])
 
   useEffect(() => {
     const raw = localStorage.getItem('tlDefaultSkillLevels')
@@ -2439,6 +2466,21 @@ useEffect(() => {
           skillable: tpl?.skillable ?? false,
         },
       ])
+    } else if (selectedType === 'endLine') {
+      const squadMax = Math.max(1, selectedGroup?.squads?.length ?? 1)
+      const targetSquad = Math.max(0, Math.min(endLineSquad, squadMax - 1))
+      const line: MarkerEvent = {
+        id,
+        time: snapTime(start),
+        label: `終了ライン(部隊${targetSquad + 1})`,
+        duration: 0.05,
+        skillable: false,
+        endLineSquad: targetSquad,
+      }
+      setMarkers((prev) => [
+        ...prev.filter((m) => m.endLineSquad !== targetSquad),
+        line,
+      ])
     }
     setLabel('')
     setShowForm(false)
@@ -2674,6 +2716,15 @@ useEffect(() => {
     setCostRecoveryApplyBonusTouched(false)
     setShowForm(true)
   }, [getStats, playhead, rowStudents, snapTime, students])
+
+  const openAddEndLineModal = useCallback(() => {
+    setSelectedType('endLine')
+    setStart(snapTime(playhead))
+    setEnd(snapTime(playhead + 1))
+    setEndLineSquad(Math.max(0, squadIndex))
+    setLabel('終了ライン')
+    setShowForm(true)
+  }, [playhead, snapTime, squadIndex])
 
   const cutSelected = useCallback(() => {
     if (!selected.length) return
@@ -3128,6 +3179,38 @@ useEffect(() => {
   if (!initialized) return 0
   return calcCost(playhead)
 }, [initialized, calcCost, playhead])
+
+  const scoreSummary = useMemo(() => {
+    const squadCount = Math.max(1, selectedGroup?.squads?.length ?? 1)
+    const endLineMap = new Map<number, MarkerEvent>()
+    markers.forEach((marker) => {
+      if (marker.endLineSquad === undefined) return
+      endLineMap.set(marker.endLineSquad, marker)
+    })
+
+    const cumulativeRows: Array<{ squad: number; time: number; cumulative: number }> = []
+    let cumulative = 0
+    for (let i = 0; i < squadCount; i++) {
+      const line = endLineMap.get(i)
+      if (!line) break
+      cumulative += Math.max(0, line.time)
+      cumulativeRows.push({ squad: i, time: Math.max(0, line.time), cumulative })
+    }
+
+    const hasSingleClear = squadCount === 1 && cumulativeRows.length === 1
+    const hasMultiClear = squadCount > 1 && cumulativeRows.length === squadCount
+    const cleared = hasSingleClear || hasMultiClear
+    const battleTime = cumulativeRows.length ? cumulativeRows[cumulativeRows.length - 1].cumulative : null
+    const timeScore = battleTime === null ? null : Math.max(0, Math.floor((3600 - battleTime) * difficultyTimeMultiplier[raidDifficulty]))
+
+    return {
+      squadCount,
+      cleared,
+      battleTime,
+      timeScore,
+      cumulativeRows,
+    }
+  }, [markers, raidDifficulty, selectedGroup])
 
   const dangerSkills = useMemo(() => {
     if (!initialized) return new Set<number>()
@@ -4385,6 +4468,16 @@ function resolveBuffText(
               <button
                 type="button"
                 onClick={() => {
+                  openAddEndLineModal()
+                  setShowMenu(false)
+                }}
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+              >
+                終了ライン追加
+              </button>
+              <button
+                type="button"
+                onClick={() => {
                   addRow()
                   setShowMenu(false)
                 }}
@@ -4779,7 +4872,9 @@ function resolveBuffText(
               <FontAwesomeIcon icon={faTimes} />
             </button>
           {selectedType && (
-            <div className="text-sm font-bold">{selectedType === 'skill' ? 'スキル' : 'イベント'}</div>
+            <div className="text-sm font-bold">
+              {selectedType === 'skill' ? 'スキル' : selectedType === 'event' ? 'イベント' : '終了ライン'}
+            </div>
           )}
           {selectedType === 'skill' && (
             <>
@@ -4985,6 +5080,33 @@ function resolveBuffText(
               </label>
             </>
           )}
+          {selectedType === 'endLine' && (
+            <>
+              <label className="flex items-center gap-2">
+                <span>対象部隊:</span>
+                <select
+                  value={endLineSquad}
+                  onChange={(e) => setEndLineSquad(parseInt(e.target.value, 10))}
+                  className="border rounded p-1 flex-1"
+                >
+                  {(selectedGroup?.squads ?? [{}, {}, {}, {}, {}, {}]).map((_, idx) => (
+                    <option key={`endline-squad-${idx}`} value={idx}>
+                      部隊{idx + 1}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex items-center gap-2">
+                <span>時間:</span>
+                <input
+                  type="number"
+                  value={start}
+                  onChange={(e) => setStart(parseFloat(e.target.value))}
+                  className="border rounded p-1 w-24"
+                />
+              </label>
+            </>
+          )}
           <label className="flex items-center gap-2">
             <span>ラベル:</span>
             <input
@@ -5052,6 +5174,61 @@ function resolveBuffText(
             <div className="text-lg font-semibold">設定</div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-4">
+                <div className="text-sm font-bold border-b pb-1">プロジェクト設定</div>
+                <section className="rounded border border-gray-200 p-3 space-y-2">
+                  <div className="text-sm font-bold">難易度</div>
+                  <select
+                    value={raidDifficulty}
+                    onChange={(e) => setRaidDifficulty(e.target.value as 'NORMAL' | 'HARD' | 'VERYHARD' | 'HARDCORE' | 'EXTREME' | 'INSANE' | 'TORMENT' | 'LUNATIC')}
+                    className="border rounded p-1"
+                  >
+                    <option value="NORMAL">NORMAL</option>
+                    <option value="HARD">HARD</option>
+                    <option value="VERYHARD">VERYHARD</option>
+                    <option value="HARDCORE">HARDCORE</option>
+                    <option value="EXTREME">EXTREME</option>
+                    <option value="INSANE">INSANE</option>
+                    <option value="TORMENT">TORMENT</option>
+                    <option value="LUNATIC">LUNATIC</option>
+                  </select>
+                </section>
+
+                <section className="rounded border border-gray-200 p-3 space-y-2">
+                  <div className="text-sm font-bold">TL長さ</div>
+                  <select
+                    value={totalSeconds}
+                    onChange={(e) => setTotalSeconds(parseInt(e.target.value, 10))}
+                    className="border rounded p-1"
+                  >
+                    <option value={180}>3:00</option>
+                    <option value={240}>4:00</option>
+                    <option value={270}>4:30</option>
+                  </select>
+                </section>
+
+                <section className="rounded border border-gray-200 p-3 space-y-2">
+                  <div className="text-sm font-bold">スナップ</div>
+                  <label className="flex items-center gap-2">
+                    <span>単位:</span>
+                    <select
+                      value={snapPreset}
+                      onChange={(e) =>
+                        setSnapPreset(e.target.value as 'off' | '0.5' | '0.1' | '0.05' | '0.033')
+                      }
+                      className="border rounded p-1"
+                    >
+                      <option value="off">OFF</option>
+                      <option value="0.5">0.5s</option>
+                      <option value="0.1">0.1s</option>
+                      <option value="0.05">0.05s</option>
+                      <option value="0.033">0.033s</option>
+                    </select>
+                  </label>
+                </section>
+              </div>
+
+              <div className="space-y-4">
+                <div className="text-sm font-bold border-b pb-1">環境設定</div>
                 <section className="rounded border border-gray-200 p-3 space-y-2">
                   <div className="text-sm font-bold">プロモード</div>
                   <label className="flex items-center gap-2">
@@ -5132,41 +5309,6 @@ function resolveBuffText(
                   >
                     自由配置をリセット
                   </button>
-                </section>
-
-                <section className="rounded border border-gray-200 p-3 space-y-2">
-                  <div className="text-sm font-bold">TL長さ</div>
-                  <select
-                    value={totalSeconds}
-                    onChange={(e) => setTotalSeconds(parseInt(e.target.value))}
-                    className="border rounded p-1"
-                  >
-                    <option value={180}>3:00</option>
-                    <option value={240}>4:00</option>
-                    <option value={270}>4:30</option>
-                  </select>
-                </section>
-              </div>
-
-              <div className="space-y-4">
-                <section className="rounded border border-gray-200 p-3 space-y-2">
-                  <div className="text-sm font-bold">スナップ</div>
-                  <label className="flex items-center gap-2">
-                    <span>単位:</span>
-                    <select
-                      value={snapPreset}
-                      onChange={(e) =>
-                        setSnapPreset(e.target.value as 'off' | '0.5' | '0.1' | '0.05' | '0.033')
-                      }
-                      className="border rounded p-1"
-                    >
-                      <option value="off">OFF</option>
-                      <option value="0.5">0.5s</option>
-                      <option value="0.1">0.1s</option>
-                      <option value="0.05">0.05s</option>
-                      <option value="0.033">0.033s</option>
-                    </select>
-                  </label>
                 </section>
 
                 <section className="rounded border border-gray-200 p-3 space-y-2">
@@ -6296,11 +6438,11 @@ setBuffPopup({
           ref={containerRef}
           className="w-full"
           style={{
-            overflowX: dragging || movingSkill ? 'hidden' : 'auto',
-            touchAction: dragging || movingSkill ? 'none' : 'pan-x',
+            overflowX: dragging || movingSkill || movingMarker ? 'hidden' : 'auto',
+            touchAction: dragging || movingSkill || movingMarker ? 'none' : 'pan-x',
           }}
           onWheel={(e) => {
-            if (dragging || movingSkill) e.preventDefault()
+            if (dragging || movingSkill || movingMarker) e.preventDefault()
           }}
         >
           <div className="relative" style={{ width: totalSeconds * timeScale }}>
@@ -6512,6 +6654,11 @@ setBuffPopup({
                 let timer: NodeJS.Timeout | null = null
                 const startTouch = (e: React.TouchEvent) => {
                   e.stopPropagation()
+                  if (m.endLineSquad !== undefined) {
+                    const t = e.touches[0]
+                    setMovingMarker({ id: m.id, offset: t.clientX - m.time * timeScale })
+                    return
+                  }
                   timer = setTimeout(() => {
                     const t = e.touches[0]
                     setSelected([{ type: 'marker', id: m.id }])
@@ -6525,6 +6672,9 @@ setBuffPopup({
                 }
                 const clearTouch = () => {
                   if (timer) clearTimeout(timer)
+                  if (movingMarker && movingMarker.id === m.id) {
+                    setMovingMarker(null)
+                  }
                 }
                 const pluginMarker = getPluginDecorForMarker(m)
                 if (pluginMarker.hide) return null
@@ -6545,6 +6695,7 @@ setBuffPopup({
                       touchAction: 'pan-x',
                     }}
                     onClick={(e) => {
+                      if (movingMarker && movingMarker.id === m.id) return
                       e.stopPropagation()
                       if (e.shiftKey) {
                         setSelected((prev) => {
@@ -6566,13 +6717,37 @@ setBuffPopup({
                       }
                     }}
                     onContextMenu={(e) => {
+                      if (m.endLineSquad !== undefined) return
                       e.preventDefault()
                       setEventMenu({ type: 'marker', id: m.id, x: e.clientX, y: e.clientY })
+                    }}
+                    onMouseDown={(e) => {
+                      if (m.endLineSquad === undefined) return
+                      e.preventDefault()
+                      setMovingMarker({ id: m.id, offset: e.clientX - m.time * timeScale })
+                    }}
+                    onMouseMove={(e) => {
+                      if (!movingMarker || movingMarker.id !== m.id) return
+                      const newTime = Math.max(0, snapTime((e.clientX - movingMarker.offset) / timeScale))
+                      setMarkers((prev) => prev.map((mk) => (mk.id === m.id ? { ...mk, time: newTime } : mk)))
+                    }}
+                    onMouseUp={() => {
+                      if (movingMarker && movingMarker.id === m.id) setMovingMarker(null)
+                    }}
+                    onMouseLeave={() => {
+                      if (movingMarker && movingMarker.id === m.id) setMovingMarker(null)
                     }}
                     onDoubleClick={(e) => {
                       e.stopPropagation()
                     }}
                     onTouchStart={startTouch}
+                    onTouchMove={(e) => {
+                      if (!movingMarker || movingMarker.id !== m.id) return
+                      e.stopPropagation()
+                      const touch = e.touches[0]
+                      const newTime = Math.max(0, snapTime((touch.clientX - movingMarker.offset) / timeScale))
+                      setMarkers((prev) => prev.map((mk) => (mk.id === m.id ? { ...mk, time: newTime } : mk)))
+                    }}
                     onTouchEnd={(e) => {
                       e.stopPropagation()
                       clearTouch()
@@ -7376,6 +7551,22 @@ setBuffPopup({
           </div>
         )
       })()}
+      {scoreSummary.cumulativeRows.length > 0 && (
+        <div className="mt-2 text-sm relative" ref={registerBlockRef('default:scoreCalc')} style={getBlockStyle('default:scoreCalc', 3040, 520)}>
+          {renderBlockHandle('default:scoreCalc', 520)}
+          {renderBlockResizeHandle('default:scoreCalc', 520, 220)}
+          <div className="font-semibold">スコア計算（{raidDifficulty}）</div>
+          <div className="text-xs text-gray-600 mb-1">計算式: (3600 - 戦闘時間[秒]) × {difficultyTimeMultiplier[raidDifficulty]}</div>
+          <div className="space-y-1">
+            {scoreSummary.cumulativeRows.map((row) => (
+              <div key={`score-row-${row.squad}`}>部隊{row.squad + 1}: {row.time.toFixed(2)}秒（累計 {row.cumulative.toFixed(2)}秒）</div>
+            ))}
+          </div>
+          <div className="mt-2">クリア判定: {scoreSummary.cleared ? 'クリア' : '未クリア（全終了ライン未設定）'}</div>
+          <div>合計戦闘時間: {scoreSummary.battleTime === null ? '-' : `${scoreSummary.battleTime.toFixed(2)}秒`}</div>
+          <div>タイムスコア: {scoreSummary.timeScore === null ? '-' : scoreSummary.timeScore.toLocaleString()}</div>
+        </div>
+      )}
         </Fragment>
       )}
     </main>
