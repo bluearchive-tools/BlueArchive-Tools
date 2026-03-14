@@ -565,7 +565,13 @@ interface ProjectSnapshot {
   markers: MarkerEvent[]
   groupId: string
   squadIndex: number
+  projectSettings: {
+    totalSeconds: number
+    raidDifficulty: RaidDifficulty
+  }
 }
+
+type RaidDifficulty = 'NORMAL' | 'HARD' | 'VERYHARD' | 'HARDCORE' | 'EXTREME' | 'INSANE' | 'TORMENT' | 'LUNATIC'
 
 const armorBonus: Record<string, Record<string, number>> = {
   '爆発': { '重装甲': 1, '軽装備': 2, '特殊装甲': 0.5, '弾力装甲': 0.5 },
@@ -574,7 +580,7 @@ const armorBonus: Record<string, Record<string, number>> = {
   '振動': { '軽装備': 1, '特殊装甲': 1.5, '弾力装甲': 2, '重装甲': 0.5 },
 }
 
-const difficultyTimeMultiplier: Record<'NORMAL' | 'HARD' | 'VERYHARD' | 'HARDCORE' | 'EXTREME' | 'INSANE' | 'TORMENT' | 'LUNATIC', number> = {
+const difficultyTimeMultiplier: Record<RaidDifficulty, number> = {
   NORMAL: 120,
   HARD: 240,
   VERYHARD: 480,
@@ -583,6 +589,23 @@ const difficultyTimeMultiplier: Record<'NORMAL' | 'HARD' | 'VERYHARD' | 'HARDCOR
   INSANE: 1920,
   TORMENT: 2400,
   LUNATIC: 2880,
+}
+
+const difficultyScoreBase: Record<RaidDifficulty, number> = {
+  NORMAL: 250000,
+  HARD: 500000,
+  VERYHARD: 1000000,
+  HARDCORE: 2000000,
+  EXTREME: 4000000,
+  INSANE: 6800000,
+  TORMENT: 12200000,
+  LUNATIC: 17710000,
+}
+
+const hpScoreByLength: Record<180 | 240 | 270, Record<RaidDifficulty, number>> = {
+  180: { NORMAL: 229000, HARD: 458000, VERYHARD: 916000, HARDCORE: 1832000, EXTREME: 5392000, INSANE: 12449600, TORMENT: 18876000, LUNATIC: 25525000 },
+  240: { NORMAL: 277000, HARD: 554000, VERYHARD: 1108000, HARDCORE: 2216000, EXTREME: 6160000, INSANE: 14216000, TORMENT: 19508000, LUNATIC: 26315000 },
+  270: { NORMAL: 304700, HARD: 609400, VERYHARD: 1218800, HARDCORE: 2437600, EXTREME: 6578880, INSANE: 14941016, TORMENT: 20302000, LUNATIC: 26954000 },
 }
 
 
@@ -1177,7 +1200,8 @@ const startResizePluginWindow = useCallback(
   const [textTL, setTextTL] = useState('')
   const [showCostLines, setShowCostLines] = useState(false)
   const [showDamageCalc, setShowDamageCalc] = useState(false)
-  const [raidDifficulty, setRaidDifficulty] = useState<'NORMAL' | 'HARD' | 'VERYHARD' | 'HARDCORE' | 'EXTREME' | 'INSANE' | 'TORMENT' | 'LUNATIC'>('INSANE')
+  const [raidDifficulty, setRaidDifficulty] = useState<RaidDifficulty>('INSANE')
+  const [settingsTab, setSettingsTab] = useState<'project' | 'environment'>('project')
   const [hideHeader, setHideHeader] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showEnemyModal, setShowEnemyModal] = useState(false)
@@ -1416,6 +1440,10 @@ useEffect(() => {
   }, [showCreateModal])
 
   useEffect(() => {
+    if (showSettings) setSettingsTab('project')
+  }, [showSettings])
+
+  useEffect(() => {
     const raw = localStorage.getItem('tlLength')
     if (raw) {
       const n = parseInt(raw)
@@ -1505,7 +1533,11 @@ useEffect(() => {
     markers: markers.map((m) => ({ ...m })),
     groupId: selectedGroup?.id ?? '',
     squadIndex,
-  }), [projectName, rowStudents, skills, markers, selectedGroup, squadIndex])
+    projectSettings: {
+      totalSeconds,
+      raidDifficulty,
+    },
+  }), [projectName, rowStudents, skills, markers, selectedGroup, squadIndex, totalSeconds, raidDifficulty])
 
   const getSnapshotRef = useRef(getSnapshot)
   useEffect(() => {
@@ -1854,6 +1886,35 @@ useEffect(() => {
     setShowImport(false)
   }
 
+  const applyImportedProjectData = (data: {
+    projectName?: string
+    rowStudents?: string[]
+    skills?: SkillEvent[]
+    markers?: MarkerEvent[]
+    groupId?: string
+    squadIndex?: number
+    projectSettings?: {
+      totalSeconds?: number
+      raidDifficulty?: RaidDifficulty
+    }
+  }) => {
+    setProjectName(data.projectName || '')
+    setSkills(data.skills || [])
+    setMarkers(data.markers || [])
+    applyMembers(data.rowStudents || [])
+    const g = groups.find((gr) => gr.id === data.groupId) || null
+    setSelectedGroup(g)
+    setSquadIndex(data.squadIndex || 0)
+    const importedSeconds = data.projectSettings?.totalSeconds
+    if (typeof importedSeconds === 'number' && Number.isFinite(importedSeconds)) {
+      setTotalSeconds(importedSeconds)
+    }
+    const importedDifficulty = data.projectSettings?.raidDifficulty
+    if (importedDifficulty) {
+      setRaidDifficulty(importedDifficulty)
+    }
+  }
+
   const projectKey = (gid: string | null, idx: number) =>
     gid ? `tlMakerProject_${gid}_${idx}` : 'tlMakerProject_default'
 
@@ -1884,10 +1945,22 @@ useEffect(() => {
         rowStudents: string[]
         skills: SkillEvent[]
         markers: MarkerEvent[]
+        projectSettings?: {
+          totalSeconds?: number
+          raidDifficulty?: RaidDifficulty
+        }
       }
       setProjectName(data.projectName)
       setSkills(data.skills || [])
       setMarkers(data.markers || [])
+      const savedTotalSeconds = data.projectSettings?.totalSeconds
+      if (typeof savedTotalSeconds === 'number' && Number.isFinite(savedTotalSeconds)) {
+        setTotalSeconds(savedTotalSeconds)
+      }
+      const savedDifficulty = data.projectSettings?.raidDifficulty
+      if (savedDifficulty) {
+        setRaidDifficulty(savedDifficulty)
+      }
       applyMembers(data.rowStudents || fallbackMembers || [])
       setTlStats({})
       return true
@@ -1904,6 +1977,10 @@ useEffect(() => {
       rowStudents,
       skills,
       markers,
+      projectSettings: {
+        totalSeconds,
+        raidDifficulty,
+      },
     }
     localStorage.setItem(key, JSON.stringify(data))
     localStorage.setItem('tlMakerCache', JSON.stringify({
@@ -1913,6 +1990,10 @@ useEffect(() => {
       rowStudents,
       skills,
       markers,
+      projectSettings: {
+        totalSeconds,
+        raidDifficulty,
+      },
     }))
     localStorage.setItem('tlMakerLastKey', key)
   }
@@ -1925,6 +2006,10 @@ useEffect(() => {
       markers,
       groupId: selectedGroup?.id ?? '',
       squadIndex,
+      projectSettings: {
+        totalSeconds,
+        raidDifficulty,
+      },
     }
     if (withStats) {
       const stats: Record<string, UserStudent> = {}
@@ -1976,6 +2061,10 @@ useEffect(() => {
     setRowStudents([...snap.rowStudents])
     setSkills(snap.skills.map((s) => ({ ...s })))
     setMarkers(snap.markers.map((m) => ({ ...m })))
+    if (snap.projectSettings) {
+      setTotalSeconds(snap.projectSettings.totalSeconds)
+      setRaidDifficulty(snap.projectSettings.raidDifficulty)
+    }
     const g = groups.find((gr) => gr.id === snap.groupId) || null
     setSelectedGroup(g)
     setSquadIndex(snap.squadIndex)
@@ -2228,8 +2317,8 @@ useEffect(() => {
       const uniqueStar = Number(stats?.unique_star ?? 0)
       setCostRecoveryApplyBonus(uniqueStar >= 2)
     }
-  }, [
-    selectedType,
+}, [
+  selectedType,
     row,
     start,
     rowStudents,
@@ -2237,13 +2326,13 @@ useEffect(() => {
     skillKind,
     skillCostTouched,
     costRecoveryTriggerTouched,
-    costRecoveryApplyBonusTouched,
-  ])
+  costRecoveryApplyBonusTouched,
+])
 
   useEffect(() => {
   if (!initialized || isRestoring.current) return
   saveProject()
-}, [initialized, projectName, selectedGroup, squadIndex, rowStudents, skills, markers])
+}, [initialized, projectName, selectedGroup, squadIndex, rowStudents, skills, markers, totalSeconds, raidDifficulty])
 
 
   const INITIAL_COST = 0
@@ -3202,15 +3291,23 @@ useEffect(() => {
     const cleared = hasSingleClear || hasMultiClear
     const battleTime = cumulativeRows.length ? cumulativeRows[cumulativeRows.length - 1].cumulative : null
     const timeScore = battleTime === null ? null : Math.max(0, Math.floor((3600 - battleTime) * difficultyTimeMultiplier[raidDifficulty]))
+    const hpTableLength: 180 | 240 | 270 = totalSeconds <= 180 ? 180 : totalSeconds <= 240 ? 240 : 270
+    const hpScore = hpScoreByLength[hpTableLength][raidDifficulty]
+    const difficultyScore = difficultyScoreBase[raidDifficulty]
+    const totalScore = timeScore === null ? null : timeScore + hpScore + difficultyScore
 
     return {
       squadCount,
       cleared,
       battleTime,
       timeScore,
+      hpScore,
+      difficultyScore,
+      totalScore,
+      hpTableLength,
       cumulativeRows,
     }
-  }, [markers, raidDifficulty, selectedGroup])
+  }, [markers, raidDifficulty, selectedGroup, totalSeconds])
 
   const dangerSkills = useMemo(() => {
     if (!initialized) return new Set<number>()
@@ -4023,13 +4120,7 @@ function resolveBuffText(
                     file.text().then((txt) => {
                       try {
                         const data = JSON.parse(txt)
-                        setProjectName(data.projectName || '')
-                        setSkills(data.skills || [])
-                        setMarkers(data.markers || [])
-                        applyMembers(data.rowStudents || [])
-                        const g = groups.find((gr) => gr.id === data.groupId) || null
-                        setSelectedGroup(g)
-                        setSquadIndex(data.squadIndex || 0)
+                        applyImportedProjectData(data)
                         if (data.userStats) {
                           const map: Record<string, UserStudent> = {}
                           Object.entries(data.userStats as Record<string, UserStudent>).forEach(
@@ -4113,13 +4204,7 @@ function resolveBuffText(
                     if (!raw) return
                     try {
                       const data = JSON.parse(raw)
-                      setProjectName(data.projectName || '')
-                      setSkills(data.skills || [])
-                      setMarkers(data.markers || [])
-                      applyMembers(data.rowStudents || [])
-                      const g = groups.find((gr) => gr.id === data.groupId) || null
-                      setSelectedGroup(g)
-                      setSquadIndex(data.squadIndex || 0)
+                      applyImportedProjectData(data)
                       setTlStats({})
                       setInitialized(true)
                     } catch {
@@ -4395,13 +4480,7 @@ function resolveBuffText(
                       file.text().then((txt) => {
                         try {
                           const data = JSON.parse(txt)
-                          setProjectName(data.projectName || '')
-                          setSkills(data.skills || [])
-                          setMarkers(data.markers || [])
-                          applyMembers(data.rowStudents || [])
-                          const g = groups.find((gr) => gr.id === data.groupId) || null
-                          setSelectedGroup(g)
-                          setSquadIndex(data.squadIndex || 0)
+                          applyImportedProjectData(data)
                           setInitialized(true)
                         } catch {
                           /* ignore */
@@ -5160,7 +5239,7 @@ function resolveBuffText(
           onClick={() => setShowSettings(false)}
         >
           <div
-            className="border rounded p-4 bg-white space-y-3 max-h-[70vh] overflow-y-auto overscroll-contain relative w-[860px] max-w-[95vw] tl-modal-panel"
+            className="border rounded p-4 bg-white space-y-3 max-h-[70vh] overflow-y-auto relative w-[860px] max-w-[95vw] tl-modal-panel"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -5172,8 +5251,12 @@ function resolveBuffText(
               <FontAwesomeIcon icon={faTimes} />
             </button>
             <div className="text-lg font-semibold">設定</div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-[180px,1fr]">
+              <div className="border rounded p-2 space-y-1 h-fit">
+                <button type="button" onClick={() => setSettingsTab('project')} className={`w-full text-left rounded px-2 py-1 ${settingsTab === 'project' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'}`}>プロジェクト設定</button>
+                <button type="button" onClick={() => setSettingsTab('environment')} className={`w-full text-left rounded px-2 py-1 ${settingsTab === 'environment' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'}`}>環境設定</button>
+              </div>
+              <div className={settingsTab === 'project' ? 'space-y-4' : 'hidden'}>
                 <div className="text-sm font-bold border-b pb-1">プロジェクト設定</div>
                 <section className="rounded border border-gray-200 p-3 space-y-2">
                   <div className="text-sm font-bold">難易度</div>
@@ -5206,15 +5289,18 @@ function resolveBuffText(
                   </select>
                 </section>
 
+              </div>
+
+
+              <div className={settingsTab === 'environment' ? 'space-y-4' : 'hidden'}>
+                <div className="text-sm font-bold border-b pb-1">環境設定</div>
                 <section className="rounded border border-gray-200 p-3 space-y-2">
                   <div className="text-sm font-bold">スナップ</div>
                   <label className="flex items-center gap-2">
                     <span>単位:</span>
                     <select
                       value={snapPreset}
-                      onChange={(e) =>
-                        setSnapPreset(e.target.value as 'off' | '0.5' | '0.1' | '0.05' | '0.033')
-                      }
+                      onChange={(e) => setSnapPreset(e.target.value as 'off' | '0.5' | '0.1' | '0.05' | '0.033')}
                       className="border rounded p-1"
                     >
                       <option value="off">OFF</option>
@@ -5225,10 +5311,6 @@ function resolveBuffText(
                     </select>
                   </label>
                 </section>
-              </div>
-
-              <div className="space-y-4">
-                <div className="text-sm font-bold border-b pb-1">環境設定</div>
                 <section className="rounded border border-gray-200 p-3 space-y-2">
                   <div className="text-sm font-bold">プロモード</div>
                   <label className="flex items-center gap-2">
@@ -6229,6 +6311,7 @@ return (
                   </div>
                 </div>
               </div>
+              )}
             </div>
           </div>
         </div>
@@ -6717,7 +6800,6 @@ setBuffPopup({
                       }
                     }}
                     onContextMenu={(e) => {
-                      if (m.endLineSquad !== undefined) return
                       e.preventDefault()
                       setEventMenu({ type: 'marker', id: m.id, x: e.clientX, y: e.clientY })
                     }}
@@ -7556,7 +7638,8 @@ setBuffPopup({
           {renderBlockHandle('default:scoreCalc', 520)}
           {renderBlockResizeHandle('default:scoreCalc', 520, 220)}
           <div className="font-semibold">スコア計算（{raidDifficulty}）</div>
-          <div className="text-xs text-gray-600 mb-1">計算式: (3600 - 戦闘時間[秒]) × {difficultyTimeMultiplier[raidDifficulty]}</div>
+          <div className="text-xs text-gray-600 mb-1">タイム計算式: (3600 - 戦闘時間[秒]) × {difficultyTimeMultiplier[raidDifficulty]}</div>
+          <div className="text-xs text-gray-600 mb-1">残りHPスコア表: {scoreSummary.hpTableLength === 180 ? '3:00' : scoreSummary.hpTableLength === 240 ? '4:00' : '4:30'}</div>
           <div className="space-y-1">
             {scoreSummary.cumulativeRows.map((row) => (
               <div key={`score-row-${row.squad}`}>部隊{row.squad + 1}: {row.time.toFixed(2)}秒（累計 {row.cumulative.toFixed(2)}秒）</div>
@@ -7565,6 +7648,9 @@ setBuffPopup({
           <div className="mt-2">クリア判定: {scoreSummary.cleared ? 'クリア' : '未クリア（全終了ライン未設定）'}</div>
           <div>合計戦闘時間: {scoreSummary.battleTime === null ? '-' : `${scoreSummary.battleTime.toFixed(2)}秒`}</div>
           <div>タイムスコア: {scoreSummary.timeScore === null ? '-' : scoreSummary.timeScore.toLocaleString()}</div>
+          <div>残りHPスコア: {scoreSummary.hpScore.toLocaleString()}</div>
+          <div>難易度スコア: {scoreSummary.difficultyScore.toLocaleString()}</div>
+          <div className="font-semibold">合計スコア: {scoreSummary.totalScore === null ? '-' : scoreSummary.totalScore.toLocaleString()}</div>
         </div>
       )}
         </Fragment>
