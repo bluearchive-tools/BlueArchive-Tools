@@ -5743,7 +5743,10 @@ function resolveBuffText(
             <div className="flex justify-end pt-1">
               <button
                 type="button"
-                onClick={() => setShowSettings(false)}
+                onClick={() => {
+                  setShowSettings(false)
+                  setToastMessage('設定を保存しました')
+                }}
                 className="border px-3 py-1 bg-blue-500 text-white rounded"
               >
                 OK
