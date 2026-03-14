@@ -147,7 +147,7 @@ export default function PageHelpButton({ pageKey, className }: Props) {
       </button>
       {visible && (
         <div
-          className={`fixed inset-0 ${dark ? 'bg-black/50' : 'bg-black/20'} flex items-center justify-center z-20 transition-opacity duration-200 ${active ? 'opacity-100' : 'opacity-0'}`}
+          className={`fixed inset-0 ${dark ? 'bg-black/50' : 'bg-black/20'} flex items-center justify-center z-[220] transition-opacity duration-200 ${active ? 'opacity-100' : 'opacity-0'}`}
           onClick={close}
         >
           <div

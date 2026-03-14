@@ -214,7 +214,6 @@ export default function Home() {
         <CollapsibleBox tutorialKey="home-section-tl" title={t('tlTools.title')} description={t('tlTools.description')}>
           <div className="space-y-2">
             <Link href="/tl/search"><FeatureItem title={t('tlTools.actions.search.title')} description={t('tlTools.actions.search.description')} /></Link>
-            <Link href="/tl/search-beta"><FeatureItem title="TL検索β" description="β版の総力戦/大決戦検索UIです" /></Link>
             <Link href="/tl/maker"><FeatureItem title={t('tlTools.actions.maker.title')} description={t('tlTools.actions.maker.description')} /></Link>
           </div>
           <div aria-disabled="true" className="opacity-50 grayscale cursor-not-allowed select-none"><div className="pointer-events-none"><FeatureItem title={t('tlTools.actions.videoToTl.title')} description={t('tlTools.actions.videoToTl.description')} /></div></div>

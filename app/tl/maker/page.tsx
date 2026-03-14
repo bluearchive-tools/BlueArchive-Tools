@@ -22,6 +22,7 @@ import {
   faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons'
 import AddEnemyModal from '../../../components/AddEnemyModal'
+import AddGimmickModal from '../../../components/AddGimmickModal'
 import PageHelpButton from '../../../components/PageHelpButton'
 import equipmentJson from '@/data/equipment.json'
 import AboutModal from '../../../components/AboutModal'
@@ -85,6 +86,24 @@ interface Enemy {
   attackOrder?: { time: number; skill: string }[]
 }
 
+interface GimmickSkill {
+  name: string
+  type?: string
+  text?: string
+  values?: SkillValues
+  hitDelay?: number
+  duration?: number
+  effectDuration?: number
+}
+
+interface Gimmick {
+  id: string
+  name: string
+  side: 'enemy' | 'ally'
+  skills?: Record<string, GimmickSkill>
+  triggers?: Array<{ time: number; skill: string }>
+}
+
 interface UserStudent {
   level: number
   ex_skill: number
@@ -103,7 +122,7 @@ interface SkillEvent {
   type?: string
   travel?: number
   motion?: number
-  target?: number
+  target?: number | number[]
   cost?: number
   costRecovery?: {
     amount: number
@@ -121,6 +140,7 @@ interface MarkerEvent {
   label: string
   duration: number
   skillable: boolean
+  endLineSquad?: number
   show?: boolean
 }
 
@@ -545,13 +565,47 @@ interface ProjectSnapshot {
   markers: MarkerEvent[]
   groupId: string
   squadIndex: number
+  projectSettings: {
+    totalSeconds: number
+    raidDifficulty: RaidDifficulty
+  }
 }
+
+type RaidDifficulty = 'NORMAL' | 'HARD' | 'VERYHARD' | 'HARDCORE' | 'EXTREME' | 'INSANE' | 'TORMENT' | 'LUNATIC'
 
 const armorBonus: Record<string, Record<string, number>> = {
   '爆発': { '重装甲': 1, '軽装備': 2, '特殊装甲': 0.5, '弾力装甲': 0.5 },
   '貫通': { '弾力装甲': 1, '重装甲': 2, '軽装備': 0.5, '特殊装甲': 1 },
   '神秘': { '特殊装甲': 2, '弾力装甲': 1, '重装甲': 0.5, '軽装備': 1 },
   '振動': { '軽装備': 1, '特殊装甲': 1.5, '弾力装甲': 2, '重装甲': 0.5 },
+}
+
+const difficultyTimeMultiplier: Record<RaidDifficulty, number> = {
+  NORMAL: 120,
+  HARD: 240,
+  VERYHARD: 480,
+  HARDCORE: 960,
+  EXTREME: 1440,
+  INSANE: 1920,
+  TORMENT: 2400,
+  LUNATIC: 2880,
+}
+
+const difficultyScoreBase: Record<RaidDifficulty, number> = {
+  NORMAL: 250000,
+  HARD: 500000,
+  VERYHARD: 1000000,
+  HARDCORE: 2000000,
+  EXTREME: 4000000,
+  INSANE: 6800000,
+  TORMENT: 12200000,
+  LUNATIC: 17710000,
+}
+
+const hpScoreByLength: Record<180 | 240 | 270, Record<RaidDifficulty, number>> = {
+  180: { NORMAL: 229000, HARD: 458000, VERYHARD: 916000, HARDCORE: 1832000, EXTREME: 5392000, INSANE: 12449600, TORMENT: 18876000, LUNATIC: 25525000 },
+  240: { NORMAL: 277000, HARD: 554000, VERYHARD: 1108000, HARDCORE: 2216000, EXTREME: 6160000, INSANE: 14216000, TORMENT: 19508000, LUNATIC: 26315000 },
+  270: { NORMAL: 304700, HARD: 609400, VERYHARD: 1218800, HARDCORE: 2437600, EXTREME: 6578880, INSANE: 14941016, TORMENT: 20302000, LUNATIC: 26954000 },
 }
 
 
@@ -569,7 +623,7 @@ export default function TLMakerPage() {
     x: number
     y: number
     text: string
-    target?: string
+    target?: string | string[]
   } | null>(null)
   const [row, setRow] = useState(0)
   const [start, setStart] = useState(0)
@@ -586,13 +640,14 @@ export default function TLMakerPage() {
   const [costRecoveryApplyBonus, setCostRecoveryApplyBonus] = useState(false)
   const [costRecoveryApplyBonusTouched, setCostRecoveryApplyBonusTouched] = useState(false)
   const [templateId, setTemplateId] = useState('')
+  const [endLineSquad, setEndLineSquad] = useState(0)
   const [showForm, setShowForm] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [squads, setSquads] = useState<{ name: string; members: string[] }[]>([])
   const [showMenu, setShowMenu] = useState(false)
   const [showAddRowMenu, setShowAddRowMenu] = useState(false)
-  const [selectedType, setSelectedType] = useState<'skill' | 'event' | null>(null)
-  const [skillKind, setSkillKind] = useState<'ex' | 'normal'>('ex')
+  const [selectedType, setSelectedType] = useState<'skill' | 'event' | 'endLine' | null>(null)
+  const [skillKind, setSkillKind] = useState<'ex' | 'normal' | 'gimmick'>('ex')
   const [skillOptionIndex, setSkillOptionIndex] = useState(0)
   const [timeScale, setTimeScale] = useState(20) // px per second
   const [applyTravel, setApplyTravel] = useState(false)
@@ -607,6 +662,7 @@ export default function TLMakerPage() {
   const [showEditMenu, setShowEditMenu] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [movingSkill, setMovingSkill] = useState<{ id: number; offset: number } | null>(null)
+  const [movingMarker, setMovingMarker] = useState<{ id: number; offset: number } | null>(null)
   const [moveModeSkill, setMoveModeSkill] = useState<number | null>(null)
   const scrollLock = useRef(0)
   const [playheadMenu, setPlayheadMenu] = useState<{ x: number; y: number } | null>(null)
@@ -1144,11 +1200,15 @@ const startResizePluginWindow = useCallback(
   const [textTL, setTextTL] = useState('')
   const [showCostLines, setShowCostLines] = useState(false)
   const [showDamageCalc, setShowDamageCalc] = useState(false)
+  const [raidDifficulty, setRaidDifficulty] = useState<RaidDifficulty>('INSANE')
+  const [settingsTab, setSettingsTab] = useState<'project' | 'environment'>('project')
   const [hideHeader, setHideHeader] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showEnemyModal, setShowEnemyModal] = useState(false)
+  const [showGimmickModal, setShowGimmickModal] = useState(false)
   const [includeStats, setIncludeStats] = useState(false)
   const [enemies, setEnemies] = useState<Enemy[]>([])
+  const [gimmicks, setGimmicks] = useState<Gimmick[]>([])
   const [defaultTargets, setDefaultTargets] = useState({ attack: 0, debuff: 0 })
   const [tlStats, setTlStats] = useState<Record<string, UserStudent>>({})
   const [defaultLevels, setDefaultLevels] = useState({ ex: 5, normal: 10, passive: 10, sub: 10 })
@@ -1181,6 +1241,7 @@ const startResizePluginWindow = useCallback(
     showPluginModal ||
     !!openPluginWindow ||
     showEnemyModal ||
+    showGimmickModal ||
     aboutOpen
 
 useEffect(() => {
@@ -1379,6 +1440,10 @@ useEffect(() => {
   }, [showCreateModal])
 
   useEffect(() => {
+    if (showSettings) setSettingsTab('project')
+  }, [showSettings])
+
+  useEffect(() => {
     const raw = localStorage.getItem('tlLength')
     if (raw) {
       const n = parseInt(raw)
@@ -1389,6 +1454,18 @@ useEffect(() => {
   useEffect(() => {
     localStorage.setItem('tlLength', String(totalSeconds))
   }, [totalSeconds])
+
+  useEffect(() => {
+    const raw = localStorage.getItem('tlRaidDifficulty')
+    if (!raw) return
+    if (raw === 'NORMAL' || raw === 'HARD' || raw === 'VERYHARD' || raw === 'HARDCORE' || raw === 'EXTREME' || raw === 'INSANE' || raw === 'TORMENT' || raw === 'LUNATIC') {
+      setRaidDifficulty(raw)
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('tlRaidDifficulty', raidDifficulty)
+  }, [raidDifficulty])
 
   useEffect(() => {
     const raw = localStorage.getItem('tlDefaultSkillLevels')
@@ -1456,7 +1533,11 @@ useEffect(() => {
     markers: markers.map((m) => ({ ...m })),
     groupId: selectedGroup?.id ?? '',
     squadIndex,
-  }), [projectName, rowStudents, skills, markers, selectedGroup, squadIndex])
+    projectSettings: {
+      totalSeconds,
+      raidDifficulty,
+    },
+  }), [projectName, rowStudents, skills, markers, selectedGroup, squadIndex, totalSeconds, raidDifficulty])
 
   const getSnapshotRef = useRef(getSnapshot)
   useEffect(() => {
@@ -1704,6 +1785,34 @@ useEffect(() => {
     if (events.length) setSkills((prev) => [...prev, ...events])
   }
 
+
+  const addGimmickRow = (gimmickId: string) => {
+    const idx = rowStudents.length
+    setRowStudents((prev) => [...prev, `gimmick:${gimmickId}`])
+    const gimmick = gimmicks.find((g) => g.id === gimmickId)
+    if (!gimmick?.triggers?.length) return
+    const now = Date.now()
+    const events: SkillEvent[] = gimmick.triggers.map((trigger, i) => {
+      const info = gimmick.skills?.[trigger.skill]
+      const hitDelay = info?.hitDelay ?? 0
+      const duration = info?.duration ?? 0
+      const effectDuration = info?.effectDuration ?? 0
+      const startTime = snapTime(trigger.time)
+      return {
+        id: now + i,
+        row: idx,
+        start: startTime,
+        end: snapTime(startTime + hitDelay + duration + effectDuration),
+        label: info?.name || trigger.skill,
+        type: 'other',
+        travel: hitDelay,
+        motion: duration,
+        skillRef: info?.name || trigger.skill,
+      }
+    })
+    if (events.length) setSkills((prev) => [...prev, ...events])
+  }
+
   const addNormalSkills = (members: string[]) => {
     const now = Date.now()
     const events: SkillEvent[] = []
@@ -1777,6 +1886,35 @@ useEffect(() => {
     setShowImport(false)
   }
 
+  const applyImportedProjectData = (data: {
+    projectName?: string
+    rowStudents?: string[]
+    skills?: SkillEvent[]
+    markers?: MarkerEvent[]
+    groupId?: string
+    squadIndex?: number
+    projectSettings?: {
+      totalSeconds?: number
+      raidDifficulty?: RaidDifficulty
+    }
+  }) => {
+    setProjectName(data.projectName || '')
+    setSkills(data.skills || [])
+    setMarkers(data.markers || [])
+    applyMembers(data.rowStudents || [])
+    const g = groups.find((gr) => gr.id === data.groupId) || null
+    setSelectedGroup(g)
+    setSquadIndex(data.squadIndex || 0)
+    const importedSeconds = data.projectSettings?.totalSeconds
+    if (typeof importedSeconds === 'number' && Number.isFinite(importedSeconds)) {
+      setTotalSeconds(importedSeconds)
+    }
+    const importedDifficulty = data.projectSettings?.raidDifficulty
+    if (importedDifficulty) {
+      setRaidDifficulty(importedDifficulty)
+    }
+  }
+
   const projectKey = (gid: string | null, idx: number) =>
     gid ? `tlMakerProject_${gid}_${idx}` : 'tlMakerProject_default'
 
@@ -1807,10 +1945,22 @@ useEffect(() => {
         rowStudents: string[]
         skills: SkillEvent[]
         markers: MarkerEvent[]
+        projectSettings?: {
+          totalSeconds?: number
+          raidDifficulty?: RaidDifficulty
+        }
       }
       setProjectName(data.projectName)
       setSkills(data.skills || [])
       setMarkers(data.markers || [])
+      const savedTotalSeconds = data.projectSettings?.totalSeconds
+      if (typeof savedTotalSeconds === 'number' && Number.isFinite(savedTotalSeconds)) {
+        setTotalSeconds(savedTotalSeconds)
+      }
+      const savedDifficulty = data.projectSettings?.raidDifficulty
+      if (savedDifficulty) {
+        setRaidDifficulty(savedDifficulty)
+      }
       applyMembers(data.rowStudents || fallbackMembers || [])
       setTlStats({})
       return true
@@ -1827,6 +1977,10 @@ useEffect(() => {
       rowStudents,
       skills,
       markers,
+      projectSettings: {
+        totalSeconds,
+        raidDifficulty,
+      },
     }
     localStorage.setItem(key, JSON.stringify(data))
     localStorage.setItem('tlMakerCache', JSON.stringify({
@@ -1836,6 +1990,10 @@ useEffect(() => {
       rowStudents,
       skills,
       markers,
+      projectSettings: {
+        totalSeconds,
+        raidDifficulty,
+      },
     }))
     localStorage.setItem('tlMakerLastKey', key)
   }
@@ -1848,6 +2006,10 @@ useEffect(() => {
       markers,
       groupId: selectedGroup?.id ?? '',
       squadIndex,
+      projectSettings: {
+        totalSeconds,
+        raidDifficulty,
+      },
     }
     if (withStats) {
       const stats: Record<string, UserStudent> = {}
@@ -1899,6 +2061,10 @@ useEffect(() => {
     setRowStudents([...snap.rowStudents])
     setSkills(snap.skills.map((s) => ({ ...s })))
     setMarkers(snap.markers.map((m) => ({ ...m })))
+    if (snap.projectSettings) {
+      setTotalSeconds(snap.projectSettings.totalSeconds)
+      setRaidDifficulty(snap.projectSettings.raidDifficulty)
+    }
     const g = groups.find((gr) => gr.id === snap.groupId) || null
     setSelectedGroup(g)
     setSquadIndex(snap.squadIndex)
@@ -1959,9 +2125,18 @@ useEffect(() => {
         /* ignore */
       }
     }
+    const loadGimmicks = async () => {
+      try {
+        const res = await fetch('/api/gimmicks')
+        if (res.ok) setGimmicks(await res.json())
+      } catch {
+        /* ignore */
+      }
+    }
     loadStudents()
     loadEvents()
     loadEnemies()
+    loadGimmicks()
     const map: Record<string, UserStudent> = {}
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)
@@ -2023,16 +2198,37 @@ useEffect(() => {
 
   const skillOptions = useMemo(() => {
     if (selectedType !== 'skill') return []
-    const st = students.find((s) => s.id === rowStudents[row])
+    const rowId = rowStudents[row]
+    if (!rowId) return []
+    if (rowId.startsWith('gimmick:')) {
+      if (skillKind !== 'gimmick') return []
+      const gimmickId = rowId.slice('gimmick:'.length)
+      const gimmick = gimmicks.find((g) => g.id === gimmickId)
+      const options: SkillOption[] = Object.values(gimmick?.skills ?? {}).map((sk) => ({
+        label: sk.name,
+        skill: { title: sk.name, type: sk.type, text: sk.text, values: sk.values },
+        duration: sk.duration,
+      }))
+      return options
+    }
+    const st = students.find((s) => s.id === rowId)
     if (!st) return []
+    if (skillKind === 'gimmick') return []
     const skillDef = skillKind === 'ex' ? st.skills?.ex : st.skills?.normal
     return flattenSkillEntries(getSkillEntries(skillDef))
-  }, [selectedType, students, rowStudents, row, skillKind])
+  }, [selectedType, students, rowStudents, row, skillKind, gimmicks])
 
   useEffect(() => {
     if (selectedType !== 'skill') return
+    const rowId = rowStudents[row]
+    if (rowId?.startsWith('gimmick:') && skillKind !== 'gimmick') {
+      setSkillKind('gimmick')
+    }
+    if (!rowId?.startsWith('gimmick:') && skillKind === 'gimmick') {
+      setSkillKind('ex')
+    }
     setSkillOptionIndex(0)
-  }, [row, skillKind, selectedType])
+  }, [row, skillKind, selectedType, rowStudents])
 
   useEffect(() => {
     if (skillOptionIndex >= skillOptions.length) {
@@ -2048,7 +2244,12 @@ useEffect(() => {
       setSkillCost(opt.cost)
       return
     }
-    const st = students.find((s) => s.id === rowStudents[row])
+    const rowId = rowStudents[row]
+    if (rowId.startsWith('gimmick:')) {
+      setSkillCost(0)
+      return
+    }
+    const st = students.find((s) => s.id === rowId)
     if (!st) return
     setSkillCost(st.cost ?? 0)
   }, [selectedType, skillOptions, skillOptionIndex, rowStudents, row, students, skillCostTouched])
@@ -2062,9 +2263,21 @@ useEffect(() => {
 
   useEffect(() => {
     if (selectedType !== 'skill') return
-    const st = students.find((s) => s.id === rowStudents[row])
-    if (!st) return
+    const rowId = rowStudents[row]
     const opt = skillOptions[skillOptionIndex]
+    if (rowId.startsWith('gimmick:')) {
+      const gimmick = gimmicks.find((g) => `gimmick:${g.id}` === rowId)
+      const picked = Object.values(gimmick?.skills ?? {})[skillOptionIndex]
+      const dur = opt?.duration ?? picked?.duration
+      const travel = picked?.hitDelay ?? 0
+      if (dur !== undefined) {
+        const extra = applyTravel ? 0 : travel
+        setEnd(snapTime(start + dur + extra))
+      }
+      return
+    }
+    const st = students.find((s) => s.id === rowId)
+    if (!st) return
     const dur =
       opt?.duration ?? (skillKind === 'ex' ? st.exDuration : st.normalDuration)
     if (dur !== undefined) {
@@ -2075,11 +2288,18 @@ useEffect(() => {
       const extra = applyTravel ? 0 : travel
       setEnd(snapTime(start + dur + extra))
     }
-  }, [row, start, selectedType, rowStudents, students, applyTravel, skillKind])
+  }, [row, start, selectedType, rowStudents, students, applyTravel, skillKind, skillOptions, skillOptionIndex, gimmicks])
 
   useEffect(() => {
     if (selectedType !== 'skill') return
-    const st = students.find((s) => s.id === rowStudents[row])
+    const rowId = rowStudents[row]
+    if (rowId.startsWith('gimmick:')) {
+      if (!skillCostTouched) setSkillCost(0)
+      if (!costRecoveryTriggerTouched) setCostRecoveryTrigger(snapTime(start))
+      if (!costRecoveryApplyBonusTouched) setCostRecoveryApplyBonus(false)
+      return
+    }
+    const st = students.find((s) => s.id === rowId)
     if (!st) return
     if (!skillCostTouched) {
       setSkillCost(st.cost ?? 0)
@@ -2097,8 +2317,8 @@ useEffect(() => {
       const uniqueStar = Number(stats?.unique_star ?? 0)
       setCostRecoveryApplyBonus(uniqueStar >= 2)
     }
-  }, [
-    selectedType,
+}, [
+  selectedType,
     row,
     start,
     rowStudents,
@@ -2106,13 +2326,13 @@ useEffect(() => {
     skillKind,
     skillCostTouched,
     costRecoveryTriggerTouched,
-    costRecoveryApplyBonusTouched,
-  ])
+  costRecoveryApplyBonusTouched,
+])
 
   useEffect(() => {
   if (!initialized || isRestoring.current) return
   saveProject()
-}, [initialized, projectName, selectedGroup, squadIndex, rowStudents, skills, markers])
+}, [initialized, projectName, selectedGroup, squadIndex, rowStudents, skills, markers, totalSeconds, raidDifficulty])
 
 
   const INITIAL_COST = 0
@@ -2201,11 +2421,18 @@ useEffect(() => {
   const addEvent = () => {
     const id = Date.now()
     if (selectedType === 'skill') {
-      const st = students.find((s) => s.id === rowStudents[row])
+      const rowId = rowStudents[row]
+      const st = students.find((s) => s.id === rowId)
+      const gimmick = rowId.startsWith('gimmick:')
+        ? gimmicks.find((g) => g.id === rowId.slice('gimmick:'.length))
+        : undefined
+      const gimmickSkill = skillKind === 'gimmick' ? Object.values(gimmick?.skills ?? {})[skillOptionIndex] : undefined
       const travel =
         skillKind === 'ex'
           ? st?.exHitDelay || 0
-          : st?.normalHitDelay || 0
+          : skillKind === 'normal'
+            ? st?.normalHitDelay || 0
+            : gimmickSkill?.hitDelay || 0
       const duration = end - start
       const baseStart = snapTime(applyTravel ? start - travel : start)
       let s = baseStart
@@ -2213,9 +2440,17 @@ useEffect(() => {
       const motion =
         skillKind === 'ex'
           ? Math.max(0, (st?.exMotionDuration || 0) - travel)
-          : Math.max(0, (st?.normalMotionDuration || 0) - travel)
+          : skillKind === 'normal'
+            ? Math.max(0, (st?.normalMotionDuration || 0) - travel)
+            : Math.max(0, (gimmickSkill?.duration || 0) - travel)
       const skillDef = skillKind === 'ex' ? st?.skills?.ex : st?.skills?.normal
-      const options = flattenSkillEntries(getSkillEntries(skillDef))
+      const options: SkillOption[] = skillKind === 'gimmick'
+        ? Object.values(gimmick?.skills ?? {}).map((sk): SkillOption => ({
+            label: sk.name,
+            skill: { title: sk.name, type: sk.type, text: sk.text, values: sk.values },
+            duration: sk.duration,
+          }))
+        : flattenSkillEntries(getSkillEntries(skillDef))
       const pickedOption = options[skillOptionIndex]
       const costValue = pickedOption?.cost ?? (skillCost === '' ? 0 : skillCost)
       if (skillKind === 'ex' && waitCost && costValue > 0) {
@@ -2261,7 +2496,7 @@ useEffect(() => {
       const fallbackLabel =
         pickedOption?.label ||
         getPrimarySkillOption(skillDef)?.label ||
-        (skillKind === 'ex' ? 'EX' : 'NS')
+        (skillKind === 'ex' ? 'EX' : skillKind === 'normal' ? 'NS' : 'ギミック')
       const lbl =
         label ||
         pickedOption?.label ||
@@ -2290,7 +2525,7 @@ useEffect(() => {
           label: lbl,
           travel,
           motion,
-          type: skillKind,
+          type: skillKind === 'gimmick' ? 'other' : skillKind,
           cost: costValue,
           ...(costRecoveryEnabled &&
           (costRecoveryDuration === '' ? 0 : costRecoveryDuration) > 0 &&
@@ -2319,6 +2554,21 @@ useEffect(() => {
           duration: tpl?.duration ?? 0,
           skillable: tpl?.skillable ?? false,
         },
+      ])
+    } else if (selectedType === 'endLine') {
+      const squadMax = Math.max(1, selectedGroup?.squads?.length ?? 1)
+      const targetSquad = Math.max(0, Math.min(endLineSquad, squadMax - 1))
+      const line: MarkerEvent = {
+        id,
+        time: snapTime(start),
+        label: `終了ライン(部隊${targetSquad + 1})`,
+        duration: 0.05,
+        skillable: false,
+        endLineSquad: targetSquad,
+      }
+      setMarkers((prev) => [
+        ...prev.filter((m) => m.endLineSquad !== targetSquad),
+        line,
       ])
     }
     setLabel('')
@@ -2555,6 +2805,15 @@ useEffect(() => {
     setCostRecoveryApplyBonusTouched(false)
     setShowForm(true)
   }, [getStats, playhead, rowStudents, snapTime, students])
+
+  const openAddEndLineModal = useCallback(() => {
+    setSelectedType('endLine')
+    setStart(snapTime(playhead))
+    setEnd(snapTime(playhead + 1))
+    setEndLineSquad(Math.max(0, squadIndex))
+    setLabel('終了ライン')
+    setShowForm(true)
+  }, [playhead, snapTime, squadIndex])
 
   const cutSelected = useCallback(() => {
     if (!selected.length) return
@@ -3010,6 +3269,46 @@ useEffect(() => {
   return calcCost(playhead)
 }, [initialized, calcCost, playhead])
 
+  const scoreSummary = useMemo(() => {
+    const squadCount = Math.max(1, selectedGroup?.squads?.length ?? 1)
+    const endLineMap = new Map<number, MarkerEvent>()
+    markers.forEach((marker) => {
+      if (marker.endLineSquad === undefined) return
+      endLineMap.set(marker.endLineSquad, marker)
+    })
+
+    const cumulativeRows: Array<{ squad: number; time: number; cumulative: number }> = []
+    let cumulative = 0
+    for (let i = 0; i < squadCount; i++) {
+      const line = endLineMap.get(i)
+      if (!line) break
+      cumulative += Math.max(0, line.time)
+      cumulativeRows.push({ squad: i, time: Math.max(0, line.time), cumulative })
+    }
+
+    const hasSingleClear = squadCount === 1 && cumulativeRows.length === 1
+    const hasMultiClear = squadCount > 1 && cumulativeRows.length === squadCount
+    const cleared = hasSingleClear || hasMultiClear
+    const battleTime = cumulativeRows.length ? cumulativeRows[cumulativeRows.length - 1].cumulative : null
+    const timeScore = battleTime === null ? null : Math.max(0, Math.floor((3600 - battleTime) * difficultyTimeMultiplier[raidDifficulty]))
+    const hpTableLength: 180 | 240 | 270 = totalSeconds <= 180 ? 180 : totalSeconds <= 240 ? 240 : 270
+    const hpScore = hpScoreByLength[hpTableLength][raidDifficulty]
+    const difficultyScore = difficultyScoreBase[raidDifficulty]
+    const totalScore = timeScore === null ? null : timeScore + hpScore + difficultyScore
+
+    return {
+      squadCount,
+      cleared,
+      battleTime,
+      timeScore,
+      hpScore,
+      difficultyScore,
+      totalScore,
+      hpTableLength,
+      cumulativeRows,
+    }
+  }, [markers, raidDifficulty, selectedGroup, totalSeconds])
+
   const dangerSkills = useMemo(() => {
     if (!initialized) return new Set<number>()
 
@@ -3181,20 +3480,63 @@ function sumSpecialSub(
     return t === 'buff' || t === 'attack' || t === 'debuff'
   }
 
-  const getEffectiveTarget = (ev: SkillEvent) => {
-    if (ev.target !== undefined) return ev.target
+  const getEffectiveTargets = (ev: SkillEvent): number[] => {
+    if (Array.isArray(ev.target)) return ev.target
+    if (typeof ev.target === 'number') return [ev.target]
     const t = getSkillType(ev)
-    if (t === 'attack') return defaultTargets.attack
-    if (t === 'debuff') return defaultTargets.debuff
-    return ev.row
+    if (t === 'attack') return [defaultTargets.attack]
+    if (t === 'debuff') return [defaultTargets.debuff]
+    return [ev.row]
+  }
+
+  const getEffectiveTarget = (ev: SkillEvent) => getEffectiveTargets(ev)[0] ?? ev.row
+
+  const getRowDisplayName = (idx: number) => {
+    const id = rowStudents[idx]
+    if (!id) return `行${idx + 1}`
+    const st = students.find((s) => s.id === id)
+    if (st) return st.name
+    const en = enemies.find((e) => `enemy:${e.id}` === id)
+    if (en) return en.name
+    const gimmick = gimmicks.find((g) => `gimmick:${g.id}` === id)
+    if (gimmick) return gimmick.name
+    return `行${idx + 1}`
+  }
+
+  const getTargetNames = (ev: SkillEvent): string[] =>
+    getEffectiveTargets(ev).map((targetIdx) => getRowDisplayName(targetIdx))
+
+  const getPopupTarget = (ev: SkillEvent): string | string[] | undefined => {
+    if (!isTargetableSkill(ev)) return undefined
+    const names = getTargetNames(ev)
+    if (names.length <= 1) return names[0]
+    return names
+  }
+
+  const resolveGimmickSkillForEvent = (ev: SkillEvent): SkillData | undefined => {
+    const rowId = rowStudents[ev.row]
+    if (!rowId.startsWith('gimmick:')) return undefined
+    const gimmick = gimmicks.find((g) => `gimmick:${g.id}` === rowId)
+    if (!gimmick?.skills) return undefined
+    if (ev.skillRef) {
+      const byName = Object.values(gimmick.skills).find((sk) => sk.name === ev.skillRef)
+      if (byName) {
+        return { title: byName.name, type: byName.type, text: byName.text, values: byName.values }
+      }
+    }
+    const byLabel = Object.values(gimmick.skills).find((sk) => sk.name === ev.label)
+    if (byLabel) {
+      return { title: byLabel.name, type: byLabel.type, text: byLabel.text, values: byLabel.values }
+    }
+    return undefined
   }
 
   const getActiveBuffs = (rowIdx: number, t: number) => {
     return skills
       .filter((ev) => isBuffSkill(ev))
       .filter((ev) => {
-        const target = getEffectiveTarget(ev)
-        if (target !== rowIdx) return false
+        const targets = getEffectiveTargets(ev)
+        if (!targets.includes(rowIdx)) return false
         const start = ev.start + (ev.travel || 0)
         return start <= t && t <= ev.end
       })
@@ -3214,8 +3556,8 @@ function sumSpecialSub(
     skills
       .filter((ev) => isBuffSkill(ev))
       .forEach((ev) => {
-        const target = getEffectiveTarget(ev)
-        if (target !== rowIdx) return
+        const targets = getEffectiveTargets(ev)
+        if (!targets.includes(rowIdx)) return
         const start = ev.start + (ev.travel || 0)
       if (start <= t && t <= ev.end) {
         const st = students.find((s) => s.id === rowStudents[ev.row])
@@ -3239,8 +3581,8 @@ function sumSpecialSub(
   skills
     .filter((ev) => isBuffSkill(ev))
     .forEach((ev) => {
-      const target = getEffectiveTarget(ev)
-      if (target !== rowIdx) return
+      const targets = getEffectiveTargets(ev)
+      if (!targets.includes(rowIdx)) return
 
       const start = ev.start + (ev.travel || 0)
       if (!(start <= t && t <= ev.end)) return
@@ -3778,13 +4120,7 @@ function resolveBuffText(
                     file.text().then((txt) => {
                       try {
                         const data = JSON.parse(txt)
-                        setProjectName(data.projectName || '')
-                        setSkills(data.skills || [])
-                        setMarkers(data.markers || [])
-                        applyMembers(data.rowStudents || [])
-                        const g = groups.find((gr) => gr.id === data.groupId) || null
-                        setSelectedGroup(g)
-                        setSquadIndex(data.squadIndex || 0)
+                        applyImportedProjectData(data)
                         if (data.userStats) {
                           const map: Record<string, UserStudent> = {}
                           Object.entries(data.userStats as Record<string, UserStudent>).forEach(
@@ -3868,13 +4204,7 @@ function resolveBuffText(
                     if (!raw) return
                     try {
                       const data = JSON.parse(raw)
-                      setProjectName(data.projectName || '')
-                      setSkills(data.skills || [])
-                      setMarkers(data.markers || [])
-                      applyMembers(data.rowStudents || [])
-                      const g = groups.find((gr) => gr.id === data.groupId) || null
-                      setSelectedGroup(g)
-                      setSquadIndex(data.squadIndex || 0)
+                      applyImportedProjectData(data)
                       setTlStats({})
                       setInitialized(true)
                     } catch {
@@ -3937,6 +4267,13 @@ function resolveBuffText(
           close={() => setShowEnemyModal(false)}
         />
       )}
+      {showGimmickModal && (
+        <AddGimmickModal
+          gimmicks={gimmicks}
+          addRow={addGimmickRow}
+          close={() => setShowGimmickModal(false)}
+        />
+      )}
       <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} currentPath="/tl/maker" />
 
       {showCreateModal && (
@@ -3973,6 +4310,37 @@ function resolveBuffText(
                   placeholder="例: クロカゲ・市街地"
                 />
               </label>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block text-sm text-gray-600">
+                  難易度
+                  <select
+                    value={raidDifficulty}
+                    onChange={(e) => setRaidDifficulty(e.target.value as RaidDifficulty)}
+                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  >
+                    <option value="NORMAL">NORMAL</option>
+                    <option value="HARD">HARD</option>
+                    <option value="VERYHARD">VERYHARD</option>
+                    <option value="HARDCORE">HARDCORE</option>
+                    <option value="EXTREME">EXTREME</option>
+                    <option value="INSANE">INSANE</option>
+                    <option value="TORMENT">TORMENT</option>
+                    <option value="LUNATIC">LUNATIC</option>
+                  </select>
+                </label>
+                <label className="block text-sm text-gray-600">
+                  TL長さ
+                  <select
+                    value={totalSeconds}
+                    onChange={(e) => setTotalSeconds(parseInt(e.target.value, 10))}
+                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  >
+                    <option value={180}>3:00</option>
+                    <option value={240}>4:00</option>
+                    <option value={270}>4:30</option>
+                  </select>
+                </label>
+              </div>
               <label className="block text-sm text-gray-600">
                 編成
                 <select
@@ -4143,13 +4511,7 @@ function resolveBuffText(
                       file.text().then((txt) => {
                         try {
                           const data = JSON.parse(txt)
-                          setProjectName(data.projectName || '')
-                          setSkills(data.skills || [])
-                          setMarkers(data.markers || [])
-                          applyMembers(data.rowStudents || [])
-                          const g = groups.find((gr) => gr.id === data.groupId) || null
-                          setSelectedGroup(g)
-                          setSquadIndex(data.squadIndex || 0)
+                          applyImportedProjectData(data)
                           setInitialized(true)
                         } catch {
                           /* ignore */
@@ -4216,6 +4578,16 @@ function resolveBuffText(
               <button
                 type="button"
                 onClick={() => {
+                  openAddEndLineModal()
+                  setShowMenu(false)
+                }}
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+              >
+                終了ライン追加
+              </button>
+              <button
+                type="button"
+                onClick={() => {
                   addRow()
                   setShowMenu(false)
                 }}
@@ -4232,6 +4604,16 @@ function resolveBuffText(
                 className="block w-full text-left px-2 py-1 hover:bg-gray-200"
               >
                 敵行追加
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowGimmickModal(true)
+                  setShowMenu(false)
+                }}
+                className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+              >
+                ギミック追加
               </button>
             </div>
           )}
@@ -4600,7 +4982,9 @@ function resolveBuffText(
               <FontAwesomeIcon icon={faTimes} />
             </button>
           {selectedType && (
-            <div className="text-sm font-bold">{selectedType === 'skill' ? 'スキル' : 'イベント'}</div>
+            <div className="text-sm font-bold">
+              {selectedType === 'skill' ? 'スキル' : selectedType === 'event' ? 'イベント' : '終了ライン'}
+            </div>
           )}
           {selectedType === 'skill' && (
             <>
@@ -4613,9 +4997,15 @@ function resolveBuffText(
                 >
                   {rowStudents.map((id, idx) => {
                     const st = students.find((s) => s.id === id)
+                    const gimmick = id.startsWith('gimmick:')
+                      ? gimmicks.find((g) => `gimmick:${g.id}` === id)
+                      : undefined
+                    const enemy = id.startsWith('enemy:')
+                      ? enemies.find((e) => `enemy:${e.id}` === id)
+                      : undefined
                     return (
                       <option key={idx} value={idx}>
-                        {st ? st.name : `行${idx + 1}`}
+                        {st ? st.name : gimmick ? `【ギミック】${gimmick.name}` : enemy ? `【敵】${enemy.name}` : `行${idx + 1}`}
                       </option>
                     )
                   })}
@@ -4625,11 +5015,12 @@ function resolveBuffText(
                 <span>種類:</span>
                 <select
                   value={skillKind}
-                  onChange={(e) => setSkillKind(e.target.value as 'ex' | 'normal')}
+                  onChange={(e) => setSkillKind(e.target.value as 'ex' | 'normal' | 'gimmick')}
                   className="border rounded p-1 w-24"
                 >
                   <option value="ex">EX</option>
                   <option value="normal">NS</option>
+                  {rowStudents[row]?.startsWith('gimmick:') && <option value="gimmick">ギミック</option>}
                 </select>
               </label>
               {skillOptions.length > 1 && (
@@ -4799,6 +5190,33 @@ function resolveBuffText(
               </label>
             </>
           )}
+          {selectedType === 'endLine' && (
+            <>
+              <label className="flex items-center gap-2">
+                <span>対象部隊:</span>
+                <select
+                  value={endLineSquad}
+                  onChange={(e) => setEndLineSquad(parseInt(e.target.value, 10))}
+                  className="border rounded p-1 flex-1"
+                >
+                  {(selectedGroup?.squads ?? [{}, {}, {}, {}, {}, {}]).map((_, idx) => (
+                    <option key={`endline-squad-${idx}`} value={idx}>
+                      部隊{idx + 1}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex items-center gap-2">
+                <span>時間:</span>
+                <input
+                  type="number"
+                  value={start}
+                  onChange={(e) => setStart(parseFloat(e.target.value))}
+                  className="border rounded p-1 w-24"
+                />
+              </label>
+            </>
+          )}
           <label className="flex items-center gap-2">
             <span>ラベル:</span>
             <input
@@ -4852,7 +5270,7 @@ function resolveBuffText(
           onClick={() => setShowSettings(false)}
         >
           <div
-            className="border rounded p-4 bg-white space-y-3 max-h-[70vh] overflow-y-auto overscroll-contain relative w-[860px] max-w-[95vw] tl-modal-panel"
+            className="border rounded p-4 bg-white space-y-3 max-h-[70vh] overflow-y-auto relative w-[860px] max-w-[95vw] tl-modal-panel"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -4864,8 +5282,66 @@ function resolveBuffText(
               <FontAwesomeIcon icon={faTimes} />
             </button>
             <div className="text-lg font-semibold">設定</div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-4">
+            <div className="grid grid-cols-[180px,1fr] gap-4">
+              <div className="border rounded p-2 space-y-1 h-fit">
+                <button type="button" onClick={() => setSettingsTab('project')} className={`w-full text-left rounded px-2 py-1 ${settingsTab === 'project' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'}`}>プロジェクト設定</button>
+                <button type="button" onClick={() => setSettingsTab('environment')} className={`w-full text-left rounded px-2 py-1 ${settingsTab === 'environment' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'}`}>環境設定</button>
+              </div>
+              <div className={settingsTab === 'project' ? 'space-y-4' : 'hidden'}>
+                <div className="text-sm font-bold border-b pb-1">プロジェクト設定</div>
+                <section className="rounded border border-gray-200 p-3 space-y-2">
+                  <div className="text-sm font-bold">難易度</div>
+                  <select
+                    value={raidDifficulty}
+                    onChange={(e) => setRaidDifficulty(e.target.value as 'NORMAL' | 'HARD' | 'VERYHARD' | 'HARDCORE' | 'EXTREME' | 'INSANE' | 'TORMENT' | 'LUNATIC')}
+                    className="border rounded p-1"
+                  >
+                    <option value="NORMAL">NORMAL</option>
+                    <option value="HARD">HARD</option>
+                    <option value="VERYHARD">VERYHARD</option>
+                    <option value="HARDCORE">HARDCORE</option>
+                    <option value="EXTREME">EXTREME</option>
+                    <option value="INSANE">INSANE</option>
+                    <option value="TORMENT">TORMENT</option>
+                    <option value="LUNATIC">LUNATIC</option>
+                  </select>
+                </section>
+
+                <section className="rounded border border-gray-200 p-3 space-y-2">
+                  <div className="text-sm font-bold">TL長さ</div>
+                  <select
+                    value={totalSeconds}
+                    onChange={(e) => setTotalSeconds(parseInt(e.target.value, 10))}
+                    className="border rounded p-1"
+                  >
+                    <option value={180}>3:00</option>
+                    <option value={240}>4:00</option>
+                    <option value={270}>4:30</option>
+                  </select>
+                </section>
+
+              </div>
+
+
+              <div className={settingsTab === 'environment' ? 'space-y-4' : 'hidden'}>
+                <div className="text-sm font-bold border-b pb-1">環境設定</div>
+                <section className="rounded border border-gray-200 p-3 space-y-2">
+                  <div className="text-sm font-bold">スナップ</div>
+                  <label className="flex items-center gap-2">
+                    <span>単位:</span>
+                    <select
+                      value={snapPreset}
+                      onChange={(e) => setSnapPreset(e.target.value as 'off' | '0.5' | '0.1' | '0.05' | '0.033')}
+                      className="border rounded p-1"
+                    >
+                      <option value="off">OFF</option>
+                      <option value="0.5">0.5s</option>
+                      <option value="0.1">0.1s</option>
+                      <option value="0.05">0.05s</option>
+                      <option value="0.033">0.033s</option>
+                    </select>
+                  </label>
+                </section>
                 <section className="rounded border border-gray-200 p-3 space-y-2">
                   <div className="text-sm font-bold">プロモード</div>
                   <label className="flex items-center gap-2">
@@ -4946,41 +5422,6 @@ function resolveBuffText(
                   >
                     自由配置をリセット
                   </button>
-                </section>
-
-                <section className="rounded border border-gray-200 p-3 space-y-2">
-                  <div className="text-sm font-bold">TL長さ</div>
-                  <select
-                    value={totalSeconds}
-                    onChange={(e) => setTotalSeconds(parseInt(e.target.value))}
-                    className="border rounded p-1"
-                  >
-                    <option value={180}>3:00</option>
-                    <option value={240}>4:00</option>
-                    <option value={270}>4:30</option>
-                  </select>
-                </section>
-              </div>
-
-              <div className="space-y-4">
-                <section className="rounded border border-gray-200 p-3 space-y-2">
-                  <div className="text-sm font-bold">スナップ</div>
-                  <label className="flex items-center gap-2">
-                    <span>単位:</span>
-                    <select
-                      value={snapPreset}
-                      onChange={(e) =>
-                        setSnapPreset(e.target.value as 'off' | '0.5' | '0.1' | '0.05' | '0.033')
-                      }
-                      className="border rounded p-1"
-                    >
-                      <option value="off">OFF</option>
-                      <option value="0.5">0.5s</option>
-                      <option value="0.1">0.1s</option>
-                      <option value="0.05">0.05s</option>
-                      <option value="0.033">0.033s</option>
-                    </select>
-                  </label>
                 </section>
 
                 <section className="rounded border border-gray-200 p-3 space-y-2">
@@ -5302,7 +5743,10 @@ function resolveBuffText(
             <div className="flex justify-end pt-1">
               <button
                 type="button"
-                onClick={() => setShowSettings(false)}
+                onClick={() => {
+                  setShowSettings(false)
+                  setToastMessage('設定を保存しました')
+                }}
                 className="border px-3 py-1 bg-blue-500 text-white rounded"
               >
                 OK
@@ -6092,6 +6536,16 @@ setBuffPopup({
                 >
                   敵行追加
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowGimmickModal(true)
+                    setShowAddRowMenu(false)
+                  }}
+                  className="block w-full text-left px-2 py-1 hover:bg-gray-200"
+                >
+                  ギミック追加
+                </button>
               </div>
             )}
           </div>
@@ -6100,11 +6554,11 @@ setBuffPopup({
           ref={containerRef}
           className="w-full"
           style={{
-            overflowX: dragging || movingSkill ? 'hidden' : 'auto',
-            touchAction: dragging || movingSkill ? 'none' : 'pan-x',
+            overflowX: dragging || movingSkill || movingMarker ? 'hidden' : 'auto',
+            touchAction: dragging || movingSkill || movingMarker ? 'none' : 'pan-x',
           }}
           onWheel={(e) => {
-            if (dragging || movingSkill) e.preventDefault()
+            if (dragging || movingSkill || movingMarker) e.preventDefault()
           }}
         >
           <div className="relative" style={{ width: totalSeconds * timeScale }}>
@@ -6316,6 +6770,11 @@ setBuffPopup({
                 let timer: NodeJS.Timeout | null = null
                 const startTouch = (e: React.TouchEvent) => {
                   e.stopPropagation()
+                  if (m.endLineSquad !== undefined) {
+                    const t = e.touches[0]
+                    setMovingMarker({ id: m.id, offset: t.clientX - m.time * timeScale })
+                    return
+                  }
                   timer = setTimeout(() => {
                     const t = e.touches[0]
                     setSelected([{ type: 'marker', id: m.id }])
@@ -6329,6 +6788,9 @@ setBuffPopup({
                 }
                 const clearTouch = () => {
                   if (timer) clearTimeout(timer)
+                  if (movingMarker && movingMarker.id === m.id) {
+                    setMovingMarker(null)
+                  }
                 }
                 const pluginMarker = getPluginDecorForMarker(m)
                 if (pluginMarker.hide) return null
@@ -6349,6 +6811,7 @@ setBuffPopup({
                       touchAction: 'pan-x',
                     }}
                     onClick={(e) => {
+                      if (movingMarker && movingMarker.id === m.id) return
                       e.stopPropagation()
                       if (e.shiftKey) {
                         setSelected((prev) => {
@@ -6373,10 +6836,33 @@ setBuffPopup({
                       e.preventDefault()
                       setEventMenu({ type: 'marker', id: m.id, x: e.clientX, y: e.clientY })
                     }}
+                    onMouseDown={(e) => {
+                      if (m.endLineSquad === undefined) return
+                      e.preventDefault()
+                      setMovingMarker({ id: m.id, offset: e.clientX - m.time * timeScale })
+                    }}
+                    onMouseMove={(e) => {
+                      if (!movingMarker || movingMarker.id !== m.id) return
+                      const newTime = Math.max(0, snapTime((e.clientX - movingMarker.offset) / timeScale))
+                      setMarkers((prev) => prev.map((mk) => (mk.id === m.id ? { ...mk, time: newTime } : mk)))
+                    }}
+                    onMouseUp={() => {
+                      if (movingMarker && movingMarker.id === m.id) setMovingMarker(null)
+                    }}
+                    onMouseLeave={() => {
+                      if (movingMarker && movingMarker.id === m.id) setMovingMarker(null)
+                    }}
                     onDoubleClick={(e) => {
                       e.stopPropagation()
                     }}
                     onTouchStart={startTouch}
+                    onTouchMove={(e) => {
+                      if (!movingMarker || movingMarker.id !== m.id) return
+                      e.stopPropagation()
+                      const touch = e.touches[0]
+                      const newTime = Math.max(0, snapTime((touch.clientX - movingMarker.offset) / timeScale))
+                      setMarkers((prev) => prev.map((mk) => (mk.id === m.id ? { ...mk, time: newTime } : mk)))
+                    }}
                     onTouchEnd={(e) => {
                       e.stopPropagation()
                       clearTouch()
@@ -6449,17 +6935,9 @@ setBuffPopup({
                     const stats = getStats(rowStudents[ev.row])
                     const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
                     const skillDef = ev.type === 'normal' ? st?.skills?.normal : st?.skills?.ex
-                    const skill = resolveSkillForEvent(skillDef, ev)
+                    const skill = resolveSkillForEvent(skillDef, ev) ?? resolveGimmickSkillForEvent(ev)
                     const text = formatSkillText(skill, level)
-                    const targetId = getEffectiveTarget(ev)
-                    const targetName = isTargetableSkill(ev)
-                      ? (() => {
-                          const id = rowStudents[targetId]
-                          const st2 = students.find((s) => s.id === id)
-                          const en = enemies.find((e) => `enemy:${e.id}` === id)
-                          return st2 ? st2.name : en ? en.name : `行${targetId + 1}`
-                        })()
-                      : undefined
+                    const targetName = getPopupTarget(ev)
                     setSelected([{ type: 'skill', id: ev.id }])
                     if (ev.label) {
                       setSkills((prev) => prev.map((sk) => ({ ...sk, show: sk.id === ev.id })))
@@ -6534,17 +7012,9 @@ setBuffPopup({
                       const stats = getStats(rowStudents[ev.row])
                       const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
                       const skillDef = ev.type === 'normal' ? st?.skills?.normal : st?.skills?.ex
-                      const skill = resolveSkillForEvent(skillDef, ev)
+                      const skill = resolveSkillForEvent(skillDef, ev) ?? resolveGimmickSkillForEvent(ev)
                       const text = formatSkillText(skill, level)
-                      const targetId = getEffectiveTarget(ev)
-                      const targetName = isTargetableSkill(ev)
-                        ? (() => {
-                            const id = rowStudents[targetId]
-                            const st2 = students.find((s) => s.id === id)
-                            const en = enemies.find((e) => `enemy:${e.id}` === id)
-                            return st2 ? st2.name : en ? en.name : `行${targetId + 1}`
-                          })()
-                        : undefined
+                      const targetName = getPopupTarget(ev)
                       if (selected.some((sel) => sel.type === 'skill' && sel.id === ev.id)) {
                         const newShow = !ev.show
                         setSkills((prev) =>
@@ -6772,8 +7242,7 @@ setBuffPopup({
                 <button
                   type="button"
                   onClick={() => {
-                    setBuffMenu({ id: eventMenu.id, x: eventMenu.x, y: eventMenu.y })
-                    setEventMenu(null)
+                    setBuffMenu({ id: eventMenu.id, x: eventMenu.x + 160, y: eventMenu.y })
                   }}
                   className="block w-full text-left px-2 py-1 hover:bg-gray-200"
                 >
@@ -6938,7 +7407,7 @@ setBuffPopup({
       )}
       {buffMenu && (
         <div
-          className="fixed bg-white border rounded shadow text-sm z-40 tl-popover"
+          className="fixed bg-white border rounded shadow text-sm z-40 tl-popover min-w-48"
           style={{ left: buffMenu.x, top: buffMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -6946,26 +7415,39 @@ setBuffPopup({
             const sk = skills.find((s) => s.id === buffMenu.id)
             const t = sk ? getSkillType(sk) : undefined
             const enemiesOnly = t === 'attack' || t === 'debuff'
+            const selectedTargets = Array.isArray(sk?.target)
+              ? sk.target
+              : typeof sk?.target === 'number'
+                ? [sk.target]
+                : []
             return rowStudents.map((id, idx) => {
               if (enemiesOnly && !id.startsWith('enemy:')) return null
               const st = students.find((s) => s.id === id)
               const enemy = enemies.find((e) => `enemy:${e.id}` === id)
+              const gimmick = gimmicks.find((g) => `gimmick:${g.id}` === id)
+              const checked = selectedTargets.includes(idx)
               return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => {
-                    setSkills((prev) =>
-                      prev.map((sk2) =>
-                        sk2.id === buffMenu.id ? { ...sk2, target: idx } : sk2
+                <label key={idx} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-200">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => {
+                      setSkills((prev) =>
+                        prev.map((sk2) => {
+                          if (sk2.id !== buffMenu.id) return sk2
+                          const cur = Array.isArray(sk2.target)
+                            ? sk2.target
+                            : typeof sk2.target === 'number'
+                              ? [sk2.target]
+                              : []
+                          const next = cur.includes(idx) ? cur.filter((v) => v !== idx) : [...cur, idx]
+                          return { ...sk2, target: next }
+                        })
                       )
-                    )
-                    setBuffMenu(null)
-                  }}
-                  className="block w-full text-left px-2 py-1 hover:bg-gray-200"
-                >
-                  {st ? st.name : enemy ? enemy.name : `行${idx + 1}`}
-                </button>
+                    }}
+                  />
+                  <span>{st ? st.name : enemy ? enemy.name : gimmick ? `【ギミック】${gimmick.name}` : `行${idx + 1}`}</span>
+                </label>
               )
             })
           })()}
@@ -7004,7 +7486,12 @@ setBuffPopup({
           onClick={(e) => e.stopPropagation()}
         >
           <div className="whitespace-pre-wrap mb-1">{skillPopup.text}</div>
-          {skillPopup.target && <div>対象: {skillPopup.target}</div>}
+          {skillPopup.target && (
+            <div>
+              対象:{' '}
+              {Array.isArray(skillPopup.target) ? skillPopup.target.join(' / ') : skillPopup.target}
+            </div>
+          )}
         </div>
       )}
       {costDetailPopup && (
@@ -7179,6 +7666,26 @@ setBuffPopup({
           </div>
         )
       })()}
+      {scoreSummary.cumulativeRows.length > 0 && (
+        <div className="mt-2 text-sm relative" ref={registerBlockRef('default:scoreCalc')} style={getBlockStyle('default:scoreCalc', 3040, 520)}>
+          {renderBlockHandle('default:scoreCalc', 520)}
+          {renderBlockResizeHandle('default:scoreCalc', 520, 220)}
+          <div className="font-semibold">スコア計算（{raidDifficulty}）</div>
+          <div className="text-xs text-gray-600 mb-1">タイム計算式: (3600 - 戦闘時間[秒]) × {difficultyTimeMultiplier[raidDifficulty]}</div>
+          <div className="text-xs text-gray-600 mb-1">残りHPスコア表: {scoreSummary.hpTableLength === 180 ? '3:00' : scoreSummary.hpTableLength === 240 ? '4:00' : '4:30'}</div>
+          <div className="space-y-1">
+            {scoreSummary.cumulativeRows.map((row) => (
+              <div key={`score-row-${row.squad}`}>部隊{row.squad + 1}: {row.time.toFixed(2)}秒（累計 {row.cumulative.toFixed(2)}秒）</div>
+            ))}
+          </div>
+          <div className="mt-2">クリア判定: {scoreSummary.cleared ? 'クリア' : '未クリア（全終了ライン未設定）'}</div>
+          <div>合計戦闘時間: {scoreSummary.battleTime === null ? '-' : `${scoreSummary.battleTime.toFixed(2)}秒`}</div>
+          <div>タイムスコア: {scoreSummary.timeScore === null ? '-' : scoreSummary.timeScore.toLocaleString()}</div>
+          <div>残りHPスコア: {scoreSummary.hpScore.toLocaleString()}</div>
+          <div>難易度スコア: {scoreSummary.difficultyScore.toLocaleString()}</div>
+          <div className="font-semibold">合計スコア: {scoreSummary.totalScore === null ? '-' : scoreSummary.totalScore.toLocaleString()}</div>
+        </div>
+      )}
         </Fragment>
       )}
     </main>
