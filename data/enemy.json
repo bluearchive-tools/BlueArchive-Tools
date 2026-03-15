@@ -1,17 +1,349 @@
 [
   {
+    "id": "boss-01",
+    "name": "ビナー",
+    "level": 90,
+    "armor": "重装甲",
+    "roomTime": 240,
+    "terrains": [
+      "屋外",
+      "市街地"
+    ],
+    "autoAdd": {
+      "enemies": [],
+      "gimmicks": []
+    },
+    "stats": {
+      "hp": 0,
+      "attack": 0,
+      "defense": 0,
+      "critResist": 0
+    },
+    "skills": {},
+    "triggers": []
+  },
+  {
+    "id": "boss-02",
+    "name": "ケセド",
+    "level": 90,
+    "armor": "重装甲",
+    "roomTime": 240,
+    "terrains": [
+      "屋内",
+      "屋外"
+    ],
+    "autoAdd": {
+      "enemies": [],
+      "gimmicks": []
+    },
+    "stats": {
+      "hp": 0,
+      "attack": 0,
+      "defense": 0,
+      "critResist": 0
+    },
+    "skills": {},
+    "triggers": []
+  },
+  {
+    "id": "boss-03",
+    "name": "シロ&クロ",
+    "level": 90,
+    "armor": "重装甲",
+    "roomTime": 240,
+    "terrains": [
+      "市街地",
+      "屋内"
+    ],
+    "autoAdd": {
+      "enemies": [],
+      "gimmicks": []
+    },
+    "stats": {
+      "hp": 0,
+      "attack": 0,
+      "defense": 0,
+      "critResist": 0
+    },
+    "skills": {},
+    "triggers": []
+  },
+  {
+    "id": "boss-04",
+    "name": "ヒエロニムス",
+    "level": 90,
+    "armor": "重装甲",
+    "roomTime": 240,
+    "terrains": [
+      "屋内",
+      "市街地"
+    ],
+    "autoAdd": {
+      "enemies": [],
+      "gimmicks": []
+    },
+    "stats": {
+      "hp": 0,
+      "attack": 0,
+      "defense": 0,
+      "critResist": 0
+    },
+    "skills": {},
+    "triggers": []
+  },
+  {
+    "id": "boss-kaiten-fx-mk-0",
+    "name": "KAITEN FX Mk.0",
+    "level": 90,
+    "armor": "重装甲",
+    "roomTime": 240,
+    "terrains": [
+      "屋外",
+      "市街地"
+    ],
+    "autoAdd": {
+      "enemies": [],
+      "gimmicks": []
+    },
+    "stats": {
+      "hp": 0,
+      "attack": 0,
+      "defense": 0,
+      "critResist": 0
+    },
+    "skills": {},
+    "triggers": []
+  },
+  {
+    "id": "boss-06",
+    "name": "ペロロジラ",
+    "level": 90,
+    "armor": "重装甲",
+    "roomTime": 240,
+    "terrains": [
+      "屋内",
+      "屋外"
+    ],
+    "autoAdd": {
+      "enemies": [],
+      "gimmicks": []
+    },
+    "stats": {
+      "hp": 0,
+      "attack": 0,
+      "defense": 0,
+      "critResist": 0
+    },
+    "skills": {},
+    "triggers": []
+  },
+  {
+    "id": "boss-07",
+    "name": "ホド",
+    "level": 90,
+    "armor": "重装甲",
+    "roomTime": 240,
+    "terrains": [
+      "市街地",
+      "屋内"
+    ],
+    "autoAdd": {
+      "enemies": [],
+      "gimmicks": []
+    },
+    "stats": {
+      "hp": 0,
+      "attack": 0,
+      "defense": 0,
+      "critResist": 0
+    },
+    "skills": {},
+    "triggers": []
+  },
+  {
+    "id": "boss-08",
+    "name": "ゴズ",
+    "level": 90,
+    "armor": "重装甲",
+    "roomTime": 240,
+    "terrains": [
+      "屋内",
+      "屋外"
+    ],
+    "autoAdd": {
+      "enemies": [],
+      "gimmicks": []
+    },
+    "stats": {
+      "hp": 0,
+      "attack": 0,
+      "defense": 0,
+      "critResist": 0
+    },
+    "skills": {},
+    "triggers": []
+  },
+  {
+    "id": "boss-09",
+    "name": "グレゴリオ",
+    "level": 90,
+    "armor": "重装甲",
+    "roomTime": 240,
+    "terrains": [
+      "屋内"
+    ],
+    "autoAdd": {
+      "enemies": [],
+      "gimmicks": []
+    },
+    "stats": {
+      "hp": 0,
+      "attack": 0,
+      "defense": 0,
+      "critResist": 0
+    },
+    "skills": {},
+    "triggers": []
+  },
+  {
+    "id": "boss-10",
+    "name": "ホバークラフト",
+    "level": 90,
+    "armor": "重装甲",
+    "roomTime": 240,
+    "terrains": [
+      "市街地",
+      "屋外"
+    ],
+    "autoAdd": {
+      "enemies": [],
+      "gimmicks": []
+    },
+    "stats": {
+      "hp": 0,
+      "attack": 0,
+      "defense": 0,
+      "critResist": 0
+    },
+    "skills": {},
+    "triggers": []
+  },
+  {
+    "id": "boss-11",
+    "name": "クロカゲ",
+    "level": 90,
+    "armor": "重装甲",
+    "roomTime": 240,
+    "terrains": [
+      "市街地"
+    ],
+    "autoAdd": {
+      "enemies": [],
+      "gimmicks": []
+    },
+    "stats": {
+      "hp": 0,
+      "attack": 0,
+      "defense": 0,
+      "critResist": 0
+    },
+    "skills": {},
+    "triggers": []
+  },
+  {
+    "id": "boss-12",
+    "name": "ゲブラ",
+    "level": 90,
+    "armor": "重装甲",
+    "roomTime": 240,
+    "terrains": [
+      "屋外"
+    ],
+    "autoAdd": {
+      "enemies": [],
+      "gimmicks": []
+    },
+    "stats": {
+      "hp": 0,
+      "attack": 0,
+      "defense": 0,
+      "critResist": 0
+    },
+    "skills": {},
+    "triggers": []
+  },
+  {
+    "id": "boss-13",
+    "name": "イェソド",
+    "level": 90,
+    "armor": "重装甲",
+    "roomTime": 240,
+    "terrains": [
+      "市街地"
+    ],
+    "autoAdd": {
+      "enemies": [],
+      "gimmicks": []
+    },
+    "stats": {
+      "hp": 0,
+      "attack": 0,
+      "defense": 0,
+      "critResist": 0
+    },
+    "skills": {},
+    "triggers": []
+  },
+  {
     "id": "enemy1",
     "name": "テストボス",
     "level": 50,
     "armor": "重装甲",
-    "stats": { "hp": 100000, "attack": 1000, "defense": 500, "critResist": 0 },
+    "stats": {
+      "hp": 100000,
+      "attack": 1000,
+      "defense": 500,
+      "critResist": 0
+    },
     "skills": {
-      "basic": { "name": "通常攻撃", "duration": 1 },
-      "special": { "name": "スペシャルアタック", "duration": 2 }
+      "basic": {
+        "name": "通常攻撃",
+        "duration": 1
+      },
+      "special": {
+        "name": "スペシャルアタック",
+        "duration": 2
+      }
     },
     "attackOrder": [
-      { "time": 10, "skill": "basic" },
-      { "time": 30, "skill": "special" }
+      {
+        "time": 10,
+        "skill": "basic"
+      },
+      {
+        "time": 30,
+        "skill": "special"
+      }
+    ],
+    "roomTime": 240,
+    "terrains": [
+      "市街地",
+      "屋外",
+      "屋内"
+    ],
+    "autoAdd": {
+      "enemies": [],
+      "gimmicks": []
+    },
+    "triggers": [
+      {
+        "time": 10,
+        "skill": "basic"
+      },
+      {
+        "time": 30,
+        "skill": "special"
+      }
     ]
   },
   {
@@ -19,6 +351,23 @@
     "name": "ケセド torment 振動",
     "level": 90,
     "armor": "弾力装甲",
-    "stats": { "hp": 21000000, "attack": 10, "defense": 100, "critResist": 5000 }
+    "stats": {
+      "hp": 21000000,
+      "attack": 10,
+      "defense": 100,
+      "critResist": 5000
+    },
+    "roomTime": 240,
+    "terrains": [
+      "市街地",
+      "屋外",
+      "屋内"
+    ],
+    "autoAdd": {
+      "enemies": [],
+      "gimmicks": []
+    },
+    "skills": {},
+    "triggers": []
   }
 ]
