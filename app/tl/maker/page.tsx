@@ -717,7 +717,7 @@ export default function TLMakerPage() {
   const [showMenu, setShowMenu] = useState(false)
   const [showAddRowMenu, setShowAddRowMenu] = useState(false)
   const [selectedType, setSelectedType] = useState<'skill' | 'event' | 'endLine' | null>(null)
-  const [skillKind, setSkillKind] = useState<'ex' | 'normal' | 'gimmick'>('ex')
+  const [skillKind, setSkillKind] = useState<'ex' | 'normal' | 'gimmick' | 'enemy'>('ex')
   const [skillOptionIndex, setSkillOptionIndex] = useState(0)
   const [timeScale, setTimeScale] = useState(20) // px per second
   const [applyTravel, setApplyTravel] = useState(false)
@@ -1881,6 +1881,14 @@ useEffect(() => {
     gimmickIds.forEach((id) => addGimmickRow(id))
   }
 
+  const applyBossRows = (bossId: string, rows?: string[]) => {
+    const currentRows = rows ?? rowStudents
+    if (!currentRows.includes(`enemy:${bossId}`)) {
+      addEnemyRow(bossId)
+    }
+    applyBossAutoAdd(bossId, currentRows)
+  }
+
   const addEnemyRow = (enemyId: string) => {
     const idx = rowStudents.length
     setRowStudents((prev) => [...prev, `enemy:${enemyId}`])
@@ -2253,7 +2261,7 @@ useEffect(() => {
   const loaded = loadProject(selectedGroup.id, index, members)
   if (!loaded) {
     addNormalSkills(members)
-    applyBossAutoAdd(selectedBossId, members)
+    applyBossRows(selectedBossId, members)
   }
 
   setSquadIndex(index)
@@ -2397,20 +2405,34 @@ useEffect(() => {
       }))
       return options
     }
+    if (rowId.startsWith('enemy:')) {
+      if (skillKind !== 'enemy') return []
+      const enemyId = rowId.slice('enemy:'.length)
+      const enemy = enemies.find((item) => item.id === enemyId)
+      const enemyVariant = getEnemyVariant(enemy, raidDifficulty)
+      const options: SkillOption[] = Object.values(enemyVariant.skills ?? {}).map((sk) => ({
+        label: sk.name,
+        skill: { title: sk.name, type: sk.type, text: sk.text, values: sk.values },
+        duration: sk.duration,
+      }))
+      return options
+    }
     const st = students.find((s) => s.id === rowId)
     if (!st) return []
     if (skillKind === 'gimmick') return []
     const skillDef = skillKind === 'ex' ? st.skills?.ex : st.skills?.normal
     return flattenSkillEntries(getSkillEntries(skillDef))
-  }, [selectedType, students, rowStudents, row, skillKind, gimmicks, raidDifficulty])
+  }, [selectedType, students, rowStudents, row, skillKind, gimmicks, enemies, raidDifficulty])
 
   useEffect(() => {
     if (selectedType !== 'skill') return
     const rowId = rowStudents[row]
     if (rowId?.startsWith('gimmick:') && skillKind !== 'gimmick') {
       setSkillKind('gimmick')
+    } else if (rowId?.startsWith('enemy:') && skillKind !== 'enemy') {
+      setSkillKind('enemy')
     }
-    if (!rowId?.startsWith('gimmick:') && skillKind === 'gimmick') {
+    if (!rowId?.startsWith('gimmick:') && !rowId?.startsWith('enemy:') && (skillKind === 'gimmick' || skillKind === 'enemy')) {
       setSkillKind('ex')
     }
     setSkillOptionIndex(0)
@@ -2475,12 +2497,12 @@ useEffect(() => {
       const extra = applyTravel ? 0 : travel
       setEnd(snapTime(start + dur + extra))
     }
-  }, [row, start, selectedType, rowStudents, students, applyTravel, skillKind, skillOptions, skillOptionIndex, gimmicks, raidDifficulty])
+  }, [row, start, selectedType, rowStudents, students, applyTravel, skillKind, skillOptions, skillOptionIndex, gimmicks, enemies, raidDifficulty])
 
   useEffect(() => {
     if (selectedType !== 'skill') return
     const rowId = rowStudents[row]
-    if (rowId.startsWith('gimmick:')) {
+    if (rowId.startsWith('gimmick:') || rowId.startsWith('enemy:')) {
       if (!skillCostTouched) setSkillCost(0)
       if (!costRecoveryTriggerTouched) setCostRecoveryTrigger(snapTime(start))
       if (!costRecoveryApplyBonusTouched) setCostRecoveryApplyBonus(false)
@@ -2614,13 +2636,20 @@ useEffect(() => {
         ? gimmicks.find((g) => g.id === rowId.slice('gimmick:'.length))
         : undefined
       const gimmickVariant = getGimmickVariant(gimmick, raidDifficulty)
+      const enemyData = rowId.startsWith('enemy:')
+        ? enemies.find((item) => item.id === rowId.slice('enemy:'.length))
+        : undefined
+      const enemyVariant = getEnemyVariant(enemyData, raidDifficulty)
       const gimmickSkill = skillKind === 'gimmick' ? Object.values(gimmickVariant.skills ?? {})[skillOptionIndex] : undefined
+      const enemySkill = skillKind === 'enemy' ? Object.values(enemyVariant.skills ?? {})[skillOptionIndex] : undefined
       const travel =
         skillKind === 'ex'
           ? st?.exHitDelay || 0
           : skillKind === 'normal'
             ? st?.normalHitDelay || 0
-            : gimmickSkill?.hitDelay || 0
+            : skillKind === 'gimmick'
+            ? gimmickSkill?.hitDelay || 0
+            : enemySkill?.hitDelay || 0
       const duration = end - start
       const baseStart = snapTime(applyTravel ? start - travel : start)
       let s = baseStart
@@ -2630,7 +2659,9 @@ useEffect(() => {
           ? Math.max(0, (st?.exMotionDuration || 0) - travel)
           : skillKind === 'normal'
             ? Math.max(0, (st?.normalMotionDuration || 0) - travel)
-            : Math.max(0, (gimmickSkill?.duration || 0) - travel)
+            : skillKind === 'gimmick'
+            ? Math.max(0, (gimmickSkill?.duration || 0) - travel)
+            : Math.max(0, (enemySkill?.duration || 0) - travel)
       const skillDef = skillKind === 'ex' ? st?.skills?.ex : st?.skills?.normal
       const options: SkillOption[] = skillKind === 'gimmick'
         ? Object.values(gimmickVariant.skills ?? {}).map((sk): SkillOption => ({
@@ -2638,7 +2669,13 @@ useEffect(() => {
             skill: { title: sk.name, type: sk.type, text: sk.text, values: sk.values },
             duration: sk.duration,
           }))
-        : flattenSkillEntries(getSkillEntries(skillDef))
+        : skillKind === 'enemy'
+          ? Object.values(enemyVariant.skills ?? {}).map((sk): SkillOption => ({
+              label: sk.name,
+              skill: { title: sk.name, type: sk.type, text: sk.text, values: sk.values },
+              duration: sk.duration,
+            }))
+          : flattenSkillEntries(getSkillEntries(skillDef))
       const pickedOption = options[skillOptionIndex]
       const costValue = pickedOption?.cost ?? (skillCost === '' ? 0 : skillCost)
       if (skillKind === 'ex' && waitCost && costValue > 0) {
@@ -2684,7 +2721,7 @@ useEffect(() => {
       const fallbackLabel =
         pickedOption?.label ||
         getPrimarySkillOption(skillDef)?.label ||
-        (skillKind === 'ex' ? 'EX' : skillKind === 'normal' ? 'NS' : 'ギミック')
+        (skillKind === 'ex' ? 'EX' : skillKind === 'normal' ? 'NS' : skillKind === 'enemy' ? '敵' : 'ギミック')
       const lbl =
         label ||
         pickedOption?.label ||
@@ -2713,7 +2750,7 @@ useEffect(() => {
           label: lbl,
           travel,
           motion,
-          type: skillKind === 'gimmick' ? 'other' : skillKind,
+          type: skillKind === 'gimmick' ? 'other' : skillKind === 'enemy' ? (pickedOption?.skill.type || 'attack') : skillKind,
           cost: costValue,
           ...(costRecoveryEnabled &&
           (costRecoveryDuration === '' ? 0 : costRecoveryDuration) > 0 &&
@@ -4665,7 +4702,7 @@ function resolveBuffText(
                     if (members.some((m) => m)) {
                       addNormalSkills(members)
                     }
-                    applyBossAutoAdd(selectedBossId, members)
+                    applyBossRows(selectedBossId, members)
                     setSelectedGroup(null)
                     setSquadIndex(0)
                   } else if (selectedGroup) {
@@ -4676,7 +4713,7 @@ function resolveBuffText(
                     setSkills([])
                     setMarkers([])
                     addNormalSkills(members)
-                    applyBossAutoAdd(selectedBossId, members)
+                    applyBossRows(selectedBossId, members)
 
                     setSquadIndex(0)
                   } else {
@@ -4684,7 +4721,7 @@ function resolveBuffText(
                     applyMembers(empty)
                     setSkills([])
                     setMarkers([])
-                    applyBossAutoAdd(selectedBossId, empty)
+                    applyBossRows(selectedBossId, empty)
                   }
 
                   setInitialized(true)
@@ -5257,12 +5294,13 @@ function resolveBuffText(
                 <span>種類:</span>
                 <select
                   value={skillKind}
-                  onChange={(e) => setSkillKind(e.target.value as 'ex' | 'normal' | 'gimmick')}
+                  onChange={(e) => setSkillKind(e.target.value as 'ex' | 'normal' | 'gimmick' | 'enemy')}
                   className="border rounded p-1 w-24"
                 >
                   <option value="ex">EX</option>
                   <option value="normal">NS</option>
                   {rowStudents[row]?.startsWith('gimmick:') && <option value="gimmick">ギミック</option>}
+                  {rowStudents[row]?.startsWith('enemy:') && <option value="enemy">敵</option>}
                 </select>
               </label>
               {skillOptions.length > 1 && (
