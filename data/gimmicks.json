@@ -41,5 +41,641 @@
         "skill": "debuff_field"
       }
     ]
+  },
+  {
+    "id": "gimmick-gregorius-choir",
+    "name": "グレゴリオ（聖歌ギミック）",
+    "side": "enemy",
+    "skills": {
+      "whisper": {
+        "name": "聖者の囁き",
+        "type": "debuff",
+        "hitDelay": 0,
+        "duration": 0,
+        "effectDuration": 120,
+        "text": "敵全体に対して攻撃力の{damage}%分の確定会心ダメージ、🛡️攻撃力を{attackdown}%減少（{effectDuration}秒間）（この効果は重複可能）",
+        "values": {
+          "damage": [
+            500
+          ],
+          "attackdown": [
+            40
+          ],
+          "effectDuration": [
+            120
+          ]
+        }
+      },
+      "remorse": {
+        "name": "厳粛なる悔悟",
+        "type": "debuff",
+        "hitDelay": 0,
+        "duration": 0,
+        "effectDuration": 120,
+        "text": "自身が保有している弱体状態の数によって適用される効果が異なります。\n-弱体状態{cleanseThreshold}つ以下：味方全体の弱体状態を1つ解除\n-弱体状態{attackdownThreshold}つ以上：味方全体の🛡️攻撃力を{attackdown}%減少（{effectDuration}秒間）",
+        "values": {
+          "cleanseThreshold": [
+            4
+          ],
+          "attackdownThreshold": [
+            5
+          ],
+          "attackdown": [
+            10
+          ],
+          "effectDuration": [
+            120
+          ]
+        }
+      },
+      "hymn": {
+        "name": "グレゴリオ聖歌",
+        "type": "debuff",
+        "hitDelay": 0,
+        "duration": 0,
+        "effectDuration": 60,
+        "text": "中央のパイプオルガンが向いた方向によって味方全体、あるいは敵全体にスキルを使用し、スキルを使用する度にスキルの効果が変更されます。\n-1番目：黒いパイプが向いたチーム全体の🛡️被ダメージ量を{takenDamageUp}%増加（60秒間）\n-2番目：白いパイプが向いたチーム全体の弱体状態を1つ解除\n-3番目：白いパイプが向いたチーム全体の🛡️被ダメージ量を{takenDamageUp}%増加（60秒間）\n-4番目：黒いパイプが向いたチーム全体の弱体状態を1つ解除\n（この後、スキル使用時1番目から繰り返し）",
+        "values": {
+          "takenDamageUp": [
+            50
+          ]
+        }
+      },
+      "salvation": {
+        "name": "万人の救恤",
+        "type": "attack",
+        "hitDelay": 0,
+        "duration": 0,
+        "effectDuration": 0,
+        "text": "敵全体に対して{damage}ダメージ（この攻撃は🧿不死身状態を解除します）",
+        "values": {
+          "damage": [
+            999999
+          ]
+        }
+      }
+    },
+    "triggers": [
+      {
+        "time": 20.1,
+        "skill": "whisper"
+      },
+      {
+        "time": 30.3,
+        "skill": "remorse"
+      },
+      {
+        "time": 38.2,
+        "skill": "hymn"
+      },
+      {
+        "time": 55.2,
+        "skill": "remorse"
+      },
+      {
+        "time": 72.7,
+        "skill": "hymn"
+      },
+      {
+        "time": 89.6,
+        "skill": "whisper"
+      },
+      {
+        "time": 107.7,
+        "skill": "hymn"
+      },
+      {
+        "time": 124.7,
+        "skill": "remorse"
+      },
+      {
+        "time": 142.2,
+        "skill": "hymn"
+      },
+      {
+        "time": 159.0,
+        "skill": "whisper"
+      },
+      {
+        "time": 177.2,
+        "skill": "hymn"
+      },
+      {
+        "time": 194.2,
+        "skill": "remorse"
+      },
+      {
+        "time": 226.5,
+        "skill": "salvation"
+      }
+    ],
+    "difficultyVariants": {
+      "extreme": {
+        "skills": {
+          "whisper": {
+            "name": "聖者の囁き",
+            "type": "debuff",
+            "hitDelay": 0,
+            "duration": 0,
+            "effectDuration": 120,
+            "text": "敵全体に対して攻撃力の{damage}%分の確定会心ダメージ、🛡️攻撃力を{attackdown}%減少（{effectDuration}秒間）（この効果は重複可能）",
+            "values": {
+              "damage": [
+                500
+              ],
+              "attackdown": [
+                40
+              ],
+              "effectDuration": [
+                120
+              ]
+            }
+          },
+          "remorse": {
+            "name": "厳粛なる悔悟",
+            "type": "debuff",
+            "hitDelay": 0,
+            "duration": 0,
+            "effectDuration": 120,
+            "text": "自身が保有している弱体状態の数によって適用される効果が異なります。\n-弱体状態{cleanseThreshold}つ以下：味方全体の弱体状態を1つ解除\n-弱体状態{attackdownThreshold}つ以上：味方全体の🛡️攻撃力を{attackdown}%減少（{effectDuration}秒間）",
+            "values": {
+              "cleanseThreshold": [
+                4
+              ],
+              "attackdownThreshold": [
+                5
+              ],
+              "attackdown": [
+                10
+              ],
+              "effectDuration": [
+                120
+              ]
+            }
+          },
+          "hymn": {
+            "name": "グレゴリオ聖歌",
+            "type": "debuff",
+            "hitDelay": 0,
+            "duration": 0,
+            "effectDuration": 60,
+            "text": "中央のパイプオルガンが向いた方向によって味方全体、あるいは敵全体にスキルを使用し、スキルを使用する度にスキルの効果が変更されます。\n-1番目：黒いパイプが向いたチーム全体の🛡️被ダメージ量を{takenDamageUp}%増加（60秒間）\n-2番目：白いパイプが向いたチーム全体の弱体状態を1つ解除\n-3番目：白いパイプが向いたチーム全体の🛡️被ダメージ量を{takenDamageUp}%増加（60秒間）\n-4番目：黒いパイプが向いたチーム全体の弱体状態を1つ解除\n（この後、スキル使用時1番目から繰り返し）",
+            "values": {
+              "takenDamageUp": [
+                50
+              ]
+            }
+          },
+          "salvation": {
+            "name": "万人の救恤",
+            "type": "attack",
+            "hitDelay": 0,
+            "duration": 0,
+            "effectDuration": 0,
+            "text": "敵全体に対して{damage}ダメージ（この攻撃は🧿不死身状態を解除します）",
+            "values": {
+              "damage": [
+                999999
+              ]
+            }
+          }
+        },
+        "triggers": [
+          {
+            "time": 20.1,
+            "skill": "whisper"
+          },
+          {
+            "time": 30.3,
+            "skill": "remorse"
+          },
+          {
+            "time": 38.2,
+            "skill": "hymn"
+          },
+          {
+            "time": 55.2,
+            "skill": "remorse"
+          },
+          {
+            "time": 72.7,
+            "skill": "hymn"
+          },
+          {
+            "time": 89.6,
+            "skill": "whisper"
+          },
+          {
+            "time": 107.7,
+            "skill": "hymn"
+          },
+          {
+            "time": 124.7,
+            "skill": "remorse"
+          },
+          {
+            "time": 142.2,
+            "skill": "hymn"
+          },
+          {
+            "time": 159.0,
+            "skill": "whisper"
+          },
+          {
+            "time": 177.2,
+            "skill": "hymn"
+          },
+          {
+            "time": 194.2,
+            "skill": "remorse"
+          },
+          {
+            "time": 226.5,
+            "skill": "salvation"
+          }
+        ]
+      },
+      "insane": {
+        "skills": {
+          "whisper": {
+            "name": "聖者の囁き",
+            "type": "debuff",
+            "hitDelay": 0,
+            "duration": 0,
+            "effectDuration": 120,
+            "text": "敵全体に対して攻撃力の{damage}%分の確定会心ダメージ、🛡️攻撃力を{attackdown}%減少（{effectDuration}秒間）（この効果は重複可能）",
+            "values": {
+              "damage": [
+                500
+              ],
+              "attackdown": [
+                40
+              ],
+              "effectDuration": [
+                120
+              ]
+            }
+          },
+          "remorse": {
+            "name": "厳粛なる悔悟",
+            "type": "debuff",
+            "hitDelay": 0,
+            "duration": 0,
+            "effectDuration": 120,
+            "text": "自身が保有している弱体状態の数によって適用される効果が異なります。\n-弱体状態{cleanseThreshold}つ以下：味方全体の弱体状態を1つ解除\n-弱体状態{attackdownThreshold}つ以上：味方全体の🛡️攻撃力を{attackdown}%減少（{effectDuration}秒間）",
+            "values": {
+              "cleanseThreshold": [
+                5
+              ],
+              "attackdownThreshold": [
+                6
+              ],
+              "attackdown": [
+                10
+              ],
+              "effectDuration": [
+                120
+              ]
+            }
+          },
+          "hymn": {
+            "name": "グレゴリオ聖歌",
+            "type": "debuff",
+            "hitDelay": 0,
+            "duration": 0,
+            "effectDuration": 60,
+            "text": "中央のパイプオルガンが向いた方向によって味方全体、あるいは敵全体にスキルを使用し、スキルを使用する度にスキルの効果が変更されます。\n-1番目：黒いパイプが向いたチーム全体の🛡️被ダメージ量を{takenDamageUp}%増加（60秒間）\n-2番目：白いパイプが向いたチーム全体の弱体状態を1つ解除\n-3番目：白いパイプが向いたチーム全体の🛡️被ダメージ量を{takenDamageUp}%増加（60秒間）\n-4番目：黒いパイプが向いたチーム全体の弱体状態を1つ解除\n（この後、スキル使用時1番目から繰り返し）",
+            "values": {
+              "takenDamageUp": [
+                50
+              ]
+            }
+          },
+          "salvation": {
+            "name": "万人の救恤",
+            "type": "attack",
+            "hitDelay": 0,
+            "duration": 0,
+            "effectDuration": 0,
+            "text": "敵全体に対して{damage}ダメージ（この攻撃は🧿不死身状態を解除します）",
+            "values": {
+              "damage": [
+                999999
+              ]
+            }
+          }
+        },
+        "triggers": [
+          {
+            "time": 20.1,
+            "skill": "whisper"
+          },
+          {
+            "time": 30.3,
+            "skill": "remorse"
+          },
+          {
+            "time": 38.2,
+            "skill": "hymn"
+          },
+          {
+            "time": 55.2,
+            "skill": "remorse"
+          },
+          {
+            "time": 72.7,
+            "skill": "hymn"
+          },
+          {
+            "time": 89.6,
+            "skill": "whisper"
+          },
+          {
+            "time": 107.7,
+            "skill": "hymn"
+          },
+          {
+            "time": 124.7,
+            "skill": "remorse"
+          },
+          {
+            "time": 142.2,
+            "skill": "hymn"
+          },
+          {
+            "time": 159.0,
+            "skill": "whisper"
+          },
+          {
+            "time": 177.2,
+            "skill": "hymn"
+          },
+          {
+            "time": 194.2,
+            "skill": "remorse"
+          },
+          {
+            "time": 226.5,
+            "skill": "salvation"
+          }
+        ]
+      },
+      "torment": {
+        "skills": {
+          "whisper": {
+            "name": "聖者の囁き",
+            "type": "debuff",
+            "hitDelay": 0,
+            "duration": 0,
+            "effectDuration": 120,
+            "text": "敵全体に対して攻撃力の{damage}%分の確定会心ダメージ、🛡️攻撃力を{attackdown}%減少（{effectDuration}秒間）（この効果は重複可能）",
+            "values": {
+              "damage": [
+                500
+              ],
+              "attackdown": [
+                40
+              ],
+              "effectDuration": [
+                120
+              ]
+            }
+          },
+          "remorse": {
+            "name": "厳粛なる悔悟",
+            "type": "debuff",
+            "hitDelay": 0,
+            "duration": 0,
+            "effectDuration": 120,
+            "text": "自身が保有している弱体状態の数によって適用される効果が異なります。\n-弱体状態{cleanseThreshold}つ以下：味方全体の弱体状態を1つ解除\n-弱体状態{attackdownThreshold}つ以上：味方全体の🛡️攻撃力を{attackdown}%減少（{effectDuration}秒間）",
+            "values": {
+              "cleanseThreshold": [
+                6
+              ],
+              "attackdownThreshold": [
+                7
+              ],
+              "attackdown": [
+                10
+              ],
+              "effectDuration": [
+                120
+              ]
+            }
+          },
+          "hymn": {
+            "name": "グレゴリオ聖歌",
+            "type": "debuff",
+            "hitDelay": 0,
+            "duration": 0,
+            "effectDuration": 60,
+            "text": "中央のパイプオルガンが向いた方向によって味方全体、あるいは敵全体にスキルを使用し、スキルを使用する度にスキルの効果が変更されます。\n-1番目：黒いパイプが向いたチーム全体の🛡️被ダメージ量を{takenDamageUp}%増加（60秒間）\n-2番目：白いパイプが向いたチーム全体の弱体状態を1つ解除\n-3番目：白いパイプが向いたチーム全体の🛡️被ダメージ量を{takenDamageUp}%増加（60秒間）\n-4番目：黒いパイプが向いたチーム全体の弱体状態を1つ解除\n（この後、スキル使用時1番目から繰り返し）",
+            "values": {
+              "takenDamageUp": [
+                50
+              ]
+            }
+          },
+          "salvation": {
+            "name": "万人の救恤",
+            "type": "attack",
+            "hitDelay": 0,
+            "duration": 0,
+            "effectDuration": 0,
+            "text": "敵全体に対して{damage}ダメージ（この攻撃は🧿不死身状態を解除します）",
+            "values": {
+              "damage": [
+                999999
+              ]
+            }
+          }
+        },
+        "triggers": [
+          {
+            "time": 20.1,
+            "skill": "whisper"
+          },
+          {
+            "time": 30.3,
+            "skill": "remorse"
+          },
+          {
+            "time": 38.2,
+            "skill": "hymn"
+          },
+          {
+            "time": 55.2,
+            "skill": "remorse"
+          },
+          {
+            "time": 72.7,
+            "skill": "hymn"
+          },
+          {
+            "time": 89.6,
+            "skill": "whisper"
+          },
+          {
+            "time": 107.7,
+            "skill": "hymn"
+          },
+          {
+            "time": 124.7,
+            "skill": "remorse"
+          },
+          {
+            "time": 142.2,
+            "skill": "hymn"
+          },
+          {
+            "time": 159.0,
+            "skill": "whisper"
+          },
+          {
+            "time": 177.2,
+            "skill": "hymn"
+          },
+          {
+            "time": 194.2,
+            "skill": "remorse"
+          },
+          {
+            "time": 226.5,
+            "skill": "salvation"
+          }
+        ]
+      },
+      "lunatic": {
+        "skills": {
+          "whisper": {
+            "name": "聖者の囁き",
+            "type": "debuff",
+            "hitDelay": 0,
+            "duration": 0,
+            "effectDuration": 120,
+            "text": "敵全体に対して攻撃力の{damage}%分の確定会心ダメージ、🛡️攻撃力を{attackdown}%減少（{effectDuration}秒間）（この効果は重複可能）（この弱体状態効果は、弱体状態解除スキルによって解除されません）",
+            "values": {
+              "damage": [
+                500
+              ],
+              "attackdown": [
+                70
+              ],
+              "effectDuration": [
+                120
+              ]
+            }
+          },
+          "remorse": {
+            "name": "厳粛なる悔悟",
+            "type": "debuff",
+            "hitDelay": 0,
+            "duration": 0,
+            "effectDuration": 120,
+            "text": "自身が保有している弱体状態の数によって適用される効果が異なります。\n-弱体状態{cleanseThreshold}つ以下：味方全体の弱体状態を1つ解除\n-弱体状態{attackdownThreshold}つ以上：味方全体の🛡️攻撃力を{attackdown}%減少（{effectDuration}秒間）",
+            "values": {
+              "cleanseThreshold": [
+                6
+              ],
+              "attackdownThreshold": [
+                7
+              ],
+              "attackdown": [
+                10
+              ],
+              "effectDuration": [
+                120
+              ]
+            }
+          },
+          "hymn": {
+            "name": "グレゴリオ聖歌",
+            "type": "debuff",
+            "hitDelay": 0,
+            "duration": 0,
+            "effectDuration": 60,
+            "text": "中央のパイプオルガンが向いた方向によって味方全体、あるいは敵全体にスキルを使用し、スキルを使用する度にスキルの効果が変更されます。\n-1番目：黒いパイプが向いたチーム全体の🛡️被ダメージ量を{takenDamageUp}%増加（60秒間）\n-2番目：白いパイプが向いたチーム全体の弱体状態を1つ解除、さらに🧨EXスキルの与えるダメージ量を{exDamageUp}%加算（{exDamageDuration}秒間）\n-3番目：白いパイプが向いたチーム全体の🛡️被ダメージ量を{takenDamageUp}%増加（60秒間）\n-4番目：黒いパイプが向いたチーム全体の弱体状態を1つ解除、さらに🧨EXスキルの与えるダメージ量を{exDamageUp}%加算（{exDamageDuration}秒間）\n（この後、スキル使用時1番目から繰り返し）",
+            "values": {
+              "takenDamageUp": [
+                50
+              ],
+              "exDamageUp": [
+                70
+              ],
+              "exDamageDuration": [
+                120
+              ]
+            }
+          },
+          "salvation": {
+            "name": "万人の救恤",
+            "type": "attack",
+            "hitDelay": 0,
+            "duration": 0,
+            "effectDuration": 0,
+            "text": "敵全体に対して{damage}ダメージ（この攻撃は🧿不死身状態を解除します）",
+            "values": {
+              "damage": [
+                999999
+              ]
+            }
+          }
+        },
+        "triggers": [
+          {
+            "time": 20.1,
+            "skill": "whisper"
+          },
+          {
+            "time": 30.3,
+            "skill": "remorse"
+          },
+          {
+            "time": 38.2,
+            "skill": "hymn"
+          },
+          {
+            "time": 55.2,
+            "skill": "remorse"
+          },
+          {
+            "time": 72.7,
+            "skill": "hymn"
+          },
+          {
+            "time": 89.6,
+            "skill": "whisper"
+          },
+          {
+            "time": 107.7,
+            "skill": "hymn"
+          },
+          {
+            "time": 124.7,
+            "skill": "remorse"
+          },
+          {
+            "time": 142.2,
+            "skill": "hymn"
+          },
+          {
+            "time": 159.0,
+            "skill": "whisper"
+          },
+          {
+            "time": 177.2,
+            "skill": "hymn"
+          },
+          {
+            "time": 194.2,
+            "skill": "remorse"
+          },
+          {
+            "time": 226.5,
+            "skill": "salvation"
+          }
+        ]
+      }
+    }
   }
 ]

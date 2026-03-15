@@ -96,12 +96,20 @@ interface GimmickSkill {
   effectDuration?: number
 }
 
+interface GimmickVariant {
+  skills?: Record<string, GimmickSkill>
+  triggers?: Array<{ time: number; skill: string }>
+}
+
+type GimmickDifficultyKey = 'extreme' | 'insane' | 'torment' | 'lunatic'
+
 interface Gimmick {
   id: string
   name: string
   side: 'enemy' | 'ally'
   skills?: Record<string, GimmickSkill>
   triggers?: Array<{ time: number; skill: string }>
+  difficultyVariants?: Partial<Record<GimmickDifficultyKey, GimmickVariant>>
 }
 
 interface UserStudent {
@@ -152,6 +160,23 @@ interface EventTemplate {
 }
 
 type SkillOption = { label: string; skill: SkillData; cost?: number; duration?: number }
+
+const toGimmickDifficultyKey = (raidDifficulty: RaidDifficulty): GimmickDifficultyKey => {
+  if (raidDifficulty === 'LUNATIC') return 'lunatic'
+  if (raidDifficulty === 'TORMENT') return 'torment'
+  if (raidDifficulty === 'INSANE') return 'insane'
+  return 'extreme'
+}
+
+const getGimmickVariant = (gimmick: Gimmick | undefined, raidDifficulty: RaidDifficulty): GimmickVariant => {
+  if (!gimmick) return {}
+  const key = toGimmickDifficultyKey(raidDifficulty)
+  const variant = gimmick.difficultyVariants?.[key]
+  return {
+    skills: variant?.skills ?? gimmick.skills,
+    triggers: variant?.triggers ?? gimmick.triggers,
+  }
+}
 
 const getSkillEntries = (skill?: SkillDefinition): SkillEntry[] => {
   if (!skill) return []
@@ -1790,10 +1815,11 @@ useEffect(() => {
     const idx = rowStudents.length
     setRowStudents((prev) => [...prev, `gimmick:${gimmickId}`])
     const gimmick = gimmicks.find((g) => g.id === gimmickId)
-    if (!gimmick?.triggers?.length) return
+    const gimmickVariant = getGimmickVariant(gimmick, raidDifficulty)
+    if (!gimmickVariant.triggers?.length) return
     const now = Date.now()
-    const events: SkillEvent[] = gimmick.triggers.map((trigger, i) => {
-      const info = gimmick.skills?.[trigger.skill]
+    const events: SkillEvent[] = gimmickVariant.triggers.map((trigger, i) => {
+      const info = gimmickVariant.skills?.[trigger.skill]
       const hitDelay = info?.hitDelay ?? 0
       const duration = info?.duration ?? 0
       const effectDuration = info?.effectDuration ?? 0
@@ -2204,7 +2230,8 @@ useEffect(() => {
       if (skillKind !== 'gimmick') return []
       const gimmickId = rowId.slice('gimmick:'.length)
       const gimmick = gimmicks.find((g) => g.id === gimmickId)
-      const options: SkillOption[] = Object.values(gimmick?.skills ?? {}).map((sk) => ({
+      const gimmickVariant = getGimmickVariant(gimmick, raidDifficulty)
+      const options: SkillOption[] = Object.values(gimmickVariant.skills ?? {}).map((sk) => ({
         label: sk.name,
         skill: { title: sk.name, type: sk.type, text: sk.text, values: sk.values },
         duration: sk.duration,
@@ -2216,7 +2243,7 @@ useEffect(() => {
     if (skillKind === 'gimmick') return []
     const skillDef = skillKind === 'ex' ? st.skills?.ex : st.skills?.normal
     return flattenSkillEntries(getSkillEntries(skillDef))
-  }, [selectedType, students, rowStudents, row, skillKind, gimmicks])
+  }, [selectedType, students, rowStudents, row, skillKind, gimmicks, raidDifficulty])
 
   useEffect(() => {
     if (selectedType !== 'skill') return
@@ -2267,7 +2294,8 @@ useEffect(() => {
     const opt = skillOptions[skillOptionIndex]
     if (rowId.startsWith('gimmick:')) {
       const gimmick = gimmicks.find((g) => `gimmick:${g.id}` === rowId)
-      const picked = Object.values(gimmick?.skills ?? {})[skillOptionIndex]
+      const gimmickVariant = getGimmickVariant(gimmick, raidDifficulty)
+      const picked = Object.values(gimmickVariant.skills ?? {})[skillOptionIndex]
       const dur = opt?.duration ?? picked?.duration
       const travel = picked?.hitDelay ?? 0
       if (dur !== undefined) {
@@ -2288,7 +2316,7 @@ useEffect(() => {
       const extra = applyTravel ? 0 : travel
       setEnd(snapTime(start + dur + extra))
     }
-  }, [row, start, selectedType, rowStudents, students, applyTravel, skillKind, skillOptions, skillOptionIndex, gimmicks])
+  }, [row, start, selectedType, rowStudents, students, applyTravel, skillKind, skillOptions, skillOptionIndex, gimmicks, raidDifficulty])
 
   useEffect(() => {
     if (selectedType !== 'skill') return
@@ -2426,7 +2454,8 @@ useEffect(() => {
       const gimmick = rowId.startsWith('gimmick:')
         ? gimmicks.find((g) => g.id === rowId.slice('gimmick:'.length))
         : undefined
-      const gimmickSkill = skillKind === 'gimmick' ? Object.values(gimmick?.skills ?? {})[skillOptionIndex] : undefined
+      const gimmickVariant = getGimmickVariant(gimmick, raidDifficulty)
+      const gimmickSkill = skillKind === 'gimmick' ? Object.values(gimmickVariant.skills ?? {})[skillOptionIndex] : undefined
       const travel =
         skillKind === 'ex'
           ? st?.exHitDelay || 0
@@ -2445,7 +2474,7 @@ useEffect(() => {
             : Math.max(0, (gimmickSkill?.duration || 0) - travel)
       const skillDef = skillKind === 'ex' ? st?.skills?.ex : st?.skills?.normal
       const options: SkillOption[] = skillKind === 'gimmick'
-        ? Object.values(gimmick?.skills ?? {}).map((sk): SkillOption => ({
+        ? Object.values(gimmickVariant.skills ?? {}).map((sk): SkillOption => ({
             label: sk.name,
             skill: { title: sk.name, type: sk.type, text: sk.text, values: sk.values },
             duration: sk.duration,
@@ -3517,14 +3546,15 @@ function sumSpecialSub(
     const rowId = rowStudents[ev.row]
     if (!rowId.startsWith('gimmick:')) return undefined
     const gimmick = gimmicks.find((g) => `gimmick:${g.id}` === rowId)
-    if (!gimmick?.skills) return undefined
+    const gimmickVariant = getGimmickVariant(gimmick, raidDifficulty)
+    if (!gimmickVariant.skills) return undefined
     if (ev.skillRef) {
-      const byName = Object.values(gimmick.skills).find((sk) => sk.name === ev.skillRef)
+      const byName = Object.values(gimmickVariant.skills).find((sk) => sk.name === ev.skillRef)
       if (byName) {
         return { title: byName.name, type: byName.type, text: byName.text, values: byName.values }
       }
     }
-    const byLabel = Object.values(gimmick.skills).find((sk) => sk.name === ev.label)
+    const byLabel = Object.values(gimmickVariant.skills).find((sk) => sk.name === ev.label)
     if (byLabel) {
       return { title: byLabel.name, type: byLabel.type, text: byLabel.text, values: byLabel.values }
     }
