@@ -79,6 +79,7 @@ interface Student {
 interface EnemyStats { hp?: number; attack?: number; defense?: number; critResist?: number }
 
 interface EnemyVariant {
+  level?: number
   stats?: EnemyStats
   skills?: Record<string, GimmickSkill>
   triggers?: Array<{ time: number; skill: string }>
@@ -98,7 +99,7 @@ interface Enemy {
   stats?: EnemyStats
   skills?: Record<string, GimmickSkill>
   triggers?: Array<{ time: number; skill: string }>
-  difficultyVariants?: Partial<Record<GimmickDifficultyKey, EnemyVariant>>
+  difficultyVariants?: Partial<Record<EnemyDifficultyKey, EnemyVariant>>
   attackOrder?: { time: number; skill: string }[]
 }
 
@@ -118,6 +119,7 @@ interface GimmickVariant {
 }
 
 type GimmickDifficultyKey = 'extreme' | 'insane' | 'torment' | 'lunatic'
+type EnemyDifficultyKey = 'normal' | 'hard' | 'veryhard' | 'hardcore' | 'extreme' | 'insane' | 'torment' | 'lunatic'
 
 interface Gimmick {
   id: string
@@ -194,11 +196,24 @@ const getGimmickVariant = (gimmick: Gimmick | undefined, raidDifficulty: RaidDif
   }
 }
 
+
+const toEnemyDifficultyKey = (raidDifficulty: RaidDifficulty): EnemyDifficultyKey => {
+  if (raidDifficulty === 'LUNATIC') return 'lunatic'
+  if (raidDifficulty === 'TORMENT') return 'torment'
+  if (raidDifficulty === 'INSANE') return 'insane'
+  if (raidDifficulty === 'EXTREME') return 'extreme'
+  if (raidDifficulty === 'HARDCORE') return 'hardcore'
+  if (raidDifficulty === 'VERYHARD') return 'veryhard'
+  if (raidDifficulty === 'HARD') return 'hard'
+  return 'normal'
+}
+
 const getEnemyVariant = (enemy: Enemy | undefined, raidDifficulty: RaidDifficulty): EnemyVariant => {
   if (!enemy) return {}
-  const key = toGimmickDifficultyKey(raidDifficulty)
+  const key = toEnemyDifficultyKey(raidDifficulty)
   const variant = enemy.difficultyVariants?.[key]
   return {
+    level: variant?.level ?? enemy.level,
     stats: variant?.stats ?? enemy.stats,
     skills: variant?.skills ?? enemy.skills,
     triggers: variant?.triggers ?? enemy.triggers ?? enemy.attackOrder,
@@ -7886,7 +7901,7 @@ setBuffPopup({
         const enemyVariant = getEnemyVariant(enemy, raidDifficulty)
         const defense = Number(enemyVariant.stats?.defense ?? enemy?.stats?.defense ?? 0)
         const attackerLevel = Number(atkStats.level ?? 1)
-        const enemyLevel = enemy?.level ?? attackerLevel
+        const enemyLevel = enemyVariant.level ?? enemy?.level ?? attackerLevel
         const levelMul = (10000 - 200 * (attackerLevel - enemyLevel)) / 10000
         const defenseArmor = enemy?.armor || selectedArmor
         const baseTypeMul = armorBonus[attacker.attackType]?.[defenseArmor] ?? 1
