@@ -76,6 +76,14 @@ interface Student {
   }
 }
 
+interface EnemyStats { hp?: number; attack?: number; defense?: number; critResist?: number }
+
+interface EnemyVariant {
+  stats?: EnemyStats
+  skills?: Record<string, GimmickSkill>
+  triggers?: Array<{ time: number; skill: string }>
+}
+
 interface Enemy {
   id: string
   name: string
@@ -87,10 +95,10 @@ interface Enemy {
     enemies?: string[]
     gimmicks?: string[]
   }
-  stats?: { hp?: number; attack?: number; defense?: number; critResist?: number }
+  stats?: EnemyStats
   skills?: Record<string, GimmickSkill>
   triggers?: Array<{ time: number; skill: string }>
-  difficultyVariants?: Partial<Record<GimmickDifficultyKey, GimmickVariant>>
+  difficultyVariants?: Partial<Record<GimmickDifficultyKey, EnemyVariant>>
   attackOrder?: { time: number; skill: string }[]
 }
 
@@ -186,11 +194,12 @@ const getGimmickVariant = (gimmick: Gimmick | undefined, raidDifficulty: RaidDif
   }
 }
 
-const getEnemyVariant = (enemy: Enemy | undefined, raidDifficulty: RaidDifficulty): GimmickVariant => {
+const getEnemyVariant = (enemy: Enemy | undefined, raidDifficulty: RaidDifficulty): EnemyVariant => {
   if (!enemy) return {}
   const key = toGimmickDifficultyKey(raidDifficulty)
   const variant = enemy.difficultyVariants?.[key]
   return {
+    stats: variant?.stats ?? enemy.stats,
     skills: variant?.skills ?? enemy.skills,
     triggers: variant?.triggers ?? enemy.triggers ?? enemy.attackOrder,
   }
@@ -613,6 +622,7 @@ interface ProjectSnapshot {
     raidDifficulty: RaidDifficulty
     bossId?: string
     terrain?: string
+    armor?: string
   }
 }
 
@@ -1248,6 +1258,7 @@ const startResizePluginWindow = useCallback(
   const [raidDifficulty, setRaidDifficulty] = useState<RaidDifficulty>('INSANE')
   const [selectedBossId, setSelectedBossId] = useState('')
   const [selectedTerrain, setSelectedTerrain] = useState('')
+  const [selectedArmor, setSelectedArmor] = useState('重装甲')
   const [settingsTab, setSettingsTab] = useState<'project' | 'environment'>('project')
   const [hideHeader, setHideHeader] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
@@ -1534,6 +1545,15 @@ useEffect(() => {
   }, [selectedTerrain])
 
   useEffect(() => {
+    const raw = localStorage.getItem('tlArmor')
+    if (raw) setSelectedArmor(raw)
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('tlArmor', selectedArmor)
+  }, [selectedArmor])
+
+  useEffect(() => {
     const raw = localStorage.getItem('tlDefaultSkillLevels')
     if (raw) {
       try {
@@ -1604,8 +1624,9 @@ useEffect(() => {
       raidDifficulty,
       bossId: selectedBossId,
       terrain: selectedTerrain,
+      armor: selectedArmor,
     },
-  }), [projectName, rowStudents, skills, markers, selectedGroup, squadIndex, totalSeconds, raidDifficulty])
+  }), [projectName, rowStudents, skills, markers, selectedGroup, squadIndex, totalSeconds, raidDifficulty, selectedBossId, selectedTerrain, selectedArmor])
 
   const getSnapshotRef = useRef(getSnapshot)
   useEffect(() => {
@@ -1985,6 +2006,7 @@ useEffect(() => {
       raidDifficulty?: RaidDifficulty
       bossId?: string
       terrain?: string
+      armor?: string
     }
   }) => {
     setProjectName(data.projectName || '')
@@ -2007,6 +2029,9 @@ useEffect(() => {
     }
     if (typeof data.projectSettings?.terrain === 'string') {
       setSelectedTerrain(data.projectSettings.terrain)
+    }
+    if (typeof data.projectSettings?.armor === 'string') {
+      setSelectedArmor(data.projectSettings.armor)
     }
   }
 
@@ -2043,6 +2068,9 @@ useEffect(() => {
         projectSettings?: {
           totalSeconds?: number
           raidDifficulty?: RaidDifficulty
+          bossId?: string
+          terrain?: string
+          armor?: string
         }
       }
       setProjectName(data.projectName)
@@ -2061,6 +2089,9 @@ useEffect(() => {
       }
       if (typeof data.projectSettings?.terrain === 'string') {
         setSelectedTerrain(data.projectSettings.terrain)
+      }
+      if (typeof data.projectSettings?.armor === 'string') {
+        setSelectedArmor(data.projectSettings.armor)
       }
       applyMembers(data.rowStudents || fallbackMembers || [])
       setTlStats({})
@@ -2083,6 +2114,7 @@ useEffect(() => {
         raidDifficulty,
         bossId: selectedBossId,
         terrain: selectedTerrain,
+        armor: selectedArmor,
       },
     }
     localStorage.setItem(key, JSON.stringify(data))
@@ -2098,6 +2130,7 @@ useEffect(() => {
         raidDifficulty,
         bossId: selectedBossId,
         terrain: selectedTerrain,
+        armor: selectedArmor,
       },
     }))
     localStorage.setItem('tlMakerLastKey', key)
@@ -2116,6 +2149,7 @@ useEffect(() => {
         raidDifficulty,
         bossId: selectedBossId,
         terrain: selectedTerrain,
+        armor: selectedArmor,
       },
     }
     if (withStats) {
@@ -2173,6 +2207,7 @@ useEffect(() => {
       setRaidDifficulty(snap.projectSettings.raidDifficulty)
       setSelectedBossId(snap.projectSettings.bossId ?? '')
       setSelectedTerrain(snap.projectSettings.terrain ?? '')
+      setSelectedArmor(snap.projectSettings.armor ?? '重装甲')
     }
     const g = groups.find((gr) => gr.id === snap.groupId) || null
     setSelectedGroup(g)
@@ -2322,6 +2357,9 @@ useEffect(() => {
     if (typeof boss.roomTime === 'number' && Number.isFinite(boss.roomTime)) {
       setTotalSeconds(boss.roomTime)
     }
+    if (typeof boss.armor === 'string' && boss.armor) {
+      setSelectedArmor((prev) => (prev ? prev : boss.armor as string))
+    }
     const terrainOptions = boss.terrains ?? []
     if (!terrainOptions.length) return
     if (!terrainOptions.includes(selectedTerrain)) {
@@ -2466,7 +2504,7 @@ useEffect(() => {
   useEffect(() => {
   if (!initialized || isRestoring.current) return
   saveProject()
-}, [initialized, projectName, selectedGroup, squadIndex, rowStudents, skills, markers, totalSeconds, raidDifficulty, selectedBossId, selectedTerrain])
+}, [initialized, projectName, selectedGroup, squadIndex, rowStudents, skills, markers, totalSeconds, raidDifficulty, selectedBossId, selectedTerrain, selectedArmor])
 
 
   const INITIAL_COST = 0
@@ -4512,6 +4550,20 @@ function resolveBuffText(
                     ))}
                   </select>
                 </label>
+                <label className="block text-sm text-gray-600">
+                  装甲
+                  <select
+                    value={selectedArmor}
+                    onChange={(e) => setSelectedArmor(e.target.value)}
+                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  >
+                    <option value="軽装備">軽装備</option>
+                    <option value="重装甲">重装甲</option>
+                    <option value="特殊装甲">特殊装甲</option>
+                    <option value="弾力装甲">弾力装甲</option>
+                  </select>
+                </label>
+
               </div>
               <label className="block text-sm text-gray-600">
                 編成
@@ -5511,6 +5563,21 @@ function resolveBuffText(
                     ))}
                   </select>
                 </section>
+
+                <section className="rounded border border-gray-200 p-3 space-y-2">
+                  <div className="text-sm font-bold">装甲</div>
+                  <select
+                    value={selectedArmor}
+                    onChange={(e) => setSelectedArmor(e.target.value)}
+                    className="border rounded p-1"
+                  >
+                    <option value="軽装備">軽装備</option>
+                    <option value="重装甲">重装甲</option>
+                    <option value="特殊装甲">特殊装甲</option>
+                    <option value="弾力装甲">弾力装甲</option>
+                  </select>
+                </section>
+
 
               </div>
 
@@ -7816,11 +7883,13 @@ setBuffPopup({
         const targetIdx = getEffectiveTarget(ev)
         const targetRowId = rowStudents[targetIdx]
         const enemy = enemies.find((e) => `enemy:${e.id}` === targetRowId)
-        const defense = Number(enemy?.stats?.defense ?? 0)
+        const enemyVariant = getEnemyVariant(enemy, raidDifficulty)
+        const defense = Number(enemyVariant.stats?.defense ?? enemy?.stats?.defense ?? 0)
         const attackerLevel = Number(atkStats.level ?? 1)
         const enemyLevel = enemy?.level ?? attackerLevel
         const levelMul = (10000 - 200 * (attackerLevel - enemyLevel)) / 10000
-        const baseTypeMul = armorBonus[attacker.attackType]?.[enemy?.armor || ''] ?? 1
+        const defenseArmor = enemy?.armor || selectedArmor
+        const baseTypeMul = armorBonus[attacker.attackType]?.[defenseArmor] ?? 1
         let typeMul = baseTypeMul === 2 ? baseTypeMul + typeBuff / 100 : baseTypeMul
         if (Number(atkStats.unique_star ?? 0) >= 4) {
           typeMul += 0.1
@@ -7833,7 +7902,7 @@ setBuffPopup({
           levelMul *
           typeMul *
           exBuffMul
-        const critResist = Number(enemy?.stats?.critResist ?? 0)
+        const critResist = Number(enemyVariant.stats?.critResist ?? enemy?.stats?.critResist ?? 0)
         const critMul = Math.max(10000, (20000 + equipFlat.critDamage + critBuffnum) * (1 + 1 * sumSpecialSub(rowStudents, 'crit') / 100 + equipPct.critDamage / 100 + critBuff / 100) - critResist) / 10000
         const dmg = baseDmg
         const crit = baseDmg * critMul
