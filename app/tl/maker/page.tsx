@@ -718,7 +718,7 @@ export default function TLMakerPage() {
   const [showMenu, setShowMenu] = useState(false)
   const [showAddRowMenu, setShowAddRowMenu] = useState(false)
   const [selectedType, setSelectedType] = useState<'skill' | 'event' | 'endLine' | null>(null)
-  const [skillKind, setSkillKind] = useState<'ex' | 'normal' | 'gimmick' | 'enemy'>('ex')
+  const [skillKind, setSkillKind] = useState<'ex' | 'normal' | 'gimmick'>('ex')
   const [skillOptionIndex, setSkillOptionIndex] = useState(0)
   const [timeScale, setTimeScale] = useState(20) // px per second
   const [applyTravel, setApplyTravel] = useState(false)
@@ -2407,7 +2407,7 @@ useEffect(() => {
       return options
     }
     if (rowId.startsWith('enemy:')) {
-      if (skillKind !== 'enemy') return []
+      if (skillKind !== 'ex') return []
       const enemyId = rowId.slice('enemy:'.length)
       const enemy = enemies.find((item) => item.id === enemyId)
       const enemyVariant = getEnemyVariant(enemy, raidDifficulty)
@@ -2432,10 +2432,10 @@ useEffect(() => {
     const rowId = rowStudents[row]
     if (rowId?.startsWith('gimmick:') && skillKind !== 'gimmick') {
       setSkillKind('gimmick')
-    } else if (rowId?.startsWith('enemy:') && skillKind !== 'enemy') {
-      setSkillKind('enemy')
+    } else if (rowId?.startsWith('enemy:') && skillKind !== 'ex') {
+      setSkillKind('ex')
     }
-    if (!rowId?.startsWith('gimmick:') && !rowId?.startsWith('enemy:') && (skillKind === 'gimmick' || skillKind === 'enemy')) {
+    if (!rowId?.startsWith('gimmick:') && !rowId?.startsWith('enemy:') && skillKind === 'gimmick') {
       setSkillKind('ex')
     }
     setSkillOptionIndex(0)
@@ -2648,7 +2648,9 @@ useEffect(() => {
         : undefined
       const enemyVariant = getEnemyVariant(enemyData, raidDifficulty)
       const gimmickSkill = skillKind === 'gimmick' ? Object.values(gimmickVariant.skills ?? {})[skillOptionIndex] : undefined
-      const enemySkill = skillKind === 'enemy' ? Object.values(enemyVariant.skills ?? {})[skillOptionIndex] : undefined
+      const isEnemyRow = rowId.startsWith('enemy:')
+      const enemySkills = Object.values(enemyVariant.skills ?? {}).filter((sk) => (sk.skillKind ?? 'ex') === 'ex')
+      const enemySkill = isEnemyRow ? enemySkills[skillOptionIndex] : undefined
       const travel =
         skillKind === 'ex'
           ? st?.exHitDelay || 0
@@ -2656,7 +2658,9 @@ useEffect(() => {
             ? st?.normalHitDelay || 0
             : skillKind === 'gimmick'
             ? gimmickSkill?.hitDelay || 0
-            : enemySkill?.hitDelay || 0
+            : isEnemyRow
+            ? enemySkill?.hitDelay || 0
+            : 0
       const duration = end - start
       const baseStart = snapTime(applyTravel ? start - travel : start)
       let s = baseStart
@@ -2668,7 +2672,9 @@ useEffect(() => {
             ? Math.max(0, (st?.normalMotionDuration || 0) - travel)
             : skillKind === 'gimmick'
             ? Math.max(0, (gimmickSkill?.duration || 0) - travel)
-            : Math.max(0, (enemySkill?.duration || 0) - travel)
+            : isEnemyRow
+            ? Math.max(0, (enemySkill?.duration || 0) - travel)
+            : 0
       const skillDef = skillKind === 'ex' ? st?.skills?.ex : st?.skills?.normal
       const options: SkillOption[] = skillKind === 'gimmick'
         ? Object.values(gimmickVariant.skills ?? {}).map((sk): SkillOption => ({
@@ -2676,14 +2682,12 @@ useEffect(() => {
             skill: { title: sk.name, type: sk.type, text: sk.text, values: sk.values },
             duration: sk.duration,
           }))
-        : skillKind === 'enemy'
-          ? Object.values(enemyVariant.skills ?? {})
-              .filter((sk) => (sk.skillKind ?? 'ex') === 'ex')
-              .map((sk): SkillOption => ({
-                label: sk.name,
-                skill: { title: sk.name, type: sk.type, text: sk.text, values: sk.values },
-                duration: sk.duration,
-              }))
+        : isEnemyRow
+          ? enemySkills.map((sk): SkillOption => ({
+              label: sk.name,
+              skill: { title: sk.name, type: sk.type, text: sk.text, values: sk.values },
+              duration: sk.duration,
+            }))
           : flattenSkillEntries(getSkillEntries(skillDef))
       if (!options.length) {
         pushToast('追加できるスキルがありません')
@@ -2735,7 +2739,7 @@ useEffect(() => {
       const fallbackLabel =
         pickedOption?.label ||
         getPrimarySkillOption(skillDef)?.label ||
-        (skillKind === 'ex' ? 'EX' : skillKind === 'normal' ? 'NS' : skillKind === 'enemy' ? '敵' : 'ギミック')
+        (isEnemyRow ? '敵' : skillKind === 'ex' ? 'EX' : skillKind === 'normal' ? 'NS' : 'ギミック')
       const lbl =
         label ||
         pickedOption?.label ||
@@ -2746,7 +2750,7 @@ useEffect(() => {
       let target: number | number[] | undefined
       const skillType =
         pickedOption?.skill.type || getPrimarySkill(skillDef)?.type
-      if (skillKind === 'enemy') {
+      if (isEnemyRow) {
         target = rowStudents.map((_, idx) => idx)
       } else {
         if (skillType === 'attack') target = defaultTargets.attack
@@ -2768,7 +2772,7 @@ useEffect(() => {
           label: lbl,
           travel,
           motion,
-          type: skillKind === 'gimmick' ? 'other' : skillKind === 'enemy' ? (pickedOption?.skill.type || 'attack') : skillKind,
+          type: skillKind === 'gimmick' ? 'other' : isEnemyRow ? (pickedOption?.skill.type || 'attack') : skillKind,
           cost: costValue,
           ...(costRecoveryEnabled &&
           (costRecoveryDuration === '' ? 0 : costRecoveryDuration) > 0 &&
@@ -5332,13 +5336,12 @@ function resolveBuffText(
                 <span>種類:</span>
                 <select
                   value={skillKind}
-                  onChange={(e) => setSkillKind(e.target.value as 'ex' | 'normal' | 'gimmick' | 'enemy')}
+                  onChange={(e) => setSkillKind(e.target.value as 'ex' | 'normal' | 'gimmick')}
                   className="border rounded p-1 w-24"
                 >
                   <option value="ex">EX</option>
                   <option value="normal">NS</option>
                   {rowStudents[row]?.startsWith('gimmick:') && <option value="gimmick">ギミック</option>}
-                  {rowStudents[row]?.startsWith('enemy:') && <option value="enemy">敵</option>}
                 </select>
               </label>
               {skillOptions.length > 1 && (
