@@ -2634,6 +2634,10 @@ useEffect(() => {
     const id = Date.now()
     if (selectedType === 'skill') {
       const rowId = rowStudents[row]
+      if (!rowId) {
+        pushToast('使用者を選択してください')
+        return
+      }
       const st = students.find((s) => s.id === rowId)
       const gimmick = rowId.startsWith('gimmick:')
         ? gimmicks.find((g) => g.id === rowId.slice('gimmick:'.length))
@@ -2681,7 +2685,12 @@ useEffect(() => {
                 duration: sk.duration,
               }))
           : flattenSkillEntries(getSkillEntries(skillDef))
-      const pickedOption = options[skillOptionIndex]
+      if (!options.length) {
+        pushToast('追加できるスキルがありません')
+        return
+      }
+      const safeSkillOptionIndex = Math.max(0, Math.min(skillOptionIndex, options.length - 1))
+      const pickedOption = options[safeSkillOptionIndex]
       const costValue = pickedOption?.cost ?? (skillCost === '' ? 0 : skillCost)
       if (skillKind === 'ex' && waitCost && costValue > 0) {
         let t = s
