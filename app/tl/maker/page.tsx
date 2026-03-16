@@ -106,6 +106,7 @@ interface Enemy {
 interface GimmickSkill {
   name: string
   type?: string
+  skillKind?: 'ex' | 'passive'
   text?: string
   values?: SkillValues
   hitDelay?: number
@@ -2410,11 +2411,13 @@ useEffect(() => {
       const enemyId = rowId.slice('enemy:'.length)
       const enemy = enemies.find((item) => item.id === enemyId)
       const enemyVariant = getEnemyVariant(enemy, raidDifficulty)
-      const options: SkillOption[] = Object.values(enemyVariant.skills ?? {}).map((sk) => ({
-        label: sk.name,
-        skill: { title: sk.name, type: sk.type, text: sk.text, values: sk.values },
-        duration: sk.duration,
-      }))
+      const options: SkillOption[] = Object.values(enemyVariant.skills ?? {})
+        .filter((sk) => (sk.skillKind ?? 'ex') === 'ex')
+        .map((sk) => ({
+          label: sk.name,
+          skill: { title: sk.name, type: sk.type, text: sk.text, values: sk.values },
+          duration: sk.duration,
+        }))
       return options
     }
     const st = students.find((s) => s.id === rowId)
@@ -2670,11 +2673,13 @@ useEffect(() => {
             duration: sk.duration,
           }))
         : skillKind === 'enemy'
-          ? Object.values(enemyVariant.skills ?? {}).map((sk): SkillOption => ({
-              label: sk.name,
-              skill: { title: sk.name, type: sk.type, text: sk.text, values: sk.values },
-              duration: sk.duration,
-            }))
+          ? Object.values(enemyVariant.skills ?? {})
+              .filter((sk) => (sk.skillKind ?? 'ex') === 'ex')
+              .map((sk): SkillOption => ({
+                label: sk.name,
+                skill: { title: sk.name, type: sk.type, text: sk.text, values: sk.values },
+                duration: sk.duration,
+              }))
           : flattenSkillEntries(getSkillEntries(skillDef))
       const pickedOption = options[skillOptionIndex]
       const costValue = pickedOption?.cost ?? (skillCost === '' ? 0 : skillCost)
@@ -2729,11 +2734,15 @@ useEffect(() => {
         getPrimarySkill(skillDef)?.title ||
         fallbackLabel ||
         ''
-      let target: number | undefined
+      let target: number | number[] | undefined
       const skillType =
         pickedOption?.skill.type || getPrimarySkill(skillDef)?.type
-      if (skillType === 'attack') target = defaultTargets.attack
-      if (skillType === 'debuff') target = defaultTargets.debuff
+      if (skillKind === 'enemy') {
+        target = rowStudents.map((_, idx) => idx)
+      } else {
+        if (skillType === 'attack') target = defaultTargets.attack
+        if (skillType === 'debuff') target = defaultTargets.debuff
+      }
       const triggerOffset = s - baseStart
       const costRecoveryTriggerValue =
         costRecoveryTrigger === '' ? 0 : costRecoveryTrigger
@@ -3574,14 +3583,34 @@ useEffect(() => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`
   }
 
-  function formatSkillText(
+  const decorateTagMap: Record<string, string> = {
+  DEF: '防御力',
+  AttackSpeed: '攻撃速度',
+  CostRegen: 'コスト回復力',
+  EnhancePierceRate: '貫通特効',
+}
+
+const cleanupSkillText = (text: string) => {
+  const withLineBreak = text.replace(/<br\s*\/?>(?!\n)/gi, '\n')
+  const replaced = withLineBreak
+    .replace(/<d:([^>]+)>/g, (_, key: string) => `【${decorateTagMap[key] ?? key}】`)
+    .replace(/<b:([^>]+)>/g, (_, key: string) => `【${decorateTagMap[key] ?? key}】`)
+    .replace(/<\/?up>/gi, '')
+    .replace(/<\/?i>/gi, '')
+    .replace(/<\/?b>/gi, '')
+    .replace(/<\/?color[^>]*>/gi, '')
+    .replace(/<[^>]+>/g, '')
+  return replaced
+}
+
+function formatSkillText(
   skill: { text?: string; values?: Record<string, number[]> } | undefined,
   level: number
 ) {
   if (!skill?.text) return ''
 
-  // {key} と {{key}} の両方を置換する
-  return skill.text.replace(/\{\{?(\w+)\}?\}/g, (matched, key) => {
+  const cleaned = cleanupSkillText(skill.text)
+  return cleaned.replace(/\{\{?(\w+)\}?\}/g, (matched, key) => {
     const arr = skill.values?.[key]
     if (!Array.isArray(arr)) return matched
 
@@ -7726,7 +7755,8 @@ setBuffPopup({
           {(() => {
             const sk = skills.find((s) => s.id === buffMenu.id)
             const t = sk ? getSkillType(sk) : undefined
-            const enemiesOnly = t === 'attack' || t === 'debuff'
+            const sourceRowId = sk ? rowStudents[sk.row] : ''
+            const enemiesOnly = (t === 'attack' || t === 'debuff') && !sourceRowId.startsWith('enemy:')
             const selectedTargets = Array.isArray(sk?.target)
               ? sk.target
               : typeof sk?.target === 'number'
