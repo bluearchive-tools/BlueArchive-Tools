@@ -76,19 +76,37 @@ interface Student {
   }
 }
 
+interface EnemyStats { hp?: number; attack?: number; defense?: number; critResist?: number }
+
+interface EnemyVariant {
+  level?: number
+  stats?: EnemyStats
+  skills?: Record<string, GimmickSkill>
+  triggers?: Array<{ time: number; skill: string }>
+}
+
 interface Enemy {
   id: string
   name: string
   level?: number
   armor?: string
-  stats?: { hp?: number; attack?: number; defense?: number; critResist?: number }
-  skills?: Record<string, { name: string; duration?: number }>
+  roomTime?: number
+  terrains?: string[]
+  autoAdd?: {
+    enemies?: string[]
+    gimmicks?: string[]
+  }
+  stats?: EnemyStats
+  skills?: Record<string, GimmickSkill>
+  triggers?: Array<{ time: number; skill: string }>
+  difficultyVariants?: Partial<Record<EnemyDifficultyKey, EnemyVariant>>
   attackOrder?: { time: number; skill: string }[]
 }
 
 interface GimmickSkill {
   name: string
   type?: string
+  skillKind?: 'ex' | 'passive'
   text?: string
   values?: SkillValues
   hitDelay?: number
@@ -102,6 +120,7 @@ interface GimmickVariant {
 }
 
 type GimmickDifficultyKey = 'extreme' | 'insane' | 'torment' | 'lunatic'
+type EnemyDifficultyKey = 'normal' | 'hard' | 'veryhard' | 'hardcore' | 'extreme' | 'insane' | 'torment' | 'lunatic'
 
 interface Gimmick {
   id: string
@@ -175,6 +194,30 @@ const getGimmickVariant = (gimmick: Gimmick | undefined, raidDifficulty: RaidDif
   return {
     skills: variant?.skills ?? gimmick.skills,
     triggers: variant?.triggers ?? gimmick.triggers,
+  }
+}
+
+
+const toEnemyDifficultyKey = (raidDifficulty: RaidDifficulty): EnemyDifficultyKey => {
+  if (raidDifficulty === 'LUNATIC') return 'lunatic'
+  if (raidDifficulty === 'TORMENT') return 'torment'
+  if (raidDifficulty === 'INSANE') return 'insane'
+  if (raidDifficulty === 'EXTREME') return 'extreme'
+  if (raidDifficulty === 'HARDCORE') return 'hardcore'
+  if (raidDifficulty === 'VERYHARD') return 'veryhard'
+  if (raidDifficulty === 'HARD') return 'hard'
+  return 'normal'
+}
+
+const getEnemyVariant = (enemy: Enemy | undefined, raidDifficulty: RaidDifficulty): EnemyVariant => {
+  if (!enemy) return {}
+  const key = toEnemyDifficultyKey(raidDifficulty)
+  const variant = enemy.difficultyVariants?.[key]
+  return {
+    level: variant?.level ?? enemy.level,
+    stats: variant?.stats ?? enemy.stats,
+    skills: variant?.skills ?? enemy.skills,
+    triggers: variant?.triggers ?? enemy.triggers ?? enemy.attackOrder,
   }
 }
 
@@ -593,6 +636,9 @@ interface ProjectSnapshot {
   projectSettings: {
     totalSeconds: number
     raidDifficulty: RaidDifficulty
+    bossId?: string
+    terrain?: string
+    armor?: string
   }
 }
 
@@ -1226,6 +1272,9 @@ const startResizePluginWindow = useCallback(
   const [showCostLines, setShowCostLines] = useState(false)
   const [showDamageCalc, setShowDamageCalc] = useState(false)
   const [raidDifficulty, setRaidDifficulty] = useState<RaidDifficulty>('INSANE')
+  const [selectedBossId, setSelectedBossId] = useState('')
+  const [selectedTerrain, setSelectedTerrain] = useState('')
+  const [selectedArmor, setSelectedArmor] = useState('重装甲')
   const [settingsTab, setSettingsTab] = useState<'project' | 'environment'>('project')
   const [hideHeader, setHideHeader] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
@@ -1492,6 +1541,34 @@ useEffect(() => {
     localStorage.setItem('tlRaidDifficulty', raidDifficulty)
   }, [raidDifficulty])
 
+
+  useEffect(() => {
+    const raw = localStorage.getItem('tlBossId')
+    if (raw) setSelectedBossId(raw)
+  }, [])
+
+  useEffect(() => {
+    const raw = localStorage.getItem('tlTerrain')
+    if (raw) setSelectedTerrain(raw)
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('tlBossId', selectedBossId)
+  }, [selectedBossId])
+
+  useEffect(() => {
+    localStorage.setItem('tlTerrain', selectedTerrain)
+  }, [selectedTerrain])
+
+  useEffect(() => {
+    const raw = localStorage.getItem('tlArmor')
+    if (raw) setSelectedArmor(raw)
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('tlArmor', selectedArmor)
+  }, [selectedArmor])
+
   useEffect(() => {
     const raw = localStorage.getItem('tlDefaultSkillLevels')
     if (raw) {
@@ -1561,8 +1638,11 @@ useEffect(() => {
     projectSettings: {
       totalSeconds,
       raidDifficulty,
+      bossId: selectedBossId,
+      terrain: selectedTerrain,
+      armor: selectedArmor,
     },
-  }), [projectName, rowStudents, skills, markers, selectedGroup, squadIndex, totalSeconds, raidDifficulty])
+  }), [projectName, rowStudents, skills, markers, selectedGroup, squadIndex, totalSeconds, raidDifficulty, selectedBossId, selectedTerrain, selectedArmor])
 
   const getSnapshotRef = useRef(getSnapshot)
   useEffect(() => {
@@ -1788,23 +1868,49 @@ useEffect(() => {
 
   const addRow = () => setRowStudents((prev) => [...prev, ''])
 
+  const applyBossAutoAdd = (bossId: string, rows?: string[]) => {
+    const boss = enemies.find((enemy) => enemy.id === bossId)
+    if (!boss?.autoAdd) return
+    const currentRows = rows ?? rowStudents
+    const existing = new Set(currentRows)
+
+    const enemyIds = (boss.autoAdd.enemies ?? []).filter((id) => !existing.has(`enemy:${id}`))
+    enemyIds.forEach((id) => existing.add(`enemy:${id}`))
+    const gimmickIds = (boss.autoAdd.gimmicks ?? []).filter((id) => !existing.has(`gimmick:${id}`))
+
+    enemyIds.forEach((id) => addEnemyRow(id))
+    gimmickIds.forEach((id) => addGimmickRow(id))
+  }
+
+  const applyBossRows = (bossId: string, rows?: string[]) => {
+    const currentRows = rows ?? rowStudents
+    if (!currentRows.includes(`enemy:${bossId}`)) {
+      addEnemyRow(bossId)
+    }
+    applyBossAutoAdd(bossId, currentRows)
+  }
+
   const addEnemyRow = (enemyId: string) => {
     const idx = rowStudents.length
     setRowStudents((prev) => [...prev, `enemy:${enemyId}`])
     const enemy = enemies.find((e) => e.id === enemyId)
-    if (!enemy || !enemy.attackOrder) return
+    const enemyVariant = getEnemyVariant(enemy, raidDifficulty)
+    if (!enemyVariant.triggers?.length) return
     const now = Date.now()
-    const events = enemy.attackOrder.map((a, i) => {
-      const info = enemy.skills?.[a.skill]
-      const dur = info?.duration ?? 1
+    const events = enemyVariant.triggers.map((a, i) => {
+      const info = enemyVariant.skills?.[a.skill]
+      const dur = (info?.hitDelay ?? 0) + (info?.duration ?? 0) + (info?.effectDuration ?? 0)
       const label = info?.name || a.skill
       return {
         id: now + i,
         row: idx,
         start: snapTime(a.time),
-        end: snapTime(a.time + dur),
+        end: snapTime(a.time + (dur || 1)),
         label,
-        type: 'attack',
+        type: info?.type || 'attack',
+        travel: info?.hitDelay,
+        motion: info?.duration,
+        skillRef: info?.name || a.skill,
       }
     })
     if (events.length) setSkills((prev) => [...prev, ...events])
@@ -1922,6 +2028,9 @@ useEffect(() => {
     projectSettings?: {
       totalSeconds?: number
       raidDifficulty?: RaidDifficulty
+      bossId?: string
+      terrain?: string
+      armor?: string
     }
   }) => {
     setProjectName(data.projectName || '')
@@ -1938,6 +2047,15 @@ useEffect(() => {
     const importedDifficulty = data.projectSettings?.raidDifficulty
     if (importedDifficulty) {
       setRaidDifficulty(importedDifficulty)
+    }
+    if (typeof data.projectSettings?.bossId === 'string') {
+      setSelectedBossId(data.projectSettings.bossId)
+    }
+    if (typeof data.projectSettings?.terrain === 'string') {
+      setSelectedTerrain(data.projectSettings.terrain)
+    }
+    if (typeof data.projectSettings?.armor === 'string') {
+      setSelectedArmor(data.projectSettings.armor)
     }
   }
 
@@ -1974,6 +2092,9 @@ useEffect(() => {
         projectSettings?: {
           totalSeconds?: number
           raidDifficulty?: RaidDifficulty
+          bossId?: string
+          terrain?: string
+          armor?: string
         }
       }
       setProjectName(data.projectName)
@@ -1986,6 +2107,15 @@ useEffect(() => {
       const savedDifficulty = data.projectSettings?.raidDifficulty
       if (savedDifficulty) {
         setRaidDifficulty(savedDifficulty)
+      }
+      if (typeof data.projectSettings?.bossId === 'string') {
+        setSelectedBossId(data.projectSettings.bossId)
+      }
+      if (typeof data.projectSettings?.terrain === 'string') {
+        setSelectedTerrain(data.projectSettings.terrain)
+      }
+      if (typeof data.projectSettings?.armor === 'string') {
+        setSelectedArmor(data.projectSettings.armor)
       }
       applyMembers(data.rowStudents || fallbackMembers || [])
       setTlStats({})
@@ -2006,6 +2136,9 @@ useEffect(() => {
       projectSettings: {
         totalSeconds,
         raidDifficulty,
+        bossId: selectedBossId,
+        terrain: selectedTerrain,
+        armor: selectedArmor,
       },
     }
     localStorage.setItem(key, JSON.stringify(data))
@@ -2019,6 +2152,9 @@ useEffect(() => {
       projectSettings: {
         totalSeconds,
         raidDifficulty,
+        bossId: selectedBossId,
+        terrain: selectedTerrain,
+        armor: selectedArmor,
       },
     }))
     localStorage.setItem('tlMakerLastKey', key)
@@ -2035,6 +2171,9 @@ useEffect(() => {
       projectSettings: {
         totalSeconds,
         raidDifficulty,
+        bossId: selectedBossId,
+        terrain: selectedTerrain,
+        armor: selectedArmor,
       },
     }
     if (withStats) {
@@ -2090,6 +2229,9 @@ useEffect(() => {
     if (snap.projectSettings) {
       setTotalSeconds(snap.projectSettings.totalSeconds)
       setRaidDifficulty(snap.projectSettings.raidDifficulty)
+      setSelectedBossId(snap.projectSettings.bossId ?? '')
+      setSelectedTerrain(snap.projectSettings.terrain ?? '')
+      setSelectedArmor(snap.projectSettings.armor ?? '重装甲')
     }
     const g = groups.find((gr) => gr.id === snap.groupId) || null
     setSelectedGroup(g)
@@ -2120,6 +2262,7 @@ useEffect(() => {
   const loaded = loadProject(selectedGroup.id, index, members)
   if (!loaded) {
     addNormalSkills(members)
+    applyBossRows(selectedBossId, members)
   }
 
   setSquadIndex(index)
@@ -2146,7 +2289,10 @@ useEffect(() => {
     const loadEnemies = async () => {
       try {
         const res = await fetch('/api/enemies')
-        if (res.ok) setEnemies(await res.json())
+        if (res.ok) {
+          const loaded = (await res.json()) as Enemy[]
+          setEnemies(loaded)
+        }
       } catch {
         /* ignore */
       }
@@ -2222,6 +2368,28 @@ useEffect(() => {
     }
   }, [templateId, selectedType, allEventTemplates])
 
+
+
+  useEffect(() => {
+    if (selectedBossId || enemies.length === 0) return
+    setSelectedBossId(enemies[0].id)
+  }, [enemies, selectedBossId])
+
+  useEffect(() => {
+    const boss = enemies.find((enemy) => enemy.id === selectedBossId)
+    if (!boss) return
+    if (typeof boss.roomTime === 'number' && Number.isFinite(boss.roomTime)) {
+      setTotalSeconds(boss.roomTime)
+    }
+    if (typeof boss.armor === 'string' && boss.armor) {
+      setSelectedArmor((prev) => (prev ? prev : boss.armor as string))
+    }
+    const terrainOptions = boss.terrains ?? []
+    if (!terrainOptions.length) return
+    if (!terrainOptions.includes(selectedTerrain)) {
+      setSelectedTerrain(terrainOptions[0])
+    }
+  }, [enemies, selectedBossId, selectedTerrain])
   const skillOptions = useMemo(() => {
     if (selectedType !== 'skill') return []
     const rowId = rowStudents[row]
@@ -2238,20 +2406,36 @@ useEffect(() => {
       }))
       return options
     }
+    if (rowId.startsWith('enemy:')) {
+      if (skillKind !== 'ex') return []
+      const enemyId = rowId.slice('enemy:'.length)
+      const enemy = enemies.find((item) => item.id === enemyId)
+      const enemyVariant = getEnemyVariant(enemy, raidDifficulty)
+      const options: SkillOption[] = Object.values(enemyVariant.skills ?? {})
+        .filter((sk) => (sk.skillKind ?? 'ex') === 'ex')
+        .map((sk) => ({
+          label: sk.name,
+          skill: { title: sk.name, type: sk.type, text: sk.text, values: sk.values },
+          duration: sk.duration,
+        }))
+      return options
+    }
     const st = students.find((s) => s.id === rowId)
     if (!st) return []
     if (skillKind === 'gimmick') return []
     const skillDef = skillKind === 'ex' ? st.skills?.ex : st.skills?.normal
     return flattenSkillEntries(getSkillEntries(skillDef))
-  }, [selectedType, students, rowStudents, row, skillKind, gimmicks, raidDifficulty])
+  }, [selectedType, students, rowStudents, row, skillKind, gimmicks, enemies, raidDifficulty])
 
   useEffect(() => {
     if (selectedType !== 'skill') return
     const rowId = rowStudents[row]
     if (rowId?.startsWith('gimmick:') && skillKind !== 'gimmick') {
       setSkillKind('gimmick')
+    } else if (rowId?.startsWith('enemy:') && skillKind !== 'ex') {
+      setSkillKind('ex')
     }
-    if (!rowId?.startsWith('gimmick:') && skillKind === 'gimmick') {
+    if (!rowId?.startsWith('gimmick:') && !rowId?.startsWith('enemy:') && skillKind === 'gimmick') {
       setSkillKind('ex')
     }
     setSkillOptionIndex(0)
@@ -2316,12 +2500,12 @@ useEffect(() => {
       const extra = applyTravel ? 0 : travel
       setEnd(snapTime(start + dur + extra))
     }
-  }, [row, start, selectedType, rowStudents, students, applyTravel, skillKind, skillOptions, skillOptionIndex, gimmicks, raidDifficulty])
+  }, [row, start, selectedType, rowStudents, students, applyTravel, skillKind, skillOptions, skillOptionIndex, gimmicks, enemies, raidDifficulty])
 
   useEffect(() => {
     if (selectedType !== 'skill') return
     const rowId = rowStudents[row]
-    if (rowId.startsWith('gimmick:')) {
+    if (rowId.startsWith('gimmick:') || rowId.startsWith('enemy:')) {
       if (!skillCostTouched) setSkillCost(0)
       if (!costRecoveryTriggerTouched) setCostRecoveryTrigger(snapTime(start))
       if (!costRecoveryApplyBonusTouched) setCostRecoveryApplyBonus(false)
@@ -2360,7 +2544,7 @@ useEffect(() => {
   useEffect(() => {
   if (!initialized || isRestoring.current) return
   saveProject()
-}, [initialized, projectName, selectedGroup, squadIndex, rowStudents, skills, markers, totalSeconds, raidDifficulty])
+}, [initialized, projectName, selectedGroup, squadIndex, rowStudents, skills, markers, totalSeconds, raidDifficulty, selectedBossId, selectedTerrain, selectedArmor])
 
 
   const INITIAL_COST = 0
@@ -2450,18 +2634,33 @@ useEffect(() => {
     const id = Date.now()
     if (selectedType === 'skill') {
       const rowId = rowStudents[row]
+      if (!rowId) {
+        pushToast('使用者を選択してください')
+        return
+      }
       const st = students.find((s) => s.id === rowId)
       const gimmick = rowId.startsWith('gimmick:')
         ? gimmicks.find((g) => g.id === rowId.slice('gimmick:'.length))
         : undefined
       const gimmickVariant = getGimmickVariant(gimmick, raidDifficulty)
+      const enemyData = rowId.startsWith('enemy:')
+        ? enemies.find((item) => item.id === rowId.slice('enemy:'.length))
+        : undefined
+      const enemyVariant = getEnemyVariant(enemyData, raidDifficulty)
       const gimmickSkill = skillKind === 'gimmick' ? Object.values(gimmickVariant.skills ?? {})[skillOptionIndex] : undefined
+      const isEnemyRow = rowId.startsWith('enemy:')
+      const enemySkills = Object.values(enemyVariant.skills ?? {}).filter((sk) => (sk.skillKind ?? 'ex') === 'ex')
+      const enemySkill = isEnemyRow ? enemySkills[skillOptionIndex] : undefined
       const travel =
         skillKind === 'ex'
           ? st?.exHitDelay || 0
           : skillKind === 'normal'
             ? st?.normalHitDelay || 0
-            : gimmickSkill?.hitDelay || 0
+            : skillKind === 'gimmick'
+            ? gimmickSkill?.hitDelay || 0
+            : isEnemyRow
+            ? enemySkill?.hitDelay || 0
+            : 0
       const duration = end - start
       const baseStart = snapTime(applyTravel ? start - travel : start)
       let s = baseStart
@@ -2471,7 +2670,11 @@ useEffect(() => {
           ? Math.max(0, (st?.exMotionDuration || 0) - travel)
           : skillKind === 'normal'
             ? Math.max(0, (st?.normalMotionDuration || 0) - travel)
-            : Math.max(0, (gimmickSkill?.duration || 0) - travel)
+            : skillKind === 'gimmick'
+            ? Math.max(0, (gimmickSkill?.duration || 0) - travel)
+            : isEnemyRow
+            ? Math.max(0, (enemySkill?.duration || 0) - travel)
+            : 0
       const skillDef = skillKind === 'ex' ? st?.skills?.ex : st?.skills?.normal
       const options: SkillOption[] = skillKind === 'gimmick'
         ? Object.values(gimmickVariant.skills ?? {}).map((sk): SkillOption => ({
@@ -2479,8 +2682,19 @@ useEffect(() => {
             skill: { title: sk.name, type: sk.type, text: sk.text, values: sk.values },
             duration: sk.duration,
           }))
-        : flattenSkillEntries(getSkillEntries(skillDef))
-      const pickedOption = options[skillOptionIndex]
+        : isEnemyRow
+          ? enemySkills.map((sk): SkillOption => ({
+              label: sk.name,
+              skill: { title: sk.name, type: sk.type, text: sk.text, values: sk.values },
+              duration: sk.duration,
+            }))
+          : flattenSkillEntries(getSkillEntries(skillDef))
+      if (!options.length) {
+        pushToast('追加できるスキルがありません')
+        return
+      }
+      const safeSkillOptionIndex = Math.max(0, Math.min(skillOptionIndex, options.length - 1))
+      const pickedOption = options[safeSkillOptionIndex]
       const costValue = pickedOption?.cost ?? (skillCost === '' ? 0 : skillCost)
       if (skillKind === 'ex' && waitCost && costValue > 0) {
         let t = s
@@ -2525,7 +2739,7 @@ useEffect(() => {
       const fallbackLabel =
         pickedOption?.label ||
         getPrimarySkillOption(skillDef)?.label ||
-        (skillKind === 'ex' ? 'EX' : skillKind === 'normal' ? 'NS' : 'ギミック')
+        (isEnemyRow ? '敵' : skillKind === 'ex' ? 'EX' : skillKind === 'normal' ? 'NS' : 'ギミック')
       const lbl =
         label ||
         pickedOption?.label ||
@@ -2533,11 +2747,15 @@ useEffect(() => {
         getPrimarySkill(skillDef)?.title ||
         fallbackLabel ||
         ''
-      let target: number | undefined
+      let target: number | number[] | undefined
       const skillType =
         pickedOption?.skill.type || getPrimarySkill(skillDef)?.type
-      if (skillType === 'attack') target = defaultTargets.attack
-      if (skillType === 'debuff') target = defaultTargets.debuff
+      if (isEnemyRow) {
+        target = rowStudents.map((_, idx) => idx)
+      } else {
+        if (skillType === 'attack') target = defaultTargets.attack
+        if (skillType === 'debuff') target = defaultTargets.debuff
+      }
       const triggerOffset = s - baseStart
       const costRecoveryTriggerValue =
         costRecoveryTrigger === '' ? 0 : costRecoveryTrigger
@@ -2554,7 +2772,7 @@ useEffect(() => {
           label: lbl,
           travel,
           motion,
-          type: skillKind === 'gimmick' ? 'other' : skillKind,
+          type: skillKind === 'gimmick' ? 'other' : isEnemyRow ? (pickedOption?.skill.type || 'attack') : skillKind,
           cost: costValue,
           ...(costRecoveryEnabled &&
           (costRecoveryDuration === '' ? 0 : costRecoveryDuration) > 0 &&
@@ -3378,14 +3596,34 @@ useEffect(() => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`
   }
 
-  function formatSkillText(
+  const decorateTagMap: Record<string, string> = {
+  DEF: '防御力',
+  AttackSpeed: '攻撃速度',
+  CostRegen: 'コスト回復力',
+  EnhancePierceRate: '貫通特効',
+}
+
+const cleanupSkillText = (text: string) => {
+  const withLineBreak = text.replace(/<br\s*\/?>(?!\n)/gi, '\n')
+  const replaced = withLineBreak
+    .replace(/<d:([^>]+)>/g, (_, key: string) => `【${decorateTagMap[key] ?? key}】`)
+    .replace(/<b:([^>]+)>/g, (_, key: string) => `【${decorateTagMap[key] ?? key}】`)
+    .replace(/<\/?up>/gi, '')
+    .replace(/<\/?i>/gi, '')
+    .replace(/<\/?b>/gi, '')
+    .replace(/<\/?color[^>]*>/gi, '')
+    .replace(/<[^>]+>/g, '')
+  return replaced
+}
+
+function formatSkillText(
   skill: { text?: string; values?: Record<string, number[]> } | undefined,
   level: number
 ) {
   if (!skill?.text) return ''
 
-  // {key} と {{key}} の両方を置換する
-  return skill.text.replace(/\{\{?(\w+)\}?\}/g, (matched, key) => {
+  const cleaned = cleanupSkillText(skill.text)
+  return cleaned.replace(/\{\{?(\w+)\}?\}/g, (matched, key) => {
     const arr = skill.values?.[key]
     if (!Array.isArray(arr)) return matched
 
@@ -3495,7 +3733,7 @@ function sumSpecialSub(
   const getSkillType = (ev: SkillEvent): string | undefined => {
     const rowId = rowStudents[ev.row]
     if (rowId.startsWith('enemy:')) {
-      return ev.type
+      return resolveEnemySkillForEvent(ev)?.type || ev.type
     }
     const st = students.find((s) => s.id === rowId)
     if (!st || !st.skills) return undefined
@@ -3555,6 +3793,26 @@ function sumSpecialSub(
       }
     }
     const byLabel = Object.values(gimmickVariant.skills).find((sk) => sk.name === ev.label)
+    if (byLabel) {
+      return { title: byLabel.name, type: byLabel.type, text: byLabel.text, values: byLabel.values }
+    }
+    return undefined
+  }
+
+
+  const resolveEnemySkillForEvent = (ev: SkillEvent): SkillData | undefined => {
+    const rowId = rowStudents[ev.row]
+    if (!rowId.startsWith('enemy:')) return undefined
+    const enemy = enemies.find((item) => `enemy:${item.id}` === rowId)
+    const enemyVariant = getEnemyVariant(enemy, raidDifficulty)
+    if (!enemyVariant.skills) return undefined
+    if (ev.skillRef) {
+      const byName = Object.values(enemyVariant.skills).find((sk) => sk.name === ev.skillRef)
+      if (byName) {
+        return { title: byName.name, type: byName.type, text: byName.text, values: byName.values }
+      }
+    }
+    const byLabel = Object.values(enemyVariant.skills).find((sk) => sk.name === ev.label)
     if (byLabel) {
       return { title: byLabel.name, type: byLabel.type, text: byLabel.text, values: byLabel.values }
     }
@@ -4359,17 +4617,47 @@ function resolveBuffText(
                   </select>
                 </label>
                 <label className="block text-sm text-gray-600">
-                  TL長さ
+                  ボス
                   <select
-                    value={totalSeconds}
-                    onChange={(e) => setTotalSeconds(parseInt(e.target.value, 10))}
+                    value={selectedBossId}
+                    onChange={(e) => setSelectedBossId(e.target.value)}
                     className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
                   >
-                    <option value={180}>3:00</option>
-                    <option value={240}>4:00</option>
-                    <option value={270}>4:30</option>
+                    {enemies.map((enemy) => (
+                      <option key={enemy.id} value={enemy.id}>
+                        {enemy.name}
+                      </option>
+                    ))}
                   </select>
                 </label>
+                <label className="block text-sm text-gray-600">
+                  地形
+                  <select
+                    value={selectedTerrain}
+                    onChange={(e) => setSelectedTerrain(e.target.value)}
+                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  >
+                    {(enemies.find((enemy) => enemy.id === selectedBossId)?.terrains ?? ['市街地', '屋外', '屋内']).map((terrain) => (
+                      <option key={terrain} value={terrain}>
+                        {terrain}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-sm text-gray-600">
+                  装甲
+                  <select
+                    value={selectedArmor}
+                    onChange={(e) => setSelectedArmor(e.target.value)}
+                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  >
+                    <option value="軽装備">軽装備</option>
+                    <option value="重装甲">重装甲</option>
+                    <option value="特殊装甲">特殊装甲</option>
+                    <option value="弾力装甲">弾力装甲</option>
+                  </select>
+                </label>
+
               </div>
               <label className="block text-sm text-gray-600">
                 編成
@@ -4456,6 +4744,7 @@ function resolveBuffText(
                     if (members.some((m) => m)) {
                       addNormalSkills(members)
                     }
+                    applyBossRows(selectedBossId, members)
                     setSelectedGroup(null)
                     setSquadIndex(0)
                   } else if (selectedGroup) {
@@ -4466,6 +4755,7 @@ function resolveBuffText(
                     setSkills([])
                     setMarkers([])
                     addNormalSkills(members)
+                    applyBossRows(selectedBossId, members)
 
                     setSquadIndex(0)
                   } else {
@@ -4473,6 +4763,7 @@ function resolveBuffText(
                     applyMembers(empty)
                     setSkills([])
                     setMarkers([])
+                    applyBossRows(selectedBossId, empty)
                   }
 
                   setInitialized(true)
@@ -5338,17 +5629,49 @@ function resolveBuffText(
                 </section>
 
                 <section className="rounded border border-gray-200 p-3 space-y-2">
-                  <div className="text-sm font-bold">TL長さ</div>
+                  <div className="text-sm font-bold">ボス</div>
                   <select
-                    value={totalSeconds}
-                    onChange={(e) => setTotalSeconds(parseInt(e.target.value, 10))}
+                    value={selectedBossId}
+                    onChange={(e) => setSelectedBossId(e.target.value)}
                     className="border rounded p-1"
                   >
-                    <option value={180}>3:00</option>
-                    <option value={240}>4:00</option>
-                    <option value={270}>4:30</option>
+                    {enemies.map((enemy) => (
+                      <option key={enemy.id} value={enemy.id}>
+                        {enemy.name}
+                      </option>
+                    ))}
                   </select>
                 </section>
+
+                <section className="rounded border border-gray-200 p-3 space-y-2">
+                  <div className="text-sm font-bold">地形</div>
+                  <select
+                    value={selectedTerrain}
+                    onChange={(e) => setSelectedTerrain(e.target.value)}
+                    className="border rounded p-1"
+                  >
+                    {(enemies.find((enemy) => enemy.id === selectedBossId)?.terrains ?? ['市街地', '屋外', '屋内']).map((terrain) => (
+                      <option key={terrain} value={terrain}>
+                        {terrain}
+                      </option>
+                    ))}
+                  </select>
+                </section>
+
+                <section className="rounded border border-gray-200 p-3 space-y-2">
+                  <div className="text-sm font-bold">装甲</div>
+                  <select
+                    value={selectedArmor}
+                    onChange={(e) => setSelectedArmor(e.target.value)}
+                    className="border rounded p-1"
+                  >
+                    <option value="軽装備">軽装備</option>
+                    <option value="重装甲">重装甲</option>
+                    <option value="特殊装甲">特殊装甲</option>
+                    <option value="弾力装甲">弾力装甲</option>
+                  </select>
+                </section>
+
 
               </div>
 
@@ -6965,7 +7288,7 @@ setBuffPopup({
                     const stats = getStats(rowStudents[ev.row])
                     const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
                     const skillDef = ev.type === 'normal' ? st?.skills?.normal : st?.skills?.ex
-                    const skill = resolveSkillForEvent(skillDef, ev) ?? resolveGimmickSkillForEvent(ev)
+                    const skill = resolveSkillForEvent(skillDef, ev) ?? resolveGimmickSkillForEvent(ev) ?? resolveEnemySkillForEvent(ev)
                     const text = formatSkillText(skill, level)
                     const targetName = getPopupTarget(ev)
                     setSelected([{ type: 'skill', id: ev.id }])
@@ -7042,7 +7365,7 @@ setBuffPopup({
                       const stats = getStats(rowStudents[ev.row])
                       const level = getSkillLevel(ev.type as 'ex' | 'normal', stats)
                       const skillDef = ev.type === 'normal' ? st?.skills?.normal : st?.skills?.ex
-                      const skill = resolveSkillForEvent(skillDef, ev) ?? resolveGimmickSkillForEvent(ev)
+                      const skill = resolveSkillForEvent(skillDef, ev) ?? resolveGimmickSkillForEvent(ev) ?? resolveEnemySkillForEvent(ev)
                       const text = formatSkillText(skill, level)
                       const targetName = getPopupTarget(ev)
                       if (selected.some((sel) => sel.type === 'skill' && sel.id === ev.id)) {
@@ -7444,7 +7767,8 @@ setBuffPopup({
           {(() => {
             const sk = skills.find((s) => s.id === buffMenu.id)
             const t = sk ? getSkillType(sk) : undefined
-            const enemiesOnly = t === 'attack' || t === 'debuff'
+            const sourceRowId = sk ? rowStudents[sk.row] : ''
+            const enemiesOnly = (t === 'attack' || t === 'debuff') && !sourceRowId.startsWith('enemy:')
             const selectedTargets = Array.isArray(sk?.target)
               ? sk.target
               : typeof sk?.target === 'number'
@@ -7654,11 +7978,13 @@ setBuffPopup({
         const targetIdx = getEffectiveTarget(ev)
         const targetRowId = rowStudents[targetIdx]
         const enemy = enemies.find((e) => `enemy:${e.id}` === targetRowId)
-        const defense = Number(enemy?.stats?.defense ?? 0)
+        const enemyVariant = getEnemyVariant(enemy, raidDifficulty)
+        const defense = Number(enemyVariant.stats?.defense ?? enemy?.stats?.defense ?? 0)
         const attackerLevel = Number(atkStats.level ?? 1)
-        const enemyLevel = enemy?.level ?? attackerLevel
+        const enemyLevel = enemyVariant.level ?? enemy?.level ?? attackerLevel
         const levelMul = (10000 - 200 * (attackerLevel - enemyLevel)) / 10000
-        const baseTypeMul = armorBonus[attacker.attackType]?.[enemy?.armor || ''] ?? 1
+        const defenseArmor = enemy?.armor || selectedArmor
+        const baseTypeMul = armorBonus[attacker.attackType]?.[defenseArmor] ?? 1
         let typeMul = baseTypeMul === 2 ? baseTypeMul + typeBuff / 100 : baseTypeMul
         if (Number(atkStats.unique_star ?? 0) >= 4) {
           typeMul += 0.1
@@ -7671,7 +7997,7 @@ setBuffPopup({
           levelMul *
           typeMul *
           exBuffMul
-        const critResist = Number(enemy?.stats?.critResist ?? 0)
+        const critResist = Number(enemyVariant.stats?.critResist ?? enemy?.stats?.critResist ?? 0)
         const critMul = Math.max(10000, (20000 + equipFlat.critDamage + critBuffnum) * (1 + 1 * sumSpecialSub(rowStudents, 'crit') / 100 + equipPct.critDamage / 100 + critBuff / 100) - critResist) / 10000
         const dmg = baseDmg
         const crit = baseDmg * critMul
