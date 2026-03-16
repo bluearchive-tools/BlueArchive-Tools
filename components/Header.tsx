@@ -93,6 +93,7 @@ export default function Header() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [username, setUsername] = useState<string | null>(null)
+  const [quickSetupProgress, setQuickSetupProgress] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
   const [hideHeader, setHideHeader] = useState(false)
@@ -107,14 +108,19 @@ export default function Header() {
       if (session) {
         const { data, error } = await supabase
           .from('profiles')
-          .select('username')
+          .select('username, quick_setup_progress')
           .eq('id', session.user.id)
           .maybeSingle()
         if (data) {
           setUsername(data?.username ?? null)
+          const rawProgress = typeof data.quick_setup_progress === 'number' ? data.quick_setup_progress : null
+          setQuickSetupProgress(rawProgress)
         } else if (!error && pathname !== '/profile/setup') {
           router.push('/profile/setup')
         }
+      } else {
+        setUsername(null)
+        setQuickSetupProgress(null)
       }
     }
     fetchProfile()
@@ -355,6 +361,17 @@ export default function Header() {
           </button>
         </div>
 
+        {session && quickSetupProgress !== 100 && (
+          <div className="hidden md:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <Link
+              href="/quick-setup"
+              className="rounded-full bg-blue-600 px-4 py-1.5 text-sm font-bold text-white shadow hover:bg-blue-500"
+            >
+              {t('quickStart')}
+            </Link>
+          </div>
+        )}
+
         <div className="hidden md:flex items-center gap-4">
           <label htmlFor="locale-select" className="sr-only">
             {t('locale.label')}
@@ -418,6 +435,13 @@ export default function Header() {
 
       {mobileToolsOpen && (
         <div className="md:hidden mt-3 border-t pt-3 space-y-3">
+          {session && quickSetupProgress !== 100 && (
+            <div className="flex justify-end">
+              <Link href="/quick-setup" className="rounded bg-blue-600 px-3 py-1 text-sm font-bold text-white">
+                {t('quickStart')}
+              </Link>
+            </div>
+          )}
           <div className="flex flex-wrap items-center justify-end gap-3">
             <button data-tutorial="header-notices" onClick={openNotice} aria-label={t('actions.notices')} className="border rounded px-3 py-1">
               <FontAwesomeIcon icon={faBell} />
