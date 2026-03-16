@@ -31,6 +31,7 @@ import { stripLeadingLocale } from '../lib/i18n/utils'
 
 
 const HELP_SHORTCUT_STORAGE_KEY = 'app:helpShortcut'
+const QUICK_SETUP_LOCAL_PROGRESS_KEY = 'ba:quick-setup-progress'
 
 const detectIsMacPlatform = () => {
   if (typeof navigator === 'undefined') return false
@@ -120,11 +121,29 @@ export default function Header() {
         }
       } else {
         setUsername(null)
-        setQuickSetupProgress(null)
+        const rawLocalProgress = typeof window !== 'undefined' ? window.localStorage.getItem(QUICK_SETUP_LOCAL_PROGRESS_KEY) : null
+        const parsedLocalProgress = rawLocalProgress ? Number(rawLocalProgress) : null
+        setQuickSetupProgress(Number.isFinite(parsedLocalProgress) ? parsedLocalProgress : null)
       }
     }
     fetchProfile()
   }, [session, supabase, router, pathname])
+
+
+  useEffect(() => {
+    if (session || typeof window === 'undefined') return
+    const syncLocalProgress = () => {
+      const raw = window.localStorage.getItem(QUICK_SETUP_LOCAL_PROGRESS_KEY)
+      const parsed = raw ? Number(raw) : null
+      setQuickSetupProgress(Number.isFinite(parsed) ? parsed : null)
+    }
+    syncLocalProgress()
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === QUICK_SETUP_LOCAL_PROGRESS_KEY) syncLocalProgress()
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [session])
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -361,7 +380,7 @@ export default function Header() {
           </button>
         </div>
 
-        {session && quickSetupProgress !== 100 && (
+        {quickSetupProgress !== 100 && (
           <div className="hidden md:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <Link
               href="/quick-setup"
@@ -435,7 +454,7 @@ export default function Header() {
 
       {mobileToolsOpen && (
         <div className="md:hidden mt-3 border-t pt-3 space-y-3">
-          {session && quickSetupProgress !== 100 && (
+          {quickSetupProgress !== 100 && (
             <div className="flex justify-end">
               <Link href="/quick-setup" className="rounded bg-blue-600 px-3 py-1 text-sm font-bold text-white">
                 {t('quickStart')}
