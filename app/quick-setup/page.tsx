@@ -4,6 +4,23 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  faArrowLeft,
+  faArrowRight,
+  faCamera,
+  faCheckCircle,
+  faCircleUser,
+  faCloudArrowUp,
+  faCompass,
+  faRightToBracket,
+  faSpinner,
+  faUserGear,
+  faUsers,
+  faVideo,
+  type IconDefinition,
+} from '@fortawesome/free-solid-svg-icons'
+import { faDiscord, faGoogle, faYoutube } from '@fortawesome/free-brands-svg-icons'
 import AddStudentModal from '../../components/AddStudentModal'
 
 type SetupSkipState = {
@@ -33,6 +50,7 @@ type StepDefinition = {
   key: QuickSetupStep
   title: string
   description: string
+  icon: IconDefinition
 }
 
 const QUICK_SETUP_LOCAL_STATE_KEY = 'ba:quick-setup-state'
@@ -41,28 +59,33 @@ const QUICK_SETUP_LOCAL_PROGRESS_KEY = 'ba:quick-setup-progress'
 const STEP_DEFINITIONS: StepDefinition[] = [
   {
     key: 'login',
-    title: '0. ログインする',
-    description: '最初にログインしておくと、進行度や設定内容をアカウントに保存できます。',
+    title: 'ログインする',
+    description: '進行状況や各種設定をアカウントへ保存できるよう、最初にログインします。',
+    icon: faRightToBracket,
   },
   {
     key: 'students',
-    title: '1. 生徒データを追加する',
-    description: '追加方法を選択して、あなたの手元データに生徒情報を登録します。',
+    title: '生徒データを追加する',
+    description: '画像かSchaleDBのどちらを使うか選び、あなたの生徒データを登録します。',
+    icon: faUsers,
   },
   {
     key: 'profile',
-    title: '2. 自分のプロフィールを設定する',
-    description: 'ユーザー名や表示名を設定して、マイページ表示を整えます。',
+    title: 'プロフィールを設定する',
+    description: 'ユーザー名や表示名を設定して、マイページや公開表示を整えます。',
+    icon: faUserGear,
   },
   {
     key: 'youtube',
-    title: '3. YouTubeアカウントを接続する',
-    description: 'YouTube連携を有効にして、関連機能を使える状態にします。',
+    title: 'YouTubeアカウントを接続する',
+    description: 'YouTube連携を有効にして、関連する投稿者機能を利用できるようにします。',
+    icon: faVideo,
   },
   {
     key: 'completed',
-    title: '4. 完了',
-    description: '全ステップを確認したらセットアップ完了です。',
+    title: '完了',
+    description: '最後に内容を確認し、セットアップを完了します。',
+    icon: faCheckCircle,
   },
 ]
 
@@ -95,17 +118,14 @@ const parseSetupState = (value: unknown): SetupState => {
 
 const hasYouTubeSocialLink = (value: unknown) => {
   if (!Array.isArray(value)) return false
-  return value.some((item) => {
-    if (!isObjectRecord(item)) return false
-    return item.service === 'youtube'
-  })
+  return value.some((item) => isObjectRecord(item) && item.service === 'youtube')
 }
 
 const getLocalStudentCount = () => {
   if (typeof window === 'undefined') return 0
   let count = 0
-  for (let i = 0; i < window.localStorage.length; i += 1) {
-    const key = window.localStorage.key(i)
+  for (let index = 0; index < window.localStorage.length; index += 1) {
+    const key = window.localStorage.key(index)
     if (key?.startsWith('userStudent:')) count += 1
   }
   return count
@@ -121,17 +141,14 @@ export default function QuickSetupPage() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
-
   const [username, setUsername] = useState('')
   const [nickname, setNickname] = useState('')
   const [bio, setBio] = useState('')
-
   const [setupState, setSetupState] = useState<SetupState>(defaultSetupState)
   const [studentCount, setStudentCount] = useState(0)
   const [youtubeConnected, setYoutubeConnected] = useState(false)
   const [addStudentOpen, setAddStudentOpen] = useState(false)
   const [selectedMethod, setSelectedMethod] = useState<StudentAddMethod>(null)
-
   const [currentStep, setCurrentStep] = useState<QuickSetupStep>('login')
   const [moveDirection, setMoveDirection] = useState<'forward' | 'backward'>('forward')
 
@@ -193,19 +210,26 @@ export default function QuickSetupPage() {
   const canCompleteFinal = loginDone && studentsDone && profileDone && youtubeDone
   const completedDone = canCompleteFinal || setupState.skipped.completed
 
+  const completionMap = useMemo<Record<QuickSetupStep, boolean>>(
+    () => ({
+      login: loginDone,
+      students: studentsDone,
+      profile: profileDone,
+      youtube: youtubeDone,
+      completed: completedDone,
+    }),
+    [completedDone, loginDone, profileDone, studentsDone, youtubeDone]
+  )
+
   const progress = useMemo(() => {
-    const doneCount = [loginDone, studentsDone, profileDone, youtubeDone, completedDone].filter(Boolean).length
-    return Math.round((doneCount / 5) * 100)
-  }, [loginDone, studentsDone, profileDone, youtubeDone, completedDone])
+    const doneCount = Object.values(completionMap).filter(Boolean).length
+    return Math.round((doneCount / STEP_DEFINITIONS.length) * 100)
+  }, [completionMap])
 
   const saveProgressToLocal = useCallback((nextState: SetupState, nextProgress: number) => {
     if (typeof window === 'undefined') return
-    try {
-      window.localStorage.setItem(QUICK_SETUP_LOCAL_STATE_KEY, JSON.stringify(nextState))
-      window.localStorage.setItem(QUICK_SETUP_LOCAL_PROGRESS_KEY, String(nextProgress))
-    } catch {
-      // ignore
-    }
+    window.localStorage.setItem(QUICK_SETUP_LOCAL_STATE_KEY, JSON.stringify(nextState))
+    window.localStorage.setItem(QUICK_SETUP_LOCAL_PROGRESS_KEY, String(nextProgress))
   }, [])
 
   const saveProgressToProfile = useCallback(
@@ -229,11 +253,12 @@ export default function QuickSetupPage() {
     if (loading) return
     saveProgressToLocal(setupState, progress)
     void saveProgressToProfile(setupState, progress)
-  }, [setupState, progress, saveProgressToLocal, saveProgressToProfile, loading])
+  }, [loading, progress, saveProgressToLocal, saveProgressToProfile, setupState])
 
   const moveToStep = (target: QuickSetupStep) => {
     setMoveDirection(stepIndex(target) >= stepIndex(currentStep) ? 'forward' : 'backward')
     setCurrentStep(target)
+    setMessage(null)
   }
 
   const goNextStep = () => {
@@ -250,7 +275,7 @@ export default function QuickSetupPage() {
     }
   }
 
-  const skipStep = (step: keyof SetupSkipState) => {
+  const markSkipped = (step: keyof SetupSkipState) => {
     setSetupState((prev) => ({
       ...prev,
       skipped: {
@@ -261,27 +286,33 @@ export default function QuickSetupPage() {
     goNextStep()
   }
 
-  const oauthSignIn = async (provider: 'google' | 'discord') => {
+  const handleOAuthSignIn = async (provider: 'google' | 'discord') => {
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
     if (!origin) return
+
     setBusy(true)
+    setMessage(null)
     const redirectTo = new URL('/auth/callback', origin)
     redirectTo.searchParams.set('next', '/quick-setup')
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
         redirectTo: redirectTo.toString(),
       },
     })
+
     if (error) {
       setBusy(false)
       setMessage(`ログインに失敗しました: ${error.message}`)
       return
     }
+
     if (data.url) {
       window.location.assign(data.url)
       return
     }
+
     setBusy(false)
   }
 
@@ -294,6 +325,7 @@ export default function QuickSetupPage() {
       setMessage('ユーザー名は3〜20文字の英数字、-_のみ使用できます。')
       return
     }
+
     setBusy(true)
     setMessage(null)
     const { error } = await supabase
@@ -308,10 +340,12 @@ export default function QuickSetupPage() {
         { onConflict: 'id' }
       )
     setBusy(false)
+
     if (error) {
       setMessage(error.message)
       return
     }
+
     setMessage('プロフィールを保存しました。')
     goNextStep()
   }
@@ -321,6 +355,7 @@ export default function QuickSetupPage() {
       setMessage('ログインが必要です。')
       return
     }
+
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
     if (!origin) return
 
@@ -352,43 +387,72 @@ export default function QuickSetupPage() {
       window.location.assign(data.url)
       return
     }
+
     setBusy(false)
   }
 
   const currentStepDefinition = STEP_DEFINITIONS[stepIndex(currentStep)]
 
+  const stepCardBaseClass =
+    'group flex min-h-48 flex-col rounded-3xl border p-6 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg'
+
   const renderStepContent = () => {
     if (currentStep === 'login') {
       return (
-        <div className="space-y-4">
-          <p className="text-sm text-gray-700">ログイン済みならこのステップは完了です。未ログイン時はここでログインしてください。</p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              disabled={busy || !!session}
-              onClick={() => void oauthSignIn('google')}
-              className="rounded border px-3 py-2 disabled:opacity-50"
-            >
-              Googleでログイン
-            </button>
-            <button
-              type="button"
-              disabled={busy || !!session}
-              onClick={() => void oauthSignIn('discord')}
-              className="rounded border px-3 py-2 disabled:opacity-50"
-            >
-              Discordでログイン
-            </button>
-            {!loginDone && (
-              <button type="button" className="rounded border px-3 py-2" onClick={() => skipStep('login')}>
-                スキップ
+        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-4 rounded-3xl bg-blue-50 p-6">
+            <div className="flex items-center gap-3 text-blue-700">
+              <FontAwesomeIcon icon={faCompass} className="text-2xl" />
+              <h3 className="text-xl font-bold">まずはアカウントを用意しましょう</h3>
+            </div>
+            <p className="text-base leading-7 text-gray-700">
+              ログインすると、進行度・プロフィール・YouTube連携状態をアカウントへ保存できます。後から別端末でも続きやすくなります。
+            </p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <button
+                type="button"
+                disabled={busy || !!session}
+                onClick={() => void handleOAuthSignIn('google')}
+                className={`${stepCardBaseClass} ${session ? 'cursor-default opacity-60' : 'border-blue-200 bg-white'}`}
+              >
+                <FontAwesomeIcon icon={faGoogle} className="mb-4 text-4xl text-[#4285F4]" />
+                <span className="text-xl font-bold">Googleでログイン</span>
+                <span className="mt-2 text-sm text-gray-600">YouTube連携までまとめて進めたい人におすすめです。</span>
               </button>
-            )}
-            {loginDone && (
-              <button type="button" className="rounded bg-blue-600 px-3 py-2 text-white" onClick={goNextStep}>
-                次へ
+              <button
+                type="button"
+                disabled={busy || !!session}
+                onClick={() => void handleOAuthSignIn('discord')}
+                className={`${stepCardBaseClass} ${session ? 'cursor-default opacity-60' : 'border-indigo-200 bg-white'}`}
+              >
+                <FontAwesomeIcon icon={faDiscord} className="mb-4 text-4xl text-[#5865F2]" />
+                <span className="text-xl font-bold">Discordでログイン</span>
+                <span className="mt-2 text-sm text-gray-600">まずはアカウントだけ作って始めたいときに便利です。</span>
               </button>
-            )}
+            </div>
+          </div>
+          <div className="flex flex-col justify-between rounded-3xl border bg-white p-6">
+            <div>
+              <div className="flex items-center gap-3 text-green-600">
+                <FontAwesomeIcon icon={faCheckCircle} className="text-2xl" />
+                <h3 className="text-xl font-bold">このステップの状態</h3>
+              </div>
+              <p className="mt-4 text-base text-gray-700">
+                {loginDone ? 'ログイン済み、またはこのステップをスキップ済みです。' : 'まだログインしていません。ここでログインすると後の設定がスムーズです。'}
+              </p>
+            </div>
+            <div className="mt-6 flex flex-wrap gap-3">
+              {!loginDone && (
+                <button type="button" className="rounded-2xl border px-5 py-3 font-semibold" onClick={() => markSkipped('login')}>
+                  このステップをスキップ
+                </button>
+              )}
+              {loginDone && (
+                <button type="button" className="rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white" onClick={goNextStep}>
+                  次のステップへ
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )
@@ -396,57 +460,96 @@ export default function QuickSetupPage() {
 
     if (currentStep === 'students') {
       return (
-        <div className="space-y-4">
-          <p className="text-sm text-gray-700">追加方法ごとに案内を分けています。まずは方法を選択してください。</p>
-          <div className="grid gap-3 md:grid-cols-2">
+        <div className="space-y-6">
+          <div className="rounded-3xl bg-slate-50 p-6">
+            <div className="flex items-center gap-3 text-slate-700">
+              <FontAwesomeIcon icon={faUsers} className="text-2xl" />
+              <h3 className="text-xl font-bold">追加方法を選んでください</h3>
+            </div>
+            <p className="mt-3 text-base leading-7 text-gray-700">
+              手元にあるデータ形式によっておすすめの追加方法が変わります。やりやすい方を選ぶと、その後の案内が切り替わります。
+            </p>
+          </div>
+
+          <div className="grid gap-5 xl:grid-cols-2">
             <button
               type="button"
               onClick={() => setSelectedMethod('image')}
-              className={`rounded border p-3 text-left ${selectedMethod === 'image' ? 'border-blue-500 bg-blue-50' : ''}`}
+              className={`${stepCardBaseClass} min-h-60 ${selectedMethod === 'image' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200 bg-white'}`}
             >
-              <p className="font-semibold">画像から追加</p>
-              <p className="mt-1 text-sm text-gray-600">スクリーンショットを読み込んで生徒データを追加します。</p>
+              <FontAwesomeIcon icon={faCamera} className="mb-5 text-5xl text-blue-500" />
+              <span className="text-2xl font-bold">画像から追加</span>
+              <span className="mt-3 text-base leading-7 text-gray-600">
+                生徒ステータスのスクリーンショットを使って追加します。OCRや画像認識を使う運用に向いています。
+              </span>
             </button>
             <button
               type="button"
               onClick={() => setSelectedMethod('schaledb')}
-              className={`rounded border p-3 text-left ${selectedMethod === 'schaledb' ? 'border-blue-500 bg-blue-50' : ''}`}
+              className={`${stepCardBaseClass} min-h-60 ${selectedMethod === 'schaledb' ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200' : 'border-gray-200 bg-white'}`}
             >
-              <p className="font-semibold">SchaleDBから追加</p>
-              <p className="mt-1 text-sm text-gray-600">SchaleDB形式のJSONをインポートして一括登録します。</p>
+              <FontAwesomeIcon icon={faCloudArrowUp} className="mb-5 text-5xl text-emerald-500" />
+              <span className="text-2xl font-bold">SchaleDBから追加</span>
+              <span className="mt-3 text-base leading-7 text-gray-600">
+                SchaleDBのエクスポートJSONを使ってまとめて取り込みます。すでに管理済みデータがある人におすすめです。
+              </span>
             </button>
           </div>
 
           {selectedMethod === 'image' && (
-            <div className="rounded border bg-gray-50 p-3 text-sm space-y-2">
-              <p>画像から追加: 生徒ステータス画像を用意して、追加モーダルの「画像から追加」を選択してください。</p>
-              <button type="button" className="rounded bg-blue-600 px-3 py-1 text-white" onClick={() => setAddStudentOpen(true)}>
+            <div className="rounded-3xl border border-blue-200 bg-blue-50 p-6">
+              <div className="flex items-center gap-3 text-blue-700">
+                <FontAwesomeIcon icon={faCamera} className="text-2xl" />
+                <h3 className="text-xl font-bold">画像追加の進め方</h3>
+              </div>
+              <ol className="mt-4 list-decimal space-y-2 pl-5 text-base leading-7 text-gray-700">
+                <li>生徒ステータスが見える画像を用意します。</li>
+                <li>下のボタンから追加モーダルを開きます。</li>
+                <li>モーダル内で「画像から追加」を選んで取り込みます。</li>
+              </ol>
+              <button type="button" className="mt-5 rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white" onClick={() => setAddStudentOpen(true)}>
                 画像追加モーダルを開く
               </button>
             </div>
           )}
 
           {selectedMethod === 'schaledb' && (
-            <div className="rounded border bg-gray-50 p-3 text-sm space-y-2">
-              <p>SchaleDBから追加: 学生一覧ページへ移動し、追加モーダルの「インポート」からJSONを読み込んでください。</p>
-              <Link href="/students" className="inline-block rounded bg-blue-600 px-3 py-1 text-white">
+            <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-6">
+              <div className="flex items-center gap-3 text-emerald-700">
+                <FontAwesomeIcon icon={faCloudArrowUp} className="text-2xl" />
+                <h3 className="text-xl font-bold">SchaleDB追加の進め方</h3>
+              </div>
+              <ol className="mt-4 list-decimal space-y-2 pl-5 text-base leading-7 text-gray-700">
+                <li>SchaleDBからエクスポートしたJSONを用意します。</li>
+                <li>生徒ページへ移動します。</li>
+                <li>追加モーダルの「インポート」からJSONを読み込んでください。</li>
+              </ol>
+              <Link href="/students" className="mt-5 inline-flex rounded-2xl bg-emerald-600 px-5 py-3 font-semibold text-white">
                 生徒ページへ移動
               </Link>
             </div>
           )}
 
-          <p className="text-sm">登録済み生徒数: {studentCount}</p>
-          <div className="flex gap-2">
-            {!studentsDone && (
-              <button type="button" className="rounded border px-3 py-1" onClick={() => skipStep('students')}>
-                スキップ
-              </button>
-            )}
-            {(studentsDone || selectedMethod !== null) && (
-              <button type="button" className="rounded bg-blue-600 px-3 py-1 text-white" onClick={goNextStep}>
-                次へ
-              </button>
-            )}
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border bg-white p-6">
+            <div className="flex items-center gap-3">
+              <FontAwesomeIcon icon={faCircleUser} className="text-2xl text-slate-500" />
+              <div>
+                <p className="text-sm text-gray-500">現在の登録状況</p>
+                <p className="text-xl font-bold">登録済み生徒数: {studentCount}</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {!studentsDone && (
+                <button type="button" className="rounded-2xl border px-5 py-3 font-semibold" onClick={() => markSkipped('students')}>
+                  このステップをスキップ
+                </button>
+              )}
+              {(studentsDone || selectedMethod !== null) && (
+                <button type="button" className="rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white" onClick={goNextStep}>
+                  次のステップへ
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )
@@ -454,27 +557,72 @@ export default function QuickSetupPage() {
 
     if (currentStep === 'profile') {
       return (
-        <div className="space-y-4">
-          {!session && (
-            <div className="rounded border border-amber-200 bg-amber-50 p-3 text-sm">
-              ログインが必要です。 <button type="button" className="underline" onClick={() => moveToStep('login')}>やっぱりログインする</button>
+        <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+          <div className="rounded-3xl bg-purple-50 p-6">
+            <div className="flex items-center gap-3 text-purple-700">
+              <FontAwesomeIcon icon={faUserGear} className="text-2xl" />
+              <h3 className="text-xl font-bold">プロフィールを整えましょう</h3>
             </div>
-          )}
-          <p className="text-sm text-gray-700">公開プロフィールの基本情報を登録します。ユーザー名は3〜20文字で入力してください。</p>
-          <div className="grid gap-2">
-            <input className="rounded border px-3 py-2" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="ユーザー名（必須）" disabled={!session} />
-            <input className="rounded border px-3 py-2" value={nickname} onChange={(event) => setNickname(event.target.value)} placeholder="ニックネーム（任意）" disabled={!session} />
-            <textarea className="rounded border px-3 py-2" value={bio} onChange={(event) => setBio(event.target.value)} placeholder="自己紹介（任意）" disabled={!session} />
-          </div>
-          <div className="flex gap-2">
-            <button type="button" className="rounded bg-blue-600 px-3 py-1 text-white disabled:opacity-50" disabled={busy || !session} onClick={() => void saveProfile()}>
-              保存して次へ
-            </button>
-            {!profileDone && (
-              <button type="button" className="rounded border px-3 py-1" onClick={() => skipStep('profile')}>
-                スキップ
-              </button>
+            <p className="mt-3 text-base leading-7 text-gray-700">
+              ユーザー名は公開URLや識別に使われます。ニックネームと自己紹介を設定すると、ユーザーページがわかりやすくなります。
+            </p>
+            {!session && (
+              <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                ログインが必要です。{' '}
+                <button type="button" className="font-semibold underline" onClick={() => moveToStep('login')}>
+                  やっぱりログインする
+                </button>
+              </div>
             )}
+          </div>
+          <div className="rounded-3xl border bg-white p-6">
+            <div className="grid gap-4">
+              <label className="grid gap-2">
+                <span className="font-semibold">ユーザー名</span>
+                <input
+                  className="rounded-2xl border px-4 py-3"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  placeholder="例: sensei_123"
+                  disabled={!session}
+                />
+              </label>
+              <label className="grid gap-2">
+                <span className="font-semibold">ニックネーム</span>
+                <input
+                  className="rounded-2xl border px-4 py-3"
+                  value={nickname}
+                  onChange={(event) => setNickname(event.target.value)}
+                  placeholder="表示名を入力"
+                  disabled={!session}
+                />
+              </label>
+              <label className="grid gap-2">
+                <span className="font-semibold">自己紹介</span>
+                <textarea
+                  className="min-h-32 rounded-2xl border px-4 py-3"
+                  value={bio}
+                  onChange={(event) => setBio(event.target.value)}
+                  placeholder="好きな生徒やプレイスタイルなど"
+                  disabled={!session}
+                />
+              </label>
+            </div>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                className="rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white disabled:opacity-50"
+                disabled={busy || !session}
+                onClick={() => void saveProfile()}
+              >
+                保存して次へ
+              </button>
+              {!profileDone && (
+                <button type="button" className="rounded-2xl border px-5 py-3 font-semibold" onClick={() => markSkipped('profile')}>
+                  このステップをスキップ
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )
@@ -482,111 +630,271 @@ export default function QuickSetupPage() {
 
     if (currentStep === 'youtube') {
       return (
-        <div className="space-y-4">
-          {!session && (
-            <div className="rounded border border-amber-200 bg-amber-50 p-3 text-sm">
-              ログインが必要です。 <button type="button" className="underline" onClick={() => moveToStep('login')}>やっぱりログインする</button>
+        <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+          <div className="rounded-3xl bg-red-50 p-6">
+            <div className="flex items-center gap-3 text-red-700">
+              <FontAwesomeIcon icon={faYoutube} className="text-3xl" />
+              <h3 className="text-xl font-bold">YouTube連携を設定する</h3>
             </div>
-          )}
-          <p className="text-sm text-gray-700">YouTube連携を行うと、関連する機能でチャンネル情報の確認ができます。</p>
-          <p className="text-sm">状態: {youtubeDone ? '接続済み' : '未接続'}</p>
-          <div className="flex gap-2">
-            {!youtubeDone && (
-              <button type="button" className="rounded bg-blue-600 px-3 py-1 text-white disabled:opacity-50" disabled={busy || !session} onClick={() => void connectYouTube()}>
-                YouTubeを接続
-              </button>
+            <p className="mt-3 text-base leading-7 text-gray-700">
+              動画投稿や投稿者紐付けに関する機能を使う場合は、ここでYouTubeアカウントを接続しておくと便利です。
+            </p>
+            {!session && (
+              <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                ログインが必要です。{' '}
+                <button type="button" className="font-semibold underline" onClick={() => moveToStep('login')}>
+                  やっぱりログインする
+                </button>
+              </div>
             )}
-            {!youtubeDone && (
-              <button type="button" className="rounded border px-3 py-1" onClick={() => skipStep('youtube')}>
-                スキップ
-              </button>
-            )}
-            {youtubeDone && (
-              <button type="button" className="rounded bg-blue-600 px-3 py-1 text-white" onClick={goNextStep}>
-                次へ
-              </button>
-            )}
+          </div>
+          <div className="rounded-3xl border bg-white p-6">
+            <div className="flex items-center gap-3">
+              <FontAwesomeIcon icon={youtubeDone ? faCheckCircle : faYoutube} className={`text-3xl ${youtubeDone ? 'text-green-600' : 'text-red-500'}`} />
+              <div>
+                <p className="text-sm text-gray-500">接続状態</p>
+                <p className="text-2xl font-bold">{youtubeDone ? '接続済み' : '未接続'}</p>
+              </div>
+            </div>
+            <p className="mt-5 text-base leading-7 text-gray-700">
+              接続時には YouTube 読み取り権限を要求します。ブランドアカウントを使う場合も、接続先を確認しながら進めてください。
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              {!youtubeDone && (
+                <button
+                  type="button"
+                  className="rounded-2xl bg-red-600 px-5 py-3 font-semibold text-white disabled:opacity-50"
+                  disabled={busy || !session}
+                  onClick={() => void connectYouTube()}
+                >
+                  YouTubeを接続
+                </button>
+              )}
+              {!youtubeDone && (
+                <button type="button" className="rounded-2xl border px-5 py-3 font-semibold" onClick={() => markSkipped('youtube')}>
+                  このステップをスキップ
+                </button>
+              )}
+              {youtubeDone && (
+                <button type="button" className="rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white" onClick={goNextStep}>
+                  次のステップへ
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )
     }
 
     return (
-      <div className="space-y-4">
-        <p className="text-sm text-gray-700">これですべてのセットアップステップが完了です。</p>
-        <div className="flex flex-wrap gap-2">
-          {canCompleteFinal && !setupState.skipped.completed && (
-            <button
-              type="button"
-              className="rounded bg-green-600 px-3 py-1 text-white"
-              onClick={() => {
-                setSetupState((prev) => ({ ...prev, skipped: { ...prev.skipped, completed: true } }))
-                router.push('/')
-              }}
-            >
-              セットアップ完了
-            </button>
-          )}
-          {!completedDone && (
-            <button type="button" className="rounded border px-3 py-1" onClick={() => skipStep('completed')}>
-              スキップ
-            </button>
-          )}
-          <Link href="/" className="inline-block rounded border px-3 py-1">
-            ホームへ戻る
-          </Link>
+      <div className="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
+        <div className="rounded-3xl bg-green-50 p-6">
+          <div className="flex items-center gap-3 text-green-700">
+            <FontAwesomeIcon icon={faCheckCircle} className="text-3xl" />
+            <h3 className="text-2xl font-bold">セットアップの最終確認</h3>
+          </div>
+          <p className="mt-3 text-base leading-7 text-gray-700">
+            ここまでで基本セットアップは完了です。必要に応じて戻って見直してから、最後に完了ボタンを押してください。
+          </p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            {STEP_DEFINITIONS.map((step) => (
+              <div key={step.key} className="rounded-2xl border bg-white p-4">
+                <div className="flex items-center gap-3">
+                  <FontAwesomeIcon icon={step.icon} className={`text-lg ${completionMap[step.key] ? 'text-green-600' : 'text-gray-400'}`} />
+                  <span className="font-semibold">{step.title}</span>
+                </div>
+                <p className="mt-2 text-sm text-gray-600">{completionMap[step.key] ? '完了またはスキップ済みです。' : 'まだ確認が残っています。'}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-3xl border bg-white p-6">
+          <p className="text-sm text-gray-500">最終アクション</p>
+          <p className="mt-2 text-xl font-bold">セットアップを終了する</p>
+          <p className="mt-3 text-base leading-7 text-gray-700">
+            完了すると、進行度が100%になり、ヘッダーのクイックスタート表示も非表示になります。
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            {canCompleteFinal && !setupState.skipped.completed && (
+              <button
+                type="button"
+                className="rounded-2xl bg-green-600 px-5 py-3 font-semibold text-white"
+                onClick={() => {
+                  setSetupState((prev) => ({
+                    ...prev,
+                    skipped: {
+                      ...prev.skipped,
+                      completed: true,
+                    },
+                  }))
+                  router.push('/')
+                }}
+              >
+                セットアップ完了
+              </button>
+            )}
+            {!completedDone && (
+              <button type="button" className="rounded-2xl border px-5 py-3 font-semibold" onClick={() => markSkipped('completed')}>
+                このステップをスキップ
+              </button>
+            )}
+            <Link href="/" className="rounded-2xl border px-5 py-3 font-semibold">
+              ホームへ戻る
+            </Link>
+          </div>
         </div>
       </div>
     )
   }
 
   if (loading) {
-    return <main className="p-4">Loading...</main>
+    return (
+      <main className="mx-auto flex min-h-[60vh] max-w-7xl items-center justify-center px-6 py-10">
+        <div className="flex items-center gap-3 rounded-2xl border bg-white px-6 py-4 shadow-sm">
+          <FontAwesomeIcon icon={faSpinner} spin className="text-blue-600" />
+          <span>クイックセットアップを読み込み中...</span>
+        </div>
+      </main>
+    )
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl p-4 space-y-4">
-      <h1 className="text-2xl font-bold">クイックセットアップ</h1>
-      <div className="rounded border p-3">
-        <p className="font-semibold">進行度: {progress}%</p>
-        <div className="mt-2 h-2 w-full rounded bg-gray-200">
-          <div className="h-2 rounded bg-blue-600 transition-all duration-300" style={{ width: `${progress}%` }} />
+    <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 xl:px-8">
+      <section className="rounded-[2rem] bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-400 p-8 text-white shadow-lg md:p-10">
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold">
+              <FontAwesomeIcon icon={faCompass} />
+              Quick Setup
+            </div>
+            <h1 className="text-3xl font-bold md:text-4xl">迷わず始められる初期セットアップ</h1>
+            <p className="text-base leading-7 text-white/90 md:text-lg">
+              ログイン、生徒データ追加、プロフィール設定、YouTube接続までを順番にガイドします。必要なところだけ進めても大丈夫です。
+            </p>
+          </div>
+          <div className="rounded-3xl bg-white/15 p-5 backdrop-blur-sm xl:min-w-80">
+            <p className="text-sm font-semibold text-white/80">全体の進行度</p>
+            <p className="mt-2 text-3xl font-bold">{progress}%</p>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="flex items-center justify-between rounded border p-3">
-        <div>
-          <p className="text-sm text-gray-500">現在のステップ</p>
-          <h2 className="text-lg font-bold">{currentStepDefinition.title}</h2>
-          <p className="text-sm text-gray-600">{currentStepDefinition.description}</p>
+      <section className="rounded-[2rem] border bg-white p-5 shadow-sm md:p-6">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm text-gray-500">進行状況</p>
+            <h2 className="text-xl font-bold">{currentStepDefinition.title}</h2>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={goPrevStep}
+              disabled={currentStep === 'login'}
+              className="rounded-2xl border px-4 py-3 font-semibold disabled:opacity-50"
+            >
+              <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
+              戻る
+            </button>
+            <button
+              type="button"
+              onClick={goNextStep}
+              disabled={currentStep === 'completed'}
+              className="rounded-2xl border px-4 py-3 font-semibold disabled:opacity-50"
+            >
+              進む
+              <FontAwesomeIcon icon={faArrowRight} className="ml-2" />
+            </button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <button type="button" onClick={goPrevStep} disabled={currentStep === 'login'} className="rounded border px-3 py-1 disabled:opacity-50">
-            戻る
-          </button>
-          <button type="button" onClick={goNextStep} disabled={currentStep === 'completed'} className="rounded border px-3 py-1 disabled:opacity-50">
-            進む
-          </button>
-        </div>
-      </div>
 
-      {message && <p className="rounded border border-blue-200 bg-blue-50 p-3 text-sm">{message}</p>}
+        <div className="grid gap-3 md:grid-cols-5">
+          {STEP_DEFINITIONS.map((step, index) => {
+            const isActive = step.key === currentStep
+            const isCompleted = completionMap[step.key]
+            return (
+              <div key={step.key} className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => moveToStep(step.key)}
+                  className={`flex min-h-20 flex-1 items-center gap-3 rounded-2xl border px-4 py-4 text-left transition ${
+                    isActive ? 'border-blue-500 bg-blue-50 shadow-sm' : isCompleted ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'
+                  }`}
+                >
+                  <div className={`flex h-11 w-11 items-center justify-center rounded-full ${isActive ? 'bg-blue-600 text-white' : isCompleted ? 'bg-green-600 text-white' : 'bg-white text-gray-500'}`}>
+                    <FontAwesomeIcon icon={step.icon} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">STEP {index + 1}</p>
+                    <p className="font-semibold leading-tight">{step.title}</p>
+                  </div>
+                </button>
+                {index < STEP_DEFINITIONS.length - 1 && <div className="hidden h-1 flex-1 rounded-full bg-gray-200 md:block" />}
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="mt-6 space-y-3">
+          <div className="relative h-5 overflow-hidden rounded-full bg-gray-100">
+            <div className="absolute inset-0 grid grid-cols-5 gap-px px-1 py-1">
+              {STEP_DEFINITIONS.map((step) => (
+                <div key={step.key} className="rounded-full bg-white/80" />
+              ))}
+            </div>
+            <div className="absolute inset-y-1 left-1 rounded-full bg-gradient-to-r from-blue-600 to-cyan-400 transition-all duration-300" style={{ width: `calc(${progress}% - 0.5rem)` }} />
+          </div>
+          <div className="flex justify-between text-xs font-semibold text-gray-500">
+            {STEP_DEFINITIONS.map((step) => (
+              <span key={step.key} className="text-center">
+                {step.title}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {message && (
+        <section className="rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
+          {message}
+        </section>
+      )}
 
       <section
         key={currentStep}
-        className={`rounded border p-4 transition-all duration-300 ${moveDirection === 'forward' ? 'animate-[slideInRight_0.28s_ease-out]' : 'animate-[slideInLeft_0.28s_ease-out]'}`}
+        className={`rounded-[2rem] border bg-white p-5 shadow-sm transition-all duration-300 md:p-8 ${moveDirection === 'forward' ? 'animate-[slideInRight_0.28s_ease-out]' : 'animate-[slideInLeft_0.28s_ease-out]'}`}
       >
+        <div className="mb-6 flex items-center gap-4 border-b pb-5">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-xl text-slate-700">
+            <FontAwesomeIcon icon={currentStepDefinition.icon} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">{currentStepDefinition.title}</h2>
+            <p className="mt-1 text-base leading-7 text-gray-600">{currentStepDefinition.description}</p>
+          </div>
+        </div>
         {renderStepContent()}
       </section>
 
       <style jsx>{`
         @keyframes slideInRight {
-          from { opacity: 0; transform: translateX(20px); }
-          to { opacity: 1; transform: translateX(0); }
+          from {
+            opacity: 0;
+            transform: translateX(24px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
         }
         @keyframes slideInLeft {
-          from { opacity: 0; transform: translateX(-20px); }
-          to { opacity: 1; transform: translateX(0); }
+          from {
+            opacity: 0;
+            transform: translateX(-24px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
         }
       `}</style>
 
@@ -596,7 +904,9 @@ export default function QuickSetupPage() {
           addStudent={() => undefined}
           onAdded={() => {
             setStudentCount(getLocalStudentCount())
-            if (session) void loadState()
+            if (session) {
+              void loadState()
+            }
           }}
           close={() => setAddStudentOpen(false)}
         />
