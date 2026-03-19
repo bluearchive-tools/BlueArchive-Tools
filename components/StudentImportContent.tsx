@@ -966,7 +966,7 @@ export default function StudentImportContent({
     } finally {
       setSaving(false)
     }
-  }, [entries, session, supabase])
+  }, [entries, onSaved, session, supabase])
 
   const hasEntries = entries.length > 0
   const isProcessing = status === 'processing'

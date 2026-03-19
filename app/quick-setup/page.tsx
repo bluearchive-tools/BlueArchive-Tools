@@ -21,12 +21,13 @@ import {
   faVideo,
   type IconDefinition,
 } from '@fortawesome/free-solid-svg-icons'
-import { faDiscord, faGoogle, faYoutube } from '@fortawesome/free-brands-svg-icons'
+import { faDiscord, faYoutube } from '@fortawesome/free-brands-svg-icons'
 import { useLocale } from 'next-intl'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 import AddStudentModal from '../../components/AddStudentModal'
+import GoogleSignInButton from '../../components/GoogleSignInButton'
 import StudentImportContent from '../../components/StudentImportContent'
 
 type SetupSkipState = {
@@ -392,7 +393,7 @@ export default function QuickSetupPage() {
     goNextStep()
   }
 
-  const handleOAuthSignIn = async (provider: 'google' | 'discord') => {
+  const handleDiscordSignIn = async () => {
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
     if (!origin) return
 
@@ -402,7 +403,7 @@ export default function QuickSetupPage() {
     redirectTo.searchParams.set('next', '/quick-setup')
 
     const { data, error } = await supabase.auth.signInWithOAuth({
-      provider,
+      provider: 'discord',
       options: {
         redirectTo: redirectTo.toString(),
       },
@@ -525,20 +526,29 @@ export default function QuickSetupPage() {
             </div>
             <div className={markdownCardClass}>{renderStepMarkdown('login')}</div>
             <div className="grid gap-4 md:grid-cols-2">
-              <button
-                type="button"
-                disabled={busy || !!session}
-                onClick={() => void handleOAuthSignIn('google')}
-                className={`${stepCardBaseClass} ${session ? 'cursor-default opacity-60' : 'border-blue-200 bg-white'}`}
-              >
-                <FontAwesomeIcon icon={faGoogle} className="mb-4 text-4xl text-[#4285F4]" />
+              <div className={`${stepCardBaseClass} ${session ? 'cursor-default opacity-60' : 'border-blue-200 bg-white'}`}>
                 <span className="text-xl font-bold">Googleでログイン</span>
                 <span className="mt-2 text-sm text-gray-600">YouTube連携までまとめて進めたい人におすすめです。</span>
-              </button>
+                <div className="mt-4">
+                  {session ? (
+                    <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                      Googleでログイン済みです。
+                    </div>
+                  ) : (
+                    <GoogleSignInButton
+                      width={260}
+                      theme="outline"
+                      size="large"
+                      text="continue_with"
+                      className="inline-flex"
+                    />
+                  )}
+                </div>
+              </div>
               <button
                 type="button"
                 disabled={busy || !!session}
-                onClick={() => void handleOAuthSignIn('discord')}
+                onClick={() => void handleDiscordSignIn()}
                 className={`${stepCardBaseClass} ${session ? 'cursor-default opacity-60' : 'border-indigo-200 bg-white'}`}
               >
                 <FontAwesomeIcon icon={faDiscord} className="mb-4 text-4xl text-[#5865F2]" />
