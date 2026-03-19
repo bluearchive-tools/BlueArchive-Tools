@@ -27,6 +27,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 import AddStudentModal from '../../components/AddStudentModal'
+import StudentImportContent from '../../components/StudentImportContent'
 
 type SetupSkipState = {
   login: boolean
@@ -59,6 +60,7 @@ type StepDefinition = {
 }
 
 type StepMarkdownMap = Record<QuickSetupStep, string>
+type StudentMethodMarkdownMap = Record<Exclude<StudentAddMethod, null>, string>
 
 const QUICK_SETUP_LOCAL_STATE_KEY = 'ba:quick-setup-state'
 const QUICK_SETUP_LOCAL_PROGRESS_KEY = 'ba:quick-setup-progress'
@@ -68,6 +70,11 @@ const QUICK_SETUP_MD_PATHS: Record<QuickSetupStep, string> = {
   profile: 'quick-setup-profile',
   youtube: 'quick-setup-youtube',
   completed: 'quick-setup-completed',
+}
+
+const QUICK_SETUP_STUDENT_METHOD_MD_PATHS: Record<Exclude<StudentAddMethod, null>, string> = {
+  image: 'quick-setup-students-image',
+  schaledb: 'quick-setup-students-schaledb',
 }
 
 const STEP_DEFINITIONS: StepDefinition[] = [
@@ -119,6 +126,11 @@ const emptyStepMarkdown: StepMarkdownMap = {
   profile: '',
   youtube: '',
   completed: '',
+}
+
+const emptyStudentMethodMarkdown: StudentMethodMarkdownMap = {
+  image: '',
+  schaledb: '',
 }
 
 const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
@@ -178,23 +190,31 @@ export default function QuickSetupPage() {
   const [currentStep, setCurrentStep] = useState<QuickSetupStep>('login')
   const [moveDirection, setMoveDirection] = useState<'forward' | 'backward'>('forward')
   const [stepMarkdown, setStepMarkdown] = useState<StepMarkdownMap>(emptyStepMarkdown)
+  const [studentMethodMarkdown, setStudentMethodMarkdown] = useState<StudentMethodMarkdownMap>(emptyStudentMethodMarkdown)
+
+  const loadMarkdownText = useCallback(
+    async (filename: string) => {
+      const requestedLocale = locale || 'ja'
+      const localeCandidates = requestedLocale === 'ja' ? ['ja'] : [requestedLocale, 'ja']
+
+      for (const localeCode of localeCandidates) {
+        const response = await fetch(`/helps/${localeCode}/${filename}.md`, { cache: 'no-store' })
+        if (response.ok) {
+          return response.text()
+        }
+      }
+
+      return ''
+    },
+    [locale]
+  )
 
   const loadStepMarkdown = useCallback(async () => {
-    const requestedLocale = locale || 'ja'
     const nextMarkdownEntries = await Promise.all(
-      (Object.keys(QUICK_SETUP_MD_PATHS) as QuickSetupStep[]).map(async (stepKey) => {
-        const filename = QUICK_SETUP_MD_PATHS[stepKey]
-        const localeCandidates = requestedLocale === 'ja' ? ['ja'] : [requestedLocale, 'ja']
-
-        for (const localeCode of localeCandidates) {
-          const response = await fetch(`/helps/${localeCode}/${filename}.md`, { cache: 'no-store' })
-          if (response.ok) {
-            return [stepKey, await response.text()] as const
-          }
-        }
-
-        return [stepKey, ''] as const
-      })
+      (Object.keys(QUICK_SETUP_MD_PATHS) as QuickSetupStep[]).map(async (stepKey) => [
+        stepKey,
+        await loadMarkdownText(QUICK_SETUP_MD_PATHS[stepKey]),
+      ] as const)
     )
 
     const markdownMap = nextMarkdownEntries.reduce<StepMarkdownMap>((accumulator, [stepKey, markdown]) => {
@@ -203,7 +223,28 @@ export default function QuickSetupPage() {
     }, { ...emptyStepMarkdown })
 
     setStepMarkdown(markdownMap)
-  }, [locale])
+  }, [loadMarkdownText])
+
+  const loadStudentMethodMarkdown = useCallback(async () => {
+    const nextMarkdownEntries = await Promise.all(
+      (Object.keys(QUICK_SETUP_STUDENT_METHOD_MD_PATHS) as Array<Exclude<StudentAddMethod, null>>).map(
+        async (methodKey) => [
+          methodKey,
+          await loadMarkdownText(QUICK_SETUP_STUDENT_METHOD_MD_PATHS[methodKey]),
+        ] as const
+      )
+    )
+
+    const markdownMap = nextMarkdownEntries.reduce<StudentMethodMarkdownMap>(
+      (accumulator, [methodKey, markdown]) => {
+        accumulator[methodKey] = markdown
+        return accumulator
+      },
+      { ...emptyStudentMethodMarkdown }
+    )
+
+    setStudentMethodMarkdown(markdownMap)
+  }, [loadMarkdownText])
 
   const loadState = useCallback(async () => {
     if (!session) {
@@ -255,7 +296,8 @@ export default function QuickSetupPage() {
   useEffect(() => {
     void loadState()
     void loadStepMarkdown()
-  }, [loadState, loadStepMarkdown])
+    void loadStudentMethodMarkdown()
+  }, [loadState, loadStepMarkdown, loadStudentMethodMarkdown])
 
   useEffect(() => {
     if (currentStep !== 'students') return undefined
@@ -533,6 +575,8 @@ export default function QuickSetupPage() {
     }
 
     if (currentStep === 'students') {
+      const selectedMethodMarkdownText = selectedMethod ? studentMethodMarkdown[selectedMethod] : ''
+
       return (
         <div className="space-y-6">
           <div className="rounded-3xl bg-slate-50 p-6">
@@ -540,7 +584,9 @@ export default function QuickSetupPage() {
               <FontAwesomeIcon icon={faUsers} className="text-2xl" />
               <h3 className="text-xl font-bold">追加方法を選んでください</h3>
             </div>
-            <div className={`mt-4 ${markdownCardClass}`}>{renderStepMarkdown('students')}</div>
+            <p className="mt-4 text-base leading-7 text-gray-700">
+              画像OCRで進めるか、SchaleDBのエクスポート文字列を使うかを先に決めると、この中で必要な操作だけ表示します。
+            </p>
           </div>
 
           <div className="grid gap-5 xl:grid-cols-2">
@@ -552,7 +598,7 @@ export default function QuickSetupPage() {
               <FontAwesomeIcon icon={faCamera} className="mb-5 text-5xl text-blue-500" />
               <span className="text-2xl font-bold">画像から追加</span>
               <span className="mt-3 text-base leading-7 text-gray-600">
-                `/students/import` と同じ形式の画面を、このクイックセットアップ内に埋め込んで使えます。
+                画像をアップロードして OCR で抽出し、その場で確認・保存まで進めます。
               </span>
             </button>
             <button
@@ -563,56 +609,66 @@ export default function QuickSetupPage() {
               <FontAwesomeIcon icon={faCloudArrowUp} className="mb-5 text-5xl text-emerald-500" />
               <span className="text-2xl font-bold">SchaleDBから追加</span>
               <span className="mt-3 text-base leading-7 text-gray-600">
-                SchaleDBのエクスポート文字列を使って生徒データを取り込みます。
+                SchaleDB のエクスポート文字列を貼り付けて、まとめて取り込みます。
               </span>
             </button>
           </div>
 
-          {selectedMethod === 'image' && (
-            <div className="rounded-3xl border border-blue-200 bg-white p-6">
+          {selectedMethod && (
+            <div
+              className={`rounded-3xl border p-6 ${
+                selectedMethod === 'image' ? 'border-blue-200 bg-white' : 'border-emerald-200 bg-white'
+              }`}
+            >
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3 text-blue-700">
-                  <FontAwesomeIcon icon={faCamera} className="text-2xl" />
-                  <h3 className="text-xl font-bold">画像アップロード（同形式）</h3>
+                <div className={`flex items-center gap-3 ${selectedMethod === 'image' ? 'text-blue-700' : 'text-emerald-700'}`}>
+                  <FontAwesomeIcon
+                    icon={selectedMethod === 'image' ? faCamera : faCloudArrowUp}
+                    className="text-2xl"
+                  />
+                  <h3 className="text-xl font-bold">
+                    {selectedMethod === 'image' ? '画像アップロードで追加する' : 'SchaleDB文字列で追加する'}
+                  </h3>
                 </div>
-                <button
-                  type="button"
-                  className="rounded-2xl border px-4 py-2 text-sm font-semibold"
-                  onClick={() => {
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    className="rounded-2xl border px-4 py-2 text-sm font-semibold"
+                    onClick={() => {
+                      setStudentCount(getLocalStudentCount())
+                      if (session) {
+                        void loadState()
+                      }
+                    }}
+                  >
+                    取り込み後に件数を更新
+                  </button>
+                  <Link href="/students/import" className="rounded-2xl border px-4 py-2 text-sm font-semibold">
+                    通常ページを開く
+                  </Link>
+                </div>
+              </div>
+
+              {selectedMethodMarkdownText && (
+                <div className={markdownCardClass}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                    {selectedMethodMarkdownText}
+                  </ReactMarkdown>
+                </div>
+              )}
+
+              <div className="mt-6 rounded-3xl border border-dashed border-gray-200 p-4 md:p-6">
+                <StudentImportContent
+                  mode={selectedMethod === 'schaledb' ? 'schale' : 'image'}
+                  showHeader={false}
+                  onSaved={() => {
                     setStudentCount(getLocalStudentCount())
                     if (session) {
                       void loadState()
                     }
                   }}
-                >
-                  取り込み後に件数を更新
-                </button>
+                />
               </div>
-              <p className="mb-4 text-sm text-gray-600">
-                下の埋め込み画面は <code>/students/import</code> と同じ形式です。画像アップロード後、保存したら「取り込み後に件数を更新」を押してください。
-              </p>
-              <iframe
-                title="students-import-embed"
-                src="/students/import"
-                className="h-[1100px] w-full rounded-2xl border bg-white"
-              />
-            </div>
-          )}
-
-          {selectedMethod === 'schaledb' && (
-            <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-6">
-              <div className="flex items-center gap-3 text-emerald-700">
-                <FontAwesomeIcon icon={faCloudArrowUp} className="text-2xl" />
-                <h3 className="text-xl font-bold">SchaleDB追加の進め方</h3>
-              </div>
-              <ol className="mt-4 list-decimal space-y-2 pl-5 text-base leading-7 text-gray-700">
-                <li>SchaleDBからエクスポートしたJSONまたはBase64文字列を用意します。</li>
-                <li>生徒ページへ移動します。</li>
-                <li>追加モーダルの「インポート」またはインポートページから読み込んでください。</li>
-              </ol>
-              <Link href="/students/import" className="mt-5 inline-flex rounded-2xl bg-emerald-600 px-5 py-3 font-semibold text-white">
-                インポートページへ移動
-              </Link>
             </div>
           )}
 
