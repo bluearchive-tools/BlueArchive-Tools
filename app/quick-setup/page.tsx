@@ -13,6 +13,7 @@ import {
   faCircleUser,
   faCloudArrowUp,
   faCompass,
+  faFileLines,
   faRightToBracket,
   faSpinner,
   faUserGear,
@@ -21,6 +22,10 @@ import {
   type IconDefinition,
 } from '@fortawesome/free-solid-svg-icons'
 import { faDiscord, faGoogle, faYoutube } from '@fortawesome/free-brands-svg-icons'
+import { useLocale } from 'next-intl'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 import AddStudentModal from '../../components/AddStudentModal'
 
 type SetupSkipState = {
@@ -53,8 +58,17 @@ type StepDefinition = {
   icon: IconDefinition
 }
 
+type StepMarkdownMap = Record<QuickSetupStep, string>
+
 const QUICK_SETUP_LOCAL_STATE_KEY = 'ba:quick-setup-state'
 const QUICK_SETUP_LOCAL_PROGRESS_KEY = 'ba:quick-setup-progress'
+const QUICK_SETUP_MD_PATHS: Record<QuickSetupStep, string> = {
+  login: 'quick-setup-login',
+  students: 'quick-setup-students',
+  profile: 'quick-setup-profile',
+  youtube: 'quick-setup-youtube',
+  completed: 'quick-setup-completed',
+}
 
 const STEP_DEFINITIONS: StepDefinition[] = [
   {
@@ -99,6 +113,14 @@ const defaultSetupState: SetupState = {
   },
 }
 
+const emptyStepMarkdown: StepMarkdownMap = {
+  login: '',
+  students: '',
+  profile: '',
+  youtube: '',
+  completed: '',
+}
+
 const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null
 
@@ -133,10 +155,14 @@ const getLocalStudentCount = () => {
 
 const stepIndex = (step: QuickSetupStep) => STEP_DEFINITIONS.findIndex((entry) => entry.key === step)
 
+const markdownCardClass =
+  'prose prose-sm max-w-none rounded-3xl border bg-slate-50 p-6 prose-headings:mt-0 prose-p:leading-7 prose-img:rounded-2xl prose-img:shadow-sm'
+
 export default function QuickSetupPage() {
   const session = useSession()
   const supabase = useSupabaseClient()
   const router = useRouter()
+  const locale = useLocale()
 
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -151,6 +177,33 @@ export default function QuickSetupPage() {
   const [selectedMethod, setSelectedMethod] = useState<StudentAddMethod>(null)
   const [currentStep, setCurrentStep] = useState<QuickSetupStep>('login')
   const [moveDirection, setMoveDirection] = useState<'forward' | 'backward'>('forward')
+  const [stepMarkdown, setStepMarkdown] = useState<StepMarkdownMap>(emptyStepMarkdown)
+
+  const loadStepMarkdown = useCallback(async () => {
+    const requestedLocale = locale || 'ja'
+    const nextMarkdownEntries = await Promise.all(
+      (Object.keys(QUICK_SETUP_MD_PATHS) as QuickSetupStep[]).map(async (stepKey) => {
+        const filename = QUICK_SETUP_MD_PATHS[stepKey]
+        const localeCandidates = requestedLocale === 'ja' ? ['ja'] : [requestedLocale, 'ja']
+
+        for (const localeCode of localeCandidates) {
+          const response = await fetch(`/helps/${localeCode}/${filename}.md`, { cache: 'no-store' })
+          if (response.ok) {
+            return [stepKey, await response.text()] as const
+          }
+        }
+
+        return [stepKey, ''] as const
+      })
+    )
+
+    const markdownMap = nextMarkdownEntries.reduce<StepMarkdownMap>((accumulator, [stepKey, markdown]) => {
+      accumulator[stepKey] = markdown
+      return accumulator
+    }, { ...emptyStepMarkdown })
+
+    setStepMarkdown(markdownMap)
+  }, [locale])
 
   const loadState = useCallback(async () => {
     if (!session) {
@@ -201,7 +254,18 @@ export default function QuickSetupPage() {
 
   useEffect(() => {
     void loadState()
-  }, [loadState])
+    void loadStepMarkdown()
+  }, [loadState, loadStepMarkdown])
+
+  useEffect(() => {
+    if (currentStep !== 'students') return undefined
+
+    const intervalId = window.setInterval(() => {
+      setStudentCount(getLocalStudentCount())
+    }, 2000)
+
+    return () => window.clearInterval(intervalId)
+  }, [currentStep])
 
   const loginDone = !!session || setupState.skipped.login
   const studentsDone = studentCount > 0 || setupState.skipped.students
@@ -392,22 +456,32 @@ export default function QuickSetupPage() {
   }
 
   const currentStepDefinition = STEP_DEFINITIONS[stepIndex(currentStep)]
+  const currentMarkdown = stepMarkdown[currentStepDefinition.key]
 
   const stepCardBaseClass =
     'group flex min-h-48 flex-col rounded-3xl border p-6 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg'
 
+  const renderStepMarkdown = (stepKey: QuickSetupStep) => {
+    const markdown = stepMarkdown[stepKey]
+    if (!markdown) return null
+
+    return (
+      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+        {markdown}
+      </ReactMarkdown>
+    )
+  }
+
   const renderStepContent = () => {
     if (currentStep === 'login') {
       return (
-        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-4 rounded-3xl bg-blue-50 p-6">
             <div className="flex items-center gap-3 text-blue-700">
               <FontAwesomeIcon icon={faCompass} className="text-2xl" />
               <h3 className="text-xl font-bold">まずはアカウントを用意しましょう</h3>
             </div>
-            <p className="text-base leading-7 text-gray-700">
-              ログインすると、進行度・プロフィール・YouTube連携状態をアカウントへ保存できます。後から別端末でも続きやすくなります。
-            </p>
+            <div className={markdownCardClass}>{renderStepMarkdown('login')}</div>
             <div className="grid gap-4 md:grid-cols-2">
               <button
                 type="button"
@@ -466,9 +540,7 @@ export default function QuickSetupPage() {
               <FontAwesomeIcon icon={faUsers} className="text-2xl" />
               <h3 className="text-xl font-bold">追加方法を選んでください</h3>
             </div>
-            <p className="mt-3 text-base leading-7 text-gray-700">
-              手元にあるデータ形式によっておすすめの追加方法が変わります。やりやすい方を選ぶと、その後の案内が切り替わります。
-            </p>
+            <div className={`mt-4 ${markdownCardClass}`}>{renderStepMarkdown('students')}</div>
           </div>
 
           <div className="grid gap-5 xl:grid-cols-2">
@@ -480,7 +552,7 @@ export default function QuickSetupPage() {
               <FontAwesomeIcon icon={faCamera} className="mb-5 text-5xl text-blue-500" />
               <span className="text-2xl font-bold">画像から追加</span>
               <span className="mt-3 text-base leading-7 text-gray-600">
-                生徒ステータスのスクリーンショットを使って追加します。OCRや画像認識を使う運用に向いています。
+                `/students/import` と同じ形式の画面を、このクイックセットアップ内に埋め込んで使えます。
               </span>
             </button>
             <button
@@ -491,25 +563,39 @@ export default function QuickSetupPage() {
               <FontAwesomeIcon icon={faCloudArrowUp} className="mb-5 text-5xl text-emerald-500" />
               <span className="text-2xl font-bold">SchaleDBから追加</span>
               <span className="mt-3 text-base leading-7 text-gray-600">
-                SchaleDBのエクスポートJSONを使ってまとめて取り込みます。すでに管理済みデータがある人におすすめです。
+                SchaleDBのエクスポート文字列を使って生徒データを取り込みます。
               </span>
             </button>
           </div>
 
           {selectedMethod === 'image' && (
-            <div className="rounded-3xl border border-blue-200 bg-blue-50 p-6">
-              <div className="flex items-center gap-3 text-blue-700">
-                <FontAwesomeIcon icon={faCamera} className="text-2xl" />
-                <h3 className="text-xl font-bold">画像追加の進め方</h3>
+            <div className="rounded-3xl border border-blue-200 bg-white p-6">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3 text-blue-700">
+                  <FontAwesomeIcon icon={faCamera} className="text-2xl" />
+                  <h3 className="text-xl font-bold">画像アップロード（同形式）</h3>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-2xl border px-4 py-2 text-sm font-semibold"
+                  onClick={() => {
+                    setStudentCount(getLocalStudentCount())
+                    if (session) {
+                      void loadState()
+                    }
+                  }}
+                >
+                  取り込み後に件数を更新
+                </button>
               </div>
-              <ol className="mt-4 list-decimal space-y-2 pl-5 text-base leading-7 text-gray-700">
-                <li>生徒ステータスが見える画像を用意します。</li>
-                <li>下のボタンから追加モーダルを開きます。</li>
-                <li>モーダル内で「画像から追加」を選んで取り込みます。</li>
-              </ol>
-              <button type="button" className="mt-5 rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white" onClick={() => setAddStudentOpen(true)}>
-                画像追加モーダルを開く
-              </button>
+              <p className="mb-4 text-sm text-gray-600">
+                下の埋め込み画面は <code>/students/import</code> と同じ形式です。画像アップロード後、保存したら「取り込み後に件数を更新」を押してください。
+              </p>
+              <iframe
+                title="students-import-embed"
+                src="/students/import"
+                className="h-[1100px] w-full rounded-2xl border bg-white"
+              />
             </div>
           )}
 
@@ -520,12 +606,12 @@ export default function QuickSetupPage() {
                 <h3 className="text-xl font-bold">SchaleDB追加の進め方</h3>
               </div>
               <ol className="mt-4 list-decimal space-y-2 pl-5 text-base leading-7 text-gray-700">
-                <li>SchaleDBからエクスポートしたJSONを用意します。</li>
+                <li>SchaleDBからエクスポートしたJSONまたはBase64文字列を用意します。</li>
                 <li>生徒ページへ移動します。</li>
-                <li>追加モーダルの「インポート」からJSONを読み込んでください。</li>
+                <li>追加モーダルの「インポート」またはインポートページから読み込んでください。</li>
               </ol>
-              <Link href="/students" className="mt-5 inline-flex rounded-2xl bg-emerald-600 px-5 py-3 font-semibold text-white">
-                生徒ページへ移動
+              <Link href="/students/import" className="mt-5 inline-flex rounded-2xl bg-emerald-600 px-5 py-3 font-semibold text-white">
+                インポートページへ移動
               </Link>
             </div>
           )}
@@ -558,16 +644,14 @@ export default function QuickSetupPage() {
     if (currentStep === 'profile') {
       return (
         <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-          <div className="rounded-3xl bg-purple-50 p-6">
+          <div className="space-y-4 rounded-3xl bg-purple-50 p-6">
             <div className="flex items-center gap-3 text-purple-700">
               <FontAwesomeIcon icon={faUserGear} className="text-2xl" />
               <h3 className="text-xl font-bold">プロフィールを整えましょう</h3>
             </div>
-            <p className="mt-3 text-base leading-7 text-gray-700">
-              ユーザー名は公開URLや識別に使われます。ニックネームと自己紹介を設定すると、ユーザーページがわかりやすくなります。
-            </p>
+            <div className={markdownCardClass}>{renderStepMarkdown('profile')}</div>
             {!session && (
-              <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                 ログインが必要です。{' '}
                 <button type="button" className="font-semibold underline" onClick={() => moveToStep('login')}>
                   やっぱりログインする
@@ -631,16 +715,14 @@ export default function QuickSetupPage() {
     if (currentStep === 'youtube') {
       return (
         <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-          <div className="rounded-3xl bg-red-50 p-6">
+          <div className="space-y-4 rounded-3xl bg-red-50 p-6">
             <div className="flex items-center gap-3 text-red-700">
               <FontAwesomeIcon icon={faYoutube} className="text-3xl" />
               <h3 className="text-xl font-bold">YouTube連携を設定する</h3>
             </div>
-            <p className="mt-3 text-base leading-7 text-gray-700">
-              動画投稿や投稿者紐付けに関する機能を使う場合は、ここでYouTubeアカウントを接続しておくと便利です。
-            </p>
+            <div className={markdownCardClass}>{renderStepMarkdown('youtube')}</div>
             {!session && (
-              <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                 ログインが必要です。{' '}
                 <button type="button" className="font-semibold underline" onClick={() => moveToStep('login')}>
                   やっぱりログインする
@@ -688,15 +770,13 @@ export default function QuickSetupPage() {
 
     return (
       <div className="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
-        <div className="rounded-3xl bg-green-50 p-6">
+        <div className="space-y-4 rounded-3xl bg-green-50 p-6">
           <div className="flex items-center gap-3 text-green-700">
             <FontAwesomeIcon icon={faCheckCircle} className="text-3xl" />
             <h3 className="text-2xl font-bold">セットアップの最終確認</h3>
           </div>
-          <p className="mt-3 text-base leading-7 text-gray-700">
-            ここまでで基本セットアップは完了です。必要に応じて戻って見直してから、最後に完了ボタンを押してください。
-          </p>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <div className={markdownCardClass}>{renderStepMarkdown('completed')}</div>
+          <div className="grid gap-3 sm:grid-cols-2">
             {STEP_DEFINITIONS.map((step) => (
               <div key={step.key} className="rounded-2xl border bg-white p-4">
                 <div className="flex items-center gap-3">
@@ -856,6 +936,16 @@ export default function QuickSetupPage() {
       {message && (
         <section className="rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
           {message}
+        </section>
+      )}
+
+      {currentMarkdown && currentStep !== 'students' && (
+        <section className="rounded-[2rem] border bg-white p-5 shadow-sm md:p-8">
+          <div className="mb-4 flex items-center gap-3">
+            <FontAwesomeIcon icon={faFileLines} className="text-xl text-slate-600" />
+            <h2 className="text-xl font-bold">このステップの説明（Markdown管理）</h2>
+          </div>
+          <div className={markdownCardClass}>{renderStepMarkdown(currentStep)}</div>
         </section>
       )}
 
