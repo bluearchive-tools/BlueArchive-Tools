@@ -599,7 +599,7 @@ export default function QuickSetupPage() {
             </p>
           </div>
 
-          <div className="grid gap-5 xl:grid-cols-2">
+          <div className="grid gap-5 md:grid-cols-2">
             <button
               type="button"
               onClick={() => setSelectedMethod('image')}
@@ -906,25 +906,6 @@ export default function QuickSetupPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 xl:px-8">
-      <section className="rounded-[2rem] bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-400 p-8 text-white shadow-lg md:p-10">
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-          <div className="max-w-3xl space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold">
-              <FontAwesomeIcon icon={faCompass} />
-              Quick Setup
-            </div>
-            <h1 className="text-3xl font-bold md:text-4xl">迷わず始められる初期セットアップ</h1>
-            <p className="text-base leading-7 text-white/90 md:text-lg">
-              ログイン、生徒データ追加、プロフィール設定、YouTube接続までを順番にガイドします。必要なところだけ進めても大丈夫です。
-            </p>
-          </div>
-          <div className="rounded-3xl bg-white/15 p-5 backdrop-blur-sm xl:min-w-80">
-            <p className="text-sm font-semibold text-white/80">全体の進行度</p>
-            <p className="mt-2 text-3xl font-bold">{progress}%</p>
-          </div>
-        </div>
-      </section>
-
       <section className="rounded-[2rem] border bg-white p-5 shadow-sm md:p-6">
         <div className="mb-4 flex items-center justify-between gap-4">
           <div>

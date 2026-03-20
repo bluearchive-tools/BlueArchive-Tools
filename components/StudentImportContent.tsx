@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent as ReactDragEvent } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 
 interface Student {
@@ -669,6 +669,7 @@ export default function StudentImportContent({
   const [saving, setSaving] = useState(false)
   const [schaleInput, setSchaleInput] = useState('')
   const [schaleMessage, setSchaleMessage] = useState<string | null>(null)
+  const [isDragActive, setIsDragActive] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -976,6 +977,38 @@ export default function StudentImportContent({
     return `抽出結果: ${entries.length}件`
   }, [entries.length, hasEntries])
 
+  const handleFileInputChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      void handleFiles(event.target.files)
+      event.target.value = ''
+    },
+    [handleFiles]
+  )
+
+  const handleDrop = useCallback(
+    (event: ReactDragEvent<HTMLDivElement>) => {
+      event.preventDefault()
+      if (isProcessing) return
+      setIsDragActive(false)
+      void handleFiles(event.dataTransfer.files)
+    },
+    [handleFiles, isProcessing]
+  )
+
+  const handleDragOver = useCallback(
+    (event: ReactDragEvent<HTMLDivElement>) => {
+      event.preventDefault()
+      if (isProcessing) return
+      setIsDragActive(true)
+    },
+    [isProcessing]
+  )
+
+  const handleDragLeave = useCallback((event: ReactDragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDragActive(false)
+  }, [])
+
   return (
     <main className="space-y-6">
       {showHeader && (
@@ -1154,17 +1187,38 @@ export default function StudentImportContent({
             type="file"
             accept="image/*"
             multiple
-            onChange={(e) => handleFiles(e.target.files)}
+            onChange={handleFileInputChange}
             className="hidden"
           />
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="border rounded px-3 py-2"
-            disabled={isProcessing}
+          <div
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            className={`rounded-2xl border-2 border-dashed p-5 transition-colors ${
+              isProcessing
+                ? 'border-gray-200 bg-gray-50 text-gray-400'
+                : isDragActive
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-300 bg-white'
+            }`}
           >
-            {isProcessing ? '解析中...' : '画像を選択'}
-          </button>
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-gray-800">画像をアップロード</p>
+                <p className="text-sm text-gray-600">
+                  ドラッグ&ドロップ、またはボタンから生徒詳細画面のスクリーンショットを選択できます。
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                className="border rounded px-3 py-2"
+                disabled={isProcessing}
+              >
+                {isProcessing ? '解析中...' : '画像を選択'}
+              </button>
+            </div>
+          </div>
           {isProcessing && (
             <div className="space-y-1">
               <div className="text-xs text-gray-500">解析進捗: {(progress * 100).toFixed(0)}%</div>
