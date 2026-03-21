@@ -1010,7 +1010,7 @@ export default function StudentImportContent({
   }, [])
 
   return (
-    <main className="space-y-6">
+    <div className="space-y-6">
       {showHeader && (
         <div className="space-y-2">
           <h2 className="text-xl font-semibold">生徒データインポート</h2>
@@ -1572,6 +1572,6 @@ export default function StudentImportContent({
           </div>
         </div>
       )}
-    </main>
+    </div>
   )
 }
