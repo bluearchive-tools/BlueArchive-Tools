@@ -899,37 +899,26 @@ export default function QuickSetupPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 xl:px-8">
-      <section className="rounded-[2rem] border bg-white p-5 shadow-sm md:p-6">
+      <section className="overflow-hidden rounded-[2rem] border bg-white p-5 shadow-sm md:p-6">
         <div className="mb-4">
           <p className="text-sm text-gray-500">進行状況</p>
           <h2 className="text-xl font-bold">{currentStepDefinition.title}</h2>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          {STEP_DEFINITIONS.map((step, index) => {
-            const isActive = step.key === currentStep
-            const isCompleted = completionMap[step.key]
-            return (
-              <div key={step.key} className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => moveToStep(step.key)}
-                  className={`flex min-h-20 flex-1 items-center gap-3 rounded-2xl border px-4 py-4 text-left transition ${
-                    isActive ? 'border-blue-500 bg-blue-50 shadow-sm' : isCompleted ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'
-                  }`}
-                >
-                  <div className={`flex h-11 w-11 items-center justify-center rounded-full ${isActive ? 'bg-blue-600 text-white' : isCompleted ? 'bg-green-600 text-white' : 'bg-white text-gray-500'}`}>
-                    <FontAwesomeIcon icon={step.icon} />
-                  </div>
-                  <div className="min-w-0">
-                    {isActive && <p className="text-xs text-gray-500">STEP {index + 1}</p>}
-                    <p className="font-semibold leading-tight break-words">{step.title}</p>
-                  </div>
-                </button>
-                {index < STEP_DEFINITIONS.length - 1 && <div className="hidden h-1 flex-1 rounded-full bg-gray-200 md:block" />}
-              </div>
-            )
-          })}
+        <div className="rounded-2xl border border-blue-500 bg-blue-50 p-4 shadow-sm">
+          <button
+            type="button"
+            onClick={() => moveToStep(currentStepDefinition.key)}
+            className="flex min-h-20 w-full items-center gap-3 text-left"
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
+              <FontAwesomeIcon icon={currentStepDefinition.icon} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-gray-500">STEP {stepIndex(currentStepDefinition.key) + 1}</p>
+              <p className="font-semibold leading-tight break-words">{currentStepDefinition.title}</p>
+            </div>
+          </button>
         </div>
 
         <div className="mt-6 space-y-3">
@@ -939,11 +928,11 @@ export default function QuickSetupPage() {
                 <div key={step.key} className="rounded-full bg-white/80" />
               ))}
             </div>
-            <div className="absolute inset-y-1 left-1 rounded-full bg-gradient-to-r from-blue-600 to-cyan-400 transition-all duration-300" style={{ width: `calc(${progress}% - 0.5rem)` }} />
+            <div className="absolute inset-y-1 left-1 rounded-full bg-gradient-to-r from-blue-600 to-cyan-400 transition-all duration-300" style={{ width: progress === 0 ? '0%' : `calc(${progress}% - 0.5rem)` }} />
           </div>
-          <div className="hidden justify-between text-[11px] font-semibold text-gray-500 sm:flex">
+          <div className="grid grid-cols-5 gap-2 text-[10px] font-semibold text-gray-500 sm:text-[11px]">
             {STEP_DEFINITIONS.map((step) => (
-              <span key={step.key} className="text-center">
+              <span key={step.key} className="min-w-0 break-words text-center leading-tight">
                 {step.title}
               </span>
             ))}
@@ -960,7 +949,7 @@ export default function QuickSetupPage() {
 
       <section
         key={currentStep}
-        className={`rounded-[2rem] border bg-white p-5 shadow-sm transition-all duration-300 md:p-8 ${moveDirection === 'forward' ? 'animate-[slideInRight_0.28s_ease-out]' : 'animate-[slideInLeft_0.28s_ease-out]'}`}
+        className={`overflow-hidden rounded-[2rem] border bg-white p-5 shadow-sm transition-all duration-300 md:p-8 ${moveDirection === 'forward' ? 'animate-[slideInRight_0.28s_ease-out]' : 'animate-[slideInLeft_0.28s_ease-out]'}`}
       >
         <div className="mb-6 flex items-center gap-4 border-b pb-5">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-xl text-slate-700">
@@ -974,7 +963,7 @@ export default function QuickSetupPage() {
         {renderStepContent()}
       </section>
 
-      <section className="rounded-[2rem] border bg-white p-5 shadow-sm md:p-6">
+      <section className="overflow-hidden rounded-[2rem] border bg-white p-5 shadow-sm md:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
           <button
             type="button"
@@ -985,15 +974,16 @@ export default function QuickSetupPage() {
             <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
             戻る
           </button>
-          <button
-            type="button"
-            onClick={goNextStep}
-            disabled={currentStep === 'completed'}
-            className="rounded-2xl border px-4 py-3 font-semibold disabled:opacity-50"
-          >
-            進む
-            <FontAwesomeIcon icon={faArrowRight} className="ml-2" />
-          </button>
+          {completionMap[currentStep] && currentStep !== 'completed' && (
+            <button
+              type="button"
+              onClick={goNextStep}
+              className="rounded-2xl border px-4 py-3 font-semibold"
+            >
+              進む
+              <FontAwesomeIcon icon={faArrowRight} className="ml-2" />
+            </button>
+          )}
         </div>
       </section>
 
