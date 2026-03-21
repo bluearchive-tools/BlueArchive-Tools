@@ -23,4 +23,10 @@
     "zh-TW": "繁體中文"
   },
   "quickStart": "Quick Start"
+,
+  "quickStartNotice": {
+    "title": "Quick Setup is available",
+    "body": "Your initial setup is not finished yet. You can continue from here.",
+    "dismiss": "Dismiss notice"
+  }
 }

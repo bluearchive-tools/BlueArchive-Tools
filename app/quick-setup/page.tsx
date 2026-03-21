@@ -13,7 +13,6 @@ import {
   faCircleUser,
   faCloudArrowUp,
   faCompass,
-  faFileLines,
   faRightToBracket,
   faSpinner,
   faUserGear,
@@ -312,6 +311,7 @@ export default function QuickSetupPage() {
 
   const loginDone = !!session || setupState.skipped.login
   const studentsDone = studentCount > 0 || setupState.skipped.students
+  const requiresProfileUsername = !!session && username.trim().length === 0
   const profileDone = (session ? username.trim().length > 0 : false) || setupState.skipped.profile
   const youtubeDone = (session ? youtubeConnected : false) || setupState.skipped.youtube
   const canCompleteFinal = loginDone && studentsDone && profileDone && youtubeDone
@@ -499,7 +499,6 @@ export default function QuickSetupPage() {
   }
 
   const currentStepDefinition = STEP_DEFINITIONS[stepIndex(currentStep)]
-  const currentMarkdown = stepMarkdown[currentStepDefinition.key]
 
   const stepCardBaseClass =
     'group flex min-h-48 flex-col rounded-3xl border p-6 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg'
@@ -653,9 +652,6 @@ export default function QuickSetupPage() {
                   >
                     取り込み後に件数を更新
                   </button>
-                  <Link href="/students/import" className="rounded-2xl border px-4 py-2 text-sm font-semibold">
-                    通常ページを開く
-                  </Link>
                 </div>
               </div>
 
@@ -728,13 +724,15 @@ export default function QuickSetupPage() {
           <div className="rounded-3xl border bg-white p-6">
             <div className="grid gap-4">
               <label className="grid gap-2">
-                <span className="font-semibold">ユーザー名</span>
+                <span className="font-semibold">ユーザー名{session && <span className="ml-1 text-red-600">*</span>}</span>
                 <input
                   className="rounded-2xl border px-4 py-3"
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
                   placeholder="例: sensei_123"
                   disabled={!session}
+                  required={!!session}
+                  aria-required={!!session}
                 />
               </label>
               <label className="grid gap-2">
@@ -762,12 +760,12 @@ export default function QuickSetupPage() {
               <button
                 type="button"
                 className="rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white disabled:opacity-50"
-                disabled={busy || !session}
+                disabled={busy || !session || requiresProfileUsername}
                 onClick={() => void saveProfile()}
               >
                 保存して次へ
               </button>
-              {!profileDone && (
+              {!profileDone && !requiresProfileUsername && (
                 <button type="button" className="rounded-2xl border px-5 py-3 font-semibold" onClick={() => markSkipped('profile')}>
                   このステップをスキップ
                 </button>
@@ -879,11 +877,6 @@ export default function QuickSetupPage() {
                 セットアップ完了
               </button>
             )}
-            {!completedDone && (
-              <button type="button" className="rounded-2xl border px-5 py-3 font-semibold" onClick={() => markSkipped('completed')}>
-                このステップをスキップ
-              </button>
-            )}
             <Link href="/" className="rounded-2xl border px-5 py-3 font-semibold">
               ホームへ戻る
             </Link>
@@ -907,34 +900,12 @@ export default function QuickSetupPage() {
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 xl:px-8">
       <section className="rounded-[2rem] border bg-white p-5 shadow-sm md:p-6">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm text-gray-500">進行状況</p>
-            <h2 className="text-xl font-bold">{currentStepDefinition.title}</h2>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={goPrevStep}
-              disabled={currentStep === 'login'}
-              className="rounded-2xl border px-4 py-3 font-semibold disabled:opacity-50"
-            >
-              <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
-              戻る
-            </button>
-            <button
-              type="button"
-              onClick={goNextStep}
-              disabled={currentStep === 'completed'}
-              className="rounded-2xl border px-4 py-3 font-semibold disabled:opacity-50"
-            >
-              進む
-              <FontAwesomeIcon icon={faArrowRight} className="ml-2" />
-            </button>
-          </div>
+        <div className="mb-4">
+          <p className="text-sm text-gray-500">進行状況</p>
+          <h2 className="text-xl font-bold">{currentStepDefinition.title}</h2>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-5">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {STEP_DEFINITIONS.map((step, index) => {
             const isActive = step.key === currentStep
             const isCompleted = completionMap[step.key]
@@ -950,9 +921,9 @@ export default function QuickSetupPage() {
                   <div className={`flex h-11 w-11 items-center justify-center rounded-full ${isActive ? 'bg-blue-600 text-white' : isCompleted ? 'bg-green-600 text-white' : 'bg-white text-gray-500'}`}>
                     <FontAwesomeIcon icon={step.icon} />
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500">STEP {index + 1}</p>
-                    <p className="font-semibold leading-tight">{step.title}</p>
+                  <div className="min-w-0">
+                    {isActive && <p className="text-xs text-gray-500">STEP {index + 1}</p>}
+                    <p className="font-semibold leading-tight break-words">{step.title}</p>
                   </div>
                 </button>
                 {index < STEP_DEFINITIONS.length - 1 && <div className="hidden h-1 flex-1 rounded-full bg-gray-200 md:block" />}
@@ -970,7 +941,7 @@ export default function QuickSetupPage() {
             </div>
             <div className="absolute inset-y-1 left-1 rounded-full bg-gradient-to-r from-blue-600 to-cyan-400 transition-all duration-300" style={{ width: `calc(${progress}% - 0.5rem)` }} />
           </div>
-          <div className="flex justify-between text-xs font-semibold text-gray-500">
+          <div className="hidden justify-between text-[11px] font-semibold text-gray-500 sm:flex">
             {STEP_DEFINITIONS.map((step) => (
               <span key={step.key} className="text-center">
                 {step.title}
@@ -986,15 +957,6 @@ export default function QuickSetupPage() {
         </section>
       )}
 
-      {currentMarkdown && currentStep !== 'students' && (
-        <section className="rounded-[2rem] border bg-white p-5 shadow-sm md:p-8">
-          <div className="mb-4 flex items-center gap-3">
-            <FontAwesomeIcon icon={faFileLines} className="text-xl text-slate-600" />
-            <h2 className="text-xl font-bold">このステップの説明（Markdown管理）</h2>
-          </div>
-          <div className={markdownCardClass}>{renderStepMarkdown(currentStep)}</div>
-        </section>
-      )}
 
       <section
         key={currentStep}
@@ -1010,6 +972,29 @@ export default function QuickSetupPage() {
           </div>
         </div>
         {renderStepContent()}
+      </section>
+
+      <section className="rounded-[2rem] border bg-white p-5 shadow-sm md:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+          <button
+            type="button"
+            onClick={goPrevStep}
+            disabled={currentStep === 'login'}
+            className="rounded-2xl border px-4 py-3 font-semibold disabled:opacity-50"
+          >
+            <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
+            戻る
+          </button>
+          <button
+            type="button"
+            onClick={goNextStep}
+            disabled={currentStep === 'completed'}
+            className="rounded-2xl border px-4 py-3 font-semibold disabled:opacity-50"
+          >
+            進む
+            <FontAwesomeIcon icon={faArrowRight} className="ml-2" />
+          </button>
+        </div>
       </section>
 
       <style jsx>{`

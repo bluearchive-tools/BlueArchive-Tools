@@ -32,6 +32,7 @@ import { stripLeadingLocale } from '../lib/i18n/utils'
 
 const HELP_SHORTCUT_STORAGE_KEY = 'app:helpShortcut'
 const QUICK_SETUP_LOCAL_PROGRESS_KEY = 'ba:quick-setup-progress'
+const QUICK_SETUP_MOBILE_NOTICE_DISMISSED_KEY = 'ba:quick-setup-mobile-notice-dismissed'
 
 const detectIsMacPlatform = () => {
   if (typeof navigator === 'undefined') return false
@@ -101,6 +102,7 @@ export default function Header() {
   const [aboutOpen, setAboutOpen] = useState(false)
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false)
   const [helpShortcut, setHelpShortcut] = useState(() => (detectIsMacPlatform() ? 'Cmd+/' : 'Ctrl+/'))
+  const [showQuickSetupMobileNotice, setShowQuickSetupMobileNotice] = useState(false)
   const { dark, toggle } = useTheme()
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -273,6 +275,16 @@ export default function Header() {
   }, [pathname])
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (quickSetupProgress === 100 || currentPath === '/quick-setup') {
+      setShowQuickSetupMobileNotice(false)
+      return
+    }
+    const dismissed = window.localStorage.getItem(QUICK_SETUP_MOBILE_NOTICE_DISMISSED_KEY)
+    setShowQuickSetupMobileNotice(dismissed !== '1')
+  }, [currentPath, quickSetupProgress])
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target
       if (target instanceof HTMLElement) {
@@ -323,6 +335,13 @@ export default function Header() {
 
   const isMakerPage = (pathname ?? '').startsWith('/tl/maker')
   if (isMakerPage && hideHeader) return null
+
+  const dismissQuickSetupMobileNotice = () => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(QUICK_SETUP_MOBILE_NOTICE_DISMISSED_KEY, '1')
+    }
+    setShowQuickSetupMobileNotice(false)
+  }
 
   const accountButton = (
     <div className="relative" ref={dropdownRef}>
@@ -451,6 +470,31 @@ export default function Header() {
           </button>
         </div>
       </div>
+
+      {showQuickSetupMobileNotice && quickSetupProgress !== 100 && (
+        <div className="mt-3 rounded-2xl border border-yellow-300 bg-yellow-100 px-4 py-3 text-sm text-yellow-950 md:hidden">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-semibold">{t('quickStartNotice.title')}</p>
+              <p className="mt-1 break-words text-yellow-900">{t('quickStartNotice.body')}</p>
+              <Link
+                href="/quick-setup"
+                className="mt-3 inline-flex rounded-full bg-yellow-500 px-3 py-1.5 text-sm font-bold text-yellow-950"
+              >
+                {t('quickStart')}
+              </Link>
+            </div>
+            <button
+              type="button"
+              onClick={dismissQuickSetupMobileNotice}
+              aria-label={t('quickStartNotice.dismiss')}
+              className="shrink-0 rounded-full border border-yellow-400 px-2 py-1 text-yellow-900"
+            >
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {mobileToolsOpen && (
         <div className="md:hidden mt-3 border-t pt-3 space-y-3">
