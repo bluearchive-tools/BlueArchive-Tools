@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
@@ -191,6 +191,8 @@ export default function QuickSetupPage() {
   const [moveDirection, setMoveDirection] = useState<'forward' | 'backward'>('forward')
   const [stepMarkdown, setStepMarkdown] = useState<StepMarkdownMap>(emptyStepMarkdown)
   const [studentMethodMarkdown, setStudentMethodMarkdown] = useState<StudentMethodMarkdownMap>(emptyStudentMethodMarkdown)
+  const stepHeadingRef = useRef<HTMLDivElement | null>(null)
+  const previousStepRef = useRef<QuickSetupStep>(currentStep)
 
   const loadMarkdownText = useCallback(
     async (filename: string) => {
@@ -308,6 +310,20 @@ export default function QuickSetupPage() {
 
     return () => window.clearInterval(intervalId)
   }, [currentStep])
+
+  useEffect(() => {
+    if (loading) return
+
+    if (previousStepRef.current === currentStep) {
+      previousStepRef.current = currentStep
+      return
+    }
+
+    previousStepRef.current = currentStep
+    window.requestAnimationFrame(() => {
+      stepHeadingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }, [currentStep, loading])
 
   const loginDone = !!session || setupState.skipped.login
   const studentsDone = studentCount > 0 || setupState.skipped.students
@@ -970,7 +986,7 @@ export default function QuickSetupPage() {
         key={currentStep}
         className={`overflow-hidden rounded-[2rem] border bg-white p-5 shadow-sm transition-all duration-300 md:p-8 ${moveDirection === 'forward' ? 'animate-[slideInRight_0.28s_ease-out]' : 'animate-[slideInLeft_0.28s_ease-out]'}`}
       >
-        <div className="mb-6 flex items-center gap-4 border-b pb-5">
+        <div ref={stepHeadingRef} className="mb-6 flex items-center gap-4 border-b pb-5">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-xl text-slate-700">
             <FontAwesomeIcon icon={currentStepDefinition.icon} />
           </div>

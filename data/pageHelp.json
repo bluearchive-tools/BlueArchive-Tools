@@ -108,13 +108,6 @@
         "Use the calendar to check dates and plan stamina or ticket usage."
       ]
     },
-    "profile-setup": {
-      "title": "Profile setup",
-      "body": [
-        "Choose a username to personalize your profile.",
-        "Usernames are required before accessing certain features."
-      ]
-    },
     "story-editor": {
       "title": "Story Editor"
     },
@@ -229,13 +222,6 @@
       "body": [
         "開催中・開催予定のイベントを確認できます。",
         "カレンダーで日程を把握し、スタミナやチケットの計画に役立ててください。"
-      ]
-    },
-    "profile-setup": {
-      "title": "ユーザー名設定",
-      "body": [
-        "プロフィール用のユーザー名を設定します。",
-        "一部の機能利用前にユーザー名登録が必要です。"
       ]
     },
     "story-editor": {

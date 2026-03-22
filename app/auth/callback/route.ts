@@ -98,6 +98,7 @@ export async function GET(request: Request) {
 
   // open redirect 対策：アプリ内パスのみ許可
   const safeNext = finalNext.startsWith('/') ? finalNext : '/'
+  const normalizedSafeNext = safeNext === '/profile/setup' ? '/quick-setup' : safeNext
 
   const supabase = createRouteHandlerClient(
     { cookies },
@@ -117,7 +118,7 @@ export async function GET(request: Request) {
     data: { session },
   } = await supabase.auth.getSession()
 
-  let redirectTo = safeNext
+  let redirectTo = normalizedSafeNext
   let message = ''
 
   if (session) {
@@ -129,7 +130,7 @@ export async function GET(request: Request) {
       .maybeSingle()
 
     if (!profile) {
-      redirectTo = safeNext.startsWith('/quick-setup') ? '/quick-setup' : '/mypage'
+      redirectTo = '/quick-setup'
     } else if (xVerifyRaw && xHandleCheck) {
       // --- Server-Side X Verification Logic ---
       try {
@@ -220,7 +221,7 @@ export async function GET(request: Request) {
   const outUrl = new URL(redirectTo, requestUrl)
 
   // YouTube logic (client-side verify continuation)
-  if (redirectTo === safeNext) {
+  if (redirectTo === normalizedSafeNext) {
     if (ytVerify) outUrl.searchParams.set('yt_verify', ytVerify)
   }
 
