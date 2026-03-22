@@ -118,8 +118,8 @@ export default function Header() {
           setUsername(data?.username ?? null)
           const rawProgress = typeof data.quick_setup_progress === 'number' ? data.quick_setup_progress : null
           setQuickSetupProgress(rawProgress)
-        } else if (!error && pathname !== '/profile/setup') {
-          router.push('/profile/setup')
+        } else if (!error && pathname !== '/quick-setup') {
+          router.push('/quick-setup')
         }
       } else {
         setUsername(null)

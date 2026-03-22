@@ -4,6 +4,7 @@ import { Providers } from './providers'
 import Header from '../components/Header'
 import FloatingSearch from '../components/FloatingSearch'
 import SiteTutorial from '../components/SiteTutorial'
+import Footer from '../components/Footer'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
 import type { Metadata } from 'next'
@@ -83,7 +84,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <Header />
           <FloatingSearch />
           <SiteTutorial />
-          <main className="pt-2 pb-8">{children}</main>
+          <main className="pt-2">{children}</main>
+          <Footer />
         </Providers>
       </body>
     </html>
