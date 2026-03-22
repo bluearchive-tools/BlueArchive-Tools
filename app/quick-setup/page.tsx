@@ -639,20 +639,6 @@ export default function QuickSetupPage() {
                     {selectedMethod === 'image' ? '画像アップロードで追加する' : 'SchaleDB文字列で追加する'}
                   </h3>
                 </div>
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    className="rounded-2xl border px-4 py-2 text-sm font-semibold"
-                    onClick={() => {
-                      setStudentCount(getLocalStudentCount())
-                      if (session) {
-                        void loadState()
-                      }
-                    }}
-                  >
-                    取り込み後に件数を更新
-                  </button>
-                </div>
               </div>
 
               {selectedMethodMarkdownText && (
@@ -721,57 +707,72 @@ export default function QuickSetupPage() {
               </div>
             )}
           </div>
-          <div className="rounded-3xl border bg-white p-6">
-            <div className="grid gap-4">
-              <label className="grid gap-2">
-                <span className="font-semibold">ユーザー名{session && <span className="ml-1 text-red-600">*</span>}</span>
-                <input
-                  className="rounded-2xl border px-4 py-3"
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
-                  placeholder="例: sensei_123"
-                  disabled={!session}
-                  required={!!session}
-                  aria-required={!!session}
-                />
-              </label>
-              <label className="grid gap-2">
-                <span className="font-semibold">ニックネーム</span>
-                <input
-                  className="rounded-2xl border px-4 py-3"
-                  value={nickname}
-                  onChange={(event) => setNickname(event.target.value)}
-                  placeholder="表示名を入力"
-                  disabled={!session}
-                />
-              </label>
-              <label className="grid gap-2">
-                <span className="font-semibold">自己紹介</span>
-                <textarea
-                  className="min-h-32 rounded-2xl border px-4 py-3"
-                  value={bio}
-                  onChange={(event) => setBio(event.target.value)}
-                  placeholder="好きな生徒やプレイスタイルなど"
-                  disabled={!session}
-                />
-              </label>
-            </div>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                type="button"
-                className="rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white disabled:opacity-50"
-                disabled={busy || !session || requiresProfileUsername}
-                onClick={() => void saveProfile()}
-              >
-                保存して次へ
-              </button>
-              {!profileDone && !requiresProfileUsername && (
-                <button type="button" className="rounded-2xl border px-5 py-3 font-semibold" onClick={() => markSkipped('profile')}>
-                  このステップをスキップ
+          {session ? (
+            <div className="rounded-3xl border bg-white p-6">
+              <div className="grid gap-4">
+                <label className="grid gap-2">
+                  <span className="font-semibold">ユーザー名<span className="ml-1 text-red-600">*</span></span>
+                  <input
+                    className="rounded-2xl border px-4 py-3"
+                    value={username}
+                    onChange={(event) => setUsername(event.target.value)}
+                    placeholder="例: sensei_123"
+                    required
+                    aria-required
+                  />
+                </label>
+                <label className="grid gap-2">
+                  <span className="font-semibold">ニックネーム</span>
+                  <input
+                    className="rounded-2xl border px-4 py-3"
+                    value={nickname}
+                    onChange={(event) => setNickname(event.target.value)}
+                    placeholder="表示名を入力"
+                  />
+                </label>
+                <label className="grid gap-2">
+                  <span className="font-semibold">自己紹介</span>
+                  <textarea
+                    className="min-h-32 rounded-2xl border px-4 py-3"
+                    value={bio}
+                    onChange={(event) => setBio(event.target.value)}
+                    placeholder="好きな生徒やプレイスタイルなど"
+                  />
+                </label>
+              </div>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  className="rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white disabled:opacity-50"
+                  disabled={busy || requiresProfileUsername}
+                  onClick={() => void saveProfile()}
+                >
+                  保存して次へ
                 </button>
-              )}
+                {!profileDone && !requiresProfileUsername && (
+                  <button type="button" className="rounded-2xl border px-5 py-3 font-semibold" onClick={() => markSkipped('profile')}>
+                    このステップをスキップ
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="rounded-3xl border bg-white p-6">
+              <p className="text-base leading-7 text-gray-700">
+                プロフィール設定はログイン後に利用できます。
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button type="button" className="rounded-2xl border px-5 py-3 font-semibold" onClick={() => moveToStep('login')}>
+                  ログインステップへ戻る
+                </button>
+                {!profileDone && (
+                  <button type="button" className="rounded-2xl border px-5 py-3 font-semibold" onClick={() => markSkipped('profile')}>
+                    このステップをスキップ
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )
     }
@@ -794,40 +795,58 @@ export default function QuickSetupPage() {
               </div>
             )}
           </div>
-          <div className="rounded-3xl border bg-white p-6">
-            <div className="flex items-center gap-3">
-              <FontAwesomeIcon icon={youtubeDone ? faCheckCircle : faYoutube} className={`text-3xl ${youtubeDone ? 'text-green-600' : 'text-red-500'}`} />
-              <div>
-                <p className="text-sm text-gray-500">接続状態</p>
-                <p className="text-2xl font-bold">{youtubeDone ? '接続済み' : '未接続'}</p>
+          {session ? (
+            <div className="rounded-3xl border bg-white p-6">
+              <div className="flex items-center gap-3">
+                <FontAwesomeIcon icon={youtubeDone ? faCheckCircle : faYoutube} className={`text-3xl ${youtubeDone ? 'text-green-600' : 'text-red-500'}`} />
+                <div>
+                  <p className="text-sm text-gray-500">接続状態</p>
+                  <p className="text-2xl font-bold">{youtubeDone ? '接続済み' : '未接続'}</p>
+                </div>
+              </div>
+              <p className="mt-5 text-base leading-7 text-gray-700">
+                接続時には YouTube 読み取り権限を要求します。ブランドアカウントを使う場合も、接続先を確認しながら進めてください。
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                {!youtubeDone && (
+                  <button
+                    type="button"
+                    className="rounded-2xl bg-red-600 px-5 py-3 font-semibold text-white disabled:opacity-50"
+                    disabled={busy}
+                    onClick={() => void connectYouTube()}
+                  >
+                    YouTubeを接続
+                  </button>
+                )}
+                {!youtubeDone && (
+                  <button type="button" className="rounded-2xl border px-5 py-3 font-semibold" onClick={() => markSkipped('youtube')}>
+                    このステップをスキップ
+                  </button>
+                )}
+                {youtubeDone && (
+                  <button type="button" className="rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white" onClick={goNextStep}>
+                    次のステップへ
+                  </button>
+                )}
               </div>
             </div>
-            <p className="mt-5 text-base leading-7 text-gray-700">
-              接続時には YouTube 読み取り権限を要求します。ブランドアカウントを使う場合も、接続先を確認しながら進めてください。
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              {!youtubeDone && (
-                <button
-                  type="button"
-                  className="rounded-2xl bg-red-600 px-5 py-3 font-semibold text-white disabled:opacity-50"
-                  disabled={busy || !session}
-                  onClick={() => void connectYouTube()}
-                >
-                  YouTubeを接続
+          ) : (
+            <div className="rounded-3xl border bg-white p-6">
+              <p className="text-base leading-7 text-gray-700">
+                YouTube 連携はログイン後に利用できます。
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button type="button" className="rounded-2xl border px-5 py-3 font-semibold" onClick={() => moveToStep('login')}>
+                  ログインステップへ戻る
                 </button>
-              )}
-              {!youtubeDone && (
-                <button type="button" className="rounded-2xl border px-5 py-3 font-semibold" onClick={() => markSkipped('youtube')}>
-                  このステップをスキップ
-                </button>
-              )}
-              {youtubeDone && (
-                <button type="button" className="rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white" onClick={goNextStep}>
-                  次のステップへ
-                </button>
-              )}
+                {!youtubeDone && (
+                  <button type="button" className="rounded-2xl border px-5 py-3 font-semibold" onClick={() => markSkipped('youtube')}>
+                    このステップをスキップ
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )
     }

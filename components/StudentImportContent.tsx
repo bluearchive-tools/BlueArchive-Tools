@@ -726,8 +726,8 @@ export default function StudentImportContent({
       setProgress(0)
       setSchaleMessage(
         skipped > 0
-          ? `SchaleDBデータを ${dedup.size} 件取り込みました（未対応ID ${skipped} 件をスキップ）。下の「保存」を押すと反映されます。`
-          : `SchaleDBデータを ${dedup.size} 件取り込みました。下の「保存」を押すと反映されます。`
+          ? `SchaleDBデータを ${dedup.size} 件取り込みました（未対応ID ${skipped} 件をスキップ）。`
+          : `SchaleDBデータを ${dedup.size} 件取り込みました。`
       )
     } catch {
       setError('SchaleDBの文字列を読み取れませんでした。JSONまたはBase64文字列を確認してください。')
