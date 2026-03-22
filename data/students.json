@@ -9410,5 +9410,376 @@
     "altIds": [],
     "accessory": {"tiers":[]},
     "aliases": ["パジャマコユキ","コユキパジャマ","パユキ","コユキ（パジャマ）"]
-  }
+  },
+  {
+  "id": "255",
+  "importid": "10137",
+  "name": "コノカ",
+  "englishName": "Konoka",
+  "image": "https://bluearchive.wikiru.jp/image/ogp.jpg",
+  "attackType": "神秘",
+  "defenseType": "軽装備",
+  "hasAccessory": false,
+  "altIds": [],
+  "initialStars": 3,
+  "role": "STRIKER",
+  "characterType": "タンク",
+  "position": "FRONT",
+  "cost": 3,
+  "exDuration": 0,
+  "normalDuration": 0,
+  "normalInterval": 0,
+  "skills": {
+    "ex": {
+      "title": "正当防衛ってやつ？",
+      "text": "扇形範囲内の敵に対して、攻撃力の{damage}%分のダメージ/EXスキルの使用中、攻撃を受ける度に治癒力の{heal}%分の回復（最大35回分まで適用）",
+      "values": {
+        "damage": [
+          370,
+          425,
+          536,
+          592,
+          703
+        ],
+        "heal": [
+          18,
+          20.7,
+          26.1,
+          28.8,
+          34.2
+        ]
+      }
+    },
+    "normal": {
+      "title": "やりがいがあるじゃん？",
+      "text": "30秒毎に、敵1人に対して攻撃力{damage}%分のダメージ、さらに挑発状態を付与（{value}秒間）/治癒力の{heal}%分の回復",
+      "values": {
+        "damage": [
+          133,
+          140,
+          147,
+          174,
+          180,
+          187,
+          214,
+          220,
+          227,
+          254
+        ],
+        "value": [
+          1.3,
+          1.3,
+          1.3,
+          1.4,
+          1.4,
+          1.4,
+          1.5,
+          1.5,
+          1.5,
+          1.7
+        ],
+        "heal": [
+          77.6,
+          81.4,
+          85.3,
+          100,
+          104,
+          108,
+          124,
+          128,
+          131,
+          147
+        ]
+      }
+    },
+    "passive": {
+      "title": "助かったっす！",
+      "text": "被回復率を{value}%増加",
+      "values": {
+        "value": [
+          14,
+          14.7,
+          15.4,
+          18.2,
+          18.9,
+          19.6,
+          22.4,
+          23.1,
+          23.8,
+          26.6
+        ]
+      }
+    },
+    "passivePlus": {
+      "title": "助かったっす！+",
+      "text": "HPを{hpnum}増加/さらに被回復率を{value}%増加",
+      "values": {
+        "hpnum": [
+          4773,
+          5012,
+          5251,
+          6205,
+          6444,
+          6682,
+          7637,
+          7876,
+          8114,
+          9069
+        ],
+        "value": [
+          14,
+          14.7,
+          15.4,
+          18.2,
+          18.9,
+          19.6,
+          22.4,
+          23.1,
+          23.8,
+          26.6
+        ]
+      }
+    },
+    "sub": {
+      "title": "やれるもんならやってみなよ！",
+      "text": "EXスキルの使用中、攻撃力、防御力を{defense}%増加/EXスキルの使用状態を維持したまま回復効果を25回受ける場合、自身のスキルコストを{valuenum}減少（EXスキルの使用1回分）",
+      "values": {
+        "defense": [
+          13.1,
+          13.7,
+          14.4,
+          17,
+          17.7,
+          18.3,
+          20.9,
+          21.6,
+          22,
+          24.9
+        ],
+        "valuenum": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          2
+        ]
+      }
+    }
+  },
+  "equipmentSlots": {
+    "slot1": [
+      "weapon"
+    ],
+    "slot2": [
+      "gloves"
+    ],
+    "slot3": [
+      "shoes"
+    ],
+    "accessory": [
+      "accessory"
+    ]
+  },
+  "accessory": {
+    "tiers": []
+  },
+  "exHitDelay": 0,
+  "normalHitDelay": 0,
+  "hp": 3341,
+  "attack": 312,
+  "defense": 179,
+  "heal": 1322,
+  "range": 350,
+  "uniqueWeapon": {
+    "name": "道具",
+    "hp": 1413,
+    "attack": 112,
+    "heal": 132
+  },
+  "aliases": [
+    "コノカ"
+  ]
+},
+  {
+  "id": "256",
+  "importid": "10138",
+  "name": "レナ",
+  "englishName": "Rena",
+  "image": "https://bluearchive.wikiru.jp/image/ogp.jpg",
+  "attackType": "爆発",
+  "defenseType": "軽装備",
+  "hasAccessory": false,
+  "altIds": [],
+  "initialStars": 3,
+  "role": "STRIKER",
+  "characterType": "サポーター",
+  "position": "MIDDLE",
+  "cost": 3,
+  "exDuration": 0,
+  "normalDuration": 0,
+  "normalInterval": 0,
+  "skills": {
+    "ex": {
+      "title": "解き明かしてやるんだから！",
+      "text": "自身を除く味方1人の弱体状態を1つ解除、防御力を{defense}%増加（18秒間）/スペシャル生徒の会心ダメージ率を{critdamage}%増加、攻撃力を{attack}%増加（18秒間）",
+      "values": {
+        "defense": [
+          6.2,
+          7.2,
+          9.1,
+          10,
+          11.9
+        ],
+        "critdamage": [
+          18.3,
+          21,
+          26.5,
+          29.3,
+          34.8
+        ],
+        "attack": [
+          20.8,
+          23.9,
+          30.2,
+          33.3,
+          39.5
+        ]
+      }
+    },
+    "normal": {
+      "title": "仕立ててあげる！",
+      "text": "30秒毎に、自身を除くHPが最も低い味方1人に対して治癒力の{value}%分の回復/自身は{value2}%分の回復",
+      "values": {
+        "value": [
+          55.7,
+          58.4,
+          61.2,
+          66.8,
+          69.6,
+          72.4,
+          77.9,
+          80.7,
+          83.5,
+          89.1
+        ],
+        "value2": [
+          75.3,
+          79.1,
+          82.8,
+          90.4,
+          94.1,
+          97.9,
+          105,
+          109,
+          113,
+          120
+        ]
+      }
+    },
+    "passive": {
+      "title": "怖くなんかないわよ！",
+      "text": "HPを{hp}%増加",
+      "values": {
+        "hp": [
+          14,
+          14.7,
+          15.4,
+          18.2,
+          18.9,
+          19.6,
+          22.4,
+          23.1,
+          23.8,
+          26.6
+        ]
+      }
+    },
+    "passivePlus": {
+      "title": "怖くなんかないわよ！+",
+      "text": "バフ効果持続力を{buffnum}増加/さらにHPを{hp}%増加",
+      "values": {
+        "buffnum": [
+          1000,
+          1050,
+          1100,
+          1300,
+          1350,
+          1400,
+          1600,
+          1650,
+          1700,
+          1900
+        ],
+        "hp": [
+          14,
+          14.7,
+          15.4,
+          18.2,
+          18.9,
+          19.6,
+          22.4,
+          23.1,
+          23.8,
+          26.6
+        ]
+      }
+    },
+    "sub": {
+      "title": "あんたも怖くないでしょ！？",
+      "text": "自身とスペシャル生徒の会心ダメージ率を{critdamage}%増加",
+      "values": {
+        "critdamage": [
+          16.1,
+          16.9,
+          17.7,
+          20.9,
+          21.7,
+          22.5,
+          25.7,
+          26.5,
+          27.3,
+          30.6
+        ]
+      }
+    }
+  },
+  "equipmentSlots": {
+    "slot1": [
+      "weapon"
+    ],
+    "slot2": [
+      "gloves"
+    ],
+    "slot3": [
+      "shoes"
+    ],
+    "accessory": [
+      "accessory"
+    ]
+  },
+  "accessory": {
+    "tiers": []
+  },
+  "exHitDelay": 0,
+  "normalHitDelay": 0,
+  "hp": 2369,
+  "attack": 209,
+  "defense": 18,
+  "heal": 1763,
+  "range": 550,
+  "uniqueWeapon": {
+    "name": "護身用ミシンガン",
+    "hp": 701,
+    "attack": 75,
+    "heal": 174
+  },
+  "aliases": [
+    "レナ"
+  ]
+}
 ]
