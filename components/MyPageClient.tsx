@@ -96,7 +96,14 @@ const defaultSearchShortcut = (preferMeta: boolean) => (preferMeta ? 'Cmd+K' : '
 const SEARCH_SHORTCUT_STORAGE_KEY = 'app:searchShortcut'
 const HELP_SHORTCUT_STORAGE_KEY = 'app:helpShortcut'
 const TL_DEFAULT_SETTINGS_STORAGE_KEY = 'app:tlDefaultSettings'
+const QUICK_SETUP_STORAGE_KEYS = [
+  'ba:quick-setup-state',
+  'ba:quick-setup-progress',
+  'ba:quick-setup-mobile-notice-dismissed',
+] as const
 const defaultHelpShortcut = (preferMeta: boolean) => (preferMeta ? 'Cmd+/' : 'Ctrl+/')
+
+type DataClearAction = 'selected' | 'all'
 
 const formatShortcutFromEvent = (event: ReactKeyboardEvent<HTMLInputElement>) => {
   const key = event.key
@@ -412,7 +419,9 @@ export default function MyPageClient({
   const [delSync, setDelSync] = useState(false)
   const [delSquad, setDelSquad] = useState(false)
   const [delTL, setDelTL] = useState(false)
+  const [delQuickStart, setDelQuickStart] = useState(false)
   const [confirmVisible, setConfirmVisible] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<DataClearAction>('selected')
   const [confirmActive, setConfirmActive] = useState(false)
   const [confirmStep, setConfirmStep] = useState<'first' | 'second'>('first')
   const profileRef = useRef<HTMLElement | null>(null)
@@ -1402,49 +1411,72 @@ export default function MyPageClient({
     { label: '同期完了フラグ', value: delSync },
     { label: '部隊データ', value: delSquad },
     { label: 'TLデータ', value: delTL },
+    { label: 'クイックスタートデータ', value: delQuickStart },
   ].filter((item) => item.value)
 
-  const clearLocalData = () => {
+  const removeLocalStorageKeysByPredicate = useCallback((predicate: (key: string) => boolean) => {
+    const keys: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && predicate(key)) keys.push(key)
+    }
+    keys.forEach((key) => localStorage.removeItem(key))
+  }, [])
+
+  const openDeleteConfirm = useCallback((action: DataClearAction) => {
+    setConfirmAction(action)
+    setConfirmStep('first')
+    setConfirmVisible(true)
+    requestAnimationFrame(() => setConfirmActive(true))
+  }, [])
+
+  const clearSelectedLocalData = useCallback(() => {
     if (delUser) {
-      const keys: string[] = []
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i)
-        if (key && key.startsWith('userStudent:')) keys.push(key)
-      }
-      keys.forEach((k) => localStorage.removeItem(k))
+      removeLocalStorageKeysByPredicate((key) => key.startsWith('userStudent:'))
     }
     if (delTheme) localStorage.removeItem('theme')
     if (delNotice) localStorage.removeItem('lastNoticeId')
     if (delOpts) localStorage.removeItem('students_page_opts')
     if (delSync) {
-      const keys: string[] = []
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i)
-        if (key && key.startsWith('sync_done_')) keys.push(key)
-      }
-      keys.forEach((k) => localStorage.removeItem(k))
+      removeLocalStorageKeysByPredicate((key) => key.startsWith('sync_done_') || key.startsWith('squad_sync_done_'))
     }
     if (delSquad) localStorage.removeItem('squadGroups')
     if (delTL) {
-      const keys: string[] = []
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i)
-        if (
-          key &&
-          (key.startsWith('tlMakerProject_') ||
-            key === 'tlLength' ||
-            key === 'tlDefaultSkillLevels' ||
-            key === 'tlSkillColors' ||
-            key === 'tlMakerCache' ||
-            key === 'tlMakerLastKey')
-        ) {
-          keys.push(key)
-        }
-      }
-      keys.forEach((k) => localStorage.removeItem(k))
+      removeLocalStorageKeysByPredicate((key) =>
+        key.startsWith('tlMakerProject_') ||
+        key === 'tlLength' ||
+        key === 'tlDefaultSkillLevels' ||
+        key === 'tlSkillColors' ||
+        key === 'tlMakerCache' ||
+        key === 'tlMakerLastKey' ||
+        key === 'tlDefaultTargets' ||
+        key === 'tlRaidDifficulty' ||
+        key === 'tlBossId' ||
+        key === 'tlTerrain' ||
+        key === 'tlArmor' ||
+        key === 'tlMaker:shortcuts' ||
+        key === 'tlMaker:proMode' ||
+        key === 'tlMaker:snapPreset' ||
+        key === 'tlMaker:plugins' ||
+        key === 'tlMaker:hideHeader' ||
+        key === 'tl-page-block-order' ||
+        key === 'tl-page-block-hidden' ||
+        key === 'tl-page-layout-mode' ||
+        key === 'tl-page-layout-edit' ||
+        key === 'tl-page-block-rects'
+      )
+    }
+    if (delQuickStart) {
+      QUICK_SETUP_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key))
     }
     setMessage('選択したローカルデータを削除しました')
-  }
+  }, [delNotice, delOpts, delQuickStart, delSquad, delSync, delTL, delTheme, delUser, removeLocalStorageKeysByPredicate])
+
+  const clearAllLocalData = useCallback(() => {
+    localStorage.clear()
+    sessionStorage.clear()
+    setMessage('すべてのローカルデータを削除しました')
+  }, [])
 
   const handleConfirmNo = () => {
     setConfirmActive(false)
@@ -1459,11 +1491,16 @@ export default function MyPageClient({
       setConfirmStep('second')
       return
     }
-    clearLocalData()
+    if (confirmAction === 'all') {
+      clearAllLocalData()
+    } else {
+      clearSelectedLocalData()
+    }
     setConfirmActive(false)
     setTimeout(() => {
       setConfirmVisible(false)
       setConfirmStep('first')
+      setConfirmAction('selected')
     }, 150)
   }
 
@@ -2494,16 +2531,24 @@ export default function MyPageClient({
               <label className="block"><input type="checkbox" className="mr-2" checked={delSync} onChange={(e) => setDelSync(e.target.checked)} />同期完了フラグ</label>
               <label className="block"><input type="checkbox" className="mr-2" checked={delSquad} onChange={(e) => setDelSquad(e.target.checked)} />部隊データ</label>
               <label className="block"><input type="checkbox" className="mr-2" checked={delTL} onChange={(e) => setDelTL(e.target.checked)} />TLデータ</label>
+              <label className="block"><input type="checkbox" className="mr-2" checked={delQuickStart} onChange={(e) => setDelQuickStart(e.target.checked)} />クイックスタートデータ</label>
               <button
                 type="button"
-                onClick={() => {
-                  setConfirmStep('first')
-                  setConfirmVisible(true)
-                  requestAnimationFrame(() => setConfirmActive(true))
-                }}
+                onClick={() => openDeleteConfirm('selected')}
                 className="mt-2 w-full rounded border border-red-300 bg-red-50 px-3 py-2 text-red-700"
               >
                 選択したデータを削除
+              </button>
+            </div>
+            <div className="mt-6 border-t border-red-200 pt-4">
+              <p className="text-sm font-bold text-red-700">全削除</p>
+              <p className="mt-1 text-sm text-gray-500">localStorage と sessionStorage に保存された、すべてのローカルデータを削除します</p>
+              <button
+                type="button"
+                onClick={() => openDeleteConfirm('all')}
+                className="mt-3 w-full rounded border border-red-500 bg-red-600 px-3 py-2 text-white"
+              >
+                すべてのローカルデータを削除
               </button>
             </div>
           </section>
@@ -2521,12 +2566,18 @@ export default function MyPageClient({
           >
             <p className="font-semibold">
               {confirmStep === 'first'
-                ? '選択したデータを削除してもよろしいですか？'
-                : '本当に削除してもよろしいですか？'}
+                ? confirmAction === 'all'
+                  ? 'すべてのローカルデータを削除してもよろしいですか？'
+                  : '選択したデータを削除してもよろしいですか？'
+                : confirmAction === 'all'
+                  ? '本当にすべてのローカルデータを削除してもよろしいですか？'
+                  : '本当に削除してもよろしいですか？'}
             </p>
             <div className="mt-3 rounded bg-gray-50 p-2 text-sm dark:bg-gray-900">
               <p className="font-semibold">対象</p>
-              {selectedTargets.length > 0 ? (
+              {confirmAction === 'all' ? (
+                <p>すべてのローカルデータ（localStorage / sessionStorage）</p>
+              ) : selectedTargets.length > 0 ? (
                 <ul className="list-disc pl-5">
                   {selectedTargets.map((target) => (
                     <li key={target.label}>{target.label}</li>
