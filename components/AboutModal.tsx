@@ -27,7 +27,7 @@ export default function AboutModal({ open, onClose, currentPath }: Props) {
   const [loading, setLoading] = useState(false)
 
   const closeLabel = useMemo(() => (locale === 'ja' ? '閉じる' : locale === 'zh-CN' ? '关闭' : locale === 'zh-TW' ? '關閉' : 'Close'), [locale])
-  const legalLabel = useMemo(() => (locale === 'ja' ? '利用規約・プライバシー' : locale === 'zh-CN' ? '服务条款与隐私政策' : locale === 'zh-TW' ? '服務條款與隱私權政策' : 'Terms & Privacy'), [locale])
+  const legalLabel = useMemo(() => (locale === 'ja' ? 'プライバシーポリシー' : locale === 'zh-CN' ? '隐私政策' : locale === 'zh-TW' ? '隱私權政策' : 'Privacy Policy'), [locale])
 
   useEffect(() => {
     if (open) {
@@ -127,7 +127,7 @@ export default function AboutModal({ open, onClose, currentPath }: Props) {
           </button>
         </div>
         <div className="mb-2">
-          <Link href="/about" className="text-sm text-blue-600 underline" onClick={onClose}>
+          <Link href="/privacy-policy" className="text-sm text-blue-600 underline" onClick={onClose}>
             {legalLabel}
           </Link>
         </div>
