@@ -129,7 +129,7 @@ export async function GET(request: Request) {
       .maybeSingle()
 
     if (!profile) {
-      redirectTo = '/profile/setup'
+      redirectTo = safeNext.startsWith('/quick-setup') ? '/quick-setup' : '/mypage'
     } else if (xVerifyRaw && xHandleCheck) {
       // --- Server-Side X Verification Logic ---
       try {
