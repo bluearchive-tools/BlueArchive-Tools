@@ -900,6 +900,16 @@
       "endDate": "2026-02-25"
     },
     {
+      "number": "S87",
+      "boss": "ゴズ",
+      "terrain": "屋外",
+      "type": "総力戦",
+      "defenseArmors": ["特殊装甲"],
+      "maxDifficulty": "Lunatic",
+      "startDate": "2026-03-25",
+      "endDate": "2026-04-01"
+    },
+    {
       "number": "BD1",
       "boss": "ビナー",
       "terrain": "市街地",
