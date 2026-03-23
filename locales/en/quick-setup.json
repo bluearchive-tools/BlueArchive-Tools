@@ -1,0 +1,97 @@
+{
+  "loading": "Loading quick setup...",
+  "progress": "Progress",
+  "stepLabel": "STEP {step}",
+  "buttons": {
+    "skip": "Skip this step",
+    "nextStep": "Go to next step",
+    "saveAndNext": "Save and continue",
+    "backToLogin": "Back to login step",
+    "loginAgain": "Log in after all",
+    "connectYoutube": "Connect YouTube",
+    "complete": "Finish setup",
+    "backHome": "Back to home",
+    "back": "Back",
+    "next": "Next"
+  },
+  "messages": {
+    "loginFailed": "Login failed: {message}",
+    "loginRequired": "Login is required.",
+    "usernameInvalid": "Username must be 3-20 characters and use only letters, numbers, - or _.",
+    "profileSaved": "Profile saved.",
+    "youtubeFailed": "Failed to connect YouTube: {message}"
+  },
+  "steps": {
+    "login": {
+      "title": "Log in",
+      "description": "Log in first so your progress and settings can be saved to your account."
+    },
+    "students": {
+      "title": "Add student data",
+      "description": "Choose image OCR or SchaleDB import and register your student data."
+    },
+    "profile": {
+      "title": "Set up your profile",
+      "description": "Set your username and display name for your public profile and my page."
+    },
+    "youtube": {
+      "title": "Connect your YouTube account",
+      "description": "Enable YouTube integration to use creator-related features."
+    },
+    "completed": {
+      "title": "Complete",
+      "description": "Review everything and finish the setup."
+    }
+  },
+  "login": {
+    "heading": "Let’s prepare your account first",
+    "googleTitle": "Sign in with Google",
+    "googleDescription": "Recommended if you want to continue straight into YouTube integration.",
+    "googleDone": "Already signed in with Google.",
+    "discordTitle": "Sign in with Discord",
+    "discordDescription": "Useful if you only want to create an account and start quickly.",
+    "statusTitle": "Step status",
+    "done": "You are already logged in, or this step has been skipped.",
+    "pending": "You are not logged in yet. Logging in here makes the remaining setup smoother."
+  },
+  "students": {
+    "heading": "Choose how to add data",
+    "description": "Pick image OCR or a SchaleDB export string first so only the necessary controls are shown below.",
+    "imageTitle": "Add from images",
+    "imageDescription": "Upload screenshots, extract data with OCR, and confirm/save it right away.",
+    "schaledbTitle": "Add from SchaleDB",
+    "schaledbDescription": "Paste a SchaleDB export string to import data in bulk.",
+    "imageSectionTitle": "Add with image upload",
+    "schaledbSectionTitle": "Add with SchaleDB export text",
+    "currentStatus": "Current registration status",
+    "registeredCount": "Registered students: {count}"
+  },
+  "profile": {
+    "heading": "Set up your profile",
+    "loginRequired": "Login is required.",
+    "username": "Username",
+    "nickname": "Nickname",
+    "bio": "Bio",
+    "usernamePlaceholder": "e.g. sensei_123",
+    "nicknamePlaceholder": "Enter a display name",
+    "bioPlaceholder": "Favorite students, play style, etc.",
+    "availableAfterLogin": "Profile settings are available after login."
+  },
+  "youtube": {
+    "heading": "Configure YouTube integration",
+    "loginRequired": "Login is required.",
+    "statusLabel": "Connection status",
+    "connected": "Connected",
+    "disconnected": "Not connected",
+    "description": "When connecting, YouTube read access is requested. If you use a brand account, make sure to confirm which account you are linking.",
+    "availableAfterLogin": "YouTube integration is available after login."
+  },
+  "completed": {
+    "heading": "Final setup review",
+    "done": "Completed or skipped.",
+    "pending": "There are still items to review.",
+    "finalActionLabel": "Final action",
+    "finalActionTitle": "Finish setup",
+    "finalActionDescription": "Once completed, your progress reaches 100% and the header quick start notice is hidden."
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "loading": "正在載入快速設定...",
+  "progress": "進度",
+  "stepLabel": "STEP {step}",
+  "buttons": {
+    "skip": "跳過此步驟",
+    "nextStep": "前往下一步",
+    "saveAndNext": "儲存並繼續",
+    "backToLogin": "返回登入步驟",
+    "loginAgain": "還是先登入",
+    "connectYoutube": "連接 YouTube",
+    "complete": "完成設定",
+    "backHome": "返回首頁",
+    "back": "返回",
+    "next": "繼續"
+  },
+  "messages": {
+    "loginFailed": "登入失敗：{message}",
+    "loginRequired": "需要登入。",
+    "usernameInvalid": "使用者名稱需為 3～20 個字元，且只能使用英數字、-、_。",
+    "profileSaved": "個人資料已儲存。",
+    "youtubeFailed": "YouTube 連接失敗：{message}"
+  },
+  "steps": {
+    "login": {
+      "title": "登入",
+      "description": "先登入，才能把進度與設定儲存到帳號。"
+    },
+    "students": {
+      "title": "新增學生資料",
+      "description": "選擇圖片 OCR 或 SchaleDB 匯入，登錄你的學生資料。"
+    },
+    "profile": {
+      "title": "設定個人資料",
+      "description": "設定使用者名稱與顯示名稱，整理個人頁與公開資訊。"
+    },
+    "youtube": {
+      "title": "連接 YouTube 帳號",
+      "description": "啟用 YouTube 連動以使用相關創作者功能。"
+    },
+    "completed": {
+      "title": "完成",
+      "description": "最後確認內容並完成設定。"
+    }
+  },
+  "login": {
+    "heading": "先準備好帳號吧",
+    "googleTitle": "使用 Google 登入",
+    "googleDescription": "推薦給想一併完成 YouTube 連動的人。",
+    "googleDone": "已使用 Google 登入。",
+    "discordTitle": "使用 Discord 登入",
+    "discordDescription": "適合只想先建立帳號並快速開始時使用。",
+    "statusTitle": "此步驟狀態",
+    "done": "已登入，或已跳過此步驟。",
+    "pending": "尚未登入。在這裡登入可讓後續設定更順暢。"
+  },
+  "students": {
+    "heading": "請選擇新增方式",
+    "description": "先決定使用圖片 OCR 還是 SchaleDB 匯出字串，下面就只會顯示需要的操作。",
+    "imageTitle": "從圖片新增",
+    "imageDescription": "上傳圖片後以 OCR 擷取，並立即確認與儲存。",
+    "schaledbTitle": "從 SchaleDB 新增",
+    "schaledbDescription": "貼上 SchaleDB 的匯出字串，一次匯入資料。",
+    "imageSectionTitle": "以圖片上傳新增",
+    "schaledbSectionTitle": "以 SchaleDB 字串新增",
+    "currentStatus": "目前登錄狀態",
+    "registeredCount": "已登錄學生數：{count}"
+  },
+  "profile": {
+    "heading": "完善個人資料",
+    "loginRequired": "需要登入。",
+    "username": "使用者名稱",
+    "nickname": "暱稱",
+    "bio": "自我介紹",
+    "usernamePlaceholder": "例如：sensei_123",
+    "nicknamePlaceholder": "輸入顯示名稱",
+    "bioPlaceholder": "喜歡的學生、遊玩風格等",
+    "availableAfterLogin": "登入後即可使用個人資料設定。"
+  },
+  "youtube": {
+    "heading": "設定 YouTube 連動",
+    "loginRequired": "需要登入。",
+    "statusLabel": "連接狀態",
+    "connected": "已連接",
+    "disconnected": "未連接",
+    "description": "連接時會要求 YouTube 唯讀權限。若使用品牌帳號，請確認目前連接的是哪個帳號。",
+    "availableAfterLogin": "登入後即可使用 YouTube 連動。"
+  },
+  "completed": {
+    "heading": "最終確認",
+    "done": "已完成或已跳過。",
+    "pending": "還有內容需要確認。",
+    "finalActionLabel": "最終操作",
+    "finalActionTitle": "結束設定",
+    "finalActionDescription": "完成後，進度會達到 100%，頁首中的快速開始提示也會隱藏。"
+  }
+}

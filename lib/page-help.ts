@@ -9,11 +9,11 @@ export type PageHelpEntry = {
   buttonLabel?: string
 }
 
-export type PageHelpLocale = Record<string, PageHelpEntry> & {
+export type PageHelpLocale = {
   _common?: {
     buttonLabel?: string
   }
-}
+} & Record<string, PageHelpEntry | { buttonLabel?: string } | undefined>
 
 export const PAGE_HELP_BY_LOCALE = {
   ja: pageHelpJa,
@@ -26,7 +26,17 @@ const EXTRA_PAGE_KEYS = ['about', 'html-tags-example'] as const
 
 export const PAGE_HELP_PAGE_KEYS = [
   ...new Set([
-    ...Object.values(PAGE_HELP_BY_LOCALE).flatMap((content) => Object.keys(content).filter((key) => key !== '_common')),
+    ...Object.values(PAGE_HELP_BY_LOCALE).flatMap((content) =>
+      Object.keys(content).filter((key) => key !== '_common')
+    ),
     ...EXTRA_PAGE_KEYS,
   ]),
 ].sort((a, b) => a.localeCompare(b))
+
+export const getPageHelpEntry = (content: PageHelpLocale, pageKey: string): PageHelpEntry | undefined => {
+  const value = content[pageKey]
+  if (!value || typeof value !== 'object') return undefined
+  return 'title' in value && typeof value.title === 'string' ? value : undefined
+}
+
+export const getPageHelpButtonLabel = (content: PageHelpLocale): string | undefined => content._common?.buttonLabel

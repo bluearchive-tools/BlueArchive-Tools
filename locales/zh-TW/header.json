@@ -1,0 +1,31 @@
+{
+  "brand": "蔚藍檔案工具",
+  "actions": {
+    "notices": "通知",
+    "settings": "設定",
+    "toggleTheme": "切換主題",
+    "about": "關於本頁"
+  },
+  "account": {
+    "label": "賬戶",
+    "mypage": "使用者設定",
+    "userProfile": "使用者頁面",
+    "signOut": "登出",
+    "signInWithGoogle": "繼續使用 Google 瀏覽",
+    "signInWithDiscord": "繼續使用Discord賬號登入"
+  },
+  "locale": {
+    "label": "語言",
+    "ariaLabel": "選擇顯示語言",
+    "ja": "日本語",
+    "en": "英語",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文"
+  },
+  "quickStart": "快速開始",
+  "quickStartNotice": {
+    "title": "有可繼續的快速設定",
+    "body": "初始設定尚未完成，你可以從這裡繼續。",
+    "dismiss": "關閉提示"
+  }
+}

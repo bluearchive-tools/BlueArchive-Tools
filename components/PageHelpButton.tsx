@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircleQuestion } from '@fortawesome/free-solid-svg-icons'
 import { useLocale, useTranslations } from 'next-intl'
 import { useTheme } from './ThemeProvider'
-import { PAGE_HELP_BY_LOCALE, type PageHelpEntry, type PageHelpLocale } from '../lib/page-help'
+import { PAGE_HELP_BY_LOCALE, getPageHelpButtonLabel, getPageHelpEntry } from '../lib/page-help'
 import type { Locale } from '../lib/i18n/config'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -32,11 +32,11 @@ export default function PageHelpButton({ pageKey, className }: Props) {
   const content = useMemo(() => {
     const localeContent = PAGE_HELP_BY_LOCALE[locale] ?? PAGE_HELP_BY_LOCALE.en
     const fallbackContent = PAGE_HELP_BY_LOCALE.en
-    const entry = (localeContent as Record<string, PageHelpEntry | undefined>)[pageKey] ?? (fallbackContent as Record<string, PageHelpEntry | undefined>)[pageKey]
+    const entry = getPageHelpEntry(localeContent, pageKey) ?? getPageHelpEntry(fallbackContent, pageKey)
     const buttonLabel =
       entry?.buttonLabel ??
-      (localeContent as PageHelpLocale)._common?.buttonLabel ??
-      (fallbackContent as PageHelpLocale)._common?.buttonLabel ??
+      getPageHelpButtonLabel(localeContent) ??
+      getPageHelpButtonLabel(fallbackContent) ??
       t('defaultButtonLabel')
     return entry ? { entry, buttonLabel } : null
   }, [locale, pageKey, t])

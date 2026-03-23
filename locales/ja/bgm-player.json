@@ -1,0 +1,29 @@
+{
+  "title": "BGMプレイヤー",
+  "description": "BGMを再生できます。",
+  "nowPlaying": "再生中",
+  "empty": "再生するBGMを選択してください。",
+  "playbackOptions": {
+    "title": "再生オプション",
+    "loop": "ループ再生",
+    "autoAdvance": "自動で次の曲へ",
+    "previous": "前の曲",
+    "next": "次の曲"
+  },
+  "playlist": {
+    "title": "プレイリスト",
+    "add": "追加",
+    "remove": "削除",
+    "empty": "プレイリストに曲がありません。",
+    "play": "先頭から再生",
+    "active": "プレイリスト再生中",
+    "filtered": "一覧から再生中"
+  },
+  "filters": {
+    "all": "すべて",
+    "category": "カテゴリ",
+    "search": "検索",
+    "searchPlaceholder": "曲名やファイル名で検索",
+    "count": "{count} 曲"
+  }
+}

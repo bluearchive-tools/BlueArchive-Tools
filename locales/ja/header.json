@@ -1,0 +1,31 @@
+{
+  "brand": "BlueArchive Tools",
+  "actions": {
+    "notices": "お知らせ",
+    "settings": "設定",
+    "toggleTheme": "テーマ切替",
+    "about": "このページについて"
+  },
+  "account": {
+    "label": "アカウント",
+    "mypage": "ユーザー設定",
+    "userProfile": "ユーザーページ",
+    "signOut": "サインアウト",
+    "signInWithGoogle": "Googleでログイン",
+    "signInWithDiscord": "Discordでログイン"
+  },
+  "locale": {
+    "label": "言語",
+    "ariaLabel": "表示言語を選択",
+    "ja": "日本語",
+    "en": "English",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文"
+  },
+  "quickStart": "クイックスタート",
+  "quickStartNotice": {
+    "title": "クイックセットアップがあります",
+    "body": "初期設定がまだ完了していません。ここから続きに進めます。",
+    "dismiss": "お知らせを閉じる"
+  }
+}

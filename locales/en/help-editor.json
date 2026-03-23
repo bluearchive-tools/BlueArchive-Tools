@@ -1,0 +1,18 @@
+{
+  "title": "Markdown editor for help modals",
+  "description": "Edits are saved to localStorage and reflected immediately in PageHelpButton and About modal.",
+  "locale": "Locale",
+  "page": "Page",
+  "save": "Save",
+  "resetCurrent": "Reset this page",
+  "resetAll": "Reset all",
+  "loading": "Loading...",
+  "empty": "No content.",
+  "markdownInput": "Markdown input",
+  "preview": "Preview",
+  "saved": "Saved (reflected immediately in this browser).",
+  "saveFailed": "Failed to save.",
+  "resetCurrentDone": "Reset custom content for this page.",
+  "resetCurrentFailed": "Failed to reset.",
+  "resetAllDone": "Reset all custom help content."
+}

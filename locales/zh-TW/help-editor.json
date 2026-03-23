@@ -1,0 +1,18 @@
+{
+  "title": "說明彈窗 Markdown 編輯器",
+  "description": "在此編輯的內容會儲存到 localStorage，並立即反映到說明彈窗（PageHelpButton）與 About 彈窗。",
+  "locale": "語言",
+  "page": "頁面",
+  "save": "儲存",
+  "resetCurrent": "重設此頁面",
+  "resetAll": "全部重設",
+  "loading": "載入中...",
+  "empty": "目前沒有內容。",
+  "markdownInput": "Markdown 輸入",
+  "preview": "預覽",
+  "saved": "已儲存（會立即反映到目前瀏覽器）。",
+  "saveFailed": "儲存失敗。",
+  "resetCurrentDone": "已重設此頁面的自訂內容。",
+  "resetCurrentFailed": "重設失敗。",
+  "resetAllDone": "已重設全部自訂說明內容。"
+}

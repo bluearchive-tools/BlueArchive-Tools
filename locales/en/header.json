@@ -1,0 +1,31 @@
+{
+  "brand": "BlueArchive Tools",
+  "actions": {
+    "notices": "Notices",
+    "settings": "Settings",
+    "toggleTheme": "Toggle theme",
+    "about": "About this page"
+  },
+  "account": {
+    "label": "Account",
+    "mypage": "User settings",
+    "userProfile": "User page",
+    "signOut": "Sign out",
+    "signInWithGoogle": "Continue with Google",
+    "signInWithDiscord": "Continue with Discord"
+  },
+  "locale": {
+    "label": "Language",
+    "ariaLabel": "Select display language",
+    "ja": "日本語",
+    "en": "English",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文"
+  },
+  "quickStart": "Quick Start",
+  "quickStartNotice": {
+    "title": "Quick Setup is available",
+    "body": "Your initial setup is not finished yet. You can continue from here.",
+    "dismiss": "Dismiss notice"
+  }
+}

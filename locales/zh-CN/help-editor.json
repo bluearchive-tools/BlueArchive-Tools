@@ -1,0 +1,18 @@
+{
+  "title": "帮助弹窗 Markdown 编辑器",
+  "description": "在这里编辑的内容会保存到 localStorage，并立即反映到帮助弹窗（PageHelpButton）和 About 弹窗。",
+  "locale": "语言",
+  "page": "页面",
+  "save": "保存",
+  "resetCurrent": "重置此页面",
+  "resetAll": "全部重置",
+  "loading": "加载中...",
+  "empty": "暂无内容。",
+  "markdownInput": "Markdown 输入",
+  "preview": "预览",
+  "saved": "已保存（会立即反映到当前浏览器）。",
+  "saveFailed": "保存失败。",
+  "resetCurrentDone": "已重置此页面的自定义内容。",
+  "resetCurrentFailed": "重置失败。",
+  "resetAllDone": "已重置全部自定义帮助内容。"
+}
