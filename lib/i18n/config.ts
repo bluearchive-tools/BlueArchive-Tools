@@ -1,37 +1,9 @@
 import type { AbstractIntlMessages } from 'next-intl'
 
-import commonEn from '../../locales/en/common.json'
-import footerEn from '../../locales/en/footer.json'
-import headerEn from '../../locales/en/header.json'
-import homeEn from '../../locales/en/home.json'
-import bgmQuizEn from '../../locales/en/bgm-quiz.json'
-import bgmPlayerEn from '../../locales/en/bgm-player.json'
-import bgmDjEn from '../../locales/en/bgm-dj.json'
-import siteTutorialEn from '../../locales/en/site-tutorial.json'
-import commonJa from '../../locales/ja/common.json'
-import footerJa from '../../locales/ja/footer.json'
-import headerJa from '../../locales/ja/header.json'
-import homeJa from '../../locales/ja/home.json'
-import bgmQuizJa from '../../locales/ja/bgm-quiz.json'
-import bgmPlayerJa from '../../locales/ja/bgm-player.json'
-import bgmDjJa from '../../locales/ja/bgm-dj.json'
-import siteTutorialJa from '../../locales/ja/site-tutorial.json'
-import commonZhCn from '../../locales/zh-CN/common.json'
-import footerZhCn from '../../locales/zh-CN/footer.json'
-import headerZhCn from '../../locales/zh-CN/header.json'
-import homeZhCn from '../../locales/zh-CN/home.json'
-import bgmQuizZhCn from '../../locales/zh-CN/bgm-quiz.json'
-import bgmPlayerZhCn from '../../locales/zh-CN/bgm-player.json'
-import bgmDjZhCn from '../../locales/zh-CN/bgm-dj.json'
-import siteTutorialZhCn from '../../locales/zh-CN/site-tutorial.json'
-import commonZhTw from '../../locales/zh-TW/common.json'
-import footerZhTw from '../../locales/zh-TW/footer.json'
-import headerZhTw from '../../locales/zh-TW/header.json'
-import homeZhTw from '../../locales/zh-TW/home.json'
-import bgmQuizZhTw from '../../locales/zh-TW/bgm-quiz.json'
-import bgmPlayerZhTw from '../../locales/zh-TW/bgm-player.json'
-import bgmDjZhTw from '../../locales/zh-TW/bgm-dj.json'
-import siteTutorialZhTw from '../../locales/zh-TW/site-tutorial.json'
+import enMessages from '../../locales/messages/en.json'
+import jaMessages from '../../locales/messages/ja.json'
+import zhCnMessages from '../../locales/messages/zh-CN.json'
+import zhTwMessages from '../../locales/messages/zh-TW.json'
 
 export const SUPPORTED_LOCALES = ['ja', 'en', 'zh-CN', 'zh-TW'] as const
 export type Locale = (typeof SUPPORTED_LOCALES)[number]
@@ -39,46 +11,10 @@ export type Locale = (typeof SUPPORTED_LOCALES)[number]
 export const DEFAULT_LOCALE: Locale = 'ja'
 
 export const LOCALE_MESSAGES = {
-  en: {
-    common: commonEn,
-    header: headerEn,
-    footer: footerEn,
-    home: homeEn,
-    'bgm-quiz': bgmQuizEn,
-    'bgm-player': bgmPlayerEn,
-    'bgm-dj': bgmDjEn,
-    'site-tutorial': siteTutorialEn,
-  },
-  ja: {
-    common: commonJa,
-    header: headerJa,
-    footer: footerJa,
-    home: homeJa,
-    'bgm-quiz': bgmQuizJa,
-    'bgm-player': bgmPlayerJa,
-    'bgm-dj': bgmDjJa,
-    'site-tutorial': siteTutorialJa,
-  },
-  'zh-CN': {
-    common: commonZhCn,
-    header: headerZhCn,
-    footer: footerZhCn,
-    home: homeZhCn,
-    'bgm-quiz': bgmQuizZhCn,
-    'bgm-player': bgmPlayerZhCn,
-    'bgm-dj': bgmDjZhCn,
-    'site-tutorial': siteTutorialZhCn,
-  },
-  'zh-TW': {
-    common: commonZhTw,
-    header: headerZhTw,
-    footer: footerZhTw,
-    home: homeZhTw,
-    'bgm-quiz': bgmQuizZhTw,
-    'bgm-player': bgmPlayerZhTw,
-    'bgm-dj': bgmDjZhTw,
-    'site-tutorial': siteTutorialZhTw,
-  },
+  en: enMessages,
+  ja: jaMessages,
+  'zh-CN': zhCnMessages,
+  'zh-TW': zhTwMessages,
 } as const satisfies Record<Locale, AbstractIntlMessages>
 
 export type Messages = (typeof LOCALE_MESSAGES)[Locale]

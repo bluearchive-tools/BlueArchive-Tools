@@ -1,0 +1,604 @@
+{
+  "common": {
+    "appTitle": "蓝色档案工具",
+    "siteDescription": "有用的 Blue Archive 工具和迷你游戏的集合。",
+    "auth": {
+      "login": "登录",
+      "loginWithGoogle": "使用 Google 登录",
+      "loginWithDiscord": "继续不和谐",
+      "logout": "登出"
+    },
+    "actions": {
+      "close": "关闭"
+    },
+    "messages": {
+      "loginPrompt": "登录以充分利用 BlueArchive 工具！"
+    },
+    "bondCalc": {
+      "description": "根据当前/目标债券和自有材料估计所需数量、短缺和农业运行。",
+      "studentLabel": "学生",
+      "currentBondLabel": "当前债券",
+      "targetBondLabel": "目标债券",
+      "ownedMaterialsLabel": "自有材料（可选）",
+      "resultTitle": "计算结果",
+      "requiredBondPoint": "所需粘合点：{value}",
+      "ownedBondPoint": "拥有的材料粘合点：{value}",
+      "shortageBondPoint": "短缺保证金点：{value}",
+      "materialBreakdownTitle": "按材料划分的需求和短缺",
+      "requiredCount": "必填：{value}",
+      "shortageCount": "短缺：{value}",
+      "runRecommendationTitle": "推荐农耕运行",
+      "runLine": "{material}：大约 {runs} 在 {stage} 运行",
+      "bestRunPlan": "最快估计：大约 {runs} 与 {material} 在 {stage} 运行",
+      "materials": {
+        "basic": "基本礼物",
+        "advanced": "高级礼品",
+        "premium": "优质礼品"
+      }
+    },
+    "levelCalc": {
+      "description": "根据当前/目标水平和拥有的报告估计所需的 EXP、短缺和农业运行。",
+      "currentLevelLabel": "当前级别",
+      "targetLevelLabel": "目标水平",
+      "ownedMaterialsLabel": "拥有的报告（可选）",
+      "resultTitle": "计算结果",
+      "requiredExp": "所需经验：{value}",
+      "ownedExp": "拥有的报告 EXP：{value}",
+      "shortageExp": "短缺经验：{value}",
+      "materialBreakdownTitle": "报告要求和短缺",
+      "requiredCount": "必填：{value}",
+      "shortageCount": "短缺：{value}",
+      "runRecommendationTitle": "推荐农耕运行",
+      "runLine": "{material}：大约 {runs} 在 {stage} 运行",
+      "bestRunPlan": "最快估计：大约 {runs} 与 {material} 在 {stage} 运行",
+      "materials": {
+        "reportT1": "初学者报告",
+        "reportT2": "中间报告",
+        "reportT3": "高级报告",
+        "reportT4": "上级报告"
+      }
+    },
+    "trainingPlanning": {
+      "description": "左侧显示当前状态，右侧编辑目标状态，并自动计算所需材料。",
+      "studentLabel": "学生",
+      "currentStatusTitle": "当前状态（已保存数据）",
+      "targetStatusTitle": "目标状态（可编辑）",
+      "setMaxButton": "将全部设置为最大值（Ctrl/Cmd+单击将键设置为 50）",
+      "resultTitle": "所需材料",
+      "sections": {
+        "star": "星星",
+        "level": "等级",
+        "bond": "纽带",
+        "skill": "技能",
+        "equipment": "设备"
+      },
+      "starRequired": "所需大象（星号）：{value}",
+      "uniqueStarRequired": "所需大象（唯一）：{value}",
+      "totalElephRequired": "所需学生大象总数：{value}",
+      "levelRequiredExp": "所需经验：{value}",
+      "bondRequiredPoint": "所需粘合点：{value}",
+      "skillRequiredExp": "所需技能经验值：{value}",
+      "equipRequiredExp": "所需设备经验值：{value}",
+      "materialsLine": "预计材料 (T1/T2/T3/T4)： {t1} / {t2} / {t3} / {t4}",
+      "multiPlanTitle": "多学生计划",
+      "addPlanButton": "添加学生",
+      "removePlanButton": "消除",
+      "detailButton": "计算详情",
+      "multiPlanElephTotal": "跨计划所需的学生大象总数：{value}",
+      "noPlan": "尚未添加任何学生。",
+      "detailModalTitle": "详细信息（大象交换设置）",
+      "detailOwnedEleph": "拥有的学生Eleph",
+      "detailRate": "目前汇率",
+      "detailRemaining": "剩余兑换数量",
+      "detailNeededEleph": "所需学生大象：{value}",
+      "detailOwnedUsedEleph": "由拥有的大象覆盖：{value}",
+      "detailExchangeNeededEleph": "需要兑换：{value}",
+      "detailRequiredDivine": "所需兑换货币：{value}",
+      "detailUnexchangeableEleph": "超额兑换上限：{value}",
+      "close": "关闭",
+      "labels": {
+        "star": "星星",
+        "uniqueStar": "独特★",
+        "level": "等级",
+        "bond": "纽带",
+        "equip1": "装备1级",
+        "equip2": "装备2级",
+        "equip3": "装备3级",
+        "exSkill": "EX技能",
+        "normalSkill": "普通技能",
+        "passiveSkill": "被动技能",
+        "subSkill": "子技能"
+      },
+      "dashboardTitle": "培训计划仪表板",
+      "dashboardTotalDivine": "所需兑换货币总计：{value}",
+      "editPlanButton": "编辑",
+      "backToDashboard": "返回仪表板",
+      "addPlanModalTitle": "将学生添加到计划中",
+      "planElephLine": "需要：{student}大象x{value}（兑换货币x{divine}）"
+    }
+  },
+  "footer": {
+    "copyright": "© 2026 BlueArchive Tools",
+    "privacyPolicy": "隐私政策",
+    "about": "条款与网站信息"
+  },
+  "header": {
+    "brand": "蔚蓝档案工具",
+    "actions": {
+      "notices": "通知",
+      "settings": "设置",
+      "toggleTheme": "切换主题",
+      "about": "关于本页"
+    },
+    "account": {
+      "label": "账户",
+      "mypage": "用户设置",
+      "userProfile": "用户页面",
+      "signOut": "登出",
+      "signInWithGoogle": "继续使用 Google 浏览",
+      "signInWithDiscord": "继续使用Discord账号登录"
+    },
+    "locale": {
+      "label": "语言",
+      "ariaLabel": "选择显示语言",
+      "ja": "日本語",
+      "en": "英语",
+      "zh-CN": "简体中文",
+      "zh-TW": "繁體中文"
+    },
+    "quickStart": "快速开始",
+    "quickStartNotice": {
+      "title": "有可继续的快速设置",
+      "body": "初始设置尚未完成，你可以从这里继续。",
+      "dismiss": "关闭提示"
+    }
+  },
+  "home": {
+    "pageTitle": "蔚蓝档案工具",
+    "sections": {
+      "students": {
+        "title": "学生管理",
+        "description": "检查并编辑您的学生数据",
+        "actions": {
+          "view": {
+            "title": "显示学生",
+            "description": "显示您已保存的学生"
+          },
+          "import": {
+            "title": "批量导入学生",
+            "description": "从屏幕截图导入学生数据"
+          },
+          "squads": {
+            "title": "管理小队",
+            "description": "建立和组织小队"
+          }
+        }
+      },
+      "tlTools": {
+        "title": "TL工具（测试版）",
+        "description": "帮助您制定时间表的实用程序",
+        "actions": {
+          "search": {
+            "title": "搜索组长",
+            "description": "查找现有时间表"
+          },
+          "maker": {
+            "title": "时间轴制作器",
+            "description": "从头开始创建时间表"
+          },
+          "makerDev": {
+            "title": "时间轴制作器（开发版）",
+            "description": "试用实验性时间轴功能"
+          },
+          "videoToTl": {
+            "title": "视频到TL",
+            "description": "从视频生成时间轴"
+          }
+        }
+      },
+      "tools": {
+        "title": "工具",
+        "description": "方便的日常游戏工具",
+        "actions": {
+          "eventSchedule": {
+            "title": "活动时间表",
+            "description": "查看即将举行的活动"
+          },
+          "divineCalc": {
+            "title": "大象计算器",
+            "description": "计算所需的大象"
+          },
+          "bgmPlayer": {
+            "title": "BGM播放器",
+            "description": "播放蓝色存档BGM曲目"
+          },
+          "bgmDj": {
+            "title": "BGM DJ",
+            "description": "将BGM与两个卡组混合"
+          },
+          "bondCalc": {
+            "title": "债券计算器",
+            "description": "计算所需的材料、短缺和债券调平的建议运行"
+          },
+          "trainingPlanning": {
+            "title": "培训计划",
+            "description": "在一个地方访问STAR、BOND和LEVEL规划计算器"
+          },
+          "levelCalc": {
+            "title": "液位计算器",
+            "description": "计算所需报告并运行调平估算"
+          },
+          "studentImage": {
+            "title": "学生形象制作器",
+            "description": "生成带有攻击型框架和星星的PNG/GIF学生图标"
+          },
+          "momotalkSimulator": {
+            "title": "Momotalk 模拟器",
+            "description": "模拟Momotalk风格的聊天屏幕"
+          },
+          "storyEditor": {
+            "title": "故事编辑器",
+            "description": "创建自己的故事并回放"
+          },
+          "wikiStudentConverter": {
+            "title": "Wiki学生转换",
+            "description": "从wikiru URL生成students.json模板"
+          }
+        }
+      },
+      "minigames": {
+        "title": "小游戏",
+        "description": "您可以立即进行快速休息",
+        "actions": {
+          "bgmQuiz": {
+            "title": "BGM测验",
+            "description": "从提示中猜出曲目名称"
+          }
+        }
+      },
+      "others": {
+        "title": "其他地区",
+        "description": "支持页面和面向发展的内容",
+        "actions": {
+          "devMemos": {
+            "title": "开发备忘录",
+            "description": "浏览有关更新和实施想法的简短说明"
+          },
+          "baMemos": {
+            "title": "蔚蓝档案信息备忘录",
+            "description": "浏览与《蔚蓝档案》相关的信息备忘录。"
+          }
+        }
+      }
+    }
+  },
+  "bgm-quiz": {
+    "title": "背景音乐测验",
+    "description": "一款通过听来猜测曲目名称的小游戏。",
+    "osInfo": "操作系统：{os}",
+    "progress": "问题 {current} / {total}",
+    "hintLabel": "暗示",
+    "score": "分数：{score} / {total}",
+    "resultTitle": "结果",
+    "resultPerfect": "满分！干得好，老师！",
+    "resultGood": "这么近！再试一次，力求完美。",
+    "next": "下一个问题",
+    "restart": "再玩一次",
+    "home": "回到家",
+    "correct": "正确的！",
+    "incorrect": "不完全是......答案是“{answer}”。",
+    "setupTitle": "测验设置",
+    "setupDescription": "选择类别、回答模式和要开始的问题数量。",
+    "multiplayerLabel": "与设置",
+    "multiplayerToggle": "与多个玩家一起玩",
+    "multiplayerHint": "{count} 玩家依次回答。",
+    "onlineLabel": "线上比赛",
+    "onlineToggle": "启用在线比赛",
+    "onlineNameLabel": "显示名称",
+    "onlineNamePlaceholder": "客人",
+    "onlineRoomCodeLabel": "房间代码",
+    "onlineCreate": "创建房间",
+    "onlineJoin": "加入房间",
+    "onlineRoomCreated": "房间代码：{code}",
+    "onlineResultTitle": "线上比赛成绩",
+    "onlineResultItem": "{name}：{score} 正确",
+    "onlineResultMessage": "在线比赛结果。",
+    "onlineLobbyTitle": "在线大厅",
+    "onlineLobbyDescription": "等待大家，然后主持人就可以开始比赛了。",
+    "onlineShareLabel": "邀请链接",
+    "onlineShareCopy": "复制链接",
+    "onlineShareCopied": "已复制",
+    "onlineShareHint": "分享链接以便其他人可以加入。",
+    "onlineShareCopyFailed": "无法复制链接。",
+    "onlineAutoJoining": "加入房间...",
+    "onlinePlayerList": "玩家",
+    "onlineStartMatch": "开始比赛",
+    "onlineWaitingHost": "等待楼主启动。",
+    "onlineWaitingNext": "等待下一个问题。",
+    "onlineSolved": "这个问题已经解决了。",
+    "onlineSolvedBy": "{name} 回答正确。",
+    "onlineHostBadge": "主持人",
+    "onlineScoreBadge": "分数{score}",
+    "onlineKick": "踢",
+    "onlineTransferHost": "给主机",
+    "onlineLeave": "留出空间",
+    "onlineDisband": "解散房间",
+    "onlineForceEnd": "强制结束",
+    "onlineResetRoom": "让所有人返回大厅",
+    "onlineStatusOnline": "在线的",
+    "onlineStatusOffline": "离线",
+    "onlineWaitingBadge": "等待",
+    "onlineWaitingReady": "等到大家准备好之后就可以开始玩了。",
+    "onlineWaitingSpectator": "您正在等待，现在无法回答。",
+    "onlineReturnLobby": "回到房间",
+    "onlineSettingsTitle": "房间设置",
+    "onlineSettingsDescription": "在比赛开始前调整设置。",
+    "onlineSettingsGuestNote": "访客只能查看设置。",
+    "onlineSettingsSave": "更新设置",
+    "onlineSettingsSaving": "正在更新设置...",
+    "onlineStatsOpen": "查看统计",
+    "onlineStatsTitle": "在线比赛统计",
+    "onlineStatsDescription": "每个玩家的成绩和平均值的摘要。",
+    "onlineStatsLoading": "正在加载统计数据...",
+    "onlineStatsTotalQuestions": "问题：{total}",
+    "onlineStatsHeaderPlayer": "玩家",
+    "onlineStatsHeaderScore": "分数",
+    "onlineStatsHeaderCorrect": "正确的",
+    "onlineStatsHeaderAccuracy": "准确性",
+    "onlineStatsHeaderStop": "平均停止",
+    "onlineStatsHeaderAnswer": "平均答案",
+    "onlineStatsDownload": "另存为图像",
+    "onlineStatsShare": "分享",
+    "onlineStatsClose": "关闭",
+    "onlineStatsShareText": "分享 BGM 测验比赛统计数据。",
+    "categoryLabel": "类别",
+    "categoryAll": "全部",
+    "modeLabel": "接听模式",
+    "modeMultipleChoice": "多项选择",
+    "modeListSelect": "从列表中选择",
+    "modeFreeInput": "输入标题",
+    "gameTypeLabel": "游戏类型",
+    "gameTypeNormal": "普通的",
+    "gameTypeFast": "快速地",
+    "gameTypeIntro": "简介",
+    "gameTypeRandom": "随机的",
+    "gameTypeHint": {
+      "normal": "正常播放应答。",
+      "fast": "使用按钮停止播放并快速回答。记录你的时间。",
+      "intro": "仅播放前几秒。",
+      "random": "从随机点开始仅播放几秒钟。"
+    },
+    "introSecondsLabel": "简介播放秒数",
+    "randomSecondsLabel": "随机播放秒数",
+    "introSecondsHint": "播放 {seconds} 秒。",
+    "randomSecondsHint": "播放 {seconds} 秒。",
+    "excludeThemeLabel": "排除主题曲目（未知标题）",
+    "excludeThemeHint": "默认关闭。",
+    "questionCountLabel": "问题数量",
+    "questionCountHint": "所选类别中有 {total} 曲目。",
+    "start": "开始",
+    "nowPlaying": "正在播放",
+    "introPlaybackNotice": "简介播放（{seconds}s 然后停止）",
+    "randomPlaybackNotice": "随机播放（{seconds}s，然后在 {start}s 处停止/开始）",
+    "fastStop": "停在这里",
+    "fastStopped": "已停止 ({time}s)",
+    "fastRunning": "已过去{time}s",
+    "fastPrompt": "当您想停止时，请按按钮。",
+    "currentPlayer": "轮到玩家 {index} 了",
+    "fastResultTitle": "快速模式时间",
+    "fastResultItem": "问题 {index}：停止 {stop}s / 回答 {answer}s",
+    "fastAverage": "止损平均值：{stop}s",
+    "fastAverageUnavailable": "平均不可用时间。",
+    "fastAverageAnswer": "平均答案：{answer}s",
+    "fastAverageAnswerUnavailable": "无法回复时间。",
+    "multiplayerResultTitle": "球员得分",
+    "multiplayerResultItem": "玩家 {index}： {score} 正确",
+    "answerPlaceholder": "输入曲目标题",
+    "listSelectPlaceholder": "从列表中选择曲目标题",
+    "submitAnswer": "提交"
+  },
+  "bgm-player": {
+    "title": "背景音乐播放器",
+    "description": "播放《蔚蓝档案》BGM 曲目。",
+    "nowPlaying": "正在播放",
+    "empty": "选择曲目开始播放。",
+    "playbackOptions": {
+      "title": "播放选项",
+      "loop": "环形",
+      "autoAdvance": "自动前进",
+      "previous": "以前的",
+      "next": "下一个"
+    },
+    "playlist": {
+      "title": "播放列表",
+      "add": "添加",
+      "remove": "消除",
+      "empty": "播放列表中没有曲目。",
+      "play": "从头开始播放",
+      "active": "从播放列表播放",
+      "filtered": "从列表中播放"
+    },
+    "filters": {
+      "all": "全部",
+      "category": "类别",
+      "search": "搜索",
+      "searchPlaceholder": "按标题或文件名搜索",
+      "count": "{count} 曲目"
+    }
+  },
+  "bgm-dj": {
+    "title": "背景音乐DJ",
+    "description": "将 BGM 与受硬件启发的 DJ 布局混合。",
+    "deck": {
+      "label": "甲板 {deck}",
+      "noTrack": "未加载曲目",
+      "selectHint": "从库加载",
+      "play": "玩",
+      "pause": "暂停",
+      "cue": "提示",
+      "restart": "重新启动",
+      "sync": "同步",
+      "volume": "体积",
+      "pitch": "沥青 ％",
+      "bpm": "业务流程管理",
+      "seek": "寻找",
+      "loop": "环形",
+      "loopBeats": "{beats} 节拍",
+      "hotCue": "热提示",
+      "hotCueHelp": "按一次进行设置，再按一次跳回提示。",
+      "hotCueLabel": "提示 {label}",
+      "hotCueClear": "清除",
+      "filter": "筛选",
+      "filterType": "过滤器类型",
+      "filterOff": "离开",
+      "filterLow": "低通滤波器",
+      "filterHigh": "高通滤波器",
+      "delay": "延迟",
+      "bpmDetecting": "检测 BPM...",
+      "eq": {
+        "low": "低的",
+        "mid": "中",
+        "high": "高的"
+      }
+    },
+    "mixer": {
+      "title": "混合器",
+      "playAll": "两个都玩",
+      "pauseAll": "两者都暂停",
+      "crossfader": "交叉渐变器",
+      "curve": "曲线",
+      "curveLinear": "线性",
+      "curveSharp": "锋利的",
+      "automation": "自动化",
+      "addAutomation": "添加",
+      "removeAutomation": "消除",
+      "automationRun": "跑步",
+      "automationStop": "停止",
+      "automationRunning": "跑步",
+      "automationEmpty": "还没有步骤。",
+      "automationNoValue": "没有价值",
+      "automationCrossfader": "交叉渐变器",
+      "automationDeckAVolume": "甲板A卷",
+      "automationDeckBVolume": "甲板B体积",
+      "automationPlayA": "玩 A 牌组",
+      "automationPlayB": "玩甲板 B",
+      "automationPauseA": "暂停甲板 A",
+      "automationPauseB": "暂停甲板 B",
+      "automationRestartA": "重新启动甲板 A",
+      "automationRestartB": "重新启动甲板 B",
+      "automationLoopA": "循环甲板 A",
+      "automationLoopB": "循环甲板 B",
+      "automationLoadA": "装载甲板A",
+      "automationLoadB": "装载甲板B",
+      "automationPlayFromBeatA": "从节拍播放 Deck A",
+      "automationPlayFromBeatB": "从节拍播放 Deck B",
+      "automationSetLoopStartA": "设置 Deck A 循环开始（节拍）",
+      "automationSetLoopStartB": "设置 Deck B 循环开始（节拍）",
+      "automationSelectTrack": "选择曲目",
+      "speakers": "扬声器",
+      "speakerLeft": "左扬声器",
+      "speakerRight": "右扬声器"
+    },
+    "search": {
+      "label": "追踪搜索",
+      "placeholder": "按标题或类别搜索"
+    },
+    "list": {
+      "title": "曲目列表",
+      "loadLeft": "装载到甲板 A",
+      "loadRight": "装载至甲板 B"
+    }
+  },
+  "site-tutorial": {
+    "prompt": {
+      "title": "开始教程？",
+      "body": "我们可以引导您了解本网站的基础知识。",
+      "yes": "是",
+      "no": "否"
+    },
+    "tutorial": {
+      "title": "站点教程",
+      "skip": "跳过动画",
+      "back": "后退",
+      "next": "下一頁",
+      "finish": "完成日期",
+      "stepLabel": "步骤{current} / {total}"
+    },
+    "steps": {
+      "step1": {
+        "title": "主页",
+        "text": "您可以从主屏幕选择工具和迷你游戏。",
+        "selector": "[data-tutorial = \"home-main\"]"
+      },
+      "step2": {
+        "title": "学员",
+        "text": "使用此部分获取与学生相关的功能。",
+        "selector": "[data-tutorial = \"home-links\"]"
+      },
+      "step3": {
+        "title": "工具",
+        "text": "从此处打开计算器和实用程序工具。",
+        "selector": "[data-tutorial = \"tools-links\"]"
+      },
+      "step4": "使用BGM DJ与两个卡组和一个交叉推子混合。",
+      "step5": "玩BGM测验迷你游戏，快速挑战。"
+    }
+  },
+  "about-modal": {
+    "close": "关闭",
+    "legalLabel": "隐私政策",
+    "defaultHeading": "关于此页面",
+    "loading": "加载中...",
+    "loadError": "无法加载内容。"
+  },
+  "page-help": {
+    "defaultButtonLabel": "关于此页面",
+    "loading": "加载中...",
+    "loadError": "无法加载内容。"
+  },
+  "help-editor": {
+    "title": "帮助弹窗 Markdown 编辑器",
+    "description": "在这里编辑的内容会保存到 localStorage，并立即反映到帮助弹窗（PageHelpButton）和 About 弹窗。",
+    "locale": "语言",
+    "page": "页面",
+    "save": "保存",
+    "resetCurrent": "重置此页面",
+    "resetAll": "全部重置",
+    "loading": "加载中...",
+    "empty": "暂无内容。",
+    "markdownInput": "Markdown 输入",
+    "preview": "预览",
+    "saved": "已保存（会立即反映到当前浏览器）。",
+    "saveFailed": "保存失败。",
+    "resetCurrentDone": "已重置此页面的自定义内容。",
+    "resetCurrentFailed": "重置失败。",
+    "resetAllDone": "已重置全部自定义帮助内容。"
+  },
+  "tutorial-editor": {
+    "title": "教程编辑页面",
+    "description": "默认值来自 `data/site-tutorial-steps/<locale>.json`。保存后会优先使用 localStorage。",
+    "addStep": "新增步骤",
+    "save": "保存",
+    "reset": "重置",
+    "previewOnHome": "在首页预览",
+    "setSelector": "已设置选择器：{selector}",
+    "saved": "已保存，SiteTutorial 会立即生效。",
+    "saveFailed": "保存失败。",
+    "resetDone": "已重置为默认教程 JSON。",
+    "previewTitle": "简易预览",
+    "noStep": "没有步骤。",
+    "prev": "上一步",
+    "next": "下一步",
+    "step": "步骤",
+    "remove": "删除",
+    "keyPlaceholder": "step key",
+    "titlePlaceholder": "标题（可选）",
+    "textPlaceholder": "说明文字",
+    "selectorPlaceholder": "高亮目标 CSS 选择器（可选）",
+    "guiPick": "GUI选择",
+    "generatedCode": "生成代码（SiteTutorial 读取的 JSON）",
+    "unsetTitle": "未设置标题",
+    "unsetText": "未设置说明",
+    "unsetSelector": "(未设置)"
+  }
+}

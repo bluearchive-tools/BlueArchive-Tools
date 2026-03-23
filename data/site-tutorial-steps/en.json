@@ -1,0 +1,25 @@
+{
+  "step1": {
+    "title": "Home",
+    "text": "You can choose tools and mini games from the home screen.",
+    "selector": "[data-tutorial=\"home-main\"]"
+  },
+  "step2": {
+    "title": "Students",
+    "text": "Use this section for student-related features.",
+    "selector": "[data-tutorial=\"home-links\"]"
+  },
+  "step3": {
+    "title": "Tools",
+    "text": "Open calculators and utility tools from here.",
+    "selector": "[data-tutorial=\"tools-links\"]"
+  },
+  "step4": {
+    "title": "BGM DJ",
+    "text": "Use BGM DJ to mix with two decks and a crossfader."
+  },
+  "step5": {
+    "title": "Mini game",
+    "text": "Play the BGM quiz mini game for a quick challenge."
+  }
+}
