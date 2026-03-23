@@ -1,0 +1,97 @@
+{
+  "loading": "正在加载快速设置...",
+  "progress": "进度",
+  "stepLabel": "STEP {step}",
+  "buttons": {
+    "skip": "跳过此步骤",
+    "nextStep": "前往下一步",
+    "saveAndNext": "保存并继续",
+    "backToLogin": "返回登录步骤",
+    "loginAgain": "还是先登录",
+    "connectYoutube": "连接 YouTube",
+    "complete": "完成设置",
+    "backHome": "返回首页",
+    "back": "返回",
+    "next": "继续"
+  },
+  "messages": {
+    "loginFailed": "登录失败：{message}",
+    "loginRequired": "需要登录。",
+    "usernameInvalid": "用户名需为 3～20 个字符，只能使用英数字、-、_。",
+    "profileSaved": "个人资料已保存。",
+    "youtubeFailed": "YouTube 连接失败：{message}"
+  },
+  "steps": {
+    "login": {
+      "title": "登录",
+      "description": "先登录，这样就可以把进度和设置保存到账号。"
+    },
+    "students": {
+      "title": "添加学生数据",
+      "description": "选择图片 OCR 或 SchaleDB 导入，登记你的学生数据。"
+    },
+    "profile": {
+      "title": "设置个人资料",
+      "description": "设置用户名和显示名，完善个人页与公开资料。"
+    },
+    "youtube": {
+      "title": "连接 YouTube 账号",
+      "description": "启用 YouTube 联动以使用相关创作者功能。"
+    },
+    "completed": {
+      "title": "完成",
+      "description": "最后确认内容并完成设置。"
+    }
+  },
+  "login": {
+    "heading": "先准备好账号吧",
+    "googleTitle": "使用 Google 登录",
+    "googleDescription": "推荐给想一并完成 YouTube 联动的人。",
+    "googleDone": "已使用 Google 登录。",
+    "discordTitle": "使用 Discord 登录",
+    "discordDescription": "适合只想先创建账号并快速开始的时候。",
+    "statusTitle": "当前步骤状态",
+    "done": "已登录，或已跳过此步骤。",
+    "pending": "尚未登录。在这里登录可以让后续设置更顺畅。"
+  },
+  "students": {
+    "heading": "请选择添加方式",
+    "description": "先决定使用图片 OCR 还是 SchaleDB 导出字符串，这样下面只会显示所需操作。",
+    "imageTitle": "从图片添加",
+    "imageDescription": "上传图片后通过 OCR 提取，并当场确认与保存。",
+    "schaledbTitle": "从 SchaleDB 添加",
+    "schaledbDescription": "粘贴 SchaleDB 的导出字符串，一次性导入。",
+    "imageSectionTitle": "通过图片上传添加",
+    "schaledbSectionTitle": "通过 SchaleDB 字符串添加",
+    "currentStatus": "当前登记状态",
+    "registeredCount": "已登记学生数：{count}"
+  },
+  "profile": {
+    "heading": "完善个人资料",
+    "loginRequired": "需要登录。",
+    "username": "用户名",
+    "nickname": "昵称",
+    "bio": "自我介绍",
+    "usernamePlaceholder": "例如：sensei_123",
+    "nicknamePlaceholder": "输入显示名称",
+    "bioPlaceholder": "喜欢的学生、游玩风格等",
+    "availableAfterLogin": "登录后即可使用个人资料设置。"
+  },
+  "youtube": {
+    "heading": "设置 YouTube 联动",
+    "loginRequired": "需要登录。",
+    "statusLabel": "连接状态",
+    "connected": "已连接",
+    "disconnected": "未连接",
+    "description": "连接时会请求 YouTube 只读权限。如果使用品牌账号，请确认正在连接的目标账号。",
+    "availableAfterLogin": "登录后即可使用 YouTube 联动。"
+  },
+  "completed": {
+    "heading": "最终确认",
+    "done": "已完成或已跳过。",
+    "pending": "还有内容需要确认。",
+    "finalActionLabel": "最终操作",
+    "finalActionTitle": "结束设置",
+    "finalActionDescription": "完成后，进度会达到 100%，页眉中的快速开始提示也会隐藏。"
+  }
+}

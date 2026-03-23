@@ -224,11 +224,8 @@ export default function Home() {
             <Link href="/tools/training-planning"><FeatureItem title={t('tools.actions.trainingPlanning.title')} description={t('tools.actions.trainingPlanning.description')} /></Link>
             <Link href="/tools/event-schedule"><FeatureItem title={t('tools.actions.eventSchedule.title')} description={t('tools.actions.eventSchedule.description')} /></Link>
             <Link href="/tools/bgm-player"><FeatureItem title={t('tools.actions.bgmPlayer.title')} description={t('tools.actions.bgmPlayer.description')} /></Link>
-            <Link href="/tools/bgm-dj"><FeatureItem title={t('tools.actions.bgmDj.title')} description={t('tools.actions.bgmDj.description')} /></Link>
             <Link href="/tools/student-image"><FeatureItem title={t('tools.actions.studentImage.title')} description={t('tools.actions.studentImage.description')} /></Link>
-            <Link href="/tools/momotalk-simulator"><FeatureItem title={t('tools.actions.momotalkSimulator.title')} description={t('tools.actions.momotalkSimulator.description')} /></Link>
             <Link href="/tools/story-editor"><FeatureItem title={t('tools.actions.storyEditor.title')} description={t('tools.actions.storyEditor.description')} /></Link>
-            <Link href="/tools/wiki-student-converter"><FeatureItem title={t('tools.actions.wikiStudentConverter.title')} description={t('tools.actions.wikiStudentConverter.description')} /></Link>
           </div>
         </CollapsibleBox>
 

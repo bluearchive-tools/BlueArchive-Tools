@@ -2,18 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
-import tutorialSteps from '../data/site-tutorial-steps.json'
+import { getDefaultTutorialSteps, parseTutorialSteps, type TutorialStep } from '../lib/site-tutorial'
+import type { Locale } from '../lib/i18n/config'
 
 const PROMPT_KEY = 'app:siteTutorialPrompted'
 const COMPLETED_KEY = 'app:siteTutorialCompleted'
 const CUSTOM_TUTORIAL_KEY = 'app:siteTutorialCustom'
 const PREVIEW_RETURN_KEY = 'app:siteTutorialPreviewReturnTo'
-
-type TutorialStep = {
-  text: string
-  selector?: string
-  title?: string
-}
 
 type HighlightRect = {
   top: number
@@ -21,43 +16,6 @@ type HighlightRect = {
   width: number
   height: number
 }
-
-
-type LocaleKey = 'ja' | 'en'
-
-const getDefaultStepsFromJson = (locale: LocaleKey): TutorialStep[] => {
-  const root = tutorialSteps as Record<LocaleKey, Record<string, unknown>>
-  return parseSteps(root[locale] ?? root.ja)
-}
-
-const compareStepKeys = (a: string, b: string) => {
-  const partA = a.match(/^(.*?)(\d+)$/)
-  const partB = b.match(/^(.*?)(\d+)$/)
-  if (partA && partB && partA[1] === partB[1]) {
-    const numDiff = Number(partA[2]) - Number(partB[2])
-    if (numDiff !== 0) return numDiff
-  }
-  return a.localeCompare(b)
-}
-
-const parseSteps = (value: unknown): TutorialStep[] => {
-  if (!value || typeof value !== 'object') return []
-  const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => compareStepKeys(a, b))
-  return entries
-    .map(([, item]) => {
-      if (typeof item === 'string') return { text: item }
-      if (!item || typeof item !== 'object') return null
-      const data = item as Record<string, unknown>
-      if (typeof data.text !== 'string' || !data.text.trim()) return null
-      return {
-        text: data.text,
-        selector: typeof data.selector === 'string' && data.selector.trim() ? data.selector : undefined,
-        title: typeof data.title === 'string' && data.title.trim() ? data.title : undefined,
-      }
-    })
-    .filter((step): step is TutorialStep => !!step)
-}
-
 
 const isElementVisible = (element: HTMLElement) => {
   const style = window.getComputedStyle(element)
@@ -82,8 +40,8 @@ const needsMobileToolsExpansion = (selector: string) =>
 
 export default function SiteTutorial() {
   const t = useTranslations('site-tutorial')
-  const locale = (useLocale() as LocaleKey) || 'ja'
-  const defaultSteps = useMemo(() => getDefaultStepsFromJson(locale), [locale])
+  const locale = (useLocale() as Locale) || 'ja'
+  const defaultSteps = useMemo(() => getDefaultTutorialSteps(locale), [locale])
   const [steps, setSteps] = useState<TutorialStep[]>(defaultSteps)
   const [promptOpen, setPromptOpen] = useState(false)
   const [tutorialOpen, setTutorialOpen] = useState(false)
@@ -139,14 +97,13 @@ export default function SiteTutorial() {
         setSteps(defaultSteps)
         return
       }
-      const parsed: unknown = JSON.parse(custom)
-      const customSteps = parseSteps(parsed)
+      const parsed = JSON.parse(custom) as Record<string, string | { text?: string; selector?: string; title?: string }>
+      const customSteps = parseTutorialSteps(parsed)
       setSteps(customSteps.length ? customSteps : defaultSteps)
     } catch {
       setSteps(defaultSteps)
     }
   }, [defaultSteps])
-
 
   useEffect(() => {
     const onShortcut = () => {
@@ -238,128 +195,148 @@ export default function SiteTutorial() {
       window.requestAnimationFrame(updateRect)
     })
     mutationObserver.observe(document.body, {
+      attributes: true,
       childList: true,
       subtree: true,
-      attributes: true,
-      attributeFilter: ['class', 'style', 'hidden', 'aria-hidden'],
     })
 
     window.addEventListener('resize', updateRect)
     window.addEventListener('scroll', updateRect, true)
 
     return () => {
-      mutationObserver.disconnect()
       window.clearTimeout(delayedRectTimer)
       window.clearInterval(retryTimer)
+      mutationObserver.disconnect()
       window.removeEventListener('resize', updateRect)
       window.removeEventListener('scroll', updateRect, true)
       collapseExpanded()
     }
-  }, [tutorialOpen, stepIndex, steps])
+  }, [stepIndex, steps, tutorialOpen])
 
-  const closePrompt = (value: boolean) => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(PROMPT_KEY, '1')
-      } catch {
-        /* ignore */
-      }
+  useEffect(() => {
+    if (!tutorialOpen || !steps.length) return
+    if (stepIndex >= steps.length) {
+      setStepIndex(steps.length - 1)
     }
-    setPromptOpen(false)
-    if (value) {
-      setTutorialOpen(true)
-      setStepIndex(0)
-      return
-    }
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('site-tutorial-skipped'))
-    }
-  }
+  }, [stepIndex, steps.length, tutorialOpen])
 
-  const finishTutorial = () => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(COMPLETED_KEY, '1')
-      } catch {
-        /* ignore */
-      }
-    }
-    setTutorialOpen(false)
-    collapseExpanded()
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('site-tutorial-finished'))
-    }
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (!previewMode || !tutorialOpen) return
 
-    if (typeof window !== 'undefined' && previewMode) {
-      const returnTo = localStorage.getItem(PREVIEW_RETURN_KEY)
-      if (returnTo) {
-        localStorage.removeItem(PREVIEW_RETURN_KEY)
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        const returnTo = localStorage.getItem(PREVIEW_RETURN_KEY) || '/tutorial/editor'
         window.location.href = returnTo
       }
     }
-  }
 
-  const nextStep = () => {
-    if (stepIndex >= steps.length - 1) {
-      finishTutorial()
-      return
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [previewMode, tutorialOpen])
+
+  const closePrompt = (accepted: boolean) => {
+    setPromptOpen(false)
+    try {
+      localStorage.setItem(PROMPT_KEY, '1')
+    } catch {
+      /* ignore */
     }
-    setStepIndex((prev) => Math.min(prev + 1, steps.length - 1))
+    if (accepted) {
+      setTutorialOpen(true)
+      setStepIndex(0)
+    }
   }
 
-  const prevStep = () => {
-    setStepIndex((prev) => Math.max(prev - 1, 0))
+  const closeTutorial = () => {
+    setTutorialOpen(false)
+    setPromptOpen(false)
+    setStepIndex(0)
+    try {
+      localStorage.setItem(COMPLETED_KEY, '1')
+      if (previewMode) {
+        const returnTo = localStorage.getItem(PREVIEW_RETURN_KEY) || '/tutorial/editor'
+        localStorage.removeItem(PREVIEW_RETURN_KEY)
+        window.location.href = returnTo
+      }
+    } catch {
+      /* ignore */
+    }
   }
 
-  if ((!promptOpen && !tutorialOpen) || steps.length === 0) return null
+  const goPrev = () => setStepIndex((prev) => Math.max(0, prev - 1))
+  const goNext = () => {
+    setStepIndex((prev) => {
+      if (prev >= steps.length - 1) {
+        closeTutorial()
+        return prev
+      }
+      return prev + 1
+    })
+  }
 
-  const current = steps[stepIndex]
+  if (!promptOpen && !tutorialOpen) return null
+
+  const current = steps[Math.max(0, Math.min(stepIndex, steps.length - 1))]
+  const stepLabel = t('tutorial.stepLabel', { current: stepIndex + 1, total: steps.length })
 
   return (
-    <div className="fixed inset-0 z-[80] bg-black/40 p-4">
+    <>
+      {highlightRect && tutorialOpen && (
+        <div
+          className="pointer-events-none fixed z-[190] rounded-xl ring-4 ring-sky-400/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.55)] transition-all duration-200"
+          style={{
+            top: Math.max(highlightRect.top - 8, 0),
+            left: Math.max(highlightRect.left - 8, 0),
+            width: Math.min(highlightRect.width + 16, viewport.width),
+            height: Math.min(highlightRect.height + 16, viewport.height),
+          }}
+        />
+      )}
+
       {promptOpen && (
-        <div className="mx-auto mt-24 w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
-          <h2 className="text-lg font-semibold">{t('prompt.title')}</h2>
-          <p className="mt-2 text-sm text-gray-600">{t('prompt.body')}</p>
-          <div className="mt-4 flex justify-end gap-2">
-            <button type="button" onClick={() => closePrompt(false)} className="rounded-md border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50">{t('prompt.no')}</button>
-            <button type="button" onClick={() => closePrompt(true)} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">{t('prompt.yes')}</button>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/45 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-900 dark:text-white">
+            <h2 className="text-xl font-bold">{t('prompt.title')}</h2>
+            <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{t('prompt.body')}</p>
+            <div className="mt-5 flex justify-end gap-3">
+              <button type="button" onClick={() => closePrompt(false)} className="rounded-lg border px-4 py-2 text-sm">
+                {t('prompt.no')}
+              </button>
+              <button type="button" onClick={() => closePrompt(true)} className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white">
+                {t('prompt.yes')}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {tutorialOpen && (
-        <>
-          {highlightRect && (
-            <div
-              className="fixed z-[81] rounded-lg border-2 border-blue-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)] pointer-events-none"
-              style={{ top: highlightRect.top - 6, left: highlightRect.left - 6, width: highlightRect.width + 12, height: highlightRect.height + 12 }}
-            />
-          )}
-          <div
-            className="fixed z-[82] w-full max-w-xl rounded-lg bg-white p-6 shadow-lg"
-            style={{
-              top: highlightRect ? Math.min(highlightRect.top + highlightRect.height + 18, viewport.height - 280) : undefined,
-              left: highlightRect ? Math.max(16, Math.min(highlightRect.left, viewport.width - 560)) : undefined,
-              right: highlightRect ? undefined : 16,
-              margin: highlightRect ? undefined : '0 auto',
-              insetInline: highlightRect ? undefined : 0,
-              marginTop: highlightRect ? undefined : '6rem',
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">{current.title ?? t('tutorial.title')}</h2>
-              <button type="button" onClick={finishTutorial} className="text-sm font-semibold text-gray-500 hover:text-gray-700">{t('tutorial.skip')}</button>
+      {tutorialOpen && current && (
+        <div className="fixed inset-x-0 bottom-4 z-[210] flex justify-center px-4">
+          <div className="w-full max-w-xl rounded-2xl bg-white/95 p-4 shadow-2xl ring-1 ring-slate-200 backdrop-blur dark:bg-slate-900/95 dark:text-white dark:ring-slate-700">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-sky-600">{stepLabel}</p>
+                <h3 className="mt-1 text-lg font-bold">{current.title || t('tutorial.title')}</h3>
+              </div>
+              <button type="button" onClick={closeTutorial} className="rounded-lg border px-3 py-1.5 text-sm">
+                {t('tutorial.skip')}
+              </button>
             </div>
-            <p className="mt-3 text-sm text-gray-600">{t('tutorial.stepLabel', { current: stepIndex + 1, total: steps.length })}</p>
-            <p className="mt-4 text-base text-gray-700">{current.text}</p>
-            <div className="mt-6 flex justify-between">
-              <button type="button" onClick={prevStep} disabled={stepIndex === 0} className="rounded-md border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40">{t('tutorial.back')}</button>
-              <button type="button" onClick={nextStep} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">{stepIndex >= steps.length - 1 ? t('tutorial.finish') : t('tutorial.next')}</button>
+
+            <p className="mt-3 text-sm leading-6 text-slate-700 dark:text-slate-200">{current.text}</p>
+
+            <div className="mt-4 flex items-center justify-between">
+              <button type="button" onClick={goPrev} disabled={stepIndex === 0} className="rounded-lg border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40">
+                {t('tutorial.back')}
+              </button>
+              <button type="button" onClick={goNext} className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white">
+                {stepIndex >= steps.length - 1 ? t('tutorial.finish') : t('tutorial.next')}
+              </button>
             </div>
           </div>
-        </>
+        </div>
       )}
-    </div>
+    </>
   )
 }

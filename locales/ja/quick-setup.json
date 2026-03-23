@@ -1,0 +1,97 @@
+{
+  "loading": "クイックセットアップを読み込み中...",
+  "progress": "進行状況",
+  "stepLabel": "STEP {step}",
+  "buttons": {
+    "skip": "このステップをスキップ",
+    "nextStep": "次のステップへ",
+    "saveAndNext": "保存して次へ",
+    "backToLogin": "ログインステップへ戻る",
+    "loginAgain": "やっぱりログインする",
+    "connectYoutube": "YouTubeを接続",
+    "complete": "セットアップ完了",
+    "backHome": "ホームへ戻る",
+    "back": "戻る",
+    "next": "進む"
+  },
+  "messages": {
+    "loginFailed": "ログインに失敗しました: {message}",
+    "loginRequired": "ログインが必要です。",
+    "usernameInvalid": "ユーザー名は3〜20文字の英数字、-_のみ使用できます。",
+    "profileSaved": "プロフィールを保存しました。",
+    "youtubeFailed": "YouTube 連携に失敗しました: {message}"
+  },
+  "steps": {
+    "login": {
+      "title": "ログインする",
+      "description": "進行状況や各種設定をアカウントへ保存できるよう、最初にログインします。"
+    },
+    "students": {
+      "title": "生徒データを追加する",
+      "description": "画像かSchaleDBのどちらを使うか選び、あなたの生徒データを登録します。"
+    },
+    "profile": {
+      "title": "プロフィールを設定する",
+      "description": "ユーザー名や表示名を設定して、マイページや公開表示を整えます。"
+    },
+    "youtube": {
+      "title": "YouTubeアカウントを接続する",
+      "description": "YouTube連携を有効にして、関連する投稿者機能を利用できるようにします。"
+    },
+    "completed": {
+      "title": "完了",
+      "description": "最後に内容を確認し、セットアップを完了します。"
+    }
+  },
+  "login": {
+    "heading": "まずはアカウントを用意しましょう",
+    "googleTitle": "Googleでログイン",
+    "googleDescription": "YouTube連携までまとめて進めたい人におすすめです。",
+    "googleDone": "Googleでログイン済みです。",
+    "discordTitle": "Discordでログイン",
+    "discordDescription": "まずはアカウントだけ作って始めたいときに便利です。",
+    "statusTitle": "このステップの状態",
+    "done": "ログイン済み、またはこのステップをスキップ済みです。",
+    "pending": "まだログインしていません。ここでログインすると後の設定がスムーズです。"
+  },
+  "students": {
+    "heading": "追加方法を選んでください",
+    "description": "画像OCRで進めるか、SchaleDBのエクスポート文字列を使うかを先に決めると、この中で必要な操作だけ表示します。",
+    "imageTitle": "画像から追加",
+    "imageDescription": "画像をアップロードして OCR で抽出し、その場で確認・保存まで進めます。",
+    "schaledbTitle": "SchaleDBから追加",
+    "schaledbDescription": "SchaleDB のエクスポート文字列を貼り付けて、まとめて取り込みます。",
+    "imageSectionTitle": "画像アップロードで追加する",
+    "schaledbSectionTitle": "SchaleDB文字列で追加する",
+    "currentStatus": "現在の登録状況",
+    "registeredCount": "登録済み生徒数: {count}"
+  },
+  "profile": {
+    "heading": "プロフィールを整えましょう",
+    "loginRequired": "ログインが必要です。",
+    "username": "ユーザー名",
+    "nickname": "ニックネーム",
+    "bio": "自己紹介",
+    "usernamePlaceholder": "例: sensei_123",
+    "nicknamePlaceholder": "表示名を入力",
+    "bioPlaceholder": "好きな生徒やプレイスタイルなど",
+    "availableAfterLogin": "プロフィール設定はログイン後に利用できます。"
+  },
+  "youtube": {
+    "heading": "YouTube連携を設定する",
+    "loginRequired": "ログインが必要です。",
+    "statusLabel": "接続状態",
+    "connected": "接続済み",
+    "disconnected": "未接続",
+    "description": "接続時には YouTube 読み取り権限を要求します。ブランドアカウントを使う場合も、接続先を確認しながら進めてください。",
+    "availableAfterLogin": "YouTube 連携はログイン後に利用できます。"
+  },
+  "completed": {
+    "heading": "セットアップの最終確認",
+    "done": "完了またはスキップ済みです。",
+    "pending": "まだ確認が残っています。",
+    "finalActionLabel": "最終アクション",
+    "finalActionTitle": "セットアップを終了する",
+    "finalActionDescription": "完了すると、進行度が100%になり、ヘッダーのクイックスタート表示も非表示になります。"
+  }
+}

@@ -22,8 +22,7 @@
     "zh-CN": "简体中文",
     "zh-TW": "繁體中文"
   },
-  "quickStart": "快速開始"
-,
+  "quickStart": "快速開始",
   "quickStartNotice": {
     "title": "有可繼續的快速設定",
     "body": "初始設定尚未完成，你可以從這裡繼續。",

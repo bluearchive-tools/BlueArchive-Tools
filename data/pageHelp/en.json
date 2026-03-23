@@ -1,0 +1,116 @@
+{
+  "_common": {
+    "buttonLabel": "About this page"
+  },
+  "home": {
+    "title": "Welcome",
+    "body": [
+      "Browse the main tools for students, squads, timelines, and calculators.",
+      "Use each card to jump directly to the feature you need."
+    ]
+  },
+  "students": {
+    "title": "Student data list",
+    "body": [
+      "Review and sort your saved student stats. Use filters or grid switches to focus on specific roles or attributes.",
+      "Register new students or update local data before syncing."
+    ]
+  },
+  "students-import": {
+    "title": "Student OCR import",
+    "body": [
+      "Upload screenshots to extract student stats with OCR.",
+      "Open this help panel for tips on improving accuracy and speed."
+    ]
+  },
+  "student-detail": {
+    "title": "Student details",
+    "body": [
+      "Check detailed stats, skills, and equipment for a single student.",
+      "Use this page as the source of truth when comparing builds."
+    ]
+  },
+  "squads": {
+    "title": "Squad management",
+    "body": [
+      "Create and edit squads with strikers and specials.",
+      "Share squads with others or copy existing shared squads into your list."
+    ]
+  },
+  "tl-maker": {
+    "title": "TL maker",
+    "body": [
+      "Build or import timelines, then adjust skills, markers, and squads.",
+      "Use the controls to manage timeline length, skill colors, and templates."
+    ]
+  },
+  "tl-maker-dev": {
+    "title": "TL maker (dev)",
+    "body": [
+      "Try experimental TL features such as free layout and plugins.",
+      "Features may change frequently—use with caution for production timelines."
+    ]
+  },
+  "tl-search": {
+    "title": "TL search",
+    "body": [
+      "Search published timelines by boss, armor, terrain, or season.",
+      "Open a TL to view details or copy it to your own workspace."
+    ]
+  },
+  "tl-update": {
+    "title": "TL import",
+    "body": [
+      "Fetch timeline data for a selected season and save it locally.",
+      "Use this to update your workspace with the newest shared TLs."
+    ]
+  },
+  "tl-damage": {
+    "title": "Damage calculator",
+    "body": [
+      "Estimate expected damage for squads and skills under different conditions.",
+      "Adjust stats to compare builds and share results."
+    ]
+  },
+  "settings": {
+    "title": "Settings",
+    "body": [
+      "Switch between light and dark mode.",
+      "Clear cached data such as student records, TL caches, and notice states."
+    ]
+  },
+  "mypage": {
+    "title": "User settings",
+    "body": [
+      "Edit your profile information and linked services.",
+      "Manage your Tools ID, nickname, and visibility preferences."
+    ]
+  },
+  "tools-divine-calc": {
+    "title": "Kivotos insights calculator",
+    "body": [
+      "Estimate Kivotos Insights (神名文字) needs and expected returns.",
+      "Use rate-adjusted results to plan pulls and farming."
+    ]
+  },
+  "tools-bond-calc": {
+    "title": "Bond calculator",
+    "body": [
+      "Calculate required items to reach your target bond level.",
+      "Simulate different item mixes to minimize overuse."
+    ]
+  },
+  "tools-event-schedule": {
+    "title": "Event schedule",
+    "body": [
+      "Browse current and upcoming event timelines.",
+      "Use the calendar to check dates and plan stamina or ticket usage."
+    ]
+  },
+  "story-editor": {
+    "title": "Story Editor"
+  },
+  "wiki-student-converter": {
+    "title": "Wikiru student converter"
+  }
+}

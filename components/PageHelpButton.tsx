@@ -3,25 +3,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircleQuestion } from '@fortawesome/free-solid-svg-icons'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useTheme } from './ThemeProvider'
-import helpContent from '../data/pageHelp.json'
+import { PAGE_HELP_BY_LOCALE, getPageHelpButtonLabel, getPageHelpEntry } from '../lib/page-help'
+import type { Locale } from '../lib/i18n/config'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 
-type PageHelpEntry = {
-  title: string
-  buttonLabel?: string
-}
-
-type PageHelpLocale = Record<string, PageHelpEntry> & {
-  _common?: {
-    buttonLabel?: string
-  }
-}
-
-const helpMap = helpContent as unknown as Record<string, PageHelpLocale>
 const CUSTOM_HELP_MD_STORAGE_KEY = 'customHelpMarkdown'
 
 interface Props {
@@ -30,7 +19,8 @@ interface Props {
 }
 
 export default function PageHelpButton({ pageKey, className }: Props) {
-  const locale = useLocale()
+  const locale = useLocale() as Locale
+  const t = useTranslations('page-help')
   const { dark } = useTheme()
   const [visible, setVisible] = useState(false)
   const [active, setActive] = useState(false)
@@ -40,16 +30,16 @@ export default function PageHelpButton({ pageKey, className }: Props) {
   const [loading, setLoading] = useState(false)
 
   const content = useMemo(() => {
-    const localeContent = helpMap[locale] ?? helpMap.en ?? {}
-    const fallbackContent = helpMap.en ?? {}
-    const entry = (localeContent as Record<string, PageHelpEntry | undefined>)[pageKey] ?? (fallbackContent as Record<string, PageHelpEntry | undefined>)[pageKey]
+    const localeContent = PAGE_HELP_BY_LOCALE[locale] ?? PAGE_HELP_BY_LOCALE.en
+    const fallbackContent = PAGE_HELP_BY_LOCALE.en
+    const entry = getPageHelpEntry(localeContent, pageKey) ?? getPageHelpEntry(fallbackContent, pageKey)
     const buttonLabel =
       entry?.buttonLabel ??
-      (localeContent as { _common?: { buttonLabel?: string } })._common?.buttonLabel ??
-      (fallbackContent as { _common?: { buttonLabel?: string } })._common?.buttonLabel ??
-      'About this page'
+      getPageHelpButtonLabel(localeContent) ??
+      getPageHelpButtonLabel(fallbackContent) ??
+      t('defaultButtonLabel')
     return entry ? { entry, buttonLabel } : null
-  }, [locale, pageKey])
+  }, [locale, pageKey, t])
 
   useEffect(() => {
     if (!visible) return
@@ -59,7 +49,7 @@ export default function PageHelpButton({ pageKey, className }: Props) {
       setError(null)
       setMarkdown(null)
       setHeading(null)
-      const locales = [locale, 'en']
+      const locales: Locale[] = locale === 'en' ? ['en'] : [locale, 'en']
       for (const loc of locales) {
         try {
           const customRaw = localStorage.getItem(CUSTOM_HELP_MD_STORAGE_KEY)
@@ -68,10 +58,10 @@ export default function PageHelpButton({ pageKey, className }: Props) {
             const customMarkdown = parsed[`${loc}:${pageKey}`]
             if (customMarkdown) {
               const lines = customMarkdown.split(/\r?\n/)
-              const firstHeadingIndex = lines.findIndex((l) => l.trim().startsWith('# '))
+              const firstHeadingIndex = lines.findIndex((line) => line.trim().startsWith('# '))
               if (firstHeadingIndex >= 0) {
-                const h = lines[firstHeadingIndex].replace(/^#\s+/, '').trim()
-                setHeading(h || null)
+                const nextHeading = lines[firstHeadingIndex]?.replace(/^#\s+/, '').trim() ?? ''
+                setHeading(nextHeading || null)
                 lines.splice(firstHeadingIndex, 1)
               }
               setMarkdown(lines.join('\n').trim() || customMarkdown)
@@ -89,10 +79,10 @@ export default function PageHelpButton({ pageKey, className }: Props) {
           const text = await res.text()
           if (cancelled) return
           const lines = text.split(/\r?\n/)
-          const firstHeadingIndex = lines.findIndex((l) => l.trim().startsWith('# '))
+          const firstHeadingIndex = lines.findIndex((line) => line.trim().startsWith('# '))
           if (firstHeadingIndex >= 0) {
-            const h = lines[firstHeadingIndex].replace(/^#\s+/, '').trim()
-            setHeading(h || null)
+            const nextHeading = lines[firstHeadingIndex]?.replace(/^#\s+/, '').trim() ?? ''
+            setHeading(nextHeading || null)
             lines.splice(firstHeadingIndex, 1)
           }
           setMarkdown(lines.join('\n').trim() || text)
@@ -103,22 +93,21 @@ export default function PageHelpButton({ pageKey, className }: Props) {
         }
       }
       if (!cancelled) {
-        setError('コンテンツを読み込めませんでした。')
+        setError(t('loadError'))
         setLoading(false)
       }
     }
-    load()
+    void load()
     return () => {
       cancelled = true
     }
-  }, [visible, locale, pageKey])
+  }, [visible, locale, pageKey, t])
 
   useEffect(() => {
     if (!visible) return
     const timer = setTimeout(() => setActive(true), 20)
     return () => clearTimeout(timer)
   }, [visible])
-
 
   useEffect(() => {
     const openByShortcut = () => setVisible(true)
@@ -152,7 +141,7 @@ export default function PageHelpButton({ pageKey, className }: Props) {
         >
           <div
             className={`${dark ? 'bg-gray-800 text-white' : 'bg-gray-100'} p-4 max-w-md w-full rounded-lg h-[70vh] max-h-[70vh] flex flex-col`}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xl font-semibold">{heading || entry.title}</h2>
@@ -161,7 +150,7 @@ export default function PageHelpButton({ pageKey, className }: Props) {
               </button>
             </div>
             <div className="space-y-2 overflow-y-auto pr-1">
-              {loading && <p className="text-sm text-gray-500 dark:text-gray-300">読み込み中...</p>}
+              {loading && <p className="text-sm text-gray-500 dark:text-gray-300">{t('loading')}</p>}
               {error && <p className="text-sm text-red-500">{error}</p>}
               {!loading && !error && markdown && (
                 <ReactMarkdown
@@ -173,9 +162,7 @@ export default function PageHelpButton({ pageKey, className }: Props) {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img {...props} alt={alt ?? ''} className={`max-w-full h-auto ${props.className ?? ''}`} />
                     ),
-                    a: (props) => (
-                      <a {...props} target={props.target ?? '_blank'} rel={props.rel ?? 'noreferrer'} />
-                    ),
+                    a: (props) => <a {...props} target={props.target ?? '_blank'} rel={props.rel ?? 'noreferrer'} />,
                   }}
                 >
                   {markdown}
