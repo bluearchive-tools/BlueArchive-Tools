@@ -24,43 +24,43 @@
   "steps": {
     "login": {
       "title": "ログインする",
-      "description": "進行状況や各種設定をアカウントへ保存できるよう、最初にログインします。"
+      "description": "ログインすると、他の端末でも同じデータを利用できます"
     },
     "students": {
       "title": "生徒データを追加する",
-      "description": "画像かSchaleDBのどちらを使うか選び、あなたの生徒データを登録します。"
+      "description": "生徒データを登録しておくと、サイトが便利に使えます"
     },
     "profile": {
       "title": "プロフィールを設定する",
-      "description": "ユーザー名や表示名を設定して、マイページや公開表示を整えます。"
+      "description": "基本のプロフィールを設定しましょう"
     },
     "youtube": {
       "title": "YouTubeアカウントを接続する",
-      "description": "YouTube連携を有効にして、関連する投稿者機能を利用できるようにします。"
+      "description": "YouTube連携をすると、投稿者用機能が使えます"
     },
     "completed": {
       "title": "完了",
-      "description": "最後に内容を確認し、セットアップを完了します。"
+      "description": "全てのステップを完了しました"
     }
   },
   "login": {
     "heading": "まずはアカウントを用意しましょう",
     "googleTitle": "Googleでログイン",
-    "googleDescription": "YouTube連携までまとめて進めたい人におすすめです。",
+    "googleDescription": "Googleを使用してアカウントを作成します",
     "googleDone": "Googleでログイン済みです。",
     "discordTitle": "Discordでログイン",
-    "discordDescription": "まずはアカウントだけ作って始めたいときに便利です。",
+    "discordDescription": "Discordを使用してアカウントを作成します",
     "statusTitle": "このステップの状態",
     "done": "ログイン済み、またはこのステップをスキップ済みです。",
-    "pending": "まだログインしていません。ここでログインすると後の設定がスムーズです。"
+    "pending": "まだログインしていません。ログインすると後の設定がスムーズです。"
   },
   "students": {
     "heading": "追加方法を選んでください",
-    "description": "画像OCRで進めるか、SchaleDBのエクスポート文字列を使うかを先に決めると、この中で必要な操作だけ表示します。",
+    "description": "スクショまたはSchaleDBからデータを追加できます",
     "imageTitle": "画像から追加",
-    "imageDescription": "画像をアップロードして OCR で抽出し、その場で確認・保存まで進めます。",
+    "imageDescription": "スクショからデータを登録できます。",
     "schaledbTitle": "SchaleDBから追加",
-    "schaledbDescription": "SchaleDB のエクスポート文字列を貼り付けて、まとめて取り込みます。",
+    "schaledbDescription": "SchaleDBに保存してあるデータを移行できます。",
     "imageSectionTitle": "画像アップロードで追加する",
     "schaledbSectionTitle": "SchaleDB文字列で追加する",
     "currentStatus": "現在の登録状況",
@@ -69,12 +69,12 @@
   "profile": {
     "heading": "プロフィールを整えましょう",
     "loginRequired": "ログインが必要です。",
-    "username": "ユーザー名",
+    "username": "ユーザー名(3-20文字、英数字と-_のみ)",
     "nickname": "ニックネーム",
     "bio": "自己紹介",
-    "usernamePlaceholder": "例: sensei_123",
+    "usernamePlaceholder": "例: user-id",
     "nicknamePlaceholder": "表示名を入力",
-    "bioPlaceholder": "好きな生徒やプレイスタイルなど",
+    "bioPlaceholder": "自己紹介を入力",
     "availableAfterLogin": "プロフィール設定はログイン後に利用できます。"
   },
   "youtube": {
@@ -83,8 +83,8 @@
     "statusLabel": "接続状態",
     "connected": "接続済み",
     "disconnected": "未接続",
-    "description": "接続時には YouTube 読み取り権限を要求します。ブランドアカウントを使う場合も、接続先を確認しながら進めてください。",
-    "availableAfterLogin": "YouTube 連携はログイン後に利用できます。"
+    "description": "遷移したウィンドウで、使用するYouTubeチャンネルを選択してください",
+    "availableAfterLogin": "YouTube連携はログイン後に利用できます。"
   },
   "completed": {
     "heading": "セットアップの最終確認",
