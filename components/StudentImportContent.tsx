@@ -41,37 +41,8 @@ interface ExtractedStudent {
   source: string
 }
 
-interface WebkitFileSystemEntry {
-  readonly isFile: boolean
-  readonly isDirectory: boolean
-  readonly name: string
-  readonly fullPath: string
-}
-
-interface WebkitFileSystemFileEntry extends WebkitFileSystemEntry {
-  readonly isFile: true
-  readonly isDirectory: false
-  file: (
-    successCallback: (file: File) => void,
-    errorCallback?: (error: DOMException) => void
-  ) => void
-}
-
-interface WebkitFileSystemDirectoryReader {
-  readEntries: (
-    successCallback: (entries: WebkitFileSystemEntry[]) => void,
-    errorCallback?: (error: DOMException) => void
-  ) => void
-}
-
-interface WebkitFileSystemDirectoryEntry extends WebkitFileSystemEntry {
-  readonly isFile: false
-  readonly isDirectory: true
-  createReader: () => WebkitFileSystemDirectoryReader
-}
-
 type WebkitDataTransferItem = DataTransferItem & {
-  webkitGetAsEntry?: () => WebkitFileSystemEntry | null
+  webkitGetAsEntry?: () => FileSystemEntry | null
 }
 
 const emptyStats = {
@@ -350,14 +321,14 @@ const sortFiles = (files: File[]) =>
     return aPath.localeCompare(bPath, 'ja')
   })
 
-const readFileEntry = (entry: WebkitFileSystemFileEntry) =>
+const readFileEntry = (entry: FileSystemFileEntry) =>
   new Promise<File>((resolve, reject) => {
     entry.file(resolve, reject)
   })
 
-const readDirectoryEntries = (reader: WebkitFileSystemDirectoryReader) =>
-  new Promise<WebkitFileSystemEntry[]>((resolve, reject) => {
-    const collected: WebkitFileSystemEntry[] = []
+const readDirectoryEntries = (reader: FileSystemDirectoryReader) =>
+  new Promise<FileSystemEntry[]>((resolve, reject) => {
+    const collected: FileSystemEntry[] = []
 
     const readNext = () => {
       reader.readEntries(
@@ -376,7 +347,7 @@ const readDirectoryEntries = (reader: WebkitFileSystemDirectoryReader) =>
     readNext()
   })
 
-const collectFilesFromEntry = async (entry: WebkitFileSystemEntry): Promise<File[]> => {
+const collectFilesFromEntry = async (entry: FileSystemEntry): Promise<File[]> => {
   if (isFileSystemFileEntry(entry)) {
     return [await readFileEntry(entry)]
   }
@@ -395,7 +366,7 @@ const collectDroppedFiles = async (dataTransfer: DataTransfer): Promise<File[]> 
   const items = Array.from(dataTransfer.items) as WebkitDataTransferItem[]
   const entries = items
     .map((item) => item.webkitGetAsEntry?.() ?? null)
-    .filter((entry): entry is WebkitFileSystemEntry => entry !== null)
+    .filter((entry): entry is FileSystemEntry => entry !== null)
 
   if (entries.length > 0) {
     const files = await Promise.all(entries.map((entry) => collectFilesFromEntry(entry)))
@@ -417,13 +388,13 @@ const isImageFile = (file: File) =>
   file.type.startsWith('image/') || imageFilePattern.test(file.name)
 
 const isFileSystemFileEntry = (
-  entry: WebkitFileSystemEntry
-): entry is WebkitFileSystemFileEntry =>
+  entry: FileSystemEntry
+): entry is FileSystemFileEntry =>
   entry.isFile
 
 const isFileSystemDirectoryEntry = (
-  entry: WebkitFileSystemEntry
-): entry is WebkitFileSystemDirectoryEntry => entry.isDirectory
+  entry: FileSystemEntry
+): entry is FileSystemDirectoryEntry => entry.isDirectory
 
 const extractNearText = (text: string, name: string) => {
   const index = text.indexOf(name)
