@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent as ReactDragEvent } from 'react'
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
+import { useLocale, useTranslations } from 'next-intl'
 
 interface Student {
   id: string
@@ -40,6 +41,39 @@ interface ExtractedStudent {
   source: string
 }
 
+interface FileSystemEntry {
+  readonly isFile: boolean
+  readonly isDirectory: boolean
+  readonly name: string
+  readonly fullPath: string
+}
+
+interface FileSystemFileEntry extends FileSystemEntry {
+  readonly isFile: true
+  readonly isDirectory: false
+  file: (
+    successCallback: (file: File) => void,
+    errorCallback?: (error: DOMException) => void
+  ) => void
+}
+
+interface FileSystemDirectoryReader {
+  readEntries: (
+    successCallback: (entries: FileSystemEntry[]) => void,
+    errorCallback?: (error: DOMException) => void
+  ) => void
+}
+
+interface FileSystemDirectoryEntry extends FileSystemEntry {
+  readonly isFile: false
+  readonly isDirectory: true
+  createReader: () => FileSystemDirectoryReader
+}
+
+type WebkitDataTransferItem = DataTransferItem & {
+  webkitGetAsEntry?: () => FileSystemEntry | null
+}
+
 const emptyStats = {
   unique_star: 0,
   unique_level: 0,
@@ -61,6 +95,10 @@ const emptyStats = {
   item_tier: 0,
   alt_bonds: {},
 }
+
+const DEFAULT_OCR_ENGINE = 'paddleocr'
+const DEFAULT_OCR_MODEL = 'standard'
+const ESTIMATED_SECONDS_PER_IMAGE = 10
 
 type SchaleStudentRecord = Record<string, number | boolean | null>
 
@@ -305,11 +343,85 @@ const parseStudentDetails = (text: string) => {
   }
 }
 
+const sortFiles = (files: File[]) =>
+  files.slice().sort((a, b) => {
+    const aPath = a.webkitRelativePath || a.name
+    const bPath = b.webkitRelativePath || b.name
+    return aPath.localeCompare(bPath, 'ja')
+  })
+
+const readFileEntry = (entry: FileSystemFileEntry) =>
+  new Promise<File>((resolve, reject) => {
+    entry.file(resolve, reject)
+  })
+
+const readDirectoryEntries = (reader: FileSystemDirectoryReader) =>
+  new Promise<FileSystemEntry[]>((resolve, reject) => {
+    const collected: FileSystemEntry[] = []
+
+    const readNext = () => {
+      reader.readEntries(
+        (entries) => {
+          if (entries.length === 0) {
+            resolve(collected)
+            return
+          }
+          collected.push(...entries)
+          readNext()
+        },
+        (error) => reject(error)
+      )
+    }
+
+    readNext()
+  })
+
+const collectFilesFromEntry = async (entry: FileSystemEntry): Promise<File[]> => {
+  if (isFileSystemFileEntry(entry)) {
+    return [await readFileEntry(entry)]
+  }
+
+  if (isFileSystemDirectoryEntry(entry)) {
+    const reader = entry.createReader()
+    const childEntries = await readDirectoryEntries(reader)
+    const files = await Promise.all(childEntries.map((childEntry) => collectFilesFromEntry(childEntry)))
+    return files.flat()
+  }
+
+  return []
+}
+
+const collectDroppedFiles = async (dataTransfer: DataTransfer): Promise<File[]> => {
+  const items = Array.from(dataTransfer.items) as WebkitDataTransferItem[]
+  const entries = items
+    .map((item) => item.webkitGetAsEntry?.() ?? null)
+    .filter((entry): entry is FileSystemEntry => entry !== null)
+
+  if (entries.length > 0) {
+    const files = await Promise.all(entries.map((entry) => collectFilesFromEntry(entry)))
+    return files.flat()
+  }
+
+  return Array.from(dataTransfer.files)
+}
+
 const splitNote = [
-  'tesseract.js は画像を左右に分割し、左を上下→下を上下と分割します。',
-  'さらに左側を縦に3分割して各ステータスを抽出します。',
-  'PaddleOCR は左右分割のみで処理します。',
-].join('\n')
+  'leftTopBottom',
+  'leftColumns',
+  'paddleOnly',
+] as const
+
+const imageFilePattern = /\.(png|jpe?g|webp|gif|bmp|avif|heic|heif)$/i
+
+const isImageFile = (file: File) =>
+  file.type.startsWith('image/') || imageFilePattern.test(file.name)
+
+const isFileSystemFileEntry = (entry: FileSystemEntry): entry is FileSystemFileEntry =>
+  entry.isFile
+
+const isFileSystemDirectoryEntry = (
+  entry: FileSystemEntry
+): entry is FileSystemDirectoryEntry => entry.isDirectory
 
 const extractNearText = (text: string, name: string) => {
   const index = text.indexOf(name)
@@ -478,34 +590,6 @@ const splitStudentImage = async (file: File) => {
 const extractWeaponLevelFromText = (text: string) =>
   parseNumber(text, [/L[Vv]\.?\s*(\d{1,3})/, /レベル\s*(\d{1,3})/])
 
-const parseEntriesFromSegments = (
-  nameStarText: string,
-  statTexts: string[],
-  students: Student[],
-  weaponLevelText?: string
-) => {
-  const matched = findMatchedStudents(nameStarText, students)
-  if (!matched.length) return []
-  const star = extractStar(nameStarText)
-  const combinedStats = statTexts.join('\n')
-  const level = extractLevel(combinedStats)
-  const details = parseStudentDetails(combinedStats)
-  const weaponLevel = weaponLevelText ? extractWeaponLevelFromText(weaponLevelText) : null
-
-  return matched.map((student) => ({
-    studentId: student.id,
-    name: student.name,
-    level,
-    star,
-    ...details,
-    weaponLevel: weaponLevel ?? details.weaponLevel,
-    source: [nameStarText, combinedStats, weaponLevelText]
-      .filter(Boolean)
-      .join('\n')
-      .trim(),
-  }))
-}
-
 const parseEntriesFromLeftRight = (
   leftText: string,
   rightText: string | null,
@@ -648,6 +732,8 @@ export default function StudentImportContent({
   showHeader = true,
   onSaved,
 }: StudentImportContentProps) {
+  const t = useTranslations('student-import')
+  const locale = useLocale()
   const session = useSession()
   const supabase = useSupabaseClient()
   const [students, setStudents] = useState<Student[]>([])
@@ -656,21 +742,14 @@ export default function StudentImportContent({
   const [error, setError] = useState<string | null>(null)
   const [rawTexts, setRawTexts] = useState<string[]>([])
   const [entries, setEntries] = useState<ExtractedStudent[]>([])
-  const [ocrMode, setOcrMode] = useState<
-    'paddleocr' | 'deepseek' | 'deepseek-vllm' | 'tesseract'
-  >('paddleocr')
-  const [ocrModel, setOcrModel] = useState<'standard' | 'high'>('standard')
-  const [deepseekModel, setDeepseekModel] = useState<'deepseek-v1' | 'deepseek-v2'>(
-    'deepseek-v1'
-  )
-  const [deepseekVllmModel, setDeepseekVllmModel] = useState<
-    'deepseek-v1' | 'deepseek-v2'
-  >('deepseek-v1')
   const [saving, setSaving] = useState(false)
   const [schaleInput, setSchaleInput] = useState('')
   const [schaleMessage, setSchaleMessage] = useState<string | null>(null)
   const [isDragActive, setIsDragActive] = useState(false)
+  const [selectedFileCount, setSelectedFileCount] = useState(0)
+  const [processingStartedAt, setProcessingStartedAt] = useState<number | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const directoryInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -686,9 +765,16 @@ export default function StudentImportContent({
     load()
   }, [])
 
+  useEffect(() => {
+    const directoryInput = directoryInputRef.current
+    if (!directoryInput) return
+    directoryInput.setAttribute('webkitdirectory', '')
+    directoryInput.setAttribute('directory', '')
+  }, [])
+
   const handleSchaleImport = useCallback(() => {
     if (students.length === 0) {
-      setError('生徒データの読み込みが完了していません。少し待ってから再試行してください。')
+      setError(t('errors.studentsNotLoaded'))
       return
     }
     setError(null)
@@ -715,7 +801,7 @@ export default function StudentImportContent({
       }
 
       if (imported.length === 0) {
-        setError('一致する生徒が見つかりませんでした。importid を確認してください。')
+        setError(t('errors.noMatchedStudents'))
         return
       }
 
@@ -726,20 +812,27 @@ export default function StudentImportContent({
       setProgress(0)
       setSchaleMessage(
         skipped > 0
-          ? `SchaleDBデータを ${dedup.size} 件取り込みました（未対応ID ${skipped} 件をスキップ）。`
-          : `SchaleDBデータを ${dedup.size} 件取り込みました。`
+          ? t('schale.importedWithSkipped', { count: dedup.size, skipped })
+          : t('schale.imported', { count: dedup.size })
       )
     } catch {
-      setError('SchaleDBの文字列を読み取れませんでした。JSONまたはBase64文字列を確認してください。')
+      setError(t('errors.invalidSchaleInput'))
     }
-  }, [schaleInput, students])
+  }, [schaleInput, students, t])
 
   const handleFiles = useCallback(
-    async (files: FileList | null) => {
-      if (!files || files.length === 0) return
+    async (files: File[]) => {
+      const fileList = sortFiles(files.filter(isImageFile))
+      if (fileList.length === 0) {
+        setStatus('error')
+        setError(t('errors.noImageFiles'))
+        setSelectedFileCount(0)
+        setProcessingStartedAt(null)
+        return
+      }
       if (students.length === 0) {
         setStatus('error')
-        setError('生徒データの読み込みが完了していません。少し待ってから再試行してください。')
+        setError(t('errors.studentsNotLoaded'))
         return
       }
       setStatus('processing')
@@ -747,139 +840,80 @@ export default function StudentImportContent({
       setProgress(0)
       setRawTexts([])
       setEntries([])
-      const fileList = Array.from(files)
+      setSelectedFileCount(fileList.length)
+      setProcessingStartedAt(Date.now())
 
       try {
-        if (ocrMode === 'paddleocr' || ocrMode === 'deepseek' || ocrMode === 'deepseek-vllm') {
-          const nextTexts: string[] = []
-          const nextEntries: ExtractedStudent[] = []
-          const deviceMemory =
-            typeof navigator !== 'undefined'
-              ? (navigator as Navigator & { deviceMemory?: number }).deviceMemory
-              : undefined
-          const memoryLimit = deviceMemory && deviceMemory <= 1 ? 1 : Infinity
-          const baseConcurrency = Math.max(
-            1,
-            Number(process.env.NEXT_PUBLIC_PADDLE_OCR_CONCURRENCY ?? 1)
-          )
-          const concurrencyLimit = Math.min(memoryLimit, baseConcurrency)
-          let completedSteps = 0
-          let totalSteps = fileList.length * 2
-
-          const updateProgress = () => {
-            completedSteps += 1
-            setProgress(Math.min(1, completedSteps / Math.max(totalSteps, 1)))
-          }
-
-          const ocrEngine = ocrMode
-          const selectedModel =
-            ocrMode === 'deepseek'
-              ? deepseekModel
-              : ocrMode === 'deepseek-vllm'
-                ? deepseekVllmModel
-                : ocrModel
-          const tasks = fileList.map((file, i) => async () => {
-            const segments = await splitStudentImage(file)
-            const leftCanvas = preprocessCanvasForPaddle(segments.leftCanvas)
-            const rightCanvas = preprocessCanvasForPaddle(segments.rightCanvas)
-            const leftFile = await canvasToFile(leftCanvas, `left-${i}.png`)
-            const rightFile = await canvasToFile(rightCanvas, `right-${i}.png`)
-            const [leftText, rightText] = await Promise.all([
-              fetchExternalOcrText(leftFile, ocrEngine, selectedModel).finally(updateProgress),
-              fetchExternalOcrText(rightFile, ocrEngine, selectedModel).finally(updateProgress),
-            ])
-
-            if (leftText) {
-              return {
-                texts: [[leftText, rightText].filter(Boolean).join('\n')],
-                entries: parseEntriesFromLeftRight(leftText, rightText, students),
-              }
-            }
-
-            totalSteps += 1
-            const fallbackText = await fetchExternalOcrText(
-              file,
-              ocrEngine,
-              selectedModel
-            ).finally(updateProgress)
-            if (fallbackText) {
-              return {
-                texts: [fallbackText],
-                entries: parseEntries(fallbackText, students),
-              }
-            }
-            return { texts: [], entries: [] }
-          })
-
-          const results = await runWithConcurrency(tasks, concurrencyLimit)
-          results.forEach((result) => {
-            nextTexts.push(...result.texts)
-            nextEntries.push(...result.entries)
-          })
-
-          setRawTexts(nextTexts)
-          setEntries(nextEntries)
-          setStatus('done')
-          return
-        }
-
-        const { createWorker } = await import('tesseract.js')
         const nextTexts: string[] = []
         const nextEntries: ExtractedStudent[] = []
-        let currentIndex = 0
-        const worker = await createWorker('jpn+eng', 1, {
-          logger: (info: { progress?: number }) => {
-            if (typeof info.progress !== 'number') return
-            const base = currentIndex / fileList.length
-            setProgress(Math.min(1, base + info.progress / fileList.length))
-          },
-        })
-        await worker.setParameters({
-          preserve_interword_spaces: '1',
-        })
+        const deviceMemory =
+          typeof navigator !== 'undefined'
+            ? (navigator as Navigator & { deviceMemory?: number }).deviceMemory
+            : undefined
+        const memoryLimit = deviceMemory && deviceMemory <= 1 ? 1 : Infinity
+        const baseConcurrency = Math.max(
+          1,
+          Number(process.env.NEXT_PUBLIC_PADDLE_OCR_CONCURRENCY ?? 1)
+        )
+        const concurrencyLimit = Math.min(memoryLimit, baseConcurrency)
+        let completedSteps = 0
+        let totalSteps = fileList.length * 2
 
-        try {
-          for (let i = 0; i < fileList.length; i += 1) {
-            currentIndex = i
-            const file = fileList[i]
-            const segments = await splitStudentImage(file)
-            const nameStarCanvas = preprocessCanvas(segments.nameStarCanvas)
-            const nameStarResult = await worker.recognize(nameStarCanvas)
-            const nameStarText = nameStarResult.data.text ?? ''
-
-            const statTexts: string[] = []
-            for (const canvas of segments.statCanvases) {
-              const processed = preprocessCanvas(canvas)
-              const statResult = await worker.recognize(processed)
-              statTexts.push(statResult.data.text ?? '')
-            }
-
-            const fullFallbackCanvas = preprocessCanvas(segments.rightCanvas)
-            const fallbackResult = await worker.recognize(fullFallbackCanvas)
-            const fallbackText = fallbackResult.data.text ?? ''
-            const combinedText = [nameStarText, ...statTexts, fallbackText].join('\n')
-
-            nextTexts.push(combinedText)
-            const parsed = parseEntriesFromSegments(nameStarText, statTexts, students)
-            const results = parsed.length ? parsed : parseEntries(combinedText, students)
-
-            nextEntries.push(...results)
-            setProgress((i + 1) / fileList.length)
-          }
-        } finally {
-          await worker.terminate()
+        const updateProgress = () => {
+          completedSteps += 1
+          setProgress(Math.min(1, completedSteps / Math.max(totalSteps, 1)))
         }
+
+        const tasks = fileList.map((file, i) => async () => {
+          const segments = await splitStudentImage(file)
+          const leftCanvas = preprocessCanvasForPaddle(segments.leftCanvas)
+          const rightCanvas = preprocessCanvasForPaddle(segments.rightCanvas)
+          const leftFile = await canvasToFile(leftCanvas, `left-${i}.png`)
+          const rightFile = await canvasToFile(rightCanvas, `right-${i}.png`)
+          const [leftText, rightText] = await Promise.all([
+            fetchExternalOcrText(leftFile, DEFAULT_OCR_ENGINE, DEFAULT_OCR_MODEL).finally(updateProgress),
+            fetchExternalOcrText(rightFile, DEFAULT_OCR_ENGINE, DEFAULT_OCR_MODEL).finally(updateProgress),
+          ])
+
+          if (leftText) {
+            return {
+              texts: [[leftText, rightText].filter(Boolean).join('\n')],
+              entries: parseEntriesFromLeftRight(leftText, rightText, students),
+            }
+          }
+
+          totalSteps += 1
+          const fallbackText = await fetchExternalOcrText(
+            file,
+            DEFAULT_OCR_ENGINE,
+            DEFAULT_OCR_MODEL
+          ).finally(updateProgress)
+          if (fallbackText) {
+            return {
+              texts: [fallbackText],
+              entries: parseEntries(fallbackText, students),
+            }
+          }
+
+          return { texts: [], entries: [] }
+        })
+
+        const results = await runWithConcurrency(tasks, concurrencyLimit)
+        results.forEach((result) => {
+          nextTexts.push(...result.texts)
+          nextEntries.push(...result.entries)
+        })
 
         setRawTexts(nextTexts)
         setEntries(nextEntries)
         setStatus('done')
       } catch (err) {
         setStatus('error')
-        setError('画像の解析に失敗しました。別の画像を試してください。')
+        setError(t('errors.imageAnalysisFailed'))
         console.error(err)
       }
     },
-    [deepseekModel, deepseekVllmModel, ocrMode, ocrModel, students]
+    [students, t]
   )
 
   const updateEntry = useCallback(
@@ -971,26 +1005,59 @@ export default function StudentImportContent({
 
   const hasEntries = entries.length > 0
   const isProcessing = status === 'processing'
+  const estimatedTotalSeconds = selectedFileCount * ESTIMATED_SECONDS_PER_IMAGE
 
   const summary = useMemo(() => {
     if (!hasEntries) return null
-    return `抽出結果: ${entries.length}件`
-  }, [entries.length, hasEntries])
+    return t('summary.extracted', { count: entries.length })
+  }, [entries.length, hasEntries, t])
+
+  const formattedEstimatedDuration = useMemo(() => {
+    if (estimatedTotalSeconds <= 0) return null
+    const minutes = Math.floor(estimatedTotalSeconds / 60)
+    const seconds = estimatedTotalSeconds % 60
+    return t('estimate.duration', { minutes, seconds, totalSeconds: estimatedTotalSeconds })
+  }, [estimatedTotalSeconds, t])
+
+  const remainingSeconds = useMemo(() => {
+    if (!isProcessing) return estimatedTotalSeconds
+    return Math.max(0, Math.ceil(estimatedTotalSeconds * (1 - progress)))
+  }, [estimatedTotalSeconds, isProcessing, progress])
+
+  const estimatedCompletionTime = useMemo(() => {
+    if (selectedFileCount === 0) return null
+    const baseTime = processingStartedAt ?? Date.now()
+    const completionDate = new Date(baseTime + remainingSeconds * 1000)
+    return new Intl.DateTimeFormat(locale, {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }).format(completionDate)
+  }, [locale, processingStartedAt, remainingSeconds, selectedFileCount])
 
   const handleFileInputChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      void handleFiles(event.target.files)
+      void handleFiles(Array.from(event.target.files ?? []))
+      event.target.value = ''
+    },
+    [handleFiles]
+  )
+
+  const handleDirectoryInputChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      void handleFiles(Array.from(event.target.files ?? []))
       event.target.value = ''
     },
     [handleFiles]
   )
 
   const handleDrop = useCallback(
-    (event: ReactDragEvent<HTMLDivElement>) => {
+    async (event: ReactDragEvent<HTMLDivElement>) => {
       event.preventDefault()
       if (isProcessing) return
       setIsDragActive(false)
-      void handleFiles(event.dataTransfer.files)
+      const droppedFiles = await collectDroppedFiles(event.dataTransfer)
+      await handleFiles(droppedFiles)
     },
     [handleFiles, isProcessing]
   )
@@ -1013,26 +1080,28 @@ export default function StudentImportContent({
     <div className="space-y-6">
       {showHeader && (
         <div className="space-y-2">
-          <h2 className="text-xl font-semibold">生徒データインポート</h2>
+          <h2 className="text-xl font-semibold">{t('header.title')}</h2>
           <p className="text-sm text-gray-600">
-            生徒データの画像をアップロードすると、OCRで生徒名と一部ステータスを抽出します。
+            {t('header.description')}
           </p>
-          <p className="text-xs text-gray-500">生徒詳細（基本情報）画面のスクリーンショットを推奨します。</p>
-          <p className="text-xs text-gray-500">本機能は無料OCRのみを利用しており、結果は編集できます。</p>
-          <p className="text-xs text-gray-500 whitespace-pre-line">{splitNote}</p>
+          <p className="text-xs text-gray-500">{t('header.recommendation')}</p>
+          <p className="text-xs text-gray-500">{t('header.freeOcrNote')}</p>
+          <p className="text-xs text-gray-500 whitespace-pre-line">
+            {splitNote.map((key) => t(`header.splitNotes.${key}`)).join('\n')}
+          </p>
         </div>
       )}
 
       {(mode === 'full' || mode === 'schale') && (
         <div className="border rounded p-4 space-y-3">
-          <h3 className="text-base font-semibold">SchaleDBインポート</h3>
+          <h3 className="text-base font-semibold">{t('schale.title')}</h3>
           <p className="text-sm text-gray-600">
-            SchaleDBのエクスポート文字列（JSONまたはBase64）を貼り付けると、生徒データへ変換して下の表に展開します。
+            {t('schale.description')}
           </p>
           <textarea
             value={schaleInput}
             onChange={(e) => setSchaleInput(e.target.value)}
-            placeholder="ここにSchaleDBのエクスポート文字列を貼り付け"
+            placeholder={t('schale.placeholder')}
             className="w-full min-h-28 border rounded p-2"
             disabled={isProcessing || saving}
           />
@@ -1043,7 +1112,7 @@ export default function StudentImportContent({
               disabled={isProcessing || saving}
               className="border rounded px-3 py-1 bg-blue-600 text-white disabled:opacity-50"
             >
-              SchaleDB文字列を取り込み
+              {t('schale.importButton')}
             </button>
             {schaleMessage && <span className="text-sm text-gray-600">{schaleMessage}</span>}
           </div>
@@ -1052,142 +1121,21 @@ export default function StudentImportContent({
 
       {(mode === 'full' || mode === 'image') && (
         <div className="border rounded p-4 space-y-3">
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">OCRエンジン</p>
-            <div className="flex flex-wrap gap-4 text-sm">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="ocr-mode"
-                  value="paddleocr"
-                  checked={ocrMode === 'paddleocr'}
-                  onChange={() => setOcrMode('paddleocr')}
-                  disabled={isProcessing}
-                />
-                PaddleOCR（デフォルト）
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="ocr-mode"
-                  value="tesseract"
-                  checked={ocrMode === 'tesseract'}
-                  onChange={() => setOcrMode('tesseract')}
-                  disabled={isProcessing}
-                />
-                tesseract.js
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="ocr-mode"
-                  value="deepseek"
-                  checked={ocrMode === 'deepseek'}
-                  onChange={() => setOcrMode('deepseek')}
-                  disabled={isProcessing}
-                />
-                DeepSeek OCR
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="ocr-mode"
-                  value="deepseek-vllm"
-                  checked={ocrMode === 'deepseek-vllm'}
-                  onChange={() => setOcrMode('deepseek-vllm')}
-                  disabled={isProcessing}
-                />
-                DeepSeek OCR（vLLM）
-              </label>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">PaddleOCRモデル</p>
-            <div className="flex flex-wrap gap-4 text-sm">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="paddleocr-model"
-                  value="standard"
-                  checked={ocrModel === 'standard'}
-                  onChange={() => setOcrModel('standard')}
-                  disabled={isProcessing || ocrMode !== 'paddleocr'}
-                />
-                標準
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="paddleocr-model"
-                  value="high"
-                  checked={ocrModel === 'high'}
-                  onChange={() => setOcrModel('high')}
-                  disabled={isProcessing || ocrMode !== 'paddleocr'}
-                />
-                高精度
-              </label>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">DeepSeekモデル</p>
-            <div className="flex flex-wrap gap-4 text-sm">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="deepseek-model"
-                  value="deepseek-v1"
-                  checked={deepseekModel === 'deepseek-v1'}
-                  onChange={() => setDeepseekModel('deepseek-v1')}
-                  disabled={isProcessing || ocrMode !== 'deepseek'}
-                />
-                DeepSeek v1
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="deepseek-model"
-                  value="deepseek-v2"
-                  checked={deepseekModel === 'deepseek-v2'}
-                  onChange={() => setDeepseekModel('deepseek-v2')}
-                  disabled={isProcessing || ocrMode !== 'deepseek'}
-                />
-                DeepSeek v2
-              </label>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">DeepSeek vLLMモデル</p>
-            <div className="flex flex-wrap gap-4 text-sm">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="deepseek-vllm-model"
-                  value="deepseek-v1"
-                  checked={deepseekVllmModel === 'deepseek-v1'}
-                  onChange={() => setDeepseekVllmModel('deepseek-v1')}
-                  disabled={isProcessing || ocrMode !== 'deepseek-vllm'}
-                />
-                DeepSeek v1
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="deepseek-vllm-model"
-                  value="deepseek-v2"
-                  checked={deepseekVllmModel === 'deepseek-v2'}
-                  onChange={() => setDeepseekVllmModel('deepseek-v2')}
-                  disabled={isProcessing || ocrMode !== 'deepseek-vllm'}
-                />
-                DeepSeek v2
-              </label>
-            </div>
-          </div>
+          <p className="text-sm text-gray-600">{t('upload.defaultMode')}</p>
           <input
             ref={inputRef}
             type="file"
             accept="image/*"
             multiple
             onChange={handleFileInputChange}
+            className="hidden"
+          />
+          <input
+            ref={directoryInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleDirectoryInputChange}
             className="hidden"
           />
           <div
@@ -1204,24 +1152,61 @@ export default function StudentImportContent({
           >
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-gray-800">画像をアップロード</p>
+                <p className="text-sm font-medium text-gray-800">{t('upload.title')}</p>
                 <p className="text-sm text-gray-600">
-                  ドラッグ&ドロップ、またはボタンから生徒詳細画面のスクリーンショットを選択できます。
+                  {t('upload.description')}
                 </p>
+                {selectedFileCount > 0 && formattedEstimatedDuration && estimatedCompletionTime && (
+                  <div className="space-y-1 pt-1">
+                    <p className="text-xs text-gray-500">
+                      {t('estimate.fileCount', { count: selectedFileCount })}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {t('estimate.total', {
+                        duration: formattedEstimatedDuration,
+                        secondsPerImage: ESTIMATED_SECONDS_PER_IMAGE,
+                      })}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {isProcessing
+                        ? t('estimate.remaining', {
+                            duration: t('estimate.duration', {
+                              minutes: Math.floor(remainingSeconds / 60),
+                              seconds: remainingSeconds % 60,
+                              totalSeconds: remainingSeconds,
+                            }),
+                            time: estimatedCompletionTime,
+                          })
+                        : t('estimate.completionTime', { time: estimatedCompletionTime })}
+                    </p>
+                  </div>
+                )}
               </div>
-              <button
-                type="button"
-                onClick={() => inputRef.current?.click()}
-                className="border rounded px-3 py-2"
-                disabled={isProcessing}
-              >
-                {isProcessing ? '解析中...' : '画像を選択'}
-              </button>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => inputRef.current?.click()}
+                  className="border rounded px-3 py-2"
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? t('upload.processing') : t('upload.selectImages')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => directoryInputRef.current?.click()}
+                  className="border rounded px-3 py-2"
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? t('upload.processing') : t('upload.selectFolder')}
+                </button>
+              </div>
             </div>
           </div>
           {isProcessing && (
             <div className="space-y-1">
-              <div className="text-xs text-gray-500">解析進捗: {(progress * 100).toFixed(0)}%</div>
+              <div className="text-xs text-gray-500">
+                {t('upload.progress', { progress: (progress * 100).toFixed(0) })}
+              </div>
               <div className="h-2 bg-gray-200 rounded">
                 <div className="h-2 bg-blue-500 rounded" style={{ width: `${progress * 100}%` }} />
               </div>
@@ -1235,42 +1220,42 @@ export default function StudentImportContent({
       {hasEntries && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">抽出データ</h3>
+            <h3 className="text-lg font-semibold">{t('results.title')}</h3>
             <button
               type="button"
               onClick={handleSave}
               disabled={saving}
               className="border rounded px-3 py-1 bg-blue-600 text-white disabled:opacity-50"
             >
-              {saving ? '保存中...' : '保存'}
+              {saving ? t('results.saving') : t('results.save')}
             </button>
           </div>
           <div className="overflow-x-auto border rounded">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="px-3 py-2 text-left">生徒</th>
-                  <th className="px-3 py-2 text-left">レベル</th>
-                  <th className="px-3 py-2 text-left">星</th>
-                  <th className="px-3 py-2 text-left">絆</th>
-                  <th className="px-3 py-2 text-left">HP</th>
-                  <th className="px-3 py-2 text-left">HP WB</th>
-                  <th className="px-3 py-2 text-left">攻撃力</th>
-                  <th className="px-3 py-2 text-left">攻撃力 WB</th>
-                  <th className="px-3 py-2 text-left">防御力</th>
-                  <th className="px-3 py-2 text-left">治癒力</th>
-                  <th className="px-3 py-2 text-left">治癒力 WB</th>
-                  <th className="px-3 py-2 text-left">EX</th>
-                  <th className="px-3 py-2 text-left">NS</th>
-                  <th className="px-3 py-2 text-left">PS</th>
-                  <th className="px-3 py-2 text-left">Sub</th>
-                  <th className="px-3 py-2 text-left">武器Lv</th>
-                  <th className="px-3 py-2 text-left">武器★</th>
-                  <th className="px-3 py-2 text-left">装備1</th>
-                  <th className="px-3 py-2 text-left">装備2</th>
-                  <th className="px-3 py-2 text-left">装備3</th>
-                  <th className="px-3 py-2 text-left">愛用品</th>
-                  <th className="px-3 py-2 text-left">抽出元</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.student')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.level')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.star')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.bond')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.hp')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.hpWb')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.attack')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.attackWb')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.defense')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.heal')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.healWb')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.ex')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.ns')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.ps')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.sub')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.weaponLevel')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.weaponStar')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.equip1')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.equip2')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.equip3')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.loveTier')}</th>
+                  <th className="px-3 py-2 text-left">{t('results.columns.source')}</th>
                   <th className="px-3 py-2" />
                 </tr>
               </thead>
@@ -1541,7 +1526,7 @@ export default function StudentImportContent({
                         onClick={() => removeEntry(entry.studentId)}
                         className="text-red-600 text-xs"
                       >
-                        削除
+                        {t('results.delete')}
                       </button>
                     </td>
                   </tr>
@@ -1551,7 +1536,7 @@ export default function StudentImportContent({
           </div>
           {!session && (
             <p className="text-xs text-gray-500">
-              ログインしていないため、保存はローカルストレージに行われます。
+              {t('results.localStorageNotice')}
             </p>
           )}
         </div>
@@ -1559,7 +1544,7 @@ export default function StudentImportContent({
 
       {rawTexts.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold">OCR抽出テキスト</h3>
+          <h3 className="text-lg font-semibold">{t('rawTexts.title')}</h3>
           <div className="space-y-2">
             {rawTexts.map((text, idx) => (
               <pre

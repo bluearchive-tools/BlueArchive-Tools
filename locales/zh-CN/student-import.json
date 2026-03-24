@@ -1,0 +1,84 @@
+{
+  "page": {
+    "backLink": "返回学生数据确认"
+  },
+  "header": {
+    "title": "学生数据导入",
+    "description": "上传学生截图后，可通过 OCR 提取学生名和部分属性。",
+    "recommendation": "推荐使用学生详情（基础信息）界面的截图。",
+    "freeOcrNote": "该功能仅使用免费 OCR，提取结果可以手动编辑。",
+    "splitNotes": {
+      "leftTopBottom": "图片会先分为左右两部分进行识别。",
+      "leftColumns": "左侧还会继续切分，以提取名字和属性。",
+      "paddleOnly": "现在仅使用当前默认 OCR 设置。"
+    }
+  },
+  "errors": {
+    "studentsNotLoaded": "学生数据尚未加载完成，请稍后再试。",
+    "noMatchedStudents": "未找到匹配的学生，请检查 importid。",
+    "invalidSchaleInput": "无法读取 SchaleDB 字符串，请确认它是有效的 JSON 或 Base64。",
+    "noImageFiles": "未找到图片文件，请选择图片或包含图片的文件夹。",
+    "imageAnalysisFailed": "图片解析失败，请尝试其他图片。"
+  },
+  "schale": {
+    "title": "SchaleDB 导入",
+    "description": "粘贴 SchaleDB 导出字符串（JSON 或 Base64）后，会转换为学生数据并显示在下方表格中。",
+    "placeholder": "请在此粘贴 SchaleDB 导出字符串",
+    "importButton": "导入 SchaleDB 字符串",
+    "imported": "已导入 {count} 条 SchaleDB 数据。",
+    "importedWithSkipped": "已导入 {count} 条 SchaleDB 数据（跳过 {skipped} 个未支持 ID）。"
+  },
+  "upload": {
+    "defaultMode": "OCR 现在会使用当前默认设置（PaddleOCR 标准模型）处理。",
+    "title": "上传图片",
+    "description": "支持拖放、选择图片，或选择文件夹来导入学生详情截图。",
+    "selectImages": "选择图片",
+    "selectFolder": "选择文件夹",
+    "processing": "识别中...",
+    "progress": "识别进度: {progress}%"
+  },
+  "estimate": {
+    "fileCount": "目标图片: {count} 张",
+    "duration": "约 {minutes}分 {seconds}秒",
+    "total": "按每张 {secondsPerImage} 秒估算，总处理时间: {duration}",
+    "remaining": "预计剩余时间: {duration} / 预计完成时刻: {time}",
+    "completionTime": "预计完成时刻: {time}"
+  },
+  "summary": {
+    "extracted": "提取结果: {count} 条"
+  },
+  "results": {
+    "title": "提取数据",
+    "save": "保存",
+    "saving": "保存中...",
+    "delete": "删除",
+    "localStorageNotice": "由于尚未登录，保存将写入本地存储。",
+    "columns": {
+      "student": "学生",
+      "level": "等级",
+      "star": "星级",
+      "bond": "羁绊",
+      "hp": "HP",
+      "hpWb": "HP WB",
+      "attack": "攻击力",
+      "attackWb": "攻击力 WB",
+      "defense": "防御力",
+      "heal": "治疗力",
+      "healWb": "治疗力 WB",
+      "ex": "EX",
+      "ns": "NS",
+      "ps": "PS",
+      "sub": "Sub",
+      "weaponLevel": "武器Lv",
+      "weaponStar": "武器★",
+      "equip1": "装备1",
+      "equip2": "装备2",
+      "equip3": "装备3",
+      "loveTier": "爱用品",
+      "source": "来源"
+    }
+  },
+  "rawTexts": {
+    "title": "OCR 提取文本"
+  }
+}
