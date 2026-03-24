@@ -13,6 +13,7 @@ import pageHelpEn from '../../locales/en/page-help.json'
 import quickSetupEn from '../../locales/en/quick-setup.json'
 import siteTutorialEn from '../../locales/en/site-tutorial.json'
 import tutorialEditorEn from '../../locales/en/tutorial-editor.json'
+import studentImportEn from '../../locales/en/student-import.json'
 import aboutModalJa from '../../locales/ja/about-modal.json'
 import bgmDjJa from '../../locales/ja/bgm-dj.json'
 import bgmPlayerJa from '../../locales/ja/bgm-player.json'
@@ -26,6 +27,7 @@ import pageHelpJa from '../../locales/ja/page-help.json'
 import quickSetupJa from '../../locales/ja/quick-setup.json'
 import siteTutorialJa from '../../locales/ja/site-tutorial.json'
 import tutorialEditorJa from '../../locales/ja/tutorial-editor.json'
+import studentImportJa from '../../locales/ja/student-import.json'
 import aboutModalZhCn from '../../locales/zh-CN/about-modal.json'
 import bgmDjZhCn from '../../locales/zh-CN/bgm-dj.json'
 import bgmPlayerZhCn from '../../locales/zh-CN/bgm-player.json'
@@ -39,6 +41,7 @@ import pageHelpZhCn from '../../locales/zh-CN/page-help.json'
 import quickSetupZhCn from '../../locales/zh-CN/quick-setup.json'
 import siteTutorialZhCn from '../../locales/zh-CN/site-tutorial.json'
 import tutorialEditorZhCn from '../../locales/zh-CN/tutorial-editor.json'
+import studentImportZhCn from '../../locales/zh-CN/student-import.json'
 import aboutModalZhTw from '../../locales/zh-TW/about-modal.json'
 import bgmDjZhTw from '../../locales/zh-TW/bgm-dj.json'
 import bgmPlayerZhTw from '../../locales/zh-TW/bgm-player.json'
@@ -52,6 +55,7 @@ import pageHelpZhTw from '../../locales/zh-TW/page-help.json'
 import quickSetupZhTw from '../../locales/zh-TW/quick-setup.json'
 import siteTutorialZhTw from '../../locales/zh-TW/site-tutorial.json'
 import tutorialEditorZhTw from '../../locales/zh-TW/tutorial-editor.json'
+import studentImportZhTw from '../../locales/zh-TW/student-import.json'
 
 export const SUPPORTED_LOCALES = ['ja', 'en', 'zh-CN', 'zh-TW'] as const
 export type Locale = (typeof SUPPORTED_LOCALES)[number]
@@ -73,6 +77,7 @@ export const LOCALE_MESSAGES = {
     'help-editor': helpEditorEn,
     'tutorial-editor': tutorialEditorEn,
     'quick-setup': quickSetupEn,
+    'student-import': studentImportEn,
   },
   ja: {
     common: commonJa,
@@ -88,6 +93,7 @@ export const LOCALE_MESSAGES = {
     'help-editor': helpEditorJa,
     'tutorial-editor': tutorialEditorJa,
     'quick-setup': quickSetupJa,
+    'student-import': studentImportJa,
   },
   'zh-CN': {
     common: commonZhCn,
@@ -103,6 +109,7 @@ export const LOCALE_MESSAGES = {
     'help-editor': helpEditorZhCn,
     'tutorial-editor': tutorialEditorZhCn,
     'quick-setup': quickSetupZhCn,
+    'student-import': studentImportZhCn,
   },
   'zh-TW': {
     common: commonZhTw,
@@ -118,6 +125,7 @@ export const LOCALE_MESSAGES = {
     'help-editor': helpEditorZhTw,
     'tutorial-editor': tutorialEditorZhTw,
     'quick-setup': quickSetupZhTw,
+    'student-import': studentImportZhTw,
   },
 } as const satisfies Record<Locale, AbstractIntlMessages>
 

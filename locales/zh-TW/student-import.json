@@ -1,0 +1,84 @@
+{
+  "page": {
+    "backLink": "返回學生資料確認"
+  },
+  "header": {
+    "title": "學生資料匯入",
+    "description": "上傳學生截圖後，可透過 OCR 擷取學生名稱與部分屬性。",
+    "recommendation": "建議使用學生詳情（基本資訊）畫面的截圖。",
+    "freeOcrNote": "此功能僅使用免費 OCR，擷取結果可再手動編輯。",
+    "splitNotes": {
+      "leftTopBottom": "圖片會先切成左右兩側進行辨識。",
+      "leftColumns": "左側還會再進一步分割，以擷取名稱與屬性。",
+      "paddleOnly": "現在只會使用目前的預設 OCR 設定。"
+    }
+  },
+  "errors": {
+    "studentsNotLoaded": "學生資料尚未載入完成，請稍後再試。",
+    "noMatchedStudents": "找不到對應的學生，請確認 importid。",
+    "invalidSchaleInput": "無法讀取 SchaleDB 字串，請確認它是有效的 JSON 或 Base64。",
+    "noImageFiles": "找不到圖片檔，請選擇圖片或包含圖片的資料夾。",
+    "imageAnalysisFailed": "圖片解析失敗，請改用其他圖片再試。"
+  },
+  "schale": {
+    "title": "SchaleDB 匯入",
+    "description": "貼上 SchaleDB 匯出字串（JSON 或 Base64）後，會轉成學生資料並展開到下方表格。",
+    "placeholder": "請在此貼上 SchaleDB 匯出字串",
+    "importButton": "匯入 SchaleDB 字串",
+    "imported": "已匯入 {count} 筆 SchaleDB 資料。",
+    "importedWithSkipped": "已匯入 {count} 筆 SchaleDB 資料（略過 {skipped} 個未支援 ID）。"
+  },
+  "upload": {
+    "defaultMode": "OCR 現在會使用目前的預設設定（PaddleOCR 標準模型）處理。",
+    "title": "上傳圖片",
+    "description": "支援拖放、選擇圖片，或選擇資料夾來匯入學生詳情截圖。",
+    "selectImages": "選擇圖片",
+    "selectFolder": "選擇資料夾",
+    "processing": "解析中...",
+    "progress": "解析進度: {progress}%"
+  },
+  "estimate": {
+    "fileCount": "目標圖片: {count} 張",
+    "duration": "約 {minutes}分 {seconds}秒",
+    "total": "以每張 {secondsPerImage} 秒估算，總處理時間: {duration}",
+    "remaining": "預估剩餘時間: {duration} / 預估完成時間: {time}",
+    "completionTime": "預估完成時間: {time}"
+  },
+  "summary": {
+    "extracted": "擷取結果: {count} 筆"
+  },
+  "results": {
+    "title": "擷取資料",
+    "save": "保存",
+    "saving": "保存中...",
+    "delete": "刪除",
+    "localStorageNotice": "由於尚未登入，資料會保存到本機儲存。",
+    "columns": {
+      "student": "學生",
+      "level": "等級",
+      "star": "星級",
+      "bond": "羈絆",
+      "hp": "HP",
+      "hpWb": "HP WB",
+      "attack": "攻擊力",
+      "attackWb": "攻擊力 WB",
+      "defense": "防禦力",
+      "heal": "治癒力",
+      "healWb": "治癒力 WB",
+      "ex": "EX",
+      "ns": "NS",
+      "ps": "PS",
+      "sub": "Sub",
+      "weaponLevel": "武器Lv",
+      "weaponStar": "武器★",
+      "equip1": "裝備1",
+      "equip2": "裝備2",
+      "equip3": "裝備3",
+      "loveTier": "愛用品",
+      "source": "來源"
+    }
+  },
+  "rawTexts": {
+    "title": "OCR 擷取文字"
+  }
+}

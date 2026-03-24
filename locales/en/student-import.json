@@ -1,0 +1,84 @@
+{
+  "page": {
+    "backLink": "Back to student data"
+  },
+  "header": {
+    "title": "Student Data Import",
+    "description": "Upload student screenshots to extract student names and some stats with OCR.",
+    "recommendation": "Screenshots from the student detail (basic info) screen are recommended.",
+    "freeOcrNote": "This feature uses only free OCR and the extracted results can be edited.",
+    "splitNotes": {
+      "leftTopBottom": "Images are split into left and right sections for OCR.",
+      "leftColumns": "The left side is additionally segmented to extract names and stats.",
+      "paddleOnly": "Only the current default OCR setting is used now."
+    }
+  },
+  "errors": {
+    "studentsNotLoaded": "Student data is still loading. Please wait a moment and try again.",
+    "noMatchedStudents": "No matching students were found. Please check the importid values.",
+    "invalidSchaleInput": "Could not read the SchaleDB string. Please check that it is valid JSON or Base64.",
+    "noImageFiles": "No image files were found. Please choose images or a folder that contains images.",
+    "imageAnalysisFailed": "Failed to analyze the image. Please try a different image."
+  },
+  "schale": {
+    "title": "SchaleDB Import",
+    "description": "Paste a SchaleDB export string (JSON or Base64) to convert it into student data and expand it in the table below.",
+    "placeholder": "Paste the SchaleDB export string here",
+    "importButton": "Import SchaleDB string",
+    "imported": "Imported {count} SchaleDB records.",
+    "importedWithSkipped": "Imported {count} SchaleDB records (skipped {skipped} unsupported IDs)."
+  },
+  "upload": {
+    "defaultMode": "OCR is processed with the current default setting (PaddleOCR standard model).",
+    "title": "Upload images",
+    "description": "You can import student detail screenshots by drag and drop, image selection, or folder selection.",
+    "selectImages": "Select images",
+    "selectFolder": "Select folder",
+    "processing": "Processing...",
+    "progress": "OCR progress: {progress}%"
+  },
+  "estimate": {
+    "fileCount": "Target images: {count}",
+    "duration": "about {minutes}m {seconds}s",
+    "total": "Estimated processing time at {secondsPerImage}s per image: {duration}",
+    "remaining": "Estimated remaining time: {duration} / Estimated completion time: {time}",
+    "completionTime": "Estimated completion time: {time}"
+  },
+  "summary": {
+    "extracted": "Extracted results: {count}"
+  },
+  "results": {
+    "title": "Extracted Data",
+    "save": "Save",
+    "saving": "Saving...",
+    "delete": "Delete",
+    "localStorageNotice": "Because you are not logged in, data will be saved to local storage.",
+    "columns": {
+      "student": "Student",
+      "level": "Level",
+      "star": "Star",
+      "bond": "Bond",
+      "hp": "HP",
+      "hpWb": "HP WB",
+      "attack": "Attack",
+      "attackWb": "Attack WB",
+      "defense": "Defense",
+      "heal": "Heal",
+      "healWb": "Heal WB",
+      "ex": "EX",
+      "ns": "NS",
+      "ps": "PS",
+      "sub": "Sub",
+      "weaponLevel": "Weapon Lv",
+      "weaponStar": "Weapon ★",
+      "equip1": "Equip 1",
+      "equip2": "Equip 2",
+      "equip3": "Equip 3",
+      "loveTier": "Gift",
+      "source": "Source"
+    }
+  },
+  "rawTexts": {
+    "title": "OCR Extracted Text"
+  }
+}

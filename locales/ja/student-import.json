@@ -1,0 +1,84 @@
+{
+  "page": {
+    "backLink": "生徒データ確認へ戻る"
+  },
+  "header": {
+    "title": "生徒データインポート",
+    "description": "生徒データの画像をアップロードすると、OCRで生徒名と一部ステータスを抽出します。",
+    "recommendation": "生徒詳細（基本情報）画面のスクリーンショットを推奨します。",
+    "freeOcrNote": "本機能は無料OCRのみを利用しており、結果は編集できます。",
+    "splitNotes": {
+      "leftTopBottom": "画像は左右に分割して解析します。",
+      "leftColumns": "左側は追加で分割して名前やステータスを抽出します。",
+      "paddleOnly": "OCR方式は現在のデフォルト設定のみを使用します。"
+    }
+  },
+  "errors": {
+    "studentsNotLoaded": "生徒データの読み込みが完了していません。少し待ってから再試行してください。",
+    "noMatchedStudents": "一致する生徒が見つかりませんでした。importid を確認してください。",
+    "invalidSchaleInput": "SchaleDBの文字列を読み取れませんでした。JSONまたはBase64文字列を確認してください。",
+    "noImageFiles": "画像ファイルが見つかりませんでした。画像または画像を含むフォルダを選択してください。",
+    "imageAnalysisFailed": "画像の解析に失敗しました。別の画像を試してください。"
+  },
+  "schale": {
+    "title": "SchaleDBインポート",
+    "description": "SchaleDBのエクスポート文字列（JSONまたはBase64）を貼り付けると、生徒データへ変換して下の表に展開します。",
+    "placeholder": "ここにSchaleDBのエクスポート文字列を貼り付け",
+    "importButton": "SchaleDB文字列を取り込み",
+    "imported": "SchaleDBデータを {count} 件取り込みました。",
+    "importedWithSkipped": "SchaleDBデータを {count} 件取り込みました（未対応ID {skipped} 件をスキップ）。"
+  },
+  "upload": {
+    "defaultMode": "OCRは現在のデフォルト設定（PaddleOCR標準モデル）で処理します。",
+    "title": "画像をアップロード",
+    "description": "ドラッグ&ドロップ、画像選択、またはフォルダ選択で生徒詳細画面のスクリーンショットを取り込めます。",
+    "selectImages": "画像を選択",
+    "selectFolder": "フォルダを選択",
+    "processing": "解析中...",
+    "progress": "解析進捗: {progress}%"
+  },
+  "estimate": {
+    "fileCount": "対象画像: {count} 枚",
+    "duration": "約 {minutes}分 {seconds}秒",
+    "total": "1枚あたり{secondsPerImage}秒想定の処理時間: {duration}",
+    "remaining": "予想残り時間: {duration} / 予想完了時刻: {time}",
+    "completionTime": "予想完了時刻: {time}"
+  },
+  "summary": {
+    "extracted": "抽出結果: {count}件"
+  },
+  "results": {
+    "title": "抽出データ",
+    "save": "保存",
+    "saving": "保存中...",
+    "delete": "削除",
+    "localStorageNotice": "ログインしていないため、保存はローカルストレージに行われます。",
+    "columns": {
+      "student": "生徒",
+      "level": "レベル",
+      "star": "星",
+      "bond": "絆",
+      "hp": "HP",
+      "hpWb": "HP WB",
+      "attack": "攻撃力",
+      "attackWb": "攻撃力 WB",
+      "defense": "防御力",
+      "heal": "治癒力",
+      "healWb": "治癒力 WB",
+      "ex": "EX",
+      "ns": "NS",
+      "ps": "PS",
+      "sub": "Sub",
+      "weaponLevel": "武器Lv",
+      "weaponStar": "武器★",
+      "equip1": "装備1",
+      "equip2": "装備2",
+      "equip3": "装備3",
+      "loveTier": "愛用品",
+      "source": "抽出元"
+    }
+  },
+  "rawTexts": {
+    "title": "OCR抽出テキスト"
+  }
+}
