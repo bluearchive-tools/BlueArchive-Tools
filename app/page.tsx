@@ -1,12 +1,20 @@
-// app/page.tsx
 'use client'
 
-import CollapsibleBox from '../components/CollapsibleBox'
-import FeatureItem from '../components/FeatureItem'
 import Link from 'next/link'
 import LoginPopup from '../components/LoginPopup'
 import { useTranslations } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  faBook,
+  faClipboardList,
+  faGamepad,
+  faGear,
+  faHammer,
+  faHouse,
+  faUsers,
+  type IconDefinition,
+} from '@fortawesome/free-solid-svg-icons'
 
 const PICK_RESULT_KEY = 'app:siteTutorialPickResult'
 
@@ -14,6 +22,13 @@ type PickCandidate = {
   selector: string
   label: string
   element: HTMLElement
+}
+
+type HomeCard = {
+  href: string
+  icon: IconDefinition
+  title: string
+  description: string
 }
 
 const escapeCssIdentifier = (value: string) => {
@@ -62,7 +77,7 @@ const buildLabel = (el: HTMLElement) => {
 }
 
 export default function Home() {
-  const t = useTranslations('home.sections')
+  const t = useTranslations('home.topPage')
   const [pickMode, setPickMode] = useState(false)
   const [pickPanelOpen, setPickPanelOpen] = useState(false)
   const [candidates, setCandidates] = useState<PickCandidate[]>([])
@@ -164,6 +179,48 @@ export default function Home() {
     }
   }
 
+  const menuItems = useMemo(
+    () => [
+      { key: 'dashboard', icon: faHouse, href: '/' },
+      { key: 'students', icon: faUsers, href: '/students' },
+      { key: 'tl', icon: faClipboardList, href: '/tl/search' },
+      { key: 'tools', icon: faHammer, href: '/tools/event-schedule' },
+      { key: 'minigame', icon: faGamepad, href: '/minigames/bgm-quiz' },
+      { key: 'settings', icon: faGear, href: '/quick-setup' },
+    ],
+    []
+  )
+
+  const featureCards = useMemo<HomeCard[]>(
+    () => [
+      {
+        href: '/students',
+        icon: faUsers,
+        title: t('cards.students.title'),
+        description: t('cards.students.description'),
+      },
+      {
+        href: '/tl/search',
+        icon: faClipboardList,
+        title: t('cards.tl.title'),
+        description: t('cards.tl.description'),
+      },
+      {
+        href: '/tools/event-schedule',
+        icon: faBook,
+        title: t('cards.tools.title'),
+        description: t('cards.tools.description'),
+      },
+      {
+        href: '/minigames/bgm-quiz',
+        icon: faGamepad,
+        title: t('cards.minigame.title'),
+        description: t('cards.minigame.description'),
+      },
+    ],
+    [t]
+  )
+
   return (
     <>
       {pickMode && (
@@ -178,10 +235,12 @@ export default function Home() {
       )}
 
       {pickMode && pickPanelOpen && (
-        <div data-picker-overlay="1" className="fixed bottom-14 right-3 z-[200] w-[28rem] max-h-[70vh] overflow-auto rounded border bg-white p-3 shadow-lg">
+        <div data-picker-overlay="1" className="fixed bottom-14 right-3 z-[200] max-h-[70vh] w-[28rem] overflow-auto rounded border bg-white p-3 shadow-lg">
           <p className="text-sm font-bold">GUI選択モード</p>
           <p className="text-xs text-gray-600">マウス位置の配下要素を一覧表示します。選びたい要素を選択して「この要素を使う」を押してください。</p>
-          <button type="button" onClick={() => setPickPanelOpen(false)} className="mt-2 rounded border px-2 py-1 text-xs">閉じる</button>
+          <button type="button" onClick={() => setPickPanelOpen(false)} className="mt-2 rounded border px-2 py-1 text-xs">
+            閉じる
+          </button>
           <div className="mt-2 space-y-1">
             {candidates.map((item, index) => (
               <button
@@ -190,7 +249,7 @@ export default function Home() {
                 onClick={() => setSelectedIndex(index)}
                 className={`block w-full rounded border px-2 py-1 text-left text-xs ${selectedIndex === index ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}
               >
-                <div className="font-mono text-[11px] break-all">{item.selector}</div>
+                <div className="font-mono break-all text-[11px]">{item.selector}</div>
                 <div className="text-gray-600">{item.label}</div>
               </button>
             ))}
@@ -201,47 +260,42 @@ export default function Home() {
         </div>
       )}
 
-      <main data-tutorial="home-main" className="p-4 space-y-4 pb-16">
+      <main className="mx-auto max-w-6xl p-4 pb-12" data-tutorial="top-home-main">
         <LoginPopup />
-        <CollapsibleBox tutorialKey="home-section-students" title={t('students.title')} description={t('students.description')}>
-          <div data-tutorial="home-links" className="space-y-2">
-            <Link href="/students"><FeatureItem title={t('students.actions.view.title')} description={t('students.actions.view.description')} /></Link>
-            <Link href="/students/import"><FeatureItem title={t('students.actions.import.title')} description={t('students.actions.import.description')} /></Link>
-            <Link href="/squads"><FeatureItem title={t('students.actions.squads.title')} description={t('students.actions.squads.description')} /></Link>
-          </div>
-        </CollapsibleBox>
+        <div className="overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-br from-[#081b4f] via-[#0d2c77] to-[#142b57] text-white shadow-xl">
+          <div className="grid gap-4 p-4 md:grid-cols-[240px_minmax(0,1fr)] md:p-6">
+            <aside className="rounded-xl bg-black/20 p-3 backdrop-blur-sm">
+              <p className="mb-3 text-sm font-semibold text-blue-100">{t('menuTitle')}</p>
+              <nav className="space-y-2">
+                {menuItems.map((item) => (
+                  <Link key={item.key} href={item.href} className="flex items-center gap-2 rounded-lg border border-transparent bg-white/10 px-3 py-2 text-sm text-blue-50 transition hover:border-blue-300 hover:bg-white/20">
+                    <FontAwesomeIcon icon={item.icon} className="h-4 w-4" />
+                    <span>{t(`menu.${item.key}`)}</span>
+                  </Link>
+                ))}
+              </nav>
+            </aside>
 
-        <CollapsibleBox tutorialKey="home-section-tl" title={t('tlTools.title')} description={t('tlTools.description')}>
-          <div className="space-y-2">
-            <Link href="/tl/search"><FeatureItem title={t('tlTools.actions.search.title')} description={t('tlTools.actions.search.description')} /></Link>
-            <Link href="/tl/maker"><FeatureItem title={t('tlTools.actions.maker.title')} description={t('tlTools.actions.maker.description')} /></Link>
-          </div>
-          <div aria-disabled="true" className="opacity-50 grayscale cursor-not-allowed select-none"><div className="pointer-events-none"><FeatureItem title={t('tlTools.actions.videoToTl.title')} description={t('tlTools.actions.videoToTl.description')} /></div></div>
-        </CollapsibleBox>
+            <section className="space-y-4">
+              <div className="rounded-xl bg-white/10 p-5 backdrop-blur-sm">
+                <p className="text-2xl font-bold md:text-4xl">{t('hero.title')}</p>
+                <p className="mt-2 text-sm text-blue-100 md:text-base">{t('hero.subtitle')}</p>
+              </div>
 
-        <CollapsibleBox tutorialKey="home-section-tools" title={t('tools.title')} description={t('tools.description')}>
-          <div data-tutorial="tools-links" className="space-y-2">
-            <Link href="/tools/training-planning"><FeatureItem title={t('tools.actions.trainingPlanning.title')} description={t('tools.actions.trainingPlanning.description')} /></Link>
-            <Link href="/tools/event-schedule"><FeatureItem title={t('tools.actions.eventSchedule.title')} description={t('tools.actions.eventSchedule.description')} /></Link>
-            <Link href="/tools/bgm-player"><FeatureItem title={t('tools.actions.bgmPlayer.title')} description={t('tools.actions.bgmPlayer.description')} /></Link>
-            <Link href="/tools/student-image"><FeatureItem title={t('tools.actions.studentImage.title')} description={t('tools.actions.studentImage.description')} /></Link>
-            <Link href="/tools/story-editor"><FeatureItem title={t('tools.actions.storyEditor.title')} description={t('tools.actions.storyEditor.description')} /></Link>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {featureCards.map((card) => (
+                  <Link key={card.href} href={card.href} className="rounded-xl border border-blue-200/30 bg-white/15 p-4 transition hover:-translate-y-0.5 hover:bg-white/25">
+                    <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/40">
+                      <FontAwesomeIcon icon={card.icon} className="h-4 w-4" />
+                    </div>
+                    <p className="text-lg font-semibold">{card.title}</p>
+                    <p className="mt-1 text-sm text-blue-100">{card.description}</p>
+                  </Link>
+                ))}
+              </div>
+            </section>
           </div>
-        </CollapsibleBox>
-
-        <CollapsibleBox tutorialKey="home-section-minigames" title={t('minigames.title')} description={t('minigames.description')}>
-          <div className="space-y-2">
-            <Link href="/minigames/bgm-quiz"><FeatureItem title={t('minigames.actions.bgmQuiz.title')} description={t('minigames.actions.bgmQuiz.description')} /></Link>
-          </div>
-        </CollapsibleBox>
-
-
-        <CollapsibleBox tutorialKey="home-section-others" title={t('others.title')} description={t('others.description')}>
-          <div className="space-y-2">
-            <Link href="/dev-memos"><FeatureItem title={t('others.actions.devMemos.title')} description={t('others.actions.devMemos.description')} /></Link>
-            <Link href="/ba-memos"><FeatureItem title={t('others.actions.baMemos.title')} description={t('others.actions.baMemos.description')} /></Link>
-          </div>
-        </CollapsibleBox>
+        </div>
       </main>
     </>
   )

@@ -115,5 +115,38 @@
         }
       }
     }
+  },
+  "topPage": {
+    "menuTitle": "菜单",
+    "menu": {
+      "dashboard": "仪表盘",
+      "students": "学生管理",
+      "tl": "TL工具(β)",
+      "tools": "实用工具",
+      "minigame": "小游戏",
+      "settings": "设置"
+    },
+    "hero": {
+      "title": "你好，老师！",
+      "subtitle": "选择你需要的功能，马上开始使用。"
+    },
+    "cards": {
+      "students": {
+        "title": "学生管理",
+        "description": "查看并编辑学生培养数据"
+      },
+      "tl": {
+        "title": "TL工具(β)",
+        "description": "搜索并制作TL轴"
+      },
+      "tools": {
+        "title": "实用工具",
+        "description": "集中使用计算器与辅助功能"
+      },
+      "minigame": {
+        "title": "小游戏",
+        "description": "来一局BGM猜曲放松一下"
+      }
+    }
   }
 }
