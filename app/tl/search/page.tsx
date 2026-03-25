@@ -88,6 +88,27 @@ type EditSquad = {
   specials: string[]
 }
 
+const toSeasonDate = (date: string, boundary: 'start' | 'end'): number => {
+  const suffix =
+    boundary === 'start' ? 'T00:00:00+09:00' : 'T23:59:59.999+09:00'
+  return new Date(`${date}${suffix}`).getTime()
+}
+
+const selectDefaultSeason = (seasons: Season[]): Season | null => {
+  if (seasons.length === 0) return null
+  const now = Date.now()
+  const activeSeason = seasons.find((seasonItem) => {
+    const start = toSeasonDate(seasonItem.startDate, 'start')
+    const end = toSeasonDate(seasonItem.endDate, 'end')
+    return start <= now && now <= end
+  })
+  if (activeSeason) return activeSeason
+  const startedSeason = seasons.find(
+    (seasonItem) => toSeasonDate(seasonItem.startDate, 'start') <= now
+  )
+  return startedSeason ?? seasons[0]
+}
+
 type VideoSettingsRow = {
   videoid: string
   include_squad?: boolean | null
@@ -451,16 +472,19 @@ export default function TLSearchPage() {
             const stu: Student[] = await stuRes.json()
             setStudents(stu)
           }
-          const latest = data.seasons[0]
-          if (latest) {
-            setSeason(latest.number)
-            setBoss(latest.boss)
-            setTerrain(latest.terrain)
-            if (latest.type === '総力戦' && latest.defenseArmors.length === 1) {
-              setArmor(latest.defenseArmors[0])
+          const defaultSeason = selectDefaultSeason(data.seasons)
+          if (defaultSeason) {
+            setSeason(defaultSeason.number)
+            setBoss(defaultSeason.boss)
+            setTerrain(defaultSeason.terrain)
+            if (
+              defaultSeason.type === '総力戦' &&
+              defaultSeason.defenseArmors.length === 1
+            ) {
+              setArmor(defaultSeason.defenseArmors[0])
             }
-            setLoadingMessage(`(${latest.number})のデータを取得中...`)
-            const res = await fetch(`/api/timelines?season=${latest.number}`)
+            setLoadingMessage(`(${defaultSeason.number})のデータを取得中...`)
+            const res = await fetch(`/api/timelines?season=${defaultSeason.number}`)
             if (res.ok) {
               const data: Timeline[] = await res.json()
               data.sort((a, b) => {
