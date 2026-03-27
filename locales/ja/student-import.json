@@ -4,19 +4,19 @@
   },
   "header": {
     "title": "生徒データインポート",
-    "description": "生徒データの画像をアップロードすると、OCRで生徒名と一部ステータスを抽出します。",
-    "recommendation": "生徒詳細（基本情報）画面のスクリーンショットを推奨します。",
-    "freeOcrNote": "本機能は無料OCRのみを利用しており、結果は編集できます。",
+    "description": "SchaleDB、画像から生徒データをインポートできます。",
+    "recommendation": " ",
+    "freeOcrNote": " ",
     "splitNotes": {
-      "leftTopBottom": "画像は左右に分割して解析します。",
-      "leftColumns": "左側は追加で分割して名前やステータスを抽出します。",
-      "paddleOnly": "OCR方式は現在のデフォルト設定のみを使用します。"
+      "leftTopBottom": " ",
+      "leftColumns": " ",
+      "paddleOnly": " "
     }
   },
   "errors": {
     "studentsNotLoaded": "生徒データの読み込みが完了していません。少し待ってから再試行してください。",
-    "noMatchedStudents": "一致する生徒が見つかりませんでした。importid を確認してください。",
-    "invalidSchaleInput": "SchaleDBの文字列を読み取れませんでした。JSONまたはBase64文字列を確認してください。",
+    "noMatchedStudents": "一致する生徒が見つかりませんでした。",
+    "invalidSchaleInput": "SchaleDBの文字列を読み取れませんでした。Base64文字列を確認してください。",
     "noImageFiles": "画像ファイルが見つかりませんでした。画像または画像を含むフォルダを選択してください。",
     "imageAnalysisFailed": "画像の解析に失敗しました。別の画像を試してください。"
   },
@@ -68,7 +68,7 @@
       "ex": "EX",
       "ns": "NS",
       "ps": "PS",
-      "sub": "Sub",
+      "sub": "SS",
       "weaponLevel": "武器Lv",
       "weaponStar": "武器★",
       "equip1": "装備1",
