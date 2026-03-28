@@ -21,18 +21,12 @@ const RAID_FILE = path.join(process.cwd(), 'data', 'raid.json')
 
 const toDateKey = (value: Date): string => value.toISOString().slice(0, 10)
 
-const pickSeasonForWorkflow = (seasons: TLSeason[], todayKey: string): string | null => {
+const pickActiveSeasonForWorkflow = (seasons: TLSeason[], todayKey: string): string | null => {
   const current = seasons
     .filter((season) => season.startDate <= todayKey && todayKey <= season.endDate)
     .sort((a, b) => b.startDate.localeCompare(a.startDate))[0]
 
-  if (current) return current.number
-
-  const latestEnded = seasons
-    .filter((season) => season.endDate < todayKey)
-    .sort((a, b) => b.endDate.localeCompare(a.endDate))[0]
-
-  return latestEnded?.number ?? null
+  return current?.number ?? null
 }
 
 async function loadRaidData(): Promise<RaidData> {
@@ -43,10 +37,10 @@ async function loadRaidData(): Promise<RaidData> {
 async function main() {
   const raid = await loadRaidData()
   const todayKey = toDateKey(new Date())
-  const targetSeason = pickSeasonForWorkflow(raid.seasons, todayKey)
+  const targetSeason = pickActiveSeasonForWorkflow(raid.seasons, todayKey)
 
   if (!targetSeason) {
-    console.log(`[cron] no eligible season found at ${todayKey}.`)
+    console.log(`[cron] skip: no active season (today=${todayKey}).`)
     return
   }
 
