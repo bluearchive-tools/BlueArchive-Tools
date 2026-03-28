@@ -62,6 +62,31 @@ type OwnerIndex = {
   bilibili: Map<string, string>
 }
 
+interface UserStudent {
+  student_id: string
+  level: number
+  star: number
+  unique_star: number
+  unique_level: number
+  bond: number
+  hp: number
+  hp_wb: number
+  attack: number
+  attack_wb: number
+  defense: number
+  heal: number
+  heal_wb: number
+  ex_skill: number
+  normal_skill: number
+  passive_skill: number
+  sub_skill: number
+  equip1: number
+  equip2: number
+  equip3: number
+  item_tier: number
+  alt_bonds?: Record<string, number>
+}
+
 const parseSocialLinks = (raw: unknown): SocialLink[] => {
   if (!raw) return []
   if (Array.isArray(raw)) return raw as SocialLink[]
@@ -341,8 +366,9 @@ const extractStudentsFromLine = (line: string, students: Student[]): Student[] =
 }
 
 export async function extractFormation(
-  _supabase: SupabaseClient,
-  text: string
+  supabase: SupabaseClient,
+  text: string,
+  ownerUserId?: string
 ): Promise<string> {
   try {
     const file = path.join(process.cwd(), 'data', 'students.json')
@@ -397,31 +423,42 @@ export async function extractFormation(
       }
     }
     if (ids.size === 0) return '[]'
+    const map: Record<string, UserStudent> = {}
+    if (ownerUserId) {
+      const { data } = await supabase
+        .from('user_students')
+        .select('*')
+        .eq('user_id', ownerUserId)
+        .in('student_id', Array.from(ids))
+      for (const row of (data ?? []) as UserStudent[]) {
+        map[row.student_id] = row
+      }
+    }
     const result = teams.map((team) =>
       team.map((m) => ({
         id: m.id,
         name: m.name,
-        level: null,
-        star: null,
-        unique_star: null,
-        unique_level: null,
-        bond: null,
-        hp: null,
-        hp_wb: null,
-        attack: null,
-        attack_wb: null,
-        defense: null,
-        heal: null,
-        heal_wb: null,
-        ex_skill: null,
-        normal_skill: null,
-        passive_skill: null,
-        sub_skill: null,
-        equip1: null,
-        equip2: null,
-        equip3: null,
-        item_tier: null,
-        alt_bonds: null,
+        level: map[m.id]?.level ?? null,
+        star: map[m.id]?.star ?? null,
+        unique_star: map[m.id]?.unique_star ?? null,
+        unique_level: map[m.id]?.unique_level ?? null,
+        bond: map[m.id]?.bond ?? null,
+        hp: map[m.id]?.hp ?? null,
+        hp_wb: map[m.id]?.hp_wb ?? null,
+        attack: map[m.id]?.attack ?? null,
+        attack_wb: map[m.id]?.attack_wb ?? null,
+        defense: map[m.id]?.defense ?? null,
+        heal: map[m.id]?.heal ?? null,
+        heal_wb: map[m.id]?.heal_wb ?? null,
+        ex_skill: map[m.id]?.ex_skill ?? null,
+        normal_skill: map[m.id]?.normal_skill ?? null,
+        passive_skill: map[m.id]?.passive_skill ?? null,
+        sub_skill: map[m.id]?.sub_skill ?? null,
+        equip1: map[m.id]?.equip1 ?? null,
+        equip2: map[m.id]?.equip2 ?? null,
+        equip3: map[m.id]?.equip3 ?? null,
+        item_tier: map[m.id]?.item_tier ?? null,
+        alt_bonds: map[m.id]?.alt_bonds ?? null,
       }))
     )
     return JSON.stringify(result)
@@ -834,7 +871,7 @@ export async function upsertTimelines(params: {
     const score = normalizeScore(text, rawScore)
     const thumbnail = snippet.thumbnails?.medium?.url ?? snippet.thumbnails?.default?.url ?? null
     const difficulty = normalizeDifficulty(text, rawScore)
-    const formation = await extractFormation(supabase, text)
+    const formation = await extractFormation(supabase, text, ownerByChannel)
     const guide = extractGuide(text)
     const formationStatus =
       formation && formation !== '[]' ? 'auto' : 'none'
@@ -948,7 +985,7 @@ export async function upsertTimelines(params: {
     const score = normalizeScore(text, rawScore)
     const thumbnail = detail?.thumbnail ?? info.thumbnail ?? null
     const difficulty = normalizeDifficulty(text, rawScore)
-    const formation = await extractFormation(supabase, text)
+    const formation = await extractFormation(supabase, text, ownerByBili)
     const guide = extractGuide(text)
     const formationStatus =
       formation && formation !== '[]' ? 'auto' : 'none'
