@@ -1278,7 +1278,7 @@
       "terrain": "屋外",
       "type": "大決戦",
       "defenseArmors": ["重装甲", "特殊装甲", "弾力装甲"],
-      "maxDifficultyArmors": ["特殊装甲", "弾力装甲"],
+      "maxDifficultyArmors": ["重装甲", "特殊装甲"],
       "maxDifficulty": "Torment",
       "startDate": "2026-04-08",
       "endDate": "2026-04-15"
