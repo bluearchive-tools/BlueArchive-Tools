@@ -9790,5 +9790,638 @@
   "aliases": [
     "レナ"
   ]
+},
+  {
+  "id": "257",
+  "importid": "20057",
+  "name": "アカネ（制服）",
+  "englishName": "",
+  "image": "https://static.wikitide.net/bluearchivewiki/c/ca/Akane_%28School_Uniform%29.png",
+  "imageFull": "https://static.wikitide.net/bluearchivewiki/thumb/d/d6/Akane_%28School_Uniform%29_00.png",
+  "attackType": "爆発",
+  "defenseType": "軽装備",
+  "hasAccessory": false,
+  "altIds": [],
+  "initialStars": 3,
+  "role": "SPECIAL",
+  "characterType": "アタッカー",
+  "position": "BACK",
+  "cost": 4,
+  "exDuration": 0,
+  "normalDuration": 0,
+  "normalInterval": 0,
+  "skills": {
+    "ex": {
+      "title": "基本に忠実に",
+      "text": "敵1人に対して対象が軽装備の場合、被特効ダメージ量を{damage}%加算（27秒間）/自身に対して基礎熟練度を{value}%加算（10秒間）",
+      "values": {
+        "damage": [
+          8.5,
+          9.8,
+          12.3,
+          13.6,
+          16.1
+        ],
+        "value": [
+          44.2,
+          50.8,
+          64,
+          70.7,
+          83.9
+        ]
+      }
+    },
+    "normal": {
+      "title": "手順を守って",
+      "text": "EXスキルの使用時、敵1人に対して攻撃力の{damage}%分のダメージ（クールタイム8秒）（EXスキルの使用時に指定した敵を優先とします）",
+      "values": {
+        "damage": [
+          747,
+          785,
+          822,
+          971,
+          1009,
+          1046,
+          1196,
+          1233,
+          1270,
+          1420
+        ]
+      }
+    },
+    "passive": {
+      "title": "丁寧な整理整頓",
+      "text": "会心ダメージ率を{critdamage}%増加",
+      "values": {
+        "critdamage": [
+          14,
+          14.7,
+          15.4,
+          18.2,
+          18.9,
+          19.6,
+          22.4,
+          23.1,
+          23.8,
+          26.6
+        ]
+      }
+    },
+    "passivePlus": {
+      "title": "丁寧な整理整頓+",
+      "text": "攻撃力を{critdamage}増加/さらに会心ダメージ率を{critdamage2}%増加",
+      "values": {
+        "critdamage": [
+          384,
+          404,
+          423,
+          500,
+          519,
+          538,
+          615,
+          634,
+          653,
+          730
+        ],
+        "critdamage2": [
+          14,
+          14.7,
+          15.4,
+          18.2,
+          18.9,
+          19.6,
+          22.4,
+          23.1,
+          23.8,
+          26.6
+        ]
+      }
+    },
+    "sub": {
+      "title": "私は生徒ですから",
+      "text": "味方の会心ダメージ率を{critdamage}%増加",
+      "values": {
+        "critdamage": [
+          9.1,
+          9.5,
+          10,
+          11.8,
+          12.3,
+          12.7,
+          14.5,
+          15,
+          15.5,
+          17.3
+        ]
+      }
+    }
+  },
+  "equipmentSlots": {
+    "slot1": [
+      "weapon"
+    ],
+    "slot2": [
+      "gloves"
+    ],
+    "slot3": [
+      "shoes"
+    ],
+    "accessory": [
+      "accessory"
+    ]
+  },
+  "accessory": {
+    "tiers": []
+  },
+  "exHitDelay": 0,
+  "normalHitDelay": 0,
+  "hp": 2172,
+  "attack": 391,
+  "defense": 64,
+  "heal": 1949,
+  "range": 1000,
+  "uniqueWeapon": {
+    "name": "サイレントソリューション",
+    "hp": 422,
+    "attack": 141,
+    "heal": 195
+  },
+  "aliases": [
+    "アカネ（制服）"
+  ]
+},
+  {
+  "id": "258",
+  "importid": "",
+  "name": "ニコ",
+  "englishName": "",
+  "image": "https://bluearchive.wikiru.jp/image/ogp.jpg",
+  "attackType": "爆発",
+  "defenseType": "弾力装甲",
+  "hasAccessory": false,
+  "altIds": [],
+  "initialStars": 3,
+  "role": "STRIKER",
+  "characterType": "サポーター",
+  "position": "BACK",
+  "cost": 4,
+  "exDuration": 0,
+  "normalDuration": 0,
+  "normalInterval": 0,
+  "skills": {
+    "ex": {
+      "title": "基本に忠実に",
+      "text": "敵1人に対して対象が軽装備の場合、被特効ダメージ量を{damage}%加算（27秒間）/自身に対して基礎熟練度を{value}%加算（10秒間）",
+      "values": {
+        "damage": [
+          8.5,
+          9.8,
+          12.3,
+          13.6,
+          16.1
+        ],
+        "value": [
+          44.2,
+          50.8,
+          64,
+          70.7,
+          83.9
+        ]
+      }
+    },
+    "normal": {
+      "title": "手順を守って",
+      "text": "EXスキルの使用時、敵1人に対して攻撃力の{damage}%分のダメージ（クールタイム8秒）（EXスキルの使用時に指定した敵を優先とします）",
+      "values": {
+        "damage": [
+          747,
+          785,
+          822,
+          971,
+          1009,
+          1046,
+          1196,
+          1233,
+          1270,
+          1420
+        ]
+      }
+    },
+    "passive": {
+      "title": "丁寧な整理整頓",
+      "text": "会心ダメージ率を{critdamage}%増加",
+      "values": {
+        "critdamage": [
+          14,
+          14.7,
+          15.4,
+          18.2,
+          18.9,
+          19.6,
+          22.4,
+          23.1,
+          23.8,
+          26.6
+        ]
+      }
+    },
+    "passivePlus": {
+      "title": "丁寧な整理整頓+",
+      "text": "攻撃力を{critdamage}増加/さらに会心ダメージ率を{critdamage2}%増加",
+      "values": {
+        "critdamage": [
+          384,
+          404,
+          423,
+          500,
+          519,
+          538,
+          615,
+          634,
+          653,
+          730
+        ],
+        "critdamage2": [
+          14,
+          14.7,
+          15.4,
+          18.2,
+          18.9,
+          19.6,
+          22.4,
+          23.1,
+          23.8,
+          26.6
+        ]
+      }
+    },
+    "sub": {
+      "title": "私は生徒ですから",
+      "text": "味方の会心ダメージ率を{critdamage}%増加",
+      "values": {
+        "critdamage": [
+          9.1,
+          9.5,
+          10,
+          11.8,
+          12.3,
+          12.7,
+          14.5,
+          15,
+          15.5,
+          17.3
+        ]
+      }
+    }
+  },
+  "equipmentSlots": {
+    "slot1": [
+      "weapon"
+    ],
+    "slot2": [
+      "gloves"
+    ],
+    "slot3": [
+      "shoes"
+    ],
+    "accessory": [
+      "accessory"
+    ]
+  },
+  "accessory": {
+    "tiers": []
+  },
+  "exHitDelay": 0,
+  "normalHitDelay": 0,
+  "hp": 2172,
+  "attack": 391,
+  "defense": 64,
+  "heal": 1949,
+  "range": 1000,
+  "uniqueWeapon": {
+    "name": "サイレントソリューション",
+    "hp": 422,
+    "attack": 141,
+    "heal": 195
+  },
+  "aliases": [
+    "アカネ（制服）"
+  ]
+},
+  {
+  "id": "259",
+  "importid": "",
+  "name": "クルミ",
+  "englishName": "",
+  "image": "https://bluearchive.wikiru.jp/image/ogp.jpg",
+  "attackType": "爆発",
+  "defenseType": "軽装備",
+  "hasAccessory": false,
+  "altIds": [],
+  "initialStars": 3,
+  "role": "STRIKER",
+  "characterType": "アタッカー",
+  "position": "BACK",
+  "cost": 4,
+  "exDuration": 0,
+  "normalDuration": 0,
+  "normalInterval": 0,
+  "skills": {
+    "ex": {
+      "title": "基本に忠実に",
+      "text": "敵1人に対して対象が軽装備の場合、被特効ダメージ量を{damage}%加算（27秒間）/自身に対して基礎熟練度を{value}%加算（10秒間）",
+      "values": {
+        "damage": [
+          8.5,
+          9.8,
+          12.3,
+          13.6,
+          16.1
+        ],
+        "value": [
+          44.2,
+          50.8,
+          64,
+          70.7,
+          83.9
+        ]
+      }
+    },
+    "normal": {
+      "title": "手順を守って",
+      "text": "EXスキルの使用時、敵1人に対して攻撃力の{damage}%分のダメージ（クールタイム8秒）（EXスキルの使用時に指定した敵を優先とします）",
+      "values": {
+        "damage": [
+          747,
+          785,
+          822,
+          971,
+          1009,
+          1046,
+          1196,
+          1233,
+          1270,
+          1420
+        ]
+      }
+    },
+    "passive": {
+      "title": "丁寧な整理整頓",
+      "text": "会心ダメージ率を{critdamage}%増加",
+      "values": {
+        "critdamage": [
+          14,
+          14.7,
+          15.4,
+          18.2,
+          18.9,
+          19.6,
+          22.4,
+          23.1,
+          23.8,
+          26.6
+        ]
+      }
+    },
+    "passivePlus": {
+      "title": "丁寧な整理整頓+",
+      "text": "攻撃力を{critdamage}増加/さらに会心ダメージ率を{critdamage2}%増加",
+      "values": {
+        "critdamage": [
+          384,
+          404,
+          423,
+          500,
+          519,
+          538,
+          615,
+          634,
+          653,
+          730
+        ],
+        "critdamage2": [
+          14,
+          14.7,
+          15.4,
+          18.2,
+          18.9,
+          19.6,
+          22.4,
+          23.1,
+          23.8,
+          26.6
+        ]
+      }
+    },
+    "sub": {
+      "title": "私は生徒ですから",
+      "text": "味方の会心ダメージ率を{critdamage}%増加",
+      "values": {
+        "critdamage": [
+          9.1,
+          9.5,
+          10,
+          11.8,
+          12.3,
+          12.7,
+          14.5,
+          15,
+          15.5,
+          17.3
+        ]
+      }
+    }
+  },
+  "equipmentSlots": {
+    "slot1": [
+      "weapon"
+    ],
+    "slot2": [
+      "gloves"
+    ],
+    "slot3": [
+      "shoes"
+    ],
+    "accessory": [
+      "accessory"
+    ]
+  },
+  "accessory": {
+    "tiers": []
+  },
+  "exHitDelay": 0,
+  "normalHitDelay": 0,
+  "hp": 2172,
+  "attack": 391,
+  "defense": 64,
+  "heal": 1949,
+  "range": 1000,
+  "uniqueWeapon": {
+    "name": "サイレントソリューション",
+    "hp": 422,
+    "attack": 141,
+    "heal": 195
+  },
+  "aliases": [
+    "アカネ（制服）"
+  ]
+},
+  {
+  "id": "260",
+  "importid": "",
+  "name": "オトギ",
+  "englishName": "",
+  "image": "https://bluearchive.wikiru.jp/image/ogp.jpg",
+  "attackType": "爆発",
+  "defenseType": "軽装備",
+  "hasAccessory": false,
+  "altIds": [],
+  "initialStars": 1,
+  "role": "STRIKER",
+  "characterType": "アタッカー",
+  "position": "BACK",
+  "cost": 4,
+  "exDuration": 0,
+  "normalDuration": 0,
+  "normalInterval": 0,
+  "skills": {
+    "ex": {
+      "title": "基本に忠実に",
+      "text": "敵1人に対して対象が軽装備の場合、被特効ダメージ量を{damage}%加算（27秒間）/自身に対して基礎熟練度を{value}%加算（10秒間）",
+      "values": {
+        "damage": [
+          8.5,
+          9.8,
+          12.3,
+          13.6,
+          16.1
+        ],
+        "value": [
+          44.2,
+          50.8,
+          64,
+          70.7,
+          83.9
+        ]
+      }
+    },
+    "normal": {
+      "title": "手順を守って",
+      "text": "EXスキルの使用時、敵1人に対して攻撃力の{damage}%分のダメージ（クールタイム8秒）（EXスキルの使用時に指定した敵を優先とします）",
+      "values": {
+        "damage": [
+          747,
+          785,
+          822,
+          971,
+          1009,
+          1046,
+          1196,
+          1233,
+          1270,
+          1420
+        ]
+      }
+    },
+    "passive": {
+      "title": "丁寧な整理整頓",
+      "text": "会心ダメージ率を{critdamage}%増加",
+      "values": {
+        "critdamage": [
+          14,
+          14.7,
+          15.4,
+          18.2,
+          18.9,
+          19.6,
+          22.4,
+          23.1,
+          23.8,
+          26.6
+        ]
+      }
+    },
+    "passivePlus": {
+      "title": "丁寧な整理整頓+",
+      "text": "攻撃力を{critdamage}増加/さらに会心ダメージ率を{critdamage2}%増加",
+      "values": {
+        "critdamage": [
+          384,
+          404,
+          423,
+          500,
+          519,
+          538,
+          615,
+          634,
+          653,
+          730
+        ],
+        "critdamage2": [
+          14,
+          14.7,
+          15.4,
+          18.2,
+          18.9,
+          19.6,
+          22.4,
+          23.1,
+          23.8,
+          26.6
+        ]
+      }
+    },
+    "sub": {
+      "title": "私は生徒ですから",
+      "text": "味方の会心ダメージ率を{critdamage}%増加",
+      "values": {
+        "critdamage": [
+          9.1,
+          9.5,
+          10,
+          11.8,
+          12.3,
+          12.7,
+          14.5,
+          15,
+          15.5,
+          17.3
+        ]
+      }
+    }
+  },
+  "equipmentSlots": {
+    "slot1": [
+      "weapon"
+    ],
+    "slot2": [
+      "gloves"
+    ],
+    "slot3": [
+      "shoes"
+    ],
+    "accessory": [
+      "accessory"
+    ]
+  },
+  "accessory": {
+    "tiers": []
+  },
+  "exHitDelay": 0,
+  "normalHitDelay": 0,
+  "hp": 2172,
+  "attack": 391,
+  "defense": 64,
+  "heal": 1949,
+  "range": 1000,
+  "uniqueWeapon": {
+    "name": "サイレントソリューション",
+    "hp": 422,
+    "attack": 141,
+    "heal": 195
+  },
+  "aliases": [
+    "アカネ（制服）"
+  ]
 }
 ]
