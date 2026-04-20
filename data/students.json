@@ -9954,8 +9954,9 @@
   "id": "258",
   "importid": "",
   "name": "ニコ",
-  "englishName": "",
-  "image": "https://bluearchive.wikiru.jp/image/ogp.jpg",
+  "englishName": "Niko",
+  "image": "",
+  "imageFull": "https://static.wikitide.net/bluearchivewiki/9/91/Niko_00.png",
   "attackType": "爆発",
   "defenseType": "弾力装甲",
   "hasAccessory": false,
@@ -9963,35 +9964,28 @@
   "initialStars": 3,
   "role": "STRIKER",
   "characterType": "サポーター",
-  "position": "BACK",
+  "position": "FRONT",
   "cost": 4,
   "exDuration": 0,
   "normalDuration": 0,
   "normalInterval": 0,
   "skills": {
     "ex": {
-      "title": "基本に忠実に",
-      "text": "敵1人に対して対象が軽装備の場合、被特効ダメージ量を{damage}%加算（27秒間）/自身に対して基礎熟練度を{value}%加算（10秒間）",
+      "title": "CSAR",
+      "text": "味方1人の弱体状態を1つ解除/自身を中心とした円形範囲内の味方のEXスキルの与えるダメージ量を加算（35秒間）さらにその対象がアタッカーの場合「索敵」を1個付与（「索敵」は最大6個まで重複）",
       "values": {
-        "damage": [
-          8.5,
-          9.8,
-          12.3,
-          13.6,
-          16.1
-        ],
-        "value": [
-          44.2,
-          50.8,
-          64,
-          70.7,
-          83.9
+        "ex": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          48.5
         ]
       }
     },
     "normal": {
-      "title": "手順を守って",
-      "text": "EXスキルの使用時、敵1人に対して攻撃力の{damage}%分のダメージ（クールタイム8秒）（EXスキルの使用時に指定した敵を優先とします）",
+      "title": "ブロークンアロー",
+      "text": "一定時間毎に、敵3人に対して攻撃力の{damage}分のダメージ。攻撃力の{damage2}分の火傷持続ダメージを付与（一定時間）",
       "values": {
         "damage": [
           747,
@@ -10008,10 +10002,10 @@
       }
     },
     "passive": {
-      "title": "丁寧な整理整頓",
-      "text": "会心ダメージ率を{critdamage}%増加",
+      "title": "火器熟練",
+      "text": "通常攻撃の射程と攻撃力を{attack}%増加",
       "values": {
-        "critdamage": [
+        "attack": [
           14,
           14.7,
           15.4,
@@ -10026,7 +10020,7 @@
       }
     },
     "passivePlus": {
-      "title": "丁寧な整理整頓+",
+      "title": "火器熟練+",
       "text": "攻撃力を{critdamage}増加/さらに会心ダメージ率を{critdamage2}%増加",
       "values": {
         "critdamage": [
@@ -10056,8 +10050,8 @@
       }
     },
     "sub": {
-      "title": "私は生徒ですから",
-      "text": "味方の会心ダメージ率を{critdamage}%増加",
+      "title": "小隊のお世話焼き",
+      "text": "自身のEXスキルで味方にバフ効果を付与した時、該当味方に対して、味方全体の「索敵」1個毎にEXスキルの与えるダメージ量を加算（一定時間）（最大6個まで）。",
       "values": {
         "critdamage": [
           9.1,
@@ -10112,24 +10106,25 @@
   "id": "259",
   "importid": "",
   "name": "クルミ",
-  "englishName": "",
-  "image": "https://bluearchive.wikiru.jp/image/ogp.jpg",
+  "englishName": "Kurumi",
+  "image": "",
+  "imageFull": "https://static.wikitide.net/bluearchivewiki/c/c2/Kurumi_00.png",
   "attackType": "爆発",
   "defenseType": "軽装備",
   "hasAccessory": false,
   "altIds": [],
   "initialStars": 3,
   "role": "STRIKER",
-  "characterType": "アタッカー",
-  "position": "BACK",
-  "cost": 4,
+  "characterType": "タンク",
+  "position": "FRONT",
+  "cost": 3,
   "exDuration": 0,
   "normalDuration": 0,
   "normalInterval": 0,
   "skills": {
     "ex": {
-      "title": "基本に忠実に",
-      "text": "敵1人に対して対象が軽装備の場合、被特効ダメージ量を{damage}%加算（27秒間）/自身に対して基礎熟練度を{value}%加算（10秒間）",
+      "title": "防護盾、展開",
+      "text": "スキル発動後すぐにリロード。治癒力分の「戦術シールド」効果を発動（一定時間）、「戦術シールド」が維持される間、「戦術防御状態」に変更。（戦術シールド：効果終了時、シールド残量一定値分のHPを回復する。「戦術シールド」を保有中に他のシールド効果が付与された場合、シールドが付与される代わりに自身の治癒力分の「戦術シールド」を回復）",
       "values": {
         "damage": [
           8.5,
@@ -10148,8 +10143,8 @@
       }
     },
     "normal": {
-      "title": "手順を守って",
-      "text": "EXスキルの使用時、敵1人に対して攻撃力の{damage}%分のダメージ（クールタイム8秒）（EXスキルの使用時に指定した敵を優先とします）",
+      "title": "攻勢転換",
+      "text": "「戦術防御状態」の解除時、敵1人の会心ダメージ抵抗率を減少（一定時間）/攻撃力分のダメージ",
       "values": {
         "damage": [
           747,
@@ -10166,7 +10161,7 @@
       }
     },
     "passive": {
-      "title": "丁寧な整理整頓",
+      "title": "セラミック装甲板",
       "text": "会心ダメージ率を{critdamage}%増加",
       "values": {
         "critdamage": [
@@ -10184,7 +10179,7 @@
       }
     },
     "passivePlus": {
-      "title": "丁寧な整理整頓+",
+      "title": "セラミック装甲板+",
       "text": "攻撃力を{critdamage}増加/さらに会心ダメージ率を{critdamage2}%増加",
       "values": {
         "critdamage": [
@@ -10214,8 +10209,8 @@
       }
     },
     "sub": {
-      "title": "私は生徒ですから",
-      "text": "味方の会心ダメージ率を{critdamage}%増加",
+      "title": "槌支える鉄床",
+      "text": "コスト回復力を増加。「戦術シールド」が維持されている間は追加でコスト回復力を増加。「戦術シールド」が一定時間以上維持された場合、該当「戦術シールド」が終了時にストライカーの味方の攻撃力を増加（一定時間）",
       "values": {
         "critdamage": [
           9.1,
@@ -10270,10 +10265,11 @@
   "id": "260",
   "importid": "",
   "name": "オトギ",
-  "englishName": "",
-  "image": "https://bluearchive.wikiru.jp/image/ogp.jpg",
+  "englishName": "Otogi",
+  "image": "",
+  "imageFull": "https://static.wikitide.net/bluearchivewiki/3/35/Otogi_00.png",
   "attackType": "爆発",
-  "defenseType": "軽装備",
+  "defenseType": "特殊装甲",
   "hasAccessory": false,
   "altIds": [],
   "initialStars": 1,
@@ -10286,8 +10282,8 @@
   "normalInterval": 0,
   "skills": {
     "ex": {
-      "title": "基本に忠実に",
-      "text": "敵1人に対して対象が軽装備の場合、被特効ダメージ量を{damage}%加算（27秒間）/自身に対して基礎熟練度を{value}%加算（10秒間）",
+      "title": "指定射撃開始",
+      "text": "「指定射撃姿勢」になり、攻撃力を増加、攻撃速度を増加、通常攻撃の射程を増加（一定時間）。敵1人に対して「標識」を付与し、「オトギ」は「標識」が付与された敵を優先的に攻撃（一定時間）。発動後すぐにリロード",
       "values": {
         "damage": [
           8.5,
@@ -10306,8 +10302,8 @@
       }
     },
     "normal": {
-      "title": "手順を守って",
-      "text": "EXスキルの使用時、敵1人に対して攻撃力の{damage}%分のダメージ（クールタイム8秒）（EXスキルの使用時に指定した敵を優先とします）",
+      "title": "HEIAP弾切替",
+      "text": "「指定射撃姿勢」で弾薬数が0になった時、敵1人に対して攻撃力分のダメージ。",
       "values": {
         "damage": [
           747,
@@ -10324,7 +10320,7 @@
       }
     },
     "passive": {
-      "title": "丁寧な整理整頓",
+      "title": "速射熟練",
       "text": "会心ダメージ率を{critdamage}%増加",
       "values": {
         "critdamage": [
@@ -10342,7 +10338,7 @@
       }
     },
     "passivePlus": {
-      "title": "丁寧な整理整頓+",
+      "title": "速射熟練+",
       "text": "攻撃力を{critdamage}増加/さらに会心ダメージ率を{critdamage2}%増加",
       "values": {
         "critdamage": [
@@ -10372,8 +10368,8 @@
       }
     },
     "sub": {
-      "title": "私は生徒ですから",
-      "text": "味方の会心ダメージ率を{critdamage}%増加",
+      "title": "狙撃手の勘",
+      "text": "攻撃力を増加。EXスキルの与えるダメージ量の加算値に比例して通常攻撃、およびノーマルスキルのダメージの倍率が変更（EXスキルの与えるダメージ量の加算値が一定値を超えると最大値が適用される）",
       "values": {
         "critdamage": [
           9.1,
