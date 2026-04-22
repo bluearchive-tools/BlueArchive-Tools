@@ -115,5 +115,38 @@
         }
       }
     }
+  },
+  "topPage": {
+    "menuTitle": "Menu",
+    "menu": {
+      "dashboard": "Dashboard",
+      "students": "Students",
+      "tl": "TL Tools (Beta)",
+      "tools": "Utilities",
+      "minigame": "Mini Game",
+      "settings": "Settings"
+    },
+    "hero": {
+      "title": "Welcome back, Sensei!",
+      "subtitle": "Pick a feature below and jump straight into your workflow."
+    },
+    "cards": {
+      "students": {
+        "title": "Student Management",
+        "description": "Check and edit your student progress"
+      },
+      "tl": {
+        "title": "TL Tools (Beta)",
+        "description": "Search and build timeline strategies"
+      },
+      "tools": {
+        "title": "Utilities",
+        "description": "Open calculators and helper tools"
+      },
+      "minigame": {
+        "title": "Mini Game",
+        "description": "Take a break with the BGM quiz"
+      }
+    }
   }
 }

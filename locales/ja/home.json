@@ -115,5 +115,38 @@
         }
       }
     }
+  },
+  "topPage": {
+    "menuTitle": "メニュー",
+    "menu": {
+      "dashboard": "ダッシュボード",
+      "students": "生徒管理",
+      "tl": "TLツール(β)",
+      "tools": "便利ツール",
+      "minigame": "ミニゲーム",
+      "settings": "設定"
+    },
+    "hero": {
+      "title": "こんにちは、先生！",
+      "subtitle": "使いたい機能を選んで、すぐに作業を始めましょう。"
+    },
+    "cards": {
+      "students": {
+        "title": "生徒管理",
+        "description": "育成状況の確認と編集を行えます"
+      },
+      "tl": {
+        "title": "TLツール(β)",
+        "description": "TLの検索と作成ができます"
+      },
+      "tools": {
+        "title": "便利ツール",
+        "description": "計算機や補助機能をまとめています"
+      },
+      "minigame": {
+        "title": "ミニゲーム",
+        "description": "BGMクイズで気軽に遊べます"
+      }
+    }
   }
 }

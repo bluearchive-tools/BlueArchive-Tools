@@ -115,5 +115,38 @@
         }
       }
     }
+  },
+  "topPage": {
+    "menuTitle": "選單",
+    "menu": {
+      "dashboard": "儀表板",
+      "students": "學生管理",
+      "tl": "TL工具(β)",
+      "tools": "便利工具",
+      "minigame": "小遊戲",
+      "settings": "設定"
+    },
+    "hero": {
+      "title": "你好，老師！",
+      "subtitle": "選擇你要的功能，立即開始操作。"
+    },
+    "cards": {
+      "students": {
+        "title": "學生管理",
+        "description": "檢視並編輯學生培育資料"
+      },
+      "tl": {
+        "title": "TL工具(β)",
+        "description": "搜尋並建立TL軸"
+      },
+      "tools": {
+        "title": "便利工具",
+        "description": "集中使用計算器與輔助功能"
+      },
+      "minigame": {
+        "title": "小遊戲",
+        "description": "用BGM猜題輕鬆一下"
+      }
+    }
   }
 }
