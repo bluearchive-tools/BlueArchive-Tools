@@ -1,4 +1,4 @@
-name: Hourly YouTube Update
+name: Hourly TL Update
 
 on:
   schedule:
@@ -6,18 +6,18 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: hourly-youtube-update
+  group: hourly-tl-update
   cancel-in-progress: true
 
 jobs:
-  update-youtube:
+  update-timelines:
     runs-on: ubuntu-latest
     env:
       YOUTUBE_API_KEYS: ${{ secrets.YOUTUBE_API_KEYS }}
       YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      RUN_ONCE: 'true'
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,4 +29,4 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Run update
-        run: npm run update:youtube
+        run: npm run update:timelines

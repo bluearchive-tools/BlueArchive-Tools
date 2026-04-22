@@ -50,6 +50,18 @@ interface Student {
   normalHitDelay?: number
 }
 
+type SocialLink = {
+  service?: string
+  verified?: boolean
+  channelId?: string | null
+  biliUid?: string | null
+}
+
+type OwnerIndex = {
+  youtube: Map<string, string>
+  bilibili: Map<string, string>
+}
+
 interface UserStudent {
   student_id: string
   level: number
@@ -75,18 +87,24 @@ interface UserStudent {
   alt_bonds?: Record<string, number>
 }
 
-
-type SocialLink = {
-  service?: string
-  verified?: boolean
-  channelId?: string | null
-  biliUid?: string | null
-}
-
-type OwnerIndex = {
-  youtube: Map<string, string>
-  bilibili: Map<string, string>
-}
+type ParsedStudentStats = Partial<
+  Pick<
+    UserStudent,
+    | 'level'
+    | 'star'
+    | 'unique_star'
+    | 'unique_level'
+    | 'bond'
+    | 'ex_skill'
+    | 'normal_skill'
+    | 'passive_skill'
+    | 'sub_skill'
+    | 'equip1'
+    | 'equip2'
+    | 'equip3'
+    | 'item_tier'
+  >
+>
 
 const parseSocialLinks = (raw: unknown): SocialLink[] => {
   if (!raw) return []
@@ -366,9 +384,61 @@ const extractStudentsFromLine = (line: string, students: Student[]): Student[] =
   return selected
 }
 
+const parseStatusFromLine = (line: string): ParsedStudentStats => {
+  const out: ParsedStudentStats = {}
+  const normalized = line.replace(/[：]/g, ':')
+
+  const numberFrom = (regex: RegExp): number | undefined => {
+    const m = normalized.match(regex)
+    if (!m?.[1]) return undefined
+    const n = Number(m[1])
+    return Number.isFinite(n) ? n : undefined
+  }
+
+  const skillFrom = (regex: RegExp): number | undefined => {
+    const m = normalized.match(regex)
+    if (!m?.[1]) return undefined
+    const n = Number(m[1])
+    return Number.isFinite(n) ? n : undefined
+  }
+
+  const level = numberFrom(/(?:^|\s)(?:Lv|LV|レベル)\s*[: ]?\s*([0-9]{1,3})(?:\s|$)/)
+  if (level !== undefined) out.level = level
+
+  const star = numberFrom(/(?:^|\s)(?:星|☆|⭐︎)\s*([0-9])(?:\s|$)/)
+  if (star !== undefined) out.star = star
+
+  const uniqueStar = numberFrom(/固有\s*([0-9]{1,2})/)
+  if (uniqueStar !== undefined) out.unique_star = uniqueStar
+
+  const uniqueLevel = numberFrom(/固有(?:Lv|LV|レベル)\s*([0-9]{1,3})/)
+  if (uniqueLevel !== undefined) out.unique_level = uniqueLevel
+
+  const bond = numberFrom(/絆\s*([0-9]{1,3})/)
+  if (bond !== undefined) out.bond = bond
+
+  const ex = skillFrom(/(?:^|\s)EX\s*[: ]?\s*([0-9]{1,2})(?:\s*\/\s*[0-9]{1,2})?/i)
+  if (ex !== undefined) out.ex_skill = ex
+
+  const ns = skillFrom(/(?:^|\s)NS\s*[: ]?\s*([0-9]{1,2})(?:\s*\/\s*[0-9]{1,2})?/i)
+  if (ns !== undefined) out.normal_skill = ns
+
+  const ps = skillFrom(/(?:^|\s)PS\s*[: ]?\s*([0-9]{1,2})(?:\s*\/\s*[0-9]{1,2})?/i)
+  if (ps !== undefined) out.passive_skill = ps
+
+  const ss = skillFrom(/(?:^|\s)SS\s*[: ]?\s*([0-9]{1,2})(?:\s*\/\s*[0-9]{1,2})?/i)
+  if (ss !== undefined) out.sub_skill = ss
+
+  const equipTier = numberFrom(/(?:装備|T|Tier)\s*([0-9]{1,2})/i)
+  if (equipTier !== undefined) out.item_tier = equipTier
+
+  return out
+}
+
 export async function extractFormation(
   supabase: SupabaseClient,
-  text: string
+  text: string,
+  ownerUserId?: string
 ): Promise<string> {
   try {
     const file = path.join(process.cwd(), 'data', 'students.json')
@@ -379,6 +449,7 @@ export async function extractFormation(
     const teams: Student[][] = []
     let currentTeam: Student[] = []
     const ids = new Set<string>()
+    const parsedStatsById: Record<string, ParsedStudentStats> = {}
     let startedByMarker = false
 
     const flushCurrentTeam = () => {
@@ -408,9 +479,14 @@ export async function extractFormation(
       }
       if (hasAnyTeamMarker && !startedByMarker) continue
       if (members.length === 0) continue
+      const parsedStats = parseStatusFromLine(line)
       for (const member of members) {
         if (currentTeam.some((picked) => picked.id === member.id)) continue
         currentTeam.push(member)
+        parsedStatsById[member.id] = {
+          ...(parsedStatsById[member.id] ?? {}),
+          ...parsedStats,
+        }
       }
     }
     flushCurrentTeam()
@@ -423,41 +499,46 @@ export async function extractFormation(
       }
     }
     if (ids.size === 0) return '[]'
-    const { data } = await supabase
-      .from('user_students')
-      .select('*')
-      .in('student_id', Array.from(ids))
-    const rows = (data as UserStudent[]) || []
     const map: Record<string, UserStudent> = {}
-    for (const r of rows) {
-      map[r.student_id] = r
+    if (ownerUserId) {
+      const { data } = await supabase
+        .from('user_students')
+        .select('*')
+        .eq('user_id', ownerUserId)
+        .in('student_id', Array.from(ids))
+      for (const row of (data ?? []) as UserStudent[]) {
+        map[row.student_id] = row
+      }
     }
     const result = teams.map((team) =>
-      team.map((m) => ({
-        id: m.id,
-        name: m.name,
-        level: map[m.id]?.level ?? null,
-        star: map[m.id]?.star ?? null,
-        unique_star: map[m.id]?.unique_star ?? null,
-        unique_level: map[m.id]?.unique_level ?? null,
-        bond: map[m.id]?.bond ?? null,
-        hp: map[m.id]?.hp ?? null,
-        hp_wb: map[m.id]?.hp_wb ?? null,
-        attack: map[m.id]?.attack ?? null,
-        attack_wb: map[m.id]?.attack_wb ?? null,
-        defense: map[m.id]?.defense ?? null,
-        heal: map[m.id]?.heal ?? null,
-        heal_wb: map[m.id]?.heal_wb ?? null,
-        ex_skill: map[m.id]?.ex_skill ?? null,
-        normal_skill: map[m.id]?.normal_skill ?? null,
-        passive_skill: map[m.id]?.passive_skill ?? null,
-        sub_skill: map[m.id]?.sub_skill ?? null,
-        equip1: map[m.id]?.equip1 ?? null,
-        equip2: map[m.id]?.equip2 ?? null,
-        equip3: map[m.id]?.equip3 ?? null,
-        item_tier: map[m.id]?.item_tier ?? null,
-        alt_bonds: map[m.id]?.alt_bonds ?? null,
-      }))
+      team.map((m) => {
+        const parsed = parsedStatsById[m.id] ?? {}
+        return {
+          id: m.id,
+          name: m.name,
+          level: map[m.id]?.level ?? parsed.level ?? null,
+          star: map[m.id]?.star ?? parsed.star ?? null,
+          unique_star: map[m.id]?.unique_star ?? parsed.unique_star ?? null,
+          unique_level: map[m.id]?.unique_level ?? parsed.unique_level ?? null,
+          bond: map[m.id]?.bond ?? parsed.bond ?? null,
+          hp: map[m.id]?.hp ?? null,
+          hp_wb: map[m.id]?.hp_wb ?? null,
+          attack: map[m.id]?.attack ?? null,
+          attack_wb: map[m.id]?.attack_wb ?? null,
+          defense: map[m.id]?.defense ?? null,
+          heal: map[m.id]?.heal ?? null,
+          heal_wb: map[m.id]?.heal_wb ?? null,
+          ex_skill: map[m.id]?.ex_skill ?? parsed.ex_skill ?? null,
+          normal_skill: map[m.id]?.normal_skill ?? parsed.normal_skill ?? null,
+          passive_skill: map[m.id]?.passive_skill ?? parsed.passive_skill ?? null,
+          sub_skill: map[m.id]?.sub_skill ?? parsed.sub_skill ?? null,
+          equip1: map[m.id]?.equip1 ?? parsed.equip1 ?? null,
+          equip2: map[m.id]?.equip2 ?? parsed.equip2 ?? null,
+          equip3: map[m.id]?.equip3 ?? parsed.equip3 ?? null,
+          item_tier: map[m.id]?.item_tier ?? parsed.item_tier ?? null,
+          alt_bonds: map[m.id]?.alt_bonds ?? null,
+        }
+      })
     )
     return JSON.stringify(result)
   } catch {
@@ -869,7 +950,7 @@ export async function upsertTimelines(params: {
     const score = normalizeScore(text, rawScore)
     const thumbnail = snippet.thumbnails?.medium?.url ?? snippet.thumbnails?.default?.url ?? null
     const difficulty = normalizeDifficulty(text, rawScore)
-    const formation = await extractFormation(supabase, text)
+    const formation = await extractFormation(supabase, text, ownerByChannel)
     const guide = extractGuide(text)
     const formationStatus =
       formation && formation !== '[]' ? 'auto' : 'none'
@@ -983,7 +1064,7 @@ export async function upsertTimelines(params: {
     const score = normalizeScore(text, rawScore)
     const thumbnail = detail?.thumbnail ?? info.thumbnail ?? null
     const difficulty = normalizeDifficulty(text, rawScore)
-    const formation = await extractFormation(supabase, text)
+    const formation = await extractFormation(supabase, text, ownerByBili)
     const guide = extractGuide(text)
     const formationStatus =
       formation && formation !== '[]' ? 'auto' : 'none'
